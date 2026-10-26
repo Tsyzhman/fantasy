@@ -1,0 +1,159 @@
+{
+  "/api/health": {
+    "status": "200",
+    "body": {
+      "status": "ok",
+      "uptimeSeconds": 2671,
+      "release": {
+        "version": "0.3.131",
+        "commit": "74a5f00f162b1d22a6bc7344ee6630e0c354a595"
+      }
+    }
+  },
+  "/_monitor/access-audit.json": {
+    "status": "200",
+    "body": {
+      "status": "ok",
+      "generatedAt": "2026-10-10T07:48:18.363Z",
+      "windowMinutes": 60.0,
+      "cutoff": "2026-10-10T06:48:18.363Z",
+      "thresholds": {
+        "minimumRequests": 20,
+        "maximumServerErrorRatePercentExclusive": 1.0
+      },
+      "filesRead": 11,
+      "invalidLines": 0,
+      "excludedPaths": [
+        "/api/health/data-quality",
+        "/api/health/fantasy-prices"
+      ],
+      "excludedUserAgentPrefixes": [
+        "fantasy-scout-production-monitor/1.0",
+        "fantasy-production-browser-smoke/"
+      ],
+      "excludedRequests": 0,
+      "excludedUserAgentRequests": 0,
+      "requests": 657,
+      "firstObservedAt": "2026-10-10T06:49:04.404Z",
+      "lastObservedAt": "2026-10-10T07:47:31.446Z",
+      "observedSpanMinutes": 58.451,
+      "clientErrors": 3,
+      "serverErrors": 4,
+      "serverErrorRatePercent": 0.609,
+      "statusCounts": {
+        "0": 1,
+        "200": 647,
+        "304": 2,
+        "404": 3,
+        "502": 4
+      },
+      "durationMs": {
+        "p50": 31.069,
+        "p75": 66.235,
+        "p95": 323.022,
+        "max": 11477.559
+      }
+    }
+  },
+  "/_monitor/beta-access-audit.json": {
+    "status": "200",
+    "body": {
+      "status": "ok",
+      "generatedAt": "2026-10-10T07:48:19.460Z",
+      "windowMode": "fixed_start",
+      "windowStart": "2026-07-17T11:52:53.455Z",
+      "logCoverageStart": "2026-09-29T07:23:05.477Z",
+      "logCoverageEnd": "2026-10-10T07:47:31.446Z",
+      "retentionCoversWindowStart": false,
+      "cutoff": "2026-07-17T11:52:53.455Z",
+      "thresholds": {
+        "minimumRequests": 20,
+        "maximumServerErrorRatePercentExclusive": 1.0
+      },
+      "filesRead": 11,
+      "invalidLines": 0,
+      "excludedPaths": [
+        "/api/health/data-quality",
+        "/api/health/fantasy-prices"
+      ],
+      "excludedUserAgentPrefixes": [
+        "fantasy-scout-production-monitor/1.0",
+        "fantasy-production-browser-smoke/"
+      ],
+      "excludedRequests": 24031,
+      "excludedUserAgentRequests": 24031,
+      "requests": 11775,
+      "firstObservedAt": "2026-09-29T07:23:05.477Z",
+      "lastObservedAt": "2026-10-10T07:47:31.446Z",
+      "observedSpanMinutes": 15864.433,
+      "clientErrors": 1353,
+      "serverErrors": 60,
+      "serverErrorRatePercent": 0.51,
+      "statusCounts": {
+        "0": 9,
+        "200": 9534,
+        "304": 34,
+        "307": 528,
+        "308": 257,
+        "400": 39,
+        "401": 15,
+        "404": 1299,
+        "500": 1,
+        "502": 59
+      },
+      "durationMs": {
+        "p50": 17.172,
+        "p75": 50.629,
+        "p95": 231.932,
+        "max": 84924.443
+      }
+    }
+  },
+  "database": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n[{\"relname\":\"deadline_stage_jobs\",\"n_live_tup\":96,\"n_tup_ins\":99,\"n_tup_upd\":6964235,\"n_tup_del\":3,\"seq_scan\":1504115,\"seq_tup_read\":40542468}, \n {\"relname\":\"deadline_campaigns\",\"n_live_tup\":33,\"n_tup_ins\":36,\"n_tup_upd\":3953790,\"n_tup_del\":3,\"seq_scan\":2962785,\"seq_tup_read\":24549747}, \n {\"relname\":\"telegram_outbox\",\"n_live_tup\":15,\"n_tup_ins\":18,\"n_tup_upd\":34,\"n_tup_del\":3,\"seq_scan\":68799,\"seq_tup_read\":556192}, \n {\"relname\":\"telegram_rate_limits\",\"n_live_tup\":5,\"n_tup_ins\":5,\"n_tup_upd\":26,\"n_tup_del\":0,\"seq_scan\":5,\"seq_tup_read\":10}, \n {\"relname\":\"telegram_link_sessions\",\"n_live_tup\":5,\"n_tup_ins\":5,\"n_tup_upd\":6,\"n_tup_del\":0,\"seq_scan\":20407,\"seq_tup_read\":84344}, \n {\"relname\":\"telegram_link_challenges\",\"n_live_tup\":0,\"n_tup_ins\":25,\"n_tup_upd\":3,\"n_tup_del\":25,\"seq_scan\":40813,\"seq_tup_read\":2888}, \n {\"relname\":\"telegram_inbox\",\"n_live_tup\":1,\"n_tup_ins\":3,\"n_tup_upd\":3,\"n_tup_del\":2,\"seq_scan\":11,\"seq_tup_read\":9}, \n {\"relname\":\"telegram_links\",\"n_live_tup\":1,\"n_tup_ins\":1,\"n_tup_upd\":2,\"n_tup_del\":0,\"seq_scan\":244465,\"seq_tup_read\":244460}, \n {\"relname\":\"deadline_data_snapshots\",\"n_live_tup\":20,\"n_tup_ins\":20,\"n_tup_upd\":1,\"n_tup_del\":0,\"seq_scan\":5,\"seq_tup_read\":32}, \n {\"relname\":\"deadline_user_reports\",\"n_live_tup\":10,\"n_tup_ins\":13,\"n_tup_upd\":0,\"n_tup_del\":3,\"seq_scan\":9,\"seq_tup_read\":36}, \n {\"relname\":\"telegram_subscriptions\",\"n_live_tup\":12,\"n_tup_ins\":12,\"n_tup_upd\":0,\"n_tup_del\":0,\"seq_scan\":245067,\"seq_tup_read\":2933604}]\nROLLBACK\n",
+    "stderr": ""
+  },
+  "deadline_ticks": {
+    "count": 336,
+    "first": [
+      {
+        "at": "2026-10-10T07:29:14.486Z",
+        "campaigns": {
+          "created": 0,
+          "updated": 24,
+          "blocked": 1,
+          "skipped": 0
+        },
+        "deliveryKeys": [
+          "campaigns",
+          "stages",
+          "delivering",
+          "expired",
+          "delivery",
+          "purged"
+        ]
+      }
+    ],
+    "last": [
+      {
+        "at": "2026-10-10T07:59:10.322Z",
+        "campaigns": {
+          "created": 0,
+          "updated": 24,
+          "blocked": 1,
+          "skipped": 0
+        },
+        "deliveryKeys": [
+          "campaigns",
+          "stages",
+          "delivering",
+          "expired",
+          "delivery",
+          "purged"
+        ]
+      }
+    ],
+    "total_campaign_updates": 8064
+  }
+}

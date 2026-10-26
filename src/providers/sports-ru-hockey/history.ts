@@ -3,21 +3,50 @@ import { parse } from "node-html-parser";
 import { parseToi, type KhlPosition } from "@/khl/contracts";
 
 export type HockeyHistoryRow = { date: string; opponent: string; opponentSlug: string; home: boolean; matchUrl: string; score: string | null; week: number | null; toiSeconds: number | null; goals: number | null; assists: number | null; plusMinus: number | null; pimMinutes: number | null; saves: number | null; goalsAgainst: number | null; points: number | null };
-export type HockeyHistory = { tagId: string | null; name: string; club: string; clubSlug: string; season: string; position: KhlPosition; rows: HockeyHistoryRow[]; fixtures: HockeyHistoryRow[] };
+export type HockeyHistory = { tagId: string | null; profileUrl: string; name: string; club: string; clubSlug: string; season: string; position: KhlPosition; rows: HockeyHistoryRow[]; fixtures: HockeyHistoryRow[] };
 const text = (value: string) => value.replace(/\s+/g, " ").trim();
 function number(value: string) { const s = text(value); if (!s || s === "—" || s === "-") return null; if (!/^-?\d+$/.test(s)) throw new Error("HISTORY_NUMBER_INVALID"); return Number(s); }
 function slug(url: string) { const match = /^https:\/\/www\.sports\.ru\/hockey\/club\/([\w-]+)\/$/.exec(url); if (!match) throw new Error("HISTORY_CLUB_INVALID"); return match[1]; }
-export function parseHockeyHistory(html: string, expected: { tagId: string; season: string; position: KhlPosition; historyOnly?: boolean }): HockeyHistory {
+export function parseHockeyHistory(html: string, expected: { tagId: string; season: string; position: KhlPosition; historyOnly?: boolean;
+  verifiedArchiveIdentity?: { current: HockeyHistory; currentUrl: string; archiveUrl: string; providerSeasonId: string; tagProfile?: { tagId: string; url: string } }
+}): HockeyHistory {
   if (Buffer.byteLength(html) > 2 * 1024 * 1024) throw new Error("HISTORY_SIZE_INVALID");
-  const root = parse(html), link = root.querySelector(".go-to-page")?.getAttribute("href") ?? "";
-  const tagId = /\/tags\/(\d+)\//.exec(link)?.[1] ?? null;
+  const root = parse(html); let link = root.querySelector(".go-to-page")?.getAttribute("href") ?? "";
+  let tagId = /\/tags\/(\d+)\//.exec(link)?.[1] ?? null;
   const season = root.querySelector("#slt option[selected]")?.text.trim();
   const profile = root.querySelectorAll(".profile-table tr");
-  const clubLink = profile[0]?.querySelector("a"), club = clubLink?.text.trim();
-  const position = ({ "Вратарь": "G", "Защитник": "D", "Нападающий": "F" } as const)[profile[1]?.querySelector("td")?.text.trim() as "Вратарь"];
-  const name = root.querySelector("h1")?.text.trim();
-  if (tagId ? tagId !== expected.tagId : !/^https:\/\/www\.sports\.ru\/(?:hockey\/person\/)?[\w-]+\/$/.test(link)) throw new Error("HISTORY_IDENTITY_INVALID");
-  if (season && season !== expected.season || position !== expected.position || !name || !club) throw new Error("HISTORY_IDENTITY_INVALID");
+  const clubLink = profile[0]?.querySelector("a");
+  let club = clubLink?.text.trim(), clubSlug = clubLink ? slug(clubLink.getAttribute("href") ?? "") : null;
+  let position: KhlPosition | undefined = ({ "Вратарь": "G", "Защитник": "D", "Нападающий": "F" } as const)[profile[1]?.querySelector("td")?.text.trim() as "Вратарь"];
+  let name = root.querySelector("h1")?.text.trim();
+  let verifiedArchive = false;
+  const identity = expected.verifiedArchiveIdentity;
+  if (expected.historyOnly && identity) {
+    const currentUrl = new URL(identity.currentUrl), archiveUrl = new URL(identity.archiveUrl);
+    const currentTagVerified = identity.current.tagId === expected.tagId ||
+      identity.current.tagId === null && identity.tagProfile?.tagId === expected.tagId && identity.tagProfile.url === identity.current.profileUrl;
+    // Numeric tag redirects are checked against the provider's embedded data-tag.
+    // The exact fantasy profile and archive season IDs must also agree.
+    if (currentUrl.origin !== "https://www.sports.ru" || archiveUrl.origin !== currentUrl.origin
+      || !/^\/fantasy\/hockey\/player\/info\/\d+\/\d+\.html$/.test(currentUrl.pathname)
+      || currentUrl.search || archiveUrl.pathname !== currentUrl.pathname
+      || archiveUrl.search !== `?s=${identity.providerSeasonId}`
+      || !currentTagVerified || identity.current.position !== expected.position
+      || root.querySelector("#slt option[selected]")?.getAttribute("value") !== identity.providerSeasonId
+      || season !== expected.season) throw new Error("HISTORY_ARCHIVE_IDENTITY_MISMATCH");
+    if (!link && !name && !club && !position) {
+      ({ tagId, name, club, clubSlug, position } = identity.current); link = identity.current.profileUrl;
+    } else {
+      if (!link || !name || !club || !position || name !== identity.current.name
+        || (tagId ? tagId !== expected.tagId : link !== identity.current.profileUrl)
+        || (position === "G") !== (identity.current.position === "G")) throw new Error("HISTORY_ARCHIVE_IDENTITY_MISMATCH");
+      // D/F classification can change between seasons. Use the archived position
+      // after verifying identity; never apply the current position to old rows.
+    }
+    verifiedArchive = true;
+  }
+  if (!verifiedArchive && (tagId ? tagId !== expected.tagId : !/^https:\/\/www\.sports\.ru\/(?:hockey\/person\/)?[\w-]+\/$/.test(link))) throw new Error("HISTORY_IDENTITY_INVALID");
+  if (season && season !== expected.season || !verifiedArchive && position !== expected.position || !name || !club) throw new Error("HISTORY_IDENTITY_INVALID");
   // The provider omits </tbody> in its history table. Isolate the two complete
   // table fragments so the forgiving parser cannot swallow the calendar.
   const historyStart = html.indexOf('<div id="stat">'), calendarStart = html.indexOf('<div id="calendar">');
@@ -56,7 +85,7 @@ export function parseHockeyHistory(html: string, expected: { tagId: string; seas
     });
   });
   if (new Set(parsed[0].map(r => `${r.date}:${r.opponentSlug}:${r.home}`)).size !== parsed[0].length) throw new Error("HISTORY_DUPLICATE");
-  return { tagId, name, season: expected.season, club, clubSlug: slug(clubLink!.getAttribute("href")!), position, rows: parsed[0], fixtures: parsed[1] };
+  return { tagId, profileUrl: link, name, season: expected.season, club, clubSlug: clubSlug!, position, rows: parsed[0], fixtures: parsed[1] };
 }
 
 export function previousHockeySeason(season: string) {

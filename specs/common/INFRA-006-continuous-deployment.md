@@ -47,20 +47,42 @@ Use two running web generations and a graceful upstream reload rather than rebui
 
 ## Runtime and traffic {#runtime}
 
-- `scripts/deploy-production-docker.sh` builds an exact release while the active web and worker continue running.
+- CI builds runtime and migration images from the frozen lockfile on a digest-pinned Node 24 LTS base. The promoter loads the checksum-verified image archive and verifies both exact image IDs and release labels. Production never builds application images.
+- Web and worker run as uid 1000 with all capabilities dropped and no-new-privileges. Web: 2 GiB, 2 CPUs, 128 PIDs and 1 GiB V8 old heap; worker: 4 GiB, 3 CPUs, 256 PIDs and 2 GiB V8 old heap. PostgreSQL has a separately measured 2 GiB/2 CPU/256 PID budget, applied online; relay has 128 MiB/0.5 CPU/64 PIDs. Validate full imports and simultaneous web versions against these budgets.
+- Each Node process shares one Prisma client, connection pool and query listener across independently compiled Next server bundles. Loading another bundle must not create another pool.
+- Docker's classic store identifies a config digest while containerd may identify an OCI manifest. Verify both through the exact exported archive: unique CI tags, Linux/amd64 config hash, source label and the OCI manifest-to-config digest binding. The loaded daemon ID must be one of those verified identities. Preserve both CI and loaded IDs in the release manifest; never accept labels alone or rebuild on the server to work around a mismatch.
 - Web versions alternate between `127.0.0.1:3000` and `127.0.0.1:3001`. A candidate has schedulers disabled, uses the same database/session configuration and uploads, and passes health with the requested commit before promotion.
 - `scripts/production-web-routing.py` changes only the `fantasy.tsyzhman.ru` upstream in `/etc/caddy/Caddyfile`. It checks the expected old port, validates the complete candidate configuration and reloads Caddy gracefully. It never restarts Caddy or edits another site's routing. A failed reload restores the original file.
 - The old web remains running through the switch and a 30-second drain, then receives a graceful stop with a further 30-second timeout. Public health must confirm the exact candidate commit before finalizing the current-release symlink.
 - Candidate and prior image static assets are combined from their original images, bounded to those two releases. Existing browser tabs can still fetch prior hashed JS/CSS after the old process stops. Authentication storage and secrets are retained; deployment does not revoke sessions.
+- A stable compiler ID salt is supplied through a BuildKit secret mount. In the same build layer, strip the salt from both Node action manifests, remove private build caches and scan all build output for residual salt before publishing any runtime/setup image. The active AES-256 encryption key is a separate mode-600 host file, injected into private runtime environments only; it never enters CI or a release artifact. Next 16.4.2 uses that runtime environment in preference to the cleared manifest. Current actions are unbound module-level functions: verify all existing IDs and old forms when rotating the runtime key. Closure-capturing or bound actions require an explicit compatibility review. `deploymentId` is the exact release commit. Unsaved Squad plans persist in tab sessionStorage, scoped by account/provider/league/season/squad, with a 24-hour TTL, 64 KiB per entry and eight-entry limit; saved baselines must match before restoration. Captains, locks, round links and transfer state survive refresh.
 - Exactly one scheduler worker runs at a time. Only after the candidate web is healthy, the old worker stops and the new worker starts. Relay identities and volumes follow the actual mounted socket volume; collector locks and active-ingestion checks remain mandatory.
+- Normalize inherited runtime environment keys to one effective final value before creating the next generation. Remove keys supplied by explicit runtime-role overrides from the inherited files, preserving private values and preventing duplicate growth across releases.
+- The operator-owned VPN adapter accepts a complete AmneziaWG profile or a plain WireGuard profile. Plain profiles retain their protocol fields without adding obfuscation settings; partial AmneziaWG settings and executable configuration hooks are rejected. The new tunnel must pass the official FPL bootstrap probe before replacing the old VPN and relay; the serving web remains running.
 - Web-owned FPL and probable-lineup schedules retain their cadence. A release-specific read-only activation file defers their startup in the candidate until the old web has stopped after draining; its content must match the candidate commit. HTTP readiness does not wait for activation. The pending timer is unreferenced and ends after activation or cancellation, preventing duplicate web schedules during preparation and draining.
+
+<a name="heavy-jobs"></a>
+
+## Heavy background jobs {#heavy-jobs}
+
+On the Linux production worker, full player-pool refreshes, isolated model forecast recalculation and the three-hour franchise collector share one process-lifetime exclusive `flock` at `/app/storage/franchises/.heavy-job.lock`. Calculation children retain their PID, Node IPC and signals. Waiting jobs remain outside Node and cannot retain a calculation working set. Exit or forced termination releases the kernel lock; the lock file itself is retained. Existing per-scheduler coalescing, hourly pool slots, six-hour model cadence, source/deployment exclusion and atomic publication remain in place. The collector starts every three hours at minute 10; the shared lock also protects delayed or long-running cycles. Operator collection uses `ops/franchises-sync.sh`. A configured `FANTASY_HEAVY_JOB_LOCK_PATH` identifies the same lock for all three entry points. Local non-Linux launches retain their existing behavior.
+
+Franchise source recovery reads at most 100 identities and 25 missing squad payloads per batch. Existing source files do not trigger JSON payload reads. Preserve the previous ready snapshot on failure and verify old collector processes are absent before removing stale collection markers.
+
+The franchise CLI runs in one disposable container named `fantasy-scout-franchises-job`, using the exact worker image digest, database network and persistent franchise source volume. It starts no web server or schedulers and publishes no ports. Its 5 GiB RAM/no-swap, two-CPU and 128-PID caps do not share the long-lived worker's 4 GiB cgroup. Startup requires at least 6 GiB available host memory, including 1 GiB headroom. It retains the host collector/deploy exclusion and the same kernel calculation lock across containers. A private temporary environment file is removed on every launcher exit; `docker run --rm` removes the job container after completion. User data and rollback web generations are unaffected.
+
+An operator may resume a verified interrupted acquisition with `FRANCHISE_RESUME_AFTER=<timezone-qualified timestamp>` no older than three hours. Only H2H responses and squad records acquired since that checkpoint, together with settled valid lineups, may be reused beyond the normal HTTP TTL. Database statistics/forecast exports are always refreshed. The regular timer does not set this override. The exact known H2H blank historical-lineup template remains missing data, never a zero XI, and is retried on later normal collections; malformed/error pages still abort publication.
 
 <a name="migrations"></a>
 <a name="data"></a>
 
 ## Data and compatible migrations {#data}
 
+`fantasy_app` retains only schema usage, table SELECT/INSERT/UPDATE/DELETE and sequence usage. It has no ownership, superuser, CREATEDB, CREATEROLE, replication, BYPASSRLS, TRUNCATE or migration-journal write privileges. `fantasy_migrator` owns application schema objects, applies migrations and creates the disposable rehearsal database; its protected host credential is never copied to web/worker. `fantasy_operator` is the protected administrative/recovery identity. Default privileges of the migration owner grant runtime access to future tables. Ownership/attribute changes are transactional with short lock timeouts, preceded by isolated positive/negative probes; existing application credentials and sessions remain valid.
+
 Pending migrations must carry a reviewed `deployment.json` with `mode: online` and the exact `sqlSha256` of `migration.sql`. This explicitly asserts compatibility with the currently serving and candidate binaries, including rollback to the old binary. An absent, mismatched or unsupported declaration aborts promotion without stopping the website.
+
+PostgreSQL 16's bootstrap OID 10 cannot lose SUPERUSER. If it has the legacy runtime name, a short separate administrative session atomically renames it to `fantasy_operator`, creates the limited `fantasy_app` with unchanged credentials, and transfers application ownership. Remove the temporary transition login on success or rollback. Existing connections retain their original role until the old generations drain; after promotion only the protected operator owns OID 10. Each concurrent index uses one migration statement; the migration role has five-second lock and 120-second statement timeouts. Only when every pending migration is a checksum-reviewed single `CREATE INDEX CONCURRENTLY` statement may the private connection environment extend lock waiting to 30 seconds; ordinary/mixed DDL retains five seconds. Failed invalid indexes require an exact definition check, concurrent removal and migration rollback resolution before retry.
 
 Keep custom-format backup verification and restore/apply rehearsal, but perform them while production serves traffic. Apply only the reviewed compatible migration set, with bounded database lock/statement timeouts in its SQL; check the old serving version afterward. Breaking schema changes require an expand/contract sequence across separate releases. A normal deployment must never silently fall back to a stop-and-replace path. Applied migrations are not undone by runtime rollback.
 
@@ -68,7 +90,7 @@ Keep custom-format backup verification and restore/apply rehearsal, but perform 
 
 ## Contracts and entry points {#contracts}
 
-`Deploy Production` packages the exact Git tree and invokes the promoter with archive path, SHA-256, release name, commit, tree and version. Internal `/api/health` checks include the requested commit; public health confirms the upstream actually changed. The routing helper accepts only the expected old and alternate port, rejecting unknown/ambiguous sites and concurrent configuration changes. Release manifests and `PRODUCTION_HISTORY.tsv` identify the resulting runtime.
+`Deploy Production` packages the exact Git tree and invokes the promoter with source archive path/SHA-256, release/commit/tree/version, image archive path/SHA-256 and exact runtime/setup image IDs. Internal `/api/health` checks include the requested commit; public health confirms the upstream actually changed. After compatible migrations, a bounded authenticated canary checks Squad SSR, the materialized player-pool route and its progressive API fallback; its ephemeral session is deleted. The routing helper accepts only the expected old and alternate port, rejecting unknown/ambiguous sites and concurrent configuration changes. Release manifests and `PRODUCTION_HISTORY.tsv` identify the resulting runtime.
 
 <a name="recovery"></a>
 
@@ -76,9 +98,13 @@ Keep custom-format backup verification and restore/apply rehearsal, but perform 
 
 Keep the prior web, worker and relay until the candidate has passed internal and public health. If promotion fails, restore the old Caddy upstream before deleting the candidate, restore canonical container names and restart only the old worker. The old web must remain available. Retain the current and one stopped rollback release; remove only unused project relay volumes and bounded candidate/extraction containers. Never prune another application's resources.
 
+Retain exactly one completed full PostgreSQL custom-format dump in `/var/backups/fantasy-scout`. Write new dumps to `.partial`, verify the entire archive by rendering it to `/dev/null`, then atomically publish the completed filename. Cleanup verifies the newest full dump again before deleting older dump files; invalid or changing archives abort deletion. Temporary partial dumps are never treated as backups. Scheduled artifact cleanup uses the same host lock as production promotion and the current checked-in cleanup implementation, including its backup helper. Application/session/source caches and persistent volumes are preserved. Production builds run in disposable CI builders. Host-wide unused build-cache deletion requires the explicit operator option `--prune-host-build-cache`; it removes build cache only, with no image, container, network or volume prune.
+
 <a name="observability"></a>
 
 ## Verification and observability {#observability}
+
+Caddy assigns a request UUID and records it with upstream and release commit; application errors include the same ID, PID and commit. Every minute, bounded process diagnostics record CPU, RSS/heap/external memory and event-loop delay. SQL is represented by at most 128 hashed fingerprints and top 20 summaries in a five-minute window, without parameter values. PostgreSQL slow-query/temporary-file logging is bounded and redacts bind parameters; runtime diagnostics report actual interval deltas for temp files, never cumulative counters as a short-window result. The operational SLO is a rolling 24 hours with retained start/end coverage and unchanged <1% 5xx threshold. Fixed beta evidence remains a separate historical artifact and an explicit beta acceptance mode.
 
 Release manifests, image labels, internal health and public health agree on version/commit. Each rollout records candidate readiness, traffic switch, drain and rollback decisions. Verify public responses repeatedly during a real promotion, including an old static asset after switching. Check failed migrations, duplicate workers/jobs/deliveries, memory, OOM/restarts, release count and temporary containers/volumes after completion.
 
@@ -107,4 +133,14 @@ Unready candidates and unsafe migrations preserve the serving version. Routing v
 
 ## Change history {#changelog}
 
+- 2026-10-23: WI-081 — retain one verified full dump, publish backups atomically, share the deployment lock for scheduled cleanup and support explicit complete host build-cache removal.
+
+- 2026-10-23: WI-080 — normalize inherited runtime environment and exclude explicit role overrides so repeated promotions do not accumulate duplicate configuration.
+
+- 2026-10-21: WI-079: bound operator source resume to a verified three-hour acquisition checkpoint, refresh database exports, and keep known absent historical lineups explicit and retryable.
+
+- 2026-10-21: WI-079: serialize heavy worker calculations and bound franchise source recovery; retain refresh cadence.
+
+- 2026-10-20: WI-078 — accept an operator-supplied plain WireGuard profile in the existing guarded VPN rotation without weakening its API probe or configuration allowlist.
 - 2026-10-09: WI-060 — prohibit direct production replacement and require a verified second web version with graceful traffic switch and compatible online migrations.
+- 2026-10-10: WI-072 — least-privilege database identities, Node 24, CI image artifacts, resource budgets, domain canary, stable actions/drafts and bounded correlated diagnostics. F02 is explicitly excluded: existing pre-release backup/rehearsal remains; no new offsite schedule/PITR.

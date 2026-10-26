@@ -2,6 +2,8 @@
 
 # Product {#root}
 
+Visual contract: `spec://common/PROP-002-editorial-sport-design#root`, with the user-supplied [design instruction](../../docs/design/DESIGN.md).
+
 <a name="purpose"></a>
 
 ## Purpose {#purpose}

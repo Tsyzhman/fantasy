@@ -1,0 +1,66 @@
+{
+  "captured_utc": "2026-10-21T08:23:34.786895+00:00",
+  "health": {
+    "code": 0,
+    "stdout": "{\"status\":\"ok\",\"uptimeSeconds\":1121,\"release\":{\"version\":\"0.3.141\",\"commit\":\"0880d401519052841b7be8d0b217f83f60d46aff\"}}",
+    "stderr": ""
+  },
+  "memory": {
+    "code": 0,
+    "stdout": "total        used        free      shared  buff/cache   available\nMem:           11876        5029        2185         313        4660        6220\nSwap:              0           0           0",
+    "stderr": ""
+  },
+  "stats": {
+    "code": 0,
+    "stdout": "fantasy-scout-worker 1.399GiB / 4GiB 52.45%\nfantasy-scout-web 131.9MiB / 2GiB 15.35%\nfantasy-scout-postgres 1.027GiB / 2GiB 14.39%",
+    "stderr": ""
+  },
+  "processes": {
+    "code": 0,
+    "stdout": "PID                 PPID                ELAPSED             RSS                 COMMAND\n3484520             3484495             1119                1183032             next-server (v\n3495119             3484495             921                 916                 timeout --signal=TERM --kill-after=15 5500 flock --exclusive --no-fork /app/storage/franchises/.heavy-job.lock node scripts/franchises.cjs --sync\n3495125             3495119             921                 99820               node scripts/franchises.cjs --sync\n3495282             3495125             919                 25524               /opt/franchises/bin/python /app/scripts/franchise-analytics/sync.py\n3495283             3495282             918                 256032              /opt/franchises/bin/python /app/scripts/franchise-analytics/sync.py --stage acquire",
+    "stderr": ""
+  },
+  "service": {
+    "code": 0,
+    "stdout": "Result=success\nExecMainStartTimestamp=Wed 2026-10-21 11:08:16 MSK\nExecMainExitTimestamp=n/a\nExecMainStatus=0\nActiveState=activating\nSubState=start",
+    "stderr": ""
+  },
+  "timer": {
+    "code": 0,
+    "stdout": "NEXT                        LEFT       LAST                        PASSED       UNIT                     ACTIVATES\nWed 2026-10-21 12:10:00 MSK 46min left Wed 2026-10-21 09:47:05 MSK 1h 36min ago fantasy-franchises.timer fantasy-franchises.service\n\n1 timers listed.",
+    "stderr": ""
+  },
+  "storage": {
+    "code": 0,
+    "stdout": "189M\tstorage/franchises/source/http\n837M\tstorage/franchises\n0\n-rwxr-xr-x 1 node node 3 Oct 21 08:08 storage/franchises/.collection.lock\n-rw-r--r-- 1 node node 3 Oct 21 08:08 storage/franchises/.sync.lock\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0",
+    "stderr": ""
+  },
+  "snapshot": {
+    "code": 0,
+    "stdout": "{\"season\":\"2026/2027\",\"version\":2,\"generated_at\":\"2026-10-10T07:08:20.404\",\"squads\":45234,\"compressed_bytes\":12548402,\"sha256\":\"15e70d1ee84fc642bde721cee20552c814915a3adc48c40bcc5ed259b0e414ab\"}",
+    "stderr": ""
+  },
+  "duplicates": {
+    "code": 0,
+    "stdout": "{\"squads\" : 0, \"rounds\" : 0, \"snapshots\" : 0}",
+    "stderr": ""
+  },
+  "containers": [
+    {
+      "name": "fantasy-scout-worker",
+      "image": "sha256:1953f6b4b09a291b9f964d3b997916e101133adab392e8ef0f628a976412741c",
+      "status": "running",
+      "health": "healthy",
+      "restarts": 0,
+      "oom": false
+    },
+    {
+      "name": "fantasy-scout-web",
+      "image": "sha256:1953f6b4b09a291b9f964d3b997916e101133adab392e8ef0f628a976412741c",
+      "status": "running",
+      "health": "healthy",
+      "restarts": 0,
+      "oom": false
+    }
+  ]
+}

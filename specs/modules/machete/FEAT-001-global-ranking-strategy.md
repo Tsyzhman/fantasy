@@ -58,11 +58,15 @@ The user enables the mode instead of balanced/reliable/upside. The UI shows the 
 
 ## 6. Data and state {#data}
 
+Sports price synchronization, provider snapshots and data-quality audits share the active source registry. Active scope follows the current season and explicit tournament calendar, not metadata updatedAt or stale environment scope lists. Retained finished tournaments remain visible as archives with integrity/count diagnostics and no ongoing freshness SLA. Only existing explicitly reviewed identity exclusions affect the eligible price-mapping denominator; unresolved players remain failures under unchanged thresholds. The home page uses active/user-selected leagues and separate successful price, statistics, lineup-change and forecast-calculation timestamps; missing/stale facts remain visible.
+
 Context: N, rank, team and leader points, T/R, ER for no more than 6 completed rounds, ownership of the same provider/tournament/season. GlobalContestStrategyState, UserGlobalStrategyState and GlobalStrategyRecommendation models. The setting is GLOBAL_AUTO in existing JSON filters.
 
 <a name="contracts"></a>
 
 ## 7. Contracts {#contracts}
+
+The desktop pool remains virtualized and touch pool remains paginated at 18 players. Column selection and its existing persisted preferences are also available on touch screens; expanded mobile analytics use the selected metrics, including FFO and rotation risk, with touch/keyboard explanations. Confidence percentages have a visible data-quality label. Resize separators are focusable and support arrows, Shift acceleration, Home/End bounds and Enter reset, with current/min/max ARIA values; pointer resize and double-click reset remain. Pool rendering, forecast explanations, projection arithmetic and team-strength inputs have separate responsibility modules while preserving planner public exports and recommendations.
 
 Production full Squad pool refreshes run in a terminating child process so native database working memory is released after each cycle. The scheduler keeps full and incremental work serialized until that child exits; parent shutdown terminates its child. Refresh hours, bootstrap-only-missing behavior, atomic READY publication, retained revisions, complete player data and request-time loading remain unchanged. Development without the production bundle keeps the same in-process implementation.
 
@@ -122,12 +126,17 @@ retain their behavior.
 
 ### Provider transfer rules {#transfer-rules}
 
-Every squad-planning strategy uses three Sports.ru transfers per round. Unused
-transfers do not carry forward. Round counters, suggestions, saved-plan rollover
-and legacy opening allowances use this cap. Reading an older Sports.ru pool
+Every squad-planning strategy uses three Sports.ru transfers per round, except
+Championship 2026/2027 provider tour `2391` (11th tour, deadline
+2026-10-16T19:00:00Z) and Champions League 2026/2027 provider tour `2755`
+(third tour, deadline 2026-10-20T16:45:00Z), which each allow six. Match these
+exceptions by provider tour identity and deadline, independently of the local ordinal. Other tours retain
+three; unused exceptional transfers do not carry forward. Round counters,
+suggestions, save validation, saved-plan rollover and legacy opening allowances
+use the allowance of the corresponding tour. Reading an older Sports.ru pool
 snapshot applies the current transfer rule immediately without rebuilding its
 player data or mutating its stored metadata. Russian and English descriptions
-state three transfers per round without claiming accumulation.
+state the active tour allowance without claiming accumulation.
 
 FPL retains its separate provider rules: one new free transfer per round,
 unused free transfers bank up to five, and extra transfers cost four points.
@@ -180,6 +189,9 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 <a name="changelog"></a>
 
 ## 12. Changelog {#changelog}
+
+- 2026-10-20: WI-078 — allow six transfers only in Champions League provider tour 2755; subsequent tours retain three without banking.
+- 2026-10-16: WI-077 — allow six transfers only in Championship provider tour 2391, including cached readers, UI and save validation; retain three in all other Sports.ru tours.
 
 - 2026-10-09: WI-063 — preserve verified birth dates and explicitly reviewed exclusions, require unique fresh name/date evidence for catalog identities, resolve reviewed European club aliases, search provider and canonical names, reconcile FPL position codes and include verified FPL price-backed virtual rosters without shared starter mutations.
 - 2026-10-09: WI-059 — preserve the user's corrected two-player club cap in Championship, Netherlands, Portugal and Turkey, with current contest rules over stale snapshot metadata.

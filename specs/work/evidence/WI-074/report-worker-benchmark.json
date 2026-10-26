@@ -1,0 +1,31 @@
+{
+  "synthetic": true,
+  "node": "v24.11.1",
+  "squads": 30000,
+  "managers": 3000,
+  "rawBytes": 29981760,
+  "compressedBytes": 852936,
+  "reportBytes": 2180565,
+  "simultaneousRequests": 20,
+  "exactEquality": true,
+  "directMs": 329.1124000000001,
+  "directMainEventLoopMaxMs": 319.2383,
+  "coldMs": 497.27520000000004,
+  "warmMs": 0.14949999999998909,
+  "coldMainEventLoopMaxMs": 19.873791,
+  "cache": {
+    "entries": 1,
+    "bytes": 4358794
+  },
+  "worker": {
+    "workers": 1,
+    "pending": 0
+  },
+  "memory": {
+    "rss": 558899200,
+    "heapTotal": 263118848,
+    "heapUsed": 142261432,
+    "external": 37734240,
+    "arrayBuffers": 35056123
+  }
+}

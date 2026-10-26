@@ -1,0 +1,215 @@
+{
+  "run_id": 39585036533,
+  "url": "https://github.com/Tsyzhman/fantasy/actions/runs/39585036533",
+  "commit": "703edd62f45e514bbff003221b9fe7d7cd8ee7d0",
+  "version": "0.3.144",
+  "jobs": [
+    {
+      "id": 119171737914,
+      "name": "package-and-deploy",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 39585036533,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Checkout exact requested ref",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Fetch canonical branch history",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Reject refs that omit current main",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Setup Node.js",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Generate Prisma client",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Verify committed release source",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Verify release version against canonical branch",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Run checks before packaging",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "Verify browser-free KHL HTTP transport",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11
+        },
+        {
+          "name": "Verify franchise database adapter and xFO formula",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Verify continuous ***ment and rollback",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        },
+        {
+          "name": "Package exact Git commit",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "Build immutable Linux runtime and migration images in CI",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "Remove only this CI build cache",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        },
+        {
+          "name": "Retain immutable release archive and image manifest",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        },
+        {
+          "name": "Report dry run",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 18
+        },
+        {
+          "name": "Materialize bounded AmneziaWG secret",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 19
+        },
+        {
+          "name": "Prepare SSH key",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20
+        },
+        {
+          "name": "Transfer VPN configuration over SSH",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 21
+        },
+        {
+          "name": "Promote verified AmneziaWG network namespace",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 22
+        },
+        {
+          "name": "Remove runner copy of VPN configuration",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 23
+        },
+        {
+          "name": "Verify production remains healthy after VPN rotation",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 24
+        },
+        {
+          "name": "Reject production history rollback",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 25
+        },
+        {
+          "name": "Transfer immutable archive",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 26
+        },
+        {
+          "name": "Promote Docker release",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 27
+        },
+        {
+          "name": "Verify exact production revision",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 28
+        },
+        {
+          "name": "Post Setup Node.js",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 55
+        },
+        {
+          "name": "Post Checkout exact requested ref",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 56
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 57
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "node": 1329,
+    "node_passed": 1329,
+    "node_failed": 0,
+    "python": 27,
+    "rollout": 12
+  },
+  "artifact": {
+    "id": 12338649481,
+    "digest": "sha256:f2821cb543b62d95e98982eb20deb6806b78710c16a4badb7bfaed53d056b297"
+  }
+}

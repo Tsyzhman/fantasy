@@ -33,7 +33,7 @@ These prompts describe the earlier Excel-first MVP. Use the
 
 ## Design references
 
-- [Imported Isty Cloudline design-system reference](design/NEW_DESIGN.md)
+- [Superseded design reference — current instruction link](design/NEW_DESIGN.md)
 
 The original design reference retains its metadata and terminology. It is
 preserved separately from the Fantasy product contracts.

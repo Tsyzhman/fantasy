@@ -1,77 +1,54 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
+/** @spec spec://common/PROP-002-editorial-sport-design#preferences */
 import { useEffect, useSyncExternalStore } from "react";
-
 import { localizedText, useLanguage } from "@/components/localized-option";
 
-type Theme = "light" | "dark";
-
-const defaultTheme: Theme = "light";
-const themeChangeEvent = "fantasy-theme-change";
-const darkSchemeQuery = "(prefers-color-scheme: dark)";
+type Theme = "light" | "dark" | "system";
+const changeEvent = "fantasy-theme-change";
+const schemeQuery = "(prefers-color-scheme: dark)";
+let volatileTheme: Theme | undefined;
 
 export function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerThemeSnapshot);
+  const theme = useSyncExternalStore(subscribe, snapshot, () => "system" as Theme);
   const language = useLanguage();
-
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
-
-  function toggleTheme() {
-    const next = theme === "dark" ? "light" : "dark";
-    applyTheme(next);
-    window.localStorage.setItem("fantasy-theme", next);
-    window.dispatchEvent(new Event(themeChangeEvent));
-  }
-
-  const Icon = theme === "dark" ? Sun : Moon;
-  const label =
-    theme === "dark"
-      ? localizedText(language, "Switch to light theme", "Переключить на светлую тему")
-      : localizedText(language, "Switch to dark theme", "Переключить на темную тему");
-
+  useEffect(() => { applyTheme(theme); }, [theme]);
   return (
-    <button
-      type="button"
-      data-icon-button
-      onClick={toggleTheme}
-      aria-label={label}
-      aria-pressed={theme === "dark"}
-      title={label}
-      className="ui-icon-button !justify-center"
-    >
-      <Icon aria-hidden="true" />
-      <span className="sr-only">{label}</span>
-    </button>
+    <select className="preference-select" aria-label={localizedText(language, "Theme", "Тема")} value={theme}
+      onChange={(event) => {
+        const next = event.target.value as Theme;
+        volatileTheme = next;
+        try { localStorage.setItem("fantasy-theme", next); } catch {}
+        applyTheme(next);
+        window.dispatchEvent(new Event(changeEvent));
+      }}>
+      <option value="system">{localizedText(language, "System theme", "Как в системе")}</option>
+      <option value="light">{localizedText(language, "Pressbox", "Pressbox")}</option>
+      <option value="dark">{localizedText(language, "Midnight Scout", "Midnight Scout")}</option>
+    </select>
   );
 }
-
-function subscribeToTheme(callback: () => void) {
-  const mediaQuery = window.matchMedia(darkSchemeQuery);
-  window.addEventListener("storage", callback);
-  window.addEventListener(themeChangeEvent, callback);
-  mediaQuery.addEventListener("change", callback);
-
-  return () => {
-    window.removeEventListener("storage", callback);
-    window.removeEventListener(themeChangeEvent, callback);
-    mediaQuery.removeEventListener("change", callback);
-  };
+function snapshot(): Theme {
+  if (volatileTheme !== undefined) return volatileTheme;
+  let value: string | null | undefined;
+  try { value = localStorage.getItem("fantasy-theme"); } catch {}
+  return value === "light" || value === "dark" || value === "system" ? value : volatileTheme ?? "system";
 }
-
-function getThemeSnapshot(): Theme {
-  const stored = window.localStorage.getItem("fantasy-theme");
-  if (stored === "dark" || stored === "light") return stored;
-  return window.matchMedia(darkSchemeQuery).matches ? "dark" : defaultTheme;
-}
-
-function getServerThemeSnapshot(): Theme {
-  return defaultTheme;
-}
-
 function applyTheme(theme: Theme) {
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme;
+  const resolved = theme === "system" ? (matchMedia(schemeQuery).matches ? "dark" : "light") : theme;
+  document.documentElement.dataset.theme = resolved;
+  document.documentElement.style.colorScheme = resolved;
+}
+function subscribe(callback: () => void) {
+  const query = matchMedia(schemeQuery);
+  const update = () => { applyTheme(snapshot()); callback(); };
+  const storage = () => { volatileTheme = undefined; update(); };
+  window.addEventListener("storage", storage);
+  window.addEventListener(changeEvent, update);
+  query.addEventListener("change", update);
+  return () => {
+    window.removeEventListener("storage", storage);
+    window.removeEventListener(changeEvent, update);
+    query.removeEventListener("change", update);
+  };
 }

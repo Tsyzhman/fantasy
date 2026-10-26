@@ -6,6 +6,8 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-082](work/WI-082-scheduled-browser-smoke.md) | Restore scheduled GitHub browser checks and release the aligned revision | PROP-002, INFRA-006 | @tsyzhman | 2026-10-26 | — |
+| [WI-078](work/WI-078-ucl-round-three-transfers.md) | Six transfers only in Champions League round three | FEAT-001 | @tsyzhman | 2026-10-20 | — |
 | [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
 | [WI-059](work/WI-059-four-league-club-limits.md) | Preserve two club players in four Sports.ru leagues | FEAT-001 | @tsyzhman | 2026-10-09 | — |
 | [WI-056](work/WI-056-compact-deadline-findings.md) | Compact Telegram deadline findings | FEAT-007, INFRA-005 | @tsyzhman | 2026-10-09 | — |
@@ -27,6 +29,22 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-081](work/archive/2026/WI-081-production-artifact-retention.md) | Keep one production backup and clear build caches | @tsyzhman | 2026-10-23 |
+| [WI-080](work/archive/2026/WI-080-production-lineup-recovery.md) | Restore production lineup updates | @tsyzhman | 2026-10-23 |
+| [WI-079](work/archive/2026/WI-079-franchise-refresh-serialization.md) | Serialize heavy refreshes and restore franchise updates | @tsyzhman | 2026-10-21 |
+| [WI-077](work/archive/2026/WI-077-championship-round-transfer-limit.md) | Six transfers in Championship round eleven | @tsyzhman | 2026-10-16 |
+| [WI-076](work/archive/2026/WI-076-editorial-sport-design.md) | Adopt Midnight Scout and Pressbox | @tsyzhman | 2026-10-10 |
+| [WI-067](work/archive/2026/WI-067-auth-correctness.md) | Atomic sign-in limits and one-time bootstrap | @tsyzhman | 2026-10-10 |
+| [WI-068](work/archive/2026/WI-068-fpl-mapping-reconciliation.md) | Reconcile official FPL scores after mapping changes | @tsyzhman | 2026-10-10 |
+| [WI-069](work/archive/2026/WI-069-sports-ownership-idempotency.md) | Publish one complete Sports ownership snapshot | @tsyzhman | 2026-10-10 |
+| [WI-070](work/archive/2026/WI-070-deadline-planning-writes.md) | Stop unchanged deadline campaign writes | @tsyzhman | 2026-10-10 |
+| [WI-071](work/archive/2026/WI-071-khl-ingestion-retention.md) | Bound KHL writes and repair archive identity | @tsyzhman | 2026-10-10 |
+| [WI-072](work/archive/2026/WI-072-production-runtime.md) | Release a reproducible bounded production runtime | @tsyzhman | 2026-10-10 |
+| [WI-073](work/archive/2026/WI-073-source-freshness.md) | Align source scopes, quality checks and visible freshness | @tsyzhman | 2026-10-10 |
+| [WI-074](work/archive/2026/WI-074-franchise-computation.md) | Bound franchise computation outside the web event loop | @tsyzhman | 2026-10-10 |
+| [WI-075](work/archive/2026/WI-075-planner-accessibility.md) | Preserve planner behavior with mobile analytics and accessible modules | @tsyzhman | 2026-10-10 |
+| [WI-066](work/archive/2026/WI-066-production-project-audit.md) | Audit production deployment and project quality | @tsyzhman | 2026-10-10 |
+| [WI-064](work/archive/2026/WI-064-sports-placeholder-telegram-release.md) | Release readable Sports.ru placeholders in Telegram | @tsyzhman | 2026-10-10 |
 | [WI-063](work/archive/2026/WI-063-all-league-player-pool-audit.md) | Audit and repair all current football player pools | @tsyzhman | 2026-10-09 |
 | [WI-061](work/archive/2026/WI-061-alanzinho-portugal-mapping.md) | Restore Alanzinho in Portugal | @tsyzhman | 2026-10-09 |
 | [WI-058](work/archive/2026/WI-058-sorareinside-intake.md) | Repair rejected SorareInside XI ingestion | @tsyzhman | 2026-10-09 |

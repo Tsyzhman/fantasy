@@ -6,7 +6,8 @@ const userPlayerSurfaces = [
   ["../../components/machete/MachetePlayerTable.tsx", 1],
   ["../../app/baltika/players/page.tsx", 2],
   ["../../app/baltika/leagues/[leagueId]/teams/[teamId]/page.tsx", 3],
-  ["../../components/machete/FantasySquadPlanner.tsx", 9], // Pitch action sheet was removed; the card still compacts its name.
+  ["../../components/machete/FantasySquadPlanner.tsx", 6],
+  ["../../components/machete/PlayerPool.tsx", 3],
   ["../../components/compare/player-compare.tsx", 1],
   ["../../app/compare/page.tsx", 2],
   ["../../components/players/player-watchlist.tsx", 1],

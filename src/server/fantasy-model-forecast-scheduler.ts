@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+/** @spec spec://common/INFRA-006-continuous-deployment#heavy-jobs */
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -9,6 +9,7 @@ import { isFantasySquadLeague } from "@/lib/leagues/display";
 import { createLogger } from "@/lib/logger";
 import { recalculateFantasyModelForecasts } from "@/machete/foontasy_style_forecast_service";
 import { loadSharedLeagueOptions } from "@/machete/shared_read_model";
+import { spawnHeavyJob } from "@/server/heavy-job-process";
 
 const logger = createLogger("fantasy-model-forecast:scheduler");
 
@@ -70,7 +71,7 @@ async function runIsolatedForecastCycle(state: SchedulerState, standaloneServerP
         settled = true;
         resolve(succeeded);
       };
-      const child = spawn(process.execPath, ["--expose-gc", standaloneServerPath], {
+      const child = spawnHeavyJob(["--expose-gc", standaloneServerPath], {
         cwd: process.cwd(),
         env: fantasyModelForecastChildEnvironment(),
         stdio: ["ignore", "inherit", "inherit"]

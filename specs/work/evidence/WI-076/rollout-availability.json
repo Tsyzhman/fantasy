@@ -1,0 +1,42 @@
+{
+  "probes": 133,
+  "first": {
+    "at": "2026-10-10T15:36:43.918499+00:00",
+    "http": 200,
+    "status": "ok",
+    "release": {
+      "version": "0.3.137",
+      "commit": "7d3f96ef8b7a6efe6ecf5442e061ea2c06fda980"
+    }
+  },
+  "last": {
+    "at": "2026-10-10T16:10:04.409479+00:00",
+    "http": 200,
+    "status": "ok",
+    "release": {
+      "version": "0.3.138",
+      "commit": "72b8c78c209611ff20c50160ba6182adac514516"
+    }
+  },
+  "failures": [],
+  "transitions": [
+    {
+      "at": "2026-10-10T15:36:43.918499+00:00",
+      "http": 200,
+      "status": "ok",
+      "release": {
+        "version": "0.3.137",
+        "commit": "7d3f96ef8b7a6efe6ecf5442e061ea2c06fda980"
+      }
+    },
+    {
+      "at": "2026-10-10T16:09:34.172482+00:00",
+      "http": 200,
+      "status": "ok",
+      "release": {
+        "version": "0.3.138",
+        "commit": "72b8c78c209611ff20c50160ba6182adac514516"
+      }
+    }
+  ]
+}

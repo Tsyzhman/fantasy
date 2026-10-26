@@ -162,6 +162,8 @@ Scheduler создаёт jobs в БД; worker принимает только ca
 
 ## REVIEW и история {#changelog}
 
+- 2026-10-10: WI-070 — delivery retains its five-second tick; campaign planning reacts to subscription/calendar fingerprint changes, manual requests and a five-minute safety refresh. Unchanged terminal campaigns and identical stage due times perform no writes. Actual schedule/date changes update the campaign and invalidate old queued/failed input versions; existing delivery/build ownership and deduplication remain.
+
 - REVIEW: источник настоящего deadline для каждой лиги — кампания не планируется при `DEADLINE_CONFLICT`, неизвестном календаре или дедлайне раньше 09:00 МСК; такие туры видны оператору и не рассылаются.
 - REVIEW: канал приватных последних замен не реализован; доступен только опубликованный состав.
 - REVIEW: договорённость по массовому Sports API отсутствует; первый выпуск рассчитан на малую аудиторию и bounded import.

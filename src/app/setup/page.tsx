@@ -1,4 +1,3 @@
-import { UserRole } from "@prisma/client";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -6,7 +5,8 @@ import { DatabaseSetupNotice } from "@/components/database-setup-notice";
 import { I18nText } from "@/components/i18n-text";
 import { PublicPreferenceBar } from "@/components/public-preference-bar";
 import { createUserSession, hashPassword, normalizeEmail } from "@/lib/auth";
-import { authRateLimitBuckets, checkAuthRateLimits, clearAuthRateLimits, getClientIpFromHeaders, recordFailedAuthAttempt } from "@/lib/auth-rate-limit";
+import { authRateLimitBuckets, getClientIpFromHeaders, runLimitedAuthAttempt } from "@/lib/auth-rate-limit";
+import { completeAdminBootstrap, isAdminBootstrapRequired } from "@/lib/auth-bootstrap";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
 
 type PageProps = {
@@ -17,12 +17,12 @@ type PageProps = {
 
 export const dynamic = "force-dynamic";
 
+/** @spec spec://common/FEAT-009-session-authentication#bootstrap */
 export default async function SetupPage({ searchParams }: PageProps) {
   if (!isDatabaseConfigured()) return <DatabaseSetupNotice />;
 
   const resolvedSearchParams = (await searchParams) ?? {};
-  const adminWithPasswordCount = await getAdminWithPasswordCount();
-  if (adminWithPasswordCount > 0) redirect("/login");
+  if (!(await isAdminBootstrapRequired(prisma))) redirect("/login");
   const errorMessage = setupErrorMessage(resolvedSearchParams.error);
 
   return (
@@ -66,50 +66,35 @@ export default async function SetupPage({ searchParams }: PageProps) {
   );
 }
 
+/** @spec spec://common/FEAT-009-session-authentication#bootstrap */
 async function setupAction(formData: FormData) {
   "use server";
 
   if (!isDatabaseConfigured()) redirect("/setup");
 
-  if ((await getAdminWithPasswordCount()) > 0) redirect("/login");
+  if (!(await isAdminBootstrapRequired(prisma))) redirect("/login");
 
   const email = normalizeEmail(String(formData.get("email") ?? ""));
   const name = String(formData.get("name") ?? "").trim() || null;
   const password = String(formData.get("password") ?? "");
   const headerStore = await headers();
   const rateLimitBuckets = authRateLimitBuckets({ action: "setup", email, clientIp: getClientIpFromHeaders(headerStore) });
-  const rateLimit = await checkAuthRateLimits(prisma, rateLimitBuckets);
-  if (!rateLimit.allowed) {
+  const attempt = await runLimitedAuthAttempt(prisma, rateLimitBuckets, async (tx) => {
+    if (password.length < 8) return { success: false, value: null };
+    const passwordHash = await hashPassword(password);
+    const user = await completeAdminBootstrap(tx, { email, name, passwordHash });
+    return { success: true, value: user };
+  });
+  if (!attempt.allowed) {
     redirect("/setup?error=rate_limited");
   }
 
   if (password.length < 8) {
-    await recordFailedAuthAttempt(prisma, rateLimitBuckets);
     redirect("/setup?error=password_short");
   }
 
-  const passwordHash = await hashPassword(password);
-  const user = await prisma.user.upsert({
-    where: { email },
-    create: {
-      email,
-      name,
-      role: UserRole.ADMIN,
-      isActive: true,
-      passwordHash,
-      lastLoginAt: new Date()
-    },
-    update: {
-      name,
-      role: UserRole.ADMIN,
-      isActive: true,
-      passwordHash,
-      lastLoginAt: new Date()
-    }
-  });
-
-  await clearAuthRateLimits(prisma, rateLimitBuckets);
-  await createUserSession(user.id);
+  if (!attempt.value) redirect("/login");
+  await createUserSession(attempt.value.id);
   redirect("/");
 }
 
@@ -124,12 +109,3 @@ function setupErrorMessage(error: string | undefined) {
   return { en: error, ru: error };
 }
 
-function getAdminWithPasswordCount() {
-  return prisma.user.count({
-    where: {
-      role: UserRole.ADMIN,
-      isActive: true,
-      passwordHash: { not: null }
-    }
-  });
-}

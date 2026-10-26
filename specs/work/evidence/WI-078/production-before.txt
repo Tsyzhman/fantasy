@@ -1,0 +1,17 @@
+2026-10-20T07:29:00Z
+{"status":"ok","uptimeSeconds":312481,"release":{"version":"0.3.139","commit":"df9f214a0ded3849308ef94cbf997ce1f6938961"}}
+/fantasy-scout-web|running|healthy|0|false
+/fantasy-scout-worker|running|healthy|0|true
+/fantasy-scout-postgres|running|healthy|0|false
+fantasy-scout-web|950.9MiB / 2GiB|15
+fantasy-scout-worker|1.312GiB / 4GiB|16
+fantasy-scout-postgres|1.516GiB / 2GiB|37
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5704        2137         317        4034        5542
+Swap:              0           0           0
+BEGIN
+{"savedSquads" : 148, "digest" : "0a789c738123b2ba51da38cf2306d89d"}
+{"squadPlayers" : 2207, "digest" : "e95498ad8f64f1d8b4b98b6735f56e2e"}
+{"duplicateSquadPlayers" : 0}
+{"poolId" : "ebd2fd08-05b9-498c-ae1a-47c59f5b06d6", "metadataDigest" : "9f0e668cb4bfda86c587eb36db162da3", "rounds" : [{"id": "sports-ru:tour:2:2755", "label": "3 тур", "startsAt": "2026-10-20T16:45:00.000Z", "fixtureCount": 18}, {"id": "sports-ru:tour:3:2756", "label": "4 тур", "startsAt": "2026-11-03T17:45:00.000Z", "fixtureCount": 18}, {"id": "sports-ru:tour:4:2757", "label": "5 тур", "startsAt": "2026-11-24T17:45:00.000Z", "fixtureCount": 18}, {"id": "sports-ru:tour:5:2758", "label": "6 тур", "startsAt": "2026-12-08T17:45:00.000Z", "fixtureCount": 18}, {"id": "sports-ru:tour:6:2759", "label": "7 тур", "startsAt": "2027-01-19T17:45:00.000Z", "fixtureCount": 18}, {"id": "sports-ru:tour:7:2760", "label": "8 тур", "startsAt": "2027-01-27T20:00:00.000Z", "fixtureCount": 18}]}
+COMMIT

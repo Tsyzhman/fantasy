@@ -8,6 +8,7 @@ import type { Snapshot } from "@/franchises/analytics";
 
 let cached: { path: string; mtime: number; value: Snapshot } | null = null;
 let loading: Promise<Snapshot> | null = null;
+export function snapshotRevision() { return cached ? `${cached.path}:${cached.mtime}` : null; }
 export const MAX_SNAPSHOT_BYTES = 192 * 1024 * 1024;
 export const MAX_COMPRESSED_SNAPSHOT_BYTES = 64 * 1024 * 1024;
 export function validateSnapshot(value: Snapshot): Snapshot {

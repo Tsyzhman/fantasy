@@ -1,0 +1,2005 @@
+{
+  "observedAt": "2026-10-23T11:08:00.052556+00:00",
+  "host": {
+    "memory": "               total        used        free      shared  buff/cache   available\nMem:           11876        5526        2540         311        3809        5725\nSwap:              0           0           0\n",
+    "disk": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/vda3       119G   42G   71G  38% /\n",
+    "dockerStorage": "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          59        40        23.93GB   7.979GB (33%)\nContainers      48        45        192.5MB   106.5kB (0%)\nLocal Volumes   74        39        5.866GB   160.9MB (2%)\nBuild Cache     23        0         227.6MB   227.6MB\n",
+    "containers": "fantasy-scout-worker|Up 6 minutes (healthy)|fantasy-scout:20261023T103559Z-v0.3.145-32fcc3d\nfantasy-scout-web|Up 6 minutes (healthy)|fantasy-scout:20261023T103559Z-v0.3.145-32fcc3d\nfantasy-scout-fpl-relay|Up 6 minutes|fantasy-scout:20261023T103559Z-v0.3.145-32fcc3d\nfantasy-scout-worker-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d|Exited (143) 6 minutes ago|fantasy-scout:20261021T103252Z-v0.3.144-703edd6\nfantasy-scout-web-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d|Exited (143) 5 minutes ago|fantasy-scout:20261021T103252Z-v0.3.144-703edd6\nfantasy-scout-fpl-relay-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d|Exited (0) 5 minutes ago|fantasy-scout:20261021T103252Z-v0.3.144-703edd6\nfantasy-scout-postgres|Up 2 months (healthy)|16bc17c64a57\n",
+    "resources": "fantasy-scout-web|145.3MiB / 2GiB|0.55%|15\nfantasy-scout-worker|1.72GiB / 4GiB|1.21%|16\nfantasy-scout-postgres|965.4MiB / 2GiB|0.25%|36\nfantasy-scout-fpl-relay|32.49MiB / 128MiB|0.24%|11\n"
+  },
+  "runtime": [
+    {
+      "name": "fantasy-scout-web",
+      "id": "3a44352ccbe5ca0315c793be5062fdb1234d70a26fffd53bd6227108189ea26f",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "health": "healthy",
+      "restarts": 0,
+      "oom": false,
+      "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae",
+      "version": "0.3.145",
+      "environmentEntries": 86,
+      "uniqueEnvironmentKeys": 86,
+      "duplicateKeys": {},
+      "conflictingDuplicateKeys": []
+    },
+    {
+      "name": "fantasy-scout-worker",
+      "id": "0915ef20ff920d0e78380635f39809dbcacad1cf09eea3257e7e6465b62887e4",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "health": "healthy",
+      "restarts": 0,
+      "oom": false,
+      "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae",
+      "version": "0.3.145",
+      "environmentEntries": 89,
+      "uniqueEnvironmentKeys": 89,
+      "duplicateKeys": {},
+      "conflictingDuplicateKeys": []
+    },
+    {
+      "name": "fantasy-scout-fpl-relay",
+      "id": "db1b86b4792ba5b1865ee78610725827b64611266d53060f78f8160a9d2caec5",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "health": null,
+      "restarts": 0,
+      "oom": false,
+      "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae",
+      "version": "0.3.145",
+      "environmentEntries": 13,
+      "uniqueEnvironmentKeys": 13,
+      "duplicateKeys": {},
+      "conflictingDuplicateKeys": []
+    }
+  ],
+  "health": {
+    "/api/health": {
+      "http": 200,
+      "body": {
+        "status": "ok",
+        "uptimeSeconds": 378,
+        "release": {
+          "version": "0.3.145",
+          "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae"
+        }
+      }
+    },
+    "/api/health/fpl": {
+      "http": 200,
+      "body": {
+        "status": "ok",
+        "provider": "FPL",
+        "leagueId": "47",
+        "season": "2026/2027",
+        "healthy": true,
+        "fresh": true,
+        "complete": true,
+        "minimumMappedPercent": 99,
+        "maxSnapshotAgeMinutes": 735,
+        "contestId": "cmsraor0d0002f8sym7tlpdws",
+        "sourceUrl": "https://fantasy.premierleague.com/api/bootstrap-static/",
+        "scoreStatus": "READY",
+        "lastSyncedAt": "2026-10-23T11:02:28.657Z",
+        "snapshot": {
+          "snapshotKey": "2026-10-23-1201",
+          "fetchedAt": "2026-10-23T11:01:00.673Z",
+          "ageMinutes": 7.056316666666667,
+          "payloadHash": "55e78b13cba0f92de350e0c565c8adf09ff801f13a9e45a9c6ccff87ceddd900"
+        },
+        "counts": {
+          "prices": 668,
+          "mappedPlayers": 667,
+          "mappedPercent": 99.8502994011976,
+          "matchedEntities": 687,
+          "unmatchedEntities": 1,
+          "latestOfficialGameweek": 7,
+          "officialScoreRows": 668,
+          "mappedOfficialScoreRows": 667,
+          "officialScoreMappedPercent": 99.8502994011976
+        }
+      }
+    },
+    "/api/health/fantasy-prices": {
+      "http": 503,
+      "body": {
+        "status": "error",
+        "healthy": false,
+        "thresholds": {
+          "maximumAgeHours": 7,
+          "minimumPlayers": 100,
+          "minimumMappedPercent": 98
+        },
+        "source": "DATABASE_CONTESTS",
+        "configDrift": {
+          "configured": [
+            "63:2026/2027:russia",
+            "47:2026/2027:england",
+            "87:2026/2027:spain",
+            "54:2026/2027:germany",
+            "55:2026/2027:italy",
+            "53:2026/2027:france",
+            "61:2026/2027:portugal",
+            "57:2026/2027:netherlands",
+            "71:2026/2027:turkey",
+            "48:2026/2027:championship",
+            "42:2026/2027:champions-league",
+            "73:2026/2027:europa-league"
+          ],
+          "observed": [
+            "73:2026/2027:europa-league",
+            "42:2026/2027:champions-league",
+            "48:2026/2027:championship",
+            "71:2026/2027:turkey",
+            "57:2026/2027:netherlands",
+            "61:2026/2027:portugal",
+            "53:2026/2027:france",
+            "55:2026/2027:italy",
+            "54:2026/2027:germany",
+            "87:2026/2027:spain",
+            "47:2026/2027:england",
+            "63:2026/2027:russia"
+          ],
+          "missingInDatabase": [],
+          "notConfigured": [],
+          "tournamentMismatch": []
+        },
+        "legacyConfiguredScopes": [
+          "63:2026/2027:russia",
+          "87:2026/2027:spain",
+          "57:2026/2027:netherlands",
+          "61:2026/2027:portugal"
+        ],
+        "archives": [
+          {
+            "leagueId": "77",
+            "season": "2026",
+            "state": "ARCHIVE",
+            "freshness": "NOT_APPLICABLE",
+            "lastSuccessfulReceipt": "2026-08-14T12:06:25.012Z",
+            "integrity": {
+              "healthy": true,
+              "priceCount": 1246,
+              "mappedCount": 200,
+              "unmappedCount": 1046,
+              "invalidPriceCount": 0,
+              "mismatchedScopeCount": 0
+            }
+          }
+        ],
+        "results": [
+          {
+            "leagueId": "63",
+            "season": "2026/2027",
+            "tournamentHru": "russia",
+            "healthy": false,
+            "lastSyncedAt": "2026-10-23T11:01:58.783Z",
+            "ageHours": 0.101,
+            "priceCount": 516,
+            "mappedCount": 498,
+            "excludedCount": 1,
+            "eligibleCount": 515,
+            "mappedPercent": 96.699,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": [
+              {
+                "providerEntityId": "cmrpa0d53002cwy5cwewfhor2",
+                "matchedBy": "MANUAL_TRANSFERRED_OUT"
+              }
+            ]
+          },
+          {
+            "leagueId": "47",
+            "season": "2026/2027",
+            "tournamentHru": "england",
+            "healthy": false,
+            "lastSyncedAt": "2026-10-23T11:02:06.453Z",
+            "ageHours": 0.099,
+            "priceCount": 686,
+            "mappedCount": 665,
+            "excludedCount": 0,
+            "eligibleCount": 686,
+            "mappedPercent": 96.939,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "87",
+            "season": "2026/2027",
+            "tournamentHru": "spain",
+            "healthy": true,
+            "lastSyncedAt": "2026-10-23T11:02:17.593Z",
+            "ageHours": 0.096,
+            "priceCount": 741,
+            "mappedCount": 734,
+            "excludedCount": 0,
+            "eligibleCount": 741,
+            "mappedPercent": 99.055,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "54",
+            "season": "2026/2027",
+            "tournamentHru": "germany",
+            "healthy": true,
+            "lastSyncedAt": "2026-10-23T11:02:31.049Z",
+            "ageHours": 0.093,
+            "priceCount": 538,
+            "mappedCount": 528,
+            "excludedCount": 0,
+            "eligibleCount": 538,
+            "mappedPercent": 98.141,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "55",
+            "season": "2026/2027",
+            "tournamentHru": "italy",
+            "healthy": true,
+            "lastSyncedAt": "2026-10-23T11:02:43.394Z",
+            "ageHours": 0.089,
+            "priceCount": 638,
+            "mappedCount": 636,
+            "excludedCount": 0,
+            "eligibleCount": 638,
+            "mappedPercent": 99.687,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "53",
+            "season": "2026/2027",
+            "tournamentHru": "france",
+            "healthy": true,
+            "lastSyncedAt": "2026-10-23T11:02:51.996Z",
+            "ageHours": 0.087,
+            "priceCount": 532,
+            "mappedCount": 525,
+            "excludedCount": 0,
+            "eligibleCount": 532,
+            "mappedPercent": 98.684,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "61",
+            "season": "2026/2027",
+            "tournamentHru": "portugal",
+            "healthy": true,
+            "lastSyncedAt": "2026-10-23T11:03:03.283Z",
+            "ageHours": 0.084,
+            "priceCount": 629,
+            "mappedCount": 625,
+            "excludedCount": 0,
+            "eligibleCount": 629,
+            "mappedPercent": 99.364,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "57",
+            "season": "2026/2027",
+            "tournamentHru": "netherlands",
+            "healthy": true,
+            "lastSyncedAt": "2026-10-23T11:03:15.165Z",
+            "ageHours": 0.08,
+            "priceCount": 613,
+            "mappedCount": 611,
+            "excludedCount": 0,
+            "eligibleCount": 613,
+            "mappedPercent": 99.674,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "71",
+            "season": "2026/2027",
+            "tournamentHru": "turkey",
+            "healthy": true,
+            "lastSyncedAt": "2026-10-23T11:03:24.877Z",
+            "ageHours": 0.078,
+            "priceCount": 563,
+            "mappedCount": 563,
+            "excludedCount": 0,
+            "eligibleCount": 563,
+            "mappedPercent": 100,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "48",
+            "season": "2026/2027",
+            "tournamentHru": "championship",
+            "healthy": true,
+            "lastSyncedAt": "2026-10-23T11:03:31.334Z",
+            "ageHours": 0.076,
+            "priceCount": 788,
+            "mappedCount": 783,
+            "excludedCount": 0,
+            "eligibleCount": 788,
+            "mappedPercent": 99.365,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "42",
+            "season": "2026/2027",
+            "tournamentHru": "champions-league",
+            "healthy": false,
+            "lastSyncedAt": "2026-10-23T11:03:39.221Z",
+            "ageHours": 0.074,
+            "priceCount": 1193,
+            "mappedCount": 1157,
+            "excludedCount": 1,
+            "eligibleCount": 1192,
+            "mappedPercent": 97.064,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": [
+              {
+                "providerEntityId": "cmtmodvo60t2f2o90k66o50u3",
+                "matchedBy": "MANUAL_SOURCE_IDENTITY_CONFLICT"
+              }
+            ]
+          },
+          {
+            "leagueId": "73",
+            "season": "2026/2027",
+            "tournamentHru": "europa-league",
+            "healthy": false,
+            "lastSyncedAt": "2026-10-23T11:03:49.340Z",
+            "ageHours": 0.071,
+            "priceCount": 1161,
+            "mappedCount": 1133,
+            "excludedCount": 0,
+            "eligibleCount": 1161,
+            "mappedPercent": 97.588,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          }
+        ]
+      }
+    },
+    "/api/health/data-quality": {
+      "http": 503,
+      "body": {
+        "status": "error",
+        "healthy": false,
+        "results": [
+          {
+            "leagueId": "63",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.134,
+            "latestRun": {
+              "id": "cmvkme76mrwix10kz8vzjumxl",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 92.235,
+              "playerDataCoverage": 92.235,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.949,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-10-23T07:00:00.095Z",
+              "completedAt": "2026-10-23T07:00:02.075Z"
+            }
+          },
+          {
+            "leagueId": "47",
+            "season": "2026/2027",
+            "healthy": true,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.133,
+            "latestRun": {
+              "id": "cmvkme8uvrwiy10kz2gztat22",
+              "status": "COMPLETED",
+              "gatePassed": true,
+              "forecastCoverage": 99.815,
+              "playerDataCoverage": 99.815,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.964,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-10-23T07:00:02.264Z",
+              "completedAt": "2026-10-23T07:00:05.611Z"
+            }
+          },
+          {
+            "leagueId": "87",
+            "season": "2026/2027",
+            "healthy": true,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.132,
+            "latestRun": {
+              "id": "cmvkmebggrwiz10kzsirmy4i7",
+              "status": "COMPLETED",
+              "gatePassed": true,
+              "forecastCoverage": 99.421,
+              "playerDataCoverage": 99.421,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.976,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-10-23T07:00:05.632Z",
+              "completedAt": "2026-10-23T07:00:08.385Z"
+            }
+          },
+          {
+            "leagueId": "54",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.132,
+            "latestRun": {
+              "id": "cmvkmedlqrwj010kzbeoi0x1h",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 94.162,
+              "playerDataCoverage": 94.162,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 100,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-10-23T07:00:08.415Z",
+              "completedAt": "2026-10-23T07:00:10.491Z"
+            }
+          },
+          {
+            "leagueId": "55",
+            "season": "2026/2027",
+            "healthy": true,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.131,
+            "latestRun": {
+              "id": "cmvkmef7vrwj110kzzd96hvmf",
+              "status": "COMPLETED",
+              "gatePassed": true,
+              "forecastCoverage": 99.175,
+              "playerDataCoverage": 99.175,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.97,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-10-23T07:00:10.507Z",
+              "completedAt": "2026-10-23T07:00:13.539Z"
+            }
+          },
+          {
+            "leagueId": "53",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.13,
+            "latestRun": {
+              "id": "cmvkmehknrwj210kz3us0qp06",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 97.416,
+              "playerDataCoverage": 97.416,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.802,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-10-23T07:00:13.560Z",
+              "completedAt": "2026-10-23T07:00:15.309Z"
+            }
+          },
+          {
+            "leagueId": "61",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.13,
+            "latestRun": {
+              "id": "cmvkmeixtrwj310kzz6v6grdp",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 95.273,
+              "playerDataCoverage": 95.273,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.969,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-10-23T07:00:15.329Z",
+              "completedAt": "2026-10-23T07:00:17.021Z"
+            }
+          },
+          {
+            "leagueId": "57",
+            "season": "2026/2027",
+            "healthy": true,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.129,
+            "latestRun": {
+              "id": "cmvkmek9arwlk10kzzr3qava4",
+              "status": "COMPLETED",
+              "gatePassed": true,
+              "forecastCoverage": 99.445,
+              "playerDataCoverage": 99.445,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.861,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-10-23T07:00:17.038Z",
+              "completedAt": "2026-10-23T07:00:19.378Z"
+            }
+          },
+          {
+            "leagueId": "71",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.129,
+            "latestRun": {
+              "id": "cmvkmem30rwsf10kzp0341kuw",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 93.75,
+              "playerDataCoverage": 93.566,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.867,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-10-23T07:00:19.405Z",
+              "completedAt": "2026-10-23T07:00:21.257Z"
+            }
+          },
+          {
+            "leagueId": "48",
+            "season": "2026/2027",
+            "healthy": true,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.128,
+            "latestRun": {
+              "id": "cmvkmenivrwui10kzoycqcjii",
+              "status": "COMPLETED",
+              "gatePassed": true,
+              "forecastCoverage": 99.689,
+              "playerDataCoverage": 99.689,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.981,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-10-23T07:00:21.271Z",
+              "completedAt": "2026-10-23T07:00:24.626Z"
+            }
+          },
+          {
+            "leagueId": "42",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.126,
+            "latestRun": {
+              "id": "cmvkmeq4yrwup10kz9repnzfs",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 95.257,
+              "playerDataCoverage": 95.257,
+              "matchDataCoverage": 96.047,
+              "statRowCoverage": 100,
+              "promotionLatencyCoverage": 96.047,
+              "startedAt": "2026-10-23T07:00:24.658Z",
+              "completedAt": "2026-10-23T07:00:29.626Z"
+            }
+          },
+          {
+            "leagueId": "73",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.125,
+            "latestRun": {
+              "id": "cmvkmetzhrwuq10kzca0z7bzu",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 92.216,
+              "playerDataCoverage": 92.216,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.832,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-10-23T07:00:29.645Z",
+              "completedAt": "2026-10-23T07:00:32.935Z"
+            }
+          }
+        ],
+        "plannerDefaults": [
+          {
+            "leagueId": "63",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "47",
+            "healthy": true,
+            "reason": null,
+            "scope": {
+              "leagueId": "47",
+              "season": "2026/2027"
+            },
+            "configured": true,
+            "readiness": {
+              "leagueId": "47",
+              "season": "2026/2027",
+              "ready": true,
+              "reasons": [],
+              "activePlayers": 542,
+              "upcomingFixtures": 310,
+              "maximumAgeHours": 26,
+              "audit": {
+                "id": "cmvkme8uvrwiy10kz2gztat22",
+                "status": "COMPLETED",
+                "gatePassed": true,
+                "plannerGatePassed": true,
+                "mode": "FULL_DATA_QUALITY",
+                "coverageThreshold": 98,
+                "forecastCoverage": 99.815,
+                "finishedMatches": 70,
+                "startedAt": "2026-10-23T07:00:02.264Z",
+                "completedAt": "2026-10-23T07:00:05.611Z",
+                "ageHours": 4.133
+              },
+              "ingestion": {
+                "id": "cmvk7egztbdmh10kzdkh96wig",
+                "status": "completed",
+                "startedAt": "2026-10-23T00:00:18.560Z",
+                "finishedAt": "2026-10-23T00:08:08.065Z",
+                "ageHours": 10.999,
+                "upcomingFixturesDiscovered": 310,
+                "upcomingFixturesPersisted": 310,
+                "currentUpcomingFixturesFromDiscovery": 310
+              }
+            }
+          },
+          {
+            "leagueId": "87",
+            "healthy": true,
+            "reason": null,
+            "scope": {
+              "leagueId": "87",
+              "season": "2026/2027"
+            },
+            "configured": true,
+            "readiness": {
+              "leagueId": "87",
+              "season": "2026/2027",
+              "ready": true,
+              "reasons": [],
+              "activePlayers": 519,
+              "upcomingFixtures": 290,
+              "maximumAgeHours": 26,
+              "audit": {
+                "id": "cmvkmebggrwiz10kzsirmy4i7",
+                "status": "COMPLETED",
+                "gatePassed": true,
+                "plannerGatePassed": true,
+                "mode": "FULL_DATA_QUALITY",
+                "coverageThreshold": 98,
+                "forecastCoverage": 99.421,
+                "finishedMatches": 90,
+                "startedAt": "2026-10-23T07:00:05.632Z",
+                "completedAt": "2026-10-23T07:00:08.385Z",
+                "ageHours": 4.132
+              },
+              "ingestion": {
+                "id": "cmvk7egztbdmh10kzdkh96wig",
+                "status": "completed",
+                "startedAt": "2026-10-23T00:00:18.560Z",
+                "finishedAt": "2026-10-23T00:21:40.540Z",
+                "ageHours": 10.773,
+                "upcomingFixturesDiscovered": 290,
+                "upcomingFixturesPersisted": 290,
+                "currentUpcomingFixturesFromDiscovery": 290
+              }
+            }
+          },
+          {
+            "leagueId": "54",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "55",
+            "healthy": true,
+            "reason": null,
+            "scope": {
+              "leagueId": "55",
+              "season": "2026/2027"
+            },
+            "configured": true,
+            "readiness": {
+              "leagueId": "55",
+              "season": "2026/2027",
+              "ready": true,
+              "reasons": [],
+              "activePlayers": 606,
+              "upcomingFixtures": 310,
+              "maximumAgeHours": 26,
+              "audit": {
+                "id": "cmvkmef7vrwj110kzzd96hvmf",
+                "status": "COMPLETED",
+                "gatePassed": true,
+                "plannerGatePassed": true,
+                "mode": "FULL_DATA_QUALITY",
+                "coverageThreshold": 98,
+                "forecastCoverage": 99.175,
+                "finishedMatches": 70,
+                "startedAt": "2026-10-23T07:00:10.507Z",
+                "completedAt": "2026-10-23T07:00:13.539Z",
+                "ageHours": 4.131
+              },
+              "ingestion": {
+                "id": "cmvk7egztbdmh10kzdkh96wig",
+                "status": "completed",
+                "startedAt": "2026-10-23T00:00:18.560Z",
+                "finishedAt": "2026-10-23T00:35:40.630Z",
+                "ageHours": 10.54,
+                "upcomingFixturesDiscovered": 310,
+                "upcomingFixturesPersisted": 310,
+                "currentUpcomingFixturesFromDiscovery": 310
+              }
+            }
+          },
+          {
+            "leagueId": "53",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "61",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "57",
+            "healthy": true,
+            "reason": null,
+            "scope": {
+              "leagueId": "57",
+              "season": "2026/2027"
+            },
+            "configured": true,
+            "readiness": {
+              "leagueId": "57",
+              "season": "2026/2027",
+              "ready": true,
+              "reasons": [],
+              "activePlayers": 543,
+              "upcomingFixtures": 225,
+              "maximumAgeHours": 26,
+              "audit": {
+                "id": "cmvkmek9arwlk10kzzr3qava4",
+                "status": "COMPLETED",
+                "gatePassed": true,
+                "plannerGatePassed": true,
+                "mode": "FULL_DATA_QUALITY",
+                "coverageThreshold": 98,
+                "forecastCoverage": 99.445,
+                "finishedMatches": 81,
+                "startedAt": "2026-10-23T07:00:17.038Z",
+                "completedAt": "2026-10-23T07:00:19.378Z",
+                "ageHours": 4.129
+              },
+              "ingestion": {
+                "id": "cmvk7egztbdmh10kzdkh96wig",
+                "status": "completed",
+                "startedAt": "2026-10-23T00:00:18.560Z",
+                "finishedAt": "2026-10-23T01:18:46.514Z",
+                "ageHours": 9.822,
+                "upcomingFixturesDiscovered": 225,
+                "upcomingFixturesPersisted": 225,
+                "currentUpcomingFixturesFromDiscovery": 225
+              }
+            }
+          },
+          {
+            "leagueId": "71",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "48",
+            "healthy": true,
+            "reason": null,
+            "scope": {
+              "leagueId": "48",
+              "season": "2026/2027"
+            },
+            "configured": true,
+            "readiness": {
+              "leagueId": "48",
+              "season": "2026/2027",
+              "ready": true,
+              "reasons": [],
+              "activePlayers": 644,
+              "upcomingFixtures": 420,
+              "maximumAgeHours": 26,
+              "audit": {
+                "id": "cmvkmenivrwui10kzoycqcjii",
+                "status": "COMPLETED",
+                "gatePassed": true,
+                "plannerGatePassed": true,
+                "mode": "FULL_DATA_QUALITY",
+                "coverageThreshold": 98,
+                "forecastCoverage": 99.689,
+                "finishedMatches": 132,
+                "startedAt": "2026-10-23T07:00:21.271Z",
+                "completedAt": "2026-10-23T07:00:24.626Z",
+                "ageHours": 4.128
+              },
+              "ingestion": {
+                "id": "cmvk7egztbdmh10kzdkh96wig",
+                "status": "completed",
+                "startedAt": "2026-10-23T00:00:18.560Z",
+                "finishedAt": "2026-10-23T00:09:12.517Z",
+                "ageHours": 10.981,
+                "upcomingFixturesDiscovered": 420,
+                "upcomingFixturesPersisted": 420,
+                "currentUpcomingFixturesFromDiscovery": 420
+              }
+            }
+          },
+          {
+            "leagueId": "42",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "73",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          }
+        ]
+      }
+    }
+  },
+  "database": {
+    "databaseConnections": 31,
+    "lineups": [
+      {
+        "league_id": 38,
+        "season": "2026/2027",
+        "teams": 12,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-19T01:41:59.62"
+      },
+      {
+        "league_id": 40,
+        "season": "2026/2027",
+        "teams": 18,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-12T02:09:44.051"
+      },
+      {
+        "league_id": 42,
+        "season": "2026/2027",
+        "teams": 36,
+        "sorare_teams": 29,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:02:31.546"
+      },
+      {
+        "league_id": 46,
+        "season": "2026/2027",
+        "teams": 12,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-20T01:43:38.681"
+      },
+      {
+        "league_id": 47,
+        "season": "2026/2027",
+        "teams": 20,
+        "sorare_teams": 19,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:04:35.009"
+      },
+      {
+        "league_id": 48,
+        "season": "2026/2027",
+        "teams": 24,
+        "sorare_teams": 24,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:03:07.004"
+      },
+      {
+        "league_id": 53,
+        "season": "2026/2027",
+        "teams": 18,
+        "sorare_teams": 17,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:03:32.188"
+      },
+      {
+        "league_id": 54,
+        "season": "2026/2027",
+        "teams": 18,
+        "sorare_teams": 17,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:03:38.747"
+      },
+      {
+        "league_id": 55,
+        "season": "2026/2027",
+        "teams": 20,
+        "sorare_teams": 19,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:03:23.272"
+      },
+      {
+        "league_id": 57,
+        "season": "2026/2027",
+        "teams": 18,
+        "sorare_teams": 18,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:04:16.651"
+      },
+      {
+        "league_id": 61,
+        "season": "2026/2027",
+        "teams": 18,
+        "sorare_teams": 17,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:04:11.312"
+      },
+      {
+        "league_id": 63,
+        "season": "2026/2027",
+        "teams": 16,
+        "sorare_teams": 14,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:04:02.313"
+      },
+      {
+        "league_id": 64,
+        "season": "2026/2027",
+        "teams": 12,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-19T01:33:05.081"
+      },
+      {
+        "league_id": 69,
+        "season": "2026/2027",
+        "teams": 12,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-12T02:20:54.692"
+      },
+      {
+        "league_id": 71,
+        "season": "2026/2027",
+        "teams": 18,
+        "sorare_teams": 18,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:03:43.626"
+      },
+      {
+        "league_id": 73,
+        "season": "2026/2027",
+        "teams": 36,
+        "sorare_teams": 16,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:02:49.667"
+      },
+      {
+        "league_id": 74,
+        "season": "2026/2027",
+        "teams": 2,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-09-02T00:03:55.218"
+      },
+      {
+        "league_id": 86,
+        "season": "2026/2027",
+        "teams": 20,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-19T00:42:20.856"
+      },
+      {
+        "league_id": 87,
+        "season": "2026/2027",
+        "teams": 20,
+        "sorare_teams": 19,
+        "latest_sorare_fetch": "2026-10-23T11:05:00.005Z",
+        "latest_xi_change": "2026-10-23T11:04:27.995"
+      },
+      {
+        "league_id": 108,
+        "season": "2026/2027",
+        "teams": 24,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-22T00:07:51.983"
+      },
+      {
+        "league_id": 110,
+        "season": "2026/2027",
+        "teams": 18,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-20T00:39:19.926"
+      },
+      {
+        "league_id": 111,
+        "season": "2026/2027",
+        "teams": 20,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-20T01:15:35.669"
+      },
+      {
+        "league_id": 132,
+        "season": "2026/2027",
+        "teams": 80,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-09-03T00:12:43.85"
+      },
+      {
+        "league_id": 133,
+        "season": "2026/2027",
+        "teams": 90,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-09-18T00:23:04.987"
+      },
+      {
+        "league_id": 134,
+        "season": "2026/2027",
+        "teams": 307,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-09-02T01:49:52.181"
+      },
+      {
+        "league_id": 135,
+        "season": "2026/2027",
+        "teams": 14,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-19T01:42:55.356"
+      },
+      {
+        "league_id": 137,
+        "season": "2026/2027",
+        "teams": 70,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": null
+      },
+      {
+        "league_id": 138,
+        "season": "2026/2027",
+        "teams": 112,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-09-03T00:30:34.265"
+      },
+      {
+        "league_id": 140,
+        "season": "2026/2027",
+        "teams": 22,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-20T00:19:34.509"
+      },
+      {
+        "league_id": 141,
+        "season": "2026/2027",
+        "teams": 58,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-09-16T00:47:13.569"
+      },
+      {
+        "league_id": 146,
+        "season": "2026/2027",
+        "teams": 18,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-19T00:36:08.262"
+      },
+      {
+        "league_id": 149,
+        "season": "2026/2027",
+        "teams": 32,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-09-02T02:15:45.761"
+      },
+      {
+        "league_id": 185,
+        "season": "2026/2027",
+        "teams": 18,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": null
+      },
+      {
+        "league_id": 186,
+        "season": "2026/2027",
+        "teams": 94,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": null
+      },
+      {
+        "league_id": 193,
+        "season": "2026/2027",
+        "teams": 32,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": null
+      },
+      {
+        "league_id": 196,
+        "season": "2026/2027",
+        "teams": 18,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-20T01:46:24.579"
+      },
+      {
+        "league_id": 209,
+        "season": "2026/2027",
+        "teams": 64,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-09-03T00:40:06.251"
+      },
+      {
+        "league_id": 235,
+        "season": "2026/2027",
+        "teams": 52,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": null
+      },
+      {
+        "league_id": 338,
+        "season": "2026/2027",
+        "teams": 18,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": null
+      },
+      {
+        "league_id": 10216,
+        "season": "2026/2027",
+        "teams": 36,
+        "sorare_teams": 0,
+        "latest_sorare_fetch": null,
+        "latest_xi_change": "2026-10-23T00:06:32.412"
+      }
+    ],
+    "poolFreshness": [
+      {
+        "league_id": 42,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:02:54.422"
+      },
+      {
+        "league_id": 47,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:04:36.659"
+      },
+      {
+        "league_id": 48,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:03:21.501"
+      },
+      {
+        "league_id": 53,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:03:33.292"
+      },
+      {
+        "league_id": 54,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:03:41.089"
+      },
+      {
+        "league_id": 55,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:03:27.21"
+      },
+      {
+        "league_id": 57,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:04:23.619"
+      },
+      {
+        "league_id": 61,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:04:13.251"
+      },
+      {
+        "league_id": 63,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:04:05.432"
+      },
+      {
+        "league_id": 71,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:03:48.571"
+      },
+      {
+        "league_id": 73,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:03:09.611"
+      },
+      {
+        "league_id": 87,
+        "season": "2026/2027",
+        "variant": "CURRENT_XI",
+        "ready_revisions": 3,
+        "latest_calculated": "2026-10-23T11:04:31.739"
+      }
+    ],
+    "queue": 0,
+    "duplicatePoolPlayers": 0,
+    "orphanPoolPlayers": 0,
+    "duplicatePrices": 0,
+    "savedSquads": 149,
+    "savedSelections": 2222,
+    "savedSquadHash": "ad70b970b67fd07954a76cfed2fae646",
+    "savedSelectionHash": "69d1af38c213f74406a729eac324126b",
+    "failedMigrations": 0
+  },
+  "events": [
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "leagueId": "54",
+      "season": "2026/2027",
+      "teamId": "8149",
+      "team": "Union Berlin",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "972a5317-8d83-4fba-9731-8fa683e37544",
+      "fixtureId": "29a4f331-5be7-4cde-ae05-286c6d9d038b",
+      "kickoff": "2026-10-24T13:30:00.000Z",
+      "lineupId": "46b44533-9a4f-4b35-9d68-c46c8e22be7f",
+      "players": [
+        {
+          "sourceId": "54be3a13-3f0f-4872-b000-a1f1d0e810b2",
+          "name": "Emmanuel Latte Lath",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "leagueId": "63",
+      "season": "2026/2027",
+      "teamId": "8708",
+      "team": "FK Akhmat",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "b6afb3a9-2343-4b45-850d-5dcd44beb808",
+      "fixtureId": "762f049f-afb2-4b8c-a298-7e215877d80c",
+      "kickoff": "2026-10-23T16:30:00.000Z",
+      "lineupId": "05c05fd0-ae7b-4963-8380-9aacd4ffc047",
+      "players": [
+        {
+          "sourceId": "3bc265ca-e6c0-47c2-889d-564430a5dd3a",
+          "name": "Maksim Samorodov",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "leagueId": "63",
+      "season": "2026/2027",
+      "teamId": "8643",
+      "team": "Spartak Moscow",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "0bd65295-6396-4daf-91b3-dfc976c3fa43",
+      "fixtureId": "72fd3434-77b3-40aa-95e7-522139e8112c",
+      "kickoff": "2026-10-25T13:00:00.000Z",
+      "lineupId": "f5e7232e-ba5c-48ec-a576-4b9303a6806e",
+      "players": [
+        {
+          "sourceId": "ec3a018b-3fcd-48d4-ab8b-5cbb9caed921",
+          "name": "Marquinhos",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "leagueId": "61",
+      "season": "2026/2027",
+      "teamId": "1074320",
+      "team": "Estrela da Amadora",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "113f2f22-1d05-40a9-afe3-74732bf692e7",
+      "fixtureId": "1a080809-8e12-456c-a813-9cd55a3ae5e9",
+      "kickoff": "2026-10-24T14:30:00.000Z",
+      "lineupId": "886c7bc6-10fa-4ae2-aa80-c8f0c0d3b4ce",
+      "players": [
+        {
+          "sourceId": "d06164fb-a206-43b6-9828-66aa341d4caa",
+          "name": "Santiago Serra",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "leagueId": "87",
+      "season": "2026/2027",
+      "teamId": "8581",
+      "team": "Levante",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "689bed12-1d72-405c-84b3-e051e9580c6b",
+      "fixtureId": "e5124109-de39-4c97-89db-f67c0ea4399c",
+      "kickoff": "2026-10-25T17:30:00.000Z",
+      "lineupId": "7e8af52e-02eb-45ac-8b6e-e70ab34aca2f",
+      "players": [
+        {
+          "sourceId": "4a8749ff-503f-47c1-87bb-d0000122fa7b",
+          "name": "Nacho P\u00e9rez",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.696Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "7787",
+      "team": "Slavia Prague",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8478",
+      "team": "Viking",
+      "status": "SOURCE_ERROR",
+      "problems": [
+        "SorareInside: expected 11 unique starters with one goalkeeper first"
+      ],
+      "sourceTeamId": "1d79081b-38e3-4fd4-8c87-9bfb6d89ba7c",
+      "fixtureId": "b081e6ef-8253-4db1-98cc-6a9723eab57c",
+      "kickoff": "2026-10-25T13:30:00.000Z",
+      "lineupId": "c068bf17-dafb-4f1b-9327-b1b3d066fa41"
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "6019",
+      "team": "Slovan Bratislava",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "951893",
+      "team": "Sabah FK",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8402",
+      "team": "Bod\u00f8/Glimt",
+      "status": "SOURCE_ERROR",
+      "problems": [
+        "SorareInside: expected 11 unique starters with one goalkeeper first"
+      ],
+      "sourceTeamId": "4baa67bf-772c-4e9b-8714-fdf29e16dfc6",
+      "fixtureId": "23ac7bc0-48f0-4fb7-b52d-ee1a40675613",
+      "kickoff": "2026-10-24T14:00:00.000Z",
+      "lineupId": "58995b7e-fb40-4303-812e-6cd6e785ff4f"
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8563",
+      "team": "AEK Athens",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "9728",
+      "team": "Shakhtar Donetsk",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8635",
+      "team": "Anderlecht",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "866109",
+      "team": "Ararat Armenia",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "1957",
+      "team": "Jagiellonia Bia\u0142ystok",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10156",
+      "team": "Dinamo Zagreb",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8476",
+      "team": "Lillestr\u00f8m",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "2182",
+      "team": "Lech Pozna\u0144",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8632",
+      "team": "Levski Sofia",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "9754",
+      "team": "Hapoel Beer Sheva",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "7753",
+      "team": "OFI Crete",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "4622",
+      "team": "NK Celje",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8638",
+      "team": "Olympiacos",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "7978",
+      "team": "Union St.Gilloise",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10014",
+      "team": "Sturm Graz",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10013",
+      "team": "Salzburg",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "6033",
+      "team": "Viktoria Plze\u0148",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "212820",
+      "team": "Torreense",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10247",
+      "team": "Sparta Prague",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8044",
+      "team": "Omonia Nicosia",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8472",
+      "team": "Sunderland",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "1405417a-df55-4c1e-9c71-a2ae20b122af",
+      "fixtureId": "11ae2adf-13c5-4123-8b0c-e167e59eabd1",
+      "kickoff": "2026-10-25T16:30:00.000Z",
+      "lineupId": "7dfdc046-4313-4cfa-a82c-5742e33ce7e0",
+      "players": [
+        {
+          "sourceId": "2df9a9f3-c00f-41c2-a87c-94484494967a",
+          "name": "Tymur Tutierov",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "47",
+      "season": "2026/2027",
+      "teamId": "8472",
+      "team": "Sunderland",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "1405417a-df55-4c1e-9c71-a2ae20b122af",
+      "fixtureId": "11ae2adf-13c5-4123-8b0c-e167e59eabd1",
+      "kickoff": "2026-10-25T16:30:00.000Z",
+      "lineupId": "7dfdc046-4313-4cfa-a82c-5742e33ce7e0",
+      "players": [
+        {
+          "sourceId": "2df9a9f3-c00f-41c2-a87c-94484494967a",
+          "name": "Tymur Tutierov",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8222",
+      "team": "Ferencv\u00e1ros",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "55",
+      "season": "2026/2027",
+      "teamId": "6504",
+      "team": "Monza",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "92ae0d34-64b2-4cfe-a2ed-47320e6ecf75",
+      "fixtureId": "810f5adc-012e-4825-9642-b6625b44db98",
+      "kickoff": "2026-10-23T18:45:00.000Z",
+      "lineupId": "a06650d3-f32a-4fea-a745-bc1547e331af",
+      "players": [
+        {
+          "sourceId": "433dce04-fb95-4e5b-ac23-be947c9266c6",
+          "name": "Samuele Birindelli",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "53",
+      "season": "2026/2027",
+      "teamId": "8689",
+      "team": "Lorient",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "73dccb34-e67a-4355-9815-dde3573865ed",
+      "fixtureId": "1038dc4a-ca15-454a-b30a-dc7748e8be75",
+      "kickoff": "2026-10-25T16:15:00.000Z",
+      "lineupId": "56dd213d-235a-480a-9955-ef232e0fb0d0",
+      "players": [
+        {
+          "sourceId": "db7a7683-b766-4926-a420-db7e31dc0191",
+          "name": "Ars\u00e8ne Kouassi",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "54",
+      "season": "2026/2027",
+      "teamId": "8149",
+      "team": "Union Berlin",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "972a5317-8d83-4fba-9731-8fa683e37544",
+      "fixtureId": "29a4f331-5be7-4cde-ae05-286c6d9d038b",
+      "kickoff": "2026-10-24T13:30:00.000Z",
+      "lineupId": "46b44533-9a4f-4b35-9d68-c46c8e22be7f",
+      "players": [
+        {
+          "sourceId": "54be3a13-3f0f-4872-b000-a1f1d0e810b2",
+          "name": "Emmanuel Latte Lath",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "63",
+      "season": "2026/2027",
+      "teamId": "8708",
+      "team": "FK Akhmat",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "b6afb3a9-2343-4b45-850d-5dcd44beb808",
+      "fixtureId": "762f049f-afb2-4b8c-a298-7e215877d80c",
+      "kickoff": "2026-10-23T16:30:00.000Z",
+      "lineupId": "05c05fd0-ae7b-4963-8380-9aacd4ffc047",
+      "players": [
+        {
+          "sourceId": "3bc265ca-e6c0-47c2-889d-564430a5dd3a",
+          "name": "Maksim Samorodov",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "63",
+      "season": "2026/2027",
+      "teamId": "8643",
+      "team": "Spartak Moscow",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "0bd65295-6396-4daf-91b3-dfc976c3fa43",
+      "fixtureId": "72fd3434-77b3-40aa-95e7-522139e8112c",
+      "kickoff": "2026-10-25T13:00:00.000Z",
+      "lineupId": "f5e7232e-ba5c-48ec-a576-4b9303a6806e",
+      "players": [
+        {
+          "sourceId": "ec3a018b-3fcd-48d4-ab8b-5cbb9caed921",
+          "name": "Marquinhos",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "61",
+      "season": "2026/2027",
+      "teamId": "1074320",
+      "team": "Estrela da Amadora",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "113f2f22-1d05-40a9-afe3-74732bf692e7",
+      "fixtureId": "1a080809-8e12-456c-a813-9cd55a3ae5e9",
+      "kickoff": "2026-10-24T14:30:00.000Z",
+      "lineupId": "886c7bc6-10fa-4ae2-aa80-c8f0c0d3b4ce",
+      "players": [
+        {
+          "sourceId": "d06164fb-a206-43b6-9828-66aa341d4caa",
+          "name": "Santiago Serra",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "container": "fantasy-scout-worker",
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "87",
+      "season": "2026/2027",
+      "teamId": "8581",
+      "team": "Levante",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "689bed12-1d72-405c-84b3-e051e9580c6b",
+      "fixtureId": "e5124109-de39-4c97-89db-f67c0ea4399c",
+      "kickoff": "2026-10-25T17:30:00.000Z",
+      "lineupId": "7e8af52e-02eb-45ac-8b6e-e70ab34aca2f",
+      "players": [
+        {
+          "sourceId": "4a8749ff-503f-47c1-87bb-d0000122fa7b",
+          "name": "Nacho P\u00e9rez",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    }
+  ]
+}

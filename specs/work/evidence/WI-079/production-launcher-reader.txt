@@ -1,0 +1,2 @@
+{"revision":"a59ecee27820d092cf769c8ebd07fc5a71b2486b234715926210730552e096ab:0","generated":"2026-10-21T10:36:02.838416+00:00","acquisition":{"from":"2026-09-21T16:08:57Z","to":"2026-10-21T10:09:24Z","cached_requests":27258,"unique_urls":27258,"http_bytes":213946731},"franchises":75,"rounds":86,"squads":50129,"managerSquads":53883,"buys":125141,"responseBytes":10300236}
+{"production_launcher_commit": "703edd62f45e514bbff003221b9fe7d7cd8ee7d0", "immutable_ops_hashes_verified": true, "job_removed": true, "private_environment_files_remaining": 0}

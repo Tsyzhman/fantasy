@@ -99,3 +99,20 @@ The 0.2.x release line prevents the same failure mode in four ways:
 - [PR #40](https://github.com/Tsyzhman/fantasy/pull/40) merged as `37794b8e31a3a0b4c12d471d35010775532a029e` with an identical tree. [Candidate Check 37728507281](https://github.com/Tsyzhman/fantasy/actions/runs/37728507281) passed 1,261 tests and 20 database tests, production audit, lint, typecheck and build. [Deploy 37728525965](https://github.com/Tsyzhman/fantasy/actions/runs/37728525965) passed canary and guarded web/worker promotion; health, both image labels and the manifest agree.
 - Native authenticated filter checks passed both themes and 320/390/1440 px, combined real league samples, empty/invalid dates, superseded responses and retry. [Production browser 37729254481](https://github.com/Tsyzhman/fantasy/actions/runs/37729254481) passed authentication and 28 UI checks with 20 production-inapplicable skips and zero failures/retries.
 - No migration, data reset or VPN rotation. Temporary viewer/session/virtual-wallet fixtures removed. Franchise source/snapshot and active-job duplicates zero, raw cache expired rows zero, containers healthy with zero restarts/OOM, no running canaries and two releases retained. Evidence: `specs/work/evidence/WI-054/verification.json`.
+
+## 0.3.131 — 2026-10-10
+
+- Release: `20261010T071043Z-v0.3.131-74a5f00`; runtime `74a5f00f162b1d22a6bc7344ee6630e0c354a595`, tree `a8fda2496e9783222b771feada0d28ebc4c98330`.
+- New Telegram reports display Sports.ru import placeholders as `затычка`, preserving their identities, lineup roles and mapping warnings.
+- [Candidate Check](https://github.com/Tsyzhman/fantasy/actions/runs/38033286179) passed 1,301 tests; [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/38033292827) passed continuous promotion and exact revision verification. Public health, web/worker image labels and the manifest agree.
+- 82 availability observations recorded no errors; the prior static asset remains accessible. One healthy web/worker, zero restarts/OOM, zero delivery/report/job duplicate keys, no running canary and two retained releases/images. Reclaimable build cache remains 939.6 MB after canonical pruning; host memory available is 6,231 MiB. Evidence: `specs/work/evidence/WI-064/verification.json`.
+
+
+## 0.3.145 — 2026-10-23
+
+- Release: `20261023T103559Z-v0.3.145-32fcc3d`; runtime `32fcc3d109cac657f48f7834c892abd04e42c4ae`, tree `d3f7c6eb3e01fa9d24b00da7236f2358ed3e6970`.
+- Restore sparse SorareInside schedule parsing, preserve XI provenance during roster imports, normalize inherited runtime configuration and patch Next.js to 16.4.2.
+- [Check 39939922888](https://github.com/Tsyzhman/fantasy/actions/runs/39939922888) passed 1,332 unit and 32 database tests, dependency audit, migration drift, lint/typecheck/build and rollout checks.
+- [Artifact run 39939918757](https://github.com/Tsyzhman/fantasy/actions/runs/39939918757) built the exact immutable images, then was cancelled during a stalled transfer before promoter startup. The same digest-verified artifact was delivered through local SSH and promoted by the exact committed canonical script, exit 0. Public/web/worker/manifest revisions agree. No production build, migration, data reset or VPN rotation.
+- Initial import: 135 applied and 92 unchanged team/competition XIs; following automatic cycle: 227 unchanged. Twelve real authenticated pool readers verify 8,458 published players, 7,374 roster flags and current source revisions with zero discrepancies. Thirty-five source/identity coverage gaps remain explicit.
+- Sixty-seven promotion and 600 preparation health observations have zero failures; all ten prior action IDs and the prior CSS hash remain available. Caddy PID remains 754. Saved squads/selections retain exact hashes, duplicate rows/configuration and OOM/restarts are zero, queue is empty, two releases and three READY revisions per scope remain. Temporary transport artifacts were removed. Evidence: `specs/work/evidence/WI-080/verification.json`.

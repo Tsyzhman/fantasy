@@ -1,0 +1,19 @@
+{
+  "workflowStatus": "passed",
+  "errors": [],
+  "snapshotStatus": "current",
+  "diagnostics": [],
+  "fingerprint": "c89a1f07d2d9a7eab0ef3013ab2020cc504f58c2dce6dc4696fcc85543f42aae",
+  "provenance": {
+    "commit": "7d3f96ef8b7a6efe6ecf5442e061ea2c06fda980",
+    "source": "working_tree",
+    "observedAt": "2026-10-10T14:48:21.143Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": [
+        "specs/common/INFRA-006-continuous-deployment.md",
+        "specs/common/structure.md"
+      ]
+    }
+  }
+}

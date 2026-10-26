@@ -10,6 +10,7 @@ import { formatDate, formatNumber } from "@/lib/format";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { compactTeamDisplayName, providerTeamShortName } from "@/lib/teams/display";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
+import { loadHomeSourceFreshness, sourceAgeStatus } from "@/server/home-freshness";
 
 export const dynamic = "force-dynamic";
 
@@ -53,21 +54,22 @@ const modes = [
   }
 ];
 
+/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
 export default async function HomePage() {
   const user = process.env.NEXT_PHASE === "phase-production-build" ? null : await getCurrentUser();
   const dashboard = user ? await loadHomeDashboard(user.id).catch(() => null) : null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 pb-10 pt-24 sm:px-6 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
+    <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 pb-8 pt-6 sm:px-6">
       <section className="grid items-end gap-6 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <p className="kicker">
             <I18nText en="Today" ru="Сегодня" />
           </p>
-          <h1 className="mt-3 max-w-[14ch] text-[clamp(32px,5vw,56px)] font-bold leading-[1.04] tracking-[-0.04em] text-ink">
+          <h1 className="mt-2 text-[clamp(24px,3vw,32px)] font-bold leading-tight tracking-tight text-ink">
             <I18nText en="Fantasy Scout" ru="Fantasy Scout" />
           </h1>
-          <p className="mt-4 max-w-[56ch] text-[clamp(16px,1.6vw,19px)] leading-6 text-slate-600">
+          <p className="mt-2 max-w-[56ch] text-sm leading-6 text-slate-600">
             <I18nText
               en="Your latest squad, fresh prices, watched players and active workspaces in one place."
               ru="Последний состав, свежие цены, избранное и рабочие режимы в одном месте."
@@ -86,7 +88,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="overview-metrics mt-6 grid grid-cols-2 md:grid-cols-4">
         <MetricCard icon={<Users className="h-5 w-5" />} labelEn="Squad players" labelRu="Игроки состава" value={dashboard?.squad ? String(dashboard.squad.playersCount) : "0"} />
         <MetricCard icon={<CalendarDays className="h-5 w-5" />} labelEn="Next fixtures" labelRu="Ближайшие матчи" value={dashboard?.squad ? String(dashboard.squad.nextRound.fixtureCount) : "0"} />
         <MetricCard icon={<Eye className="h-5 w-5" />} labelEn="Saved views" labelRu="Сохраненные виды" value={String(dashboard?.savedViewsCount ?? 0)} />
@@ -266,11 +268,7 @@ async function loadHomeDashboard(userId: string) {
       orderBy: { lastSeenAt: "desc" },
       take: 5
     }),
-    prisma.leagueSeason.findMany({
-      include: { league: true },
-      orderBy: { updatedAt: "desc" },
-      take: 4
-    }),
+    loadHomeSourceFreshness(prisma, userId),
     prisma.userSavedView.count({ where: { userId } }),
     prisma.userWatchlistPlayer.count({ where: { userId } })
   ]);
@@ -316,11 +314,11 @@ async function loadHomeDashboard(userId: string) {
       leagueId: String(league.leagueId),
       season: league.season,
       isCurrent: league.isCurrent,
-      updatedAt: league.updatedAt,
+      sources: league.sources,
       name: macheteLeagueDisplayName({
         id: String(league.leagueId),
-        name: league.name ?? league.league.name,
-        country: league.country ?? league.league.country,
+        name: league.name,
+        country: league.country ?? null,
         providerLeagueId: String(league.leagueId)
       }),
       href: `/machete/leagues/${league.leagueId}?${new URLSearchParams({ season: league.season }).toString()}`
@@ -387,14 +385,14 @@ async function loadNextRound(leagueId: bigint, season: string, teamIds: bigint[]
 
 function MetricCard({ icon, labelEn, labelRu, value }: { icon: React.ReactNode; labelEn: string; labelRu: string; value: string }) {
   return (
-    <div className="ui-card p-4">
+    <div className="min-w-0">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-slate-600">
           <I18nText en={labelEn} ru={labelRu} />
         </p>
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded bg-brand-50 text-brand-700">{icon}</span>
+        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center text-slate-500">{icon}</span>
       </div>
-      <p className="mt-4 text-3xl font-bold text-ink">{value}</p>
+      <p className="mt-2 text-[28px] font-bold text-ink num-tabular">{value}</p>
     </div>
   );
 }
@@ -429,17 +427,24 @@ function PriceRow({ price }: { price: { playerName: string; teamName: string; po
   );
 }
 
-function FreshnessRow({ league }: { league: { name: string; season: string; isCurrent: boolean; updatedAt: Date; href: string } }) {
+function FreshnessRow({ league }: { league: { name: string; season: string; isCurrent: boolean; sources: Record<"prices" | "stats" | "lineups" | "forecast", Date | null>; href: string } }) {
   return (
-    <Link href={league.href} className="flex items-center justify-between gap-3 rounded border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50">
+    <Link href={league.href} className="block rounded border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50">
       <span className="min-w-0">
         <span className="block truncate font-semibold text-ink">{league.name}</span>
         <span className="block truncate text-xs text-slate-500">
           {league.season}
-          {league.isCurrent ? " · current" : ""}
+          {league.isCurrent ? <I18nText en=" · active" ru=" · активный" /> : <I18nText en=" · archive" ru=" · архив" />}
         </span>
       </span>
-      <span className="shrink-0 text-xs text-slate-500">{formatDate(league.updatedAt)}</span>
+      <span className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-slate-500">
+        {([ ["prices", "Prices", "Цены", 7], ["stats", "Statistics", "Статистика", 26], ["lineups", "Lineups", "Составы", 26], ["forecast", "Forecast", "Прогноз", 6] ] as const).map(([key, en, ru, maxAge]) => {
+          const date = league.sources[key], status = sourceAgeStatus(date, maxAge);
+          return <span key={key} className={status === "FRESH" || !league.isCurrent ? "" : "text-amber-700"}>
+            <I18nText en={en} ru={ru} />: {date ? <>{league.isCurrent && status === "STALE" ? <I18nText en="stale · " ru="устарело · " /> : null}{formatDate(date)}</> : <I18nText en="no data" ru="нет данных" />}
+          </span>;
+        })}
+      </span>
     </Link>
   );
 }

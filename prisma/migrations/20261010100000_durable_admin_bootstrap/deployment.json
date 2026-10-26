@@ -1,0 +1,5 @@
+{
+  "mode": "online",
+  "sqlSha256": "b6b21eba2f962ce2b42f66258ea51f5229f44ca148b495a7fc0bc0bb3fdb7ed9",
+  "compatibility": "Additive singleton; existing binaries ignore it. Existing password admins close setup regardless of activity. No existing table changes."
+}

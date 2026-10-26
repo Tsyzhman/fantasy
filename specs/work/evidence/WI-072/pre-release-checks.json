@@ -1,0 +1,20 @@
+{
+  "stage": "implementation and isolated regression; production rollout pending",
+  "sourceBaseline": "74a5f00f162b1d22a6bc7344ee6630e0c354a595",
+  "f02": "excluded; existing pre-release backup/restore rehearsal preserved",
+  "localUnitRun": { "tests": 1311, "passed": 1309, "skipped": 2, "failed": 0 },
+  "build": "passed: Next.js 16.3.8 webpack standalone",
+  "lint": { "errors": 0, "warnings": 236 },
+  "types": "passed",
+  "continuousRolloutTests": { "passed": 11, "failed": 0 },
+  "isolatedRoleRegression": {
+    "database": "fantasy_roles_test_ci, disposable isolated PostgreSQL container",
+    "runtimeAttributes": { "superuser": false, "createdb": false, "createrole": false, "replication": false, "bypassrls": false },
+    "crud": "passed and rolled back",
+    "forbidden": ["CREATE TABLE", "CREATE DATABASE", "CREATE ROLE", "TRUNCATE", "migration journal write", "SET ROLE operator"],
+    "futureMigrationGrant": "passed",
+    "runtimeObjectOwnership": 0,
+    "reapply": "passed"
+  },
+  "sessionRetentionRegression": "two batches of seven expired sessions deleted; five active sessions preserved"
+}

@@ -1,0 +1,991 @@
+{
+  "at": "2026-10-10T14:31:46.942924+00:00",
+  "version": "0.3.137",
+  "commit": "7d3f96ef8b7a6efe6ecf5442e061ea2c06fda980",
+  "start": "2026-10-10T14:22:00Z",
+  "end": "2026-10-10T14:26:28Z",
+  "exitStatus": 2,
+  "unit": {
+    "ExecMainStartTimestamp": "Sat 2026-10-10 17:22:00 MSK",
+    "ExecMainExitTimestamp": "Sat 2026-10-10 17:26:28 MSK",
+    "ExecMainStatus": "2",
+    "ActiveState": "failed",
+    "SubState": "failed"
+  },
+  "messages": [
+    {
+      "source": "Sports: каталог",
+      "status": "DONE",
+      "detail": {
+        "updatedAt": "2026-10-10T14:21:47.776Z",
+        "cached": true
+      }
+    },
+    {
+      "source": "Sports: идентичность игроков",
+      "status": "DONE",
+      "detail": {
+        "imported": 0,
+        "remaining": 0,
+        "errors": []
+      }
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 1,
+      "dnp": 3394,
+      "played": 5736,
+      "catalog": 700,
+      "changed": 20,
+      "imported": 20,
+      "profiles": 473,
+      "remaining": 227,
+      "failedProfiles": 0,
+      "quarantineCount": 107,
+      "incompleteProfiles": 2
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 2,
+      "dnp": 3404,
+      "played": 5745,
+      "catalog": 700,
+      "changed": 28,
+      "imported": 20,
+      "profiles": 493,
+      "remaining": 207,
+      "failedProfiles": 0,
+      "quarantineCount": 108,
+      "incompleteProfiles": 3
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 3,
+      "dnp": 3415,
+      "played": 5752,
+      "catalog": 700,
+      "changed": 25,
+      "imported": 20,
+      "profiles": 513,
+      "remaining": 187,
+      "failedProfiles": 0,
+      "quarantineCount": 110,
+      "incompleteProfiles": 5
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 4,
+      "dnp": 3419,
+      "played": 5762,
+      "catalog": 700,
+      "changed": 24,
+      "imported": 20,
+      "profiles": 533,
+      "remaining": 167,
+      "failedProfiles": 0,
+      "quarantineCount": 116,
+      "incompleteProfiles": 11
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 5,
+      "dnp": 3425,
+      "played": 5771,
+      "catalog": 700,
+      "changed": 24,
+      "imported": 20,
+      "profiles": 553,
+      "remaining": 147,
+      "failedProfiles": 0,
+      "quarantineCount": 121,
+      "incompleteProfiles": 16
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 6,
+      "dnp": 3434,
+      "played": 5776,
+      "catalog": 700,
+      "changed": 19,
+      "imported": 20,
+      "profiles": 573,
+      "remaining": 127,
+      "failedProfiles": 0,
+      "quarantineCount": 123,
+      "incompleteProfiles": 18
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 7,
+      "dnp": 3434,
+      "played": 5776,
+      "catalog": 700,
+      "changed": 0,
+      "imported": 20,
+      "profiles": 593,
+      "remaining": 107,
+      "failedProfiles": 0,
+      "quarantineCount": 123,
+      "incompleteProfiles": 18
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 8,
+      "dnp": 3434,
+      "played": 5776,
+      "catalog": 700,
+      "changed": 0,
+      "imported": 20,
+      "profiles": 613,
+      "remaining": 87,
+      "failedProfiles": 0,
+      "quarantineCount": 123,
+      "incompleteProfiles": 18
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 9,
+      "dnp": 3434,
+      "played": 5776,
+      "catalog": 700,
+      "changed": 0,
+      "imported": 20,
+      "profiles": 633,
+      "remaining": 67,
+      "failedProfiles": 0,
+      "quarantineCount": 123,
+      "incompleteProfiles": 18
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 10,
+      "dnp": 3434,
+      "played": 5776,
+      "catalog": 700,
+      "changed": 0,
+      "imported": 20,
+      "profiles": 653,
+      "remaining": 47,
+      "failedProfiles": 0,
+      "quarantineCount": 123,
+      "incompleteProfiles": 18
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 11,
+      "dnp": 3434,
+      "played": 5776,
+      "catalog": 700,
+      "changed": 0,
+      "imported": 20,
+      "profiles": 673,
+      "remaining": 27,
+      "failedProfiles": 0,
+      "quarantineCount": 123,
+      "incompleteProfiles": 18
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 12,
+      "dnp": 3434,
+      "played": 5776,
+      "catalog": 700,
+      "changed": 0,
+      "imported": 20,
+      "profiles": 693,
+      "remaining": 7,
+      "failedProfiles": 0,
+      "quarantineCount": 123,
+      "incompleteProfiles": 18
+    },
+    {
+      "source": "Sports: текущая история",
+      "batch": 13,
+      "dnp": 3434,
+      "played": 5776,
+      "catalog": 700,
+      "changed": 0,
+      "imported": 7,
+      "profiles": 700,
+      "remaining": 0,
+      "failedProfiles": 0,
+      "quarantineCount": 123,
+      "incompleteProfiles": 18
+    },
+    {
+      "source": "KHL Mobile + Sports: текущая история",
+      "status": "FAILED",
+      "detail": "CURRENT_ROWS_DEFERRED:18"
+    },
+    {
+      "source": "Sports: календарь",
+      "status": "DONE",
+      "detail": {
+        "clubs": 22,
+        "agreed": 107,
+        "errors": [],
+        "changed": 0,
+        "cleared": 0,
+        "deferred": 0,
+        "unchanged": 107
+      }
+    },
+    {
+      "source": "КХЛ: текущие протоколы",
+      "status": "FAILED",
+      "detail": "PROTOCOL_MATCHES_DEFERRED:1"
+    },
+    {
+      "source": "Sports: прошлый сезон",
+      "status": "DONE",
+      "detail": {
+        "seasonKey": "2025/2026",
+        "pool": 700,
+        "imported": 0,
+        "absent": 0,
+        "changed": 0,
+        "errors": [],
+        "deferredErrors": [],
+        "remaining": 0
+      }
+    },
+    {
+      "source": "КХЛ: архивные протоколы",
+      "status": "DONE",
+      "detail": {
+        "remaining": 0,
+        "cached": true
+      }
+    },
+    {
+      "source": "Фонбет: линия КХЛ",
+      "status": "DONE",
+      "detail": {
+        "id": "cmv2hm5he06cztg3l8m7h719l",
+        "status": "DONE"
+      }
+    },
+    {
+      "source": "КХЛ: травмированные",
+      "status": "DONE",
+      "detail": {
+        "clubs": 22,
+        "listed": 41,
+        "matched": 35,
+        "unlinked": [
+          "24801",
+          "16019",
+          "43446",
+          "21257",
+          "45425",
+          "16478"
+        ]
+      }
+    },
+    {
+      "source": "EP",
+      "status": "DONE",
+      "detail": {
+        "id": "cmv2hm97206kstg3lgo44s3gv",
+        "contestId": "cmtr4grkd00056htzwpdv4fwu",
+        "modelVersion": "khl-opponent-explained-beta-v4",
+        "rulesVersion": "provider-official-fp",
+        "inputHash": "bf5f48685313d8134dd4d450f25c666c483499ad7948a4e5cc347180cf078cd2",
+        "dataRevision": 81217,
+        "asOf": "2026-10-10T14:26:24.706Z",
+        "horizonEnd": "2026-10-17T14:26:24.706Z",
+        "status": "PUBLISHED",
+        "quality": "BETA_BASELINE",
+        "diagnostics": {
+          "horizon": "NEXT_7_DAYS",
+          "xgReady": false,
+          "warnings": [
+            "BETA_UNCALIBRATED",
+            "XG_UNAVAILABLE"
+          ],
+          "fittedModel": false,
+          "participation": "Empirical appearances with previous-season prior; not probability of starting",
+          "historicalPlayers": 561
+        }
+      }
+    },
+    {
+      "source": "Очистка",
+      "status": "DONE",
+      "detail": {
+        "raw": 0,
+        "availability": 0,
+        "availabilityRevisions": 0,
+        "previews": 0,
+        "receipts": 0,
+        "jobs": 56
+      }
+    },
+    {
+      "status": "PARTIAL",
+      "startedAt": "2026-10-10T14:22:00.528Z",
+      "results": [
+        {
+          "source": "Sports: каталог",
+          "status": "DONE",
+          "detail": {
+            "updatedAt": "2026-10-10T14:21:47.776Z",
+            "cached": true
+          }
+        },
+        {
+          "source": "Sports: идентичность игроков",
+          "status": "DONE",
+          "detail": {
+            "imported": 0,
+            "remaining": 0,
+            "errors": []
+          }
+        },
+        {
+          "source": "KHL Mobile + Sports: текущая история",
+          "status": "FAILED",
+          "detail": "CURRENT_ROWS_DEFERRED:18"
+        },
+        {
+          "source": "Sports: календарь",
+          "status": "DONE",
+          "detail": {
+            "clubs": 22,
+            "agreed": 107,
+            "errors": [],
+            "changed": 0,
+            "cleared": 0,
+            "deferred": 0,
+            "unchanged": 107
+          }
+        },
+        {
+          "source": "КХЛ: текущие протоколы",
+          "status": "FAILED",
+          "detail": "PROTOCOL_MATCHES_DEFERRED:1"
+        },
+        {
+          "source": "Sports: прошлый сезон",
+          "status": "DONE",
+          "detail": {
+            "seasonKey": "2025/2026",
+            "pool": 700,
+            "imported": 0,
+            "absent": 0,
+            "changed": 0,
+            "errors": [],
+            "deferredErrors": [],
+            "remaining": 0
+          }
+        },
+        {
+          "source": "КХЛ: архивные протоколы",
+          "status": "DONE",
+          "detail": {
+            "remaining": 0,
+            "cached": true
+          }
+        },
+        {
+          "source": "Фонбет: линия КХЛ",
+          "status": "DONE",
+          "detail": {
+            "id": "cmv2hm5he06cztg3l8m7h719l",
+            "status": "DONE"
+          }
+        },
+        {
+          "source": "КХЛ: травмированные",
+          "status": "DONE",
+          "detail": {
+            "clubs": 22,
+            "listed": 41,
+            "matched": 35,
+            "unlinked": [
+              "24801",
+              "16019",
+              "43446",
+              "21257",
+              "45425",
+              "16478"
+            ]
+          }
+        },
+        {
+          "source": "EP",
+          "status": "DONE",
+          "detail": {
+            "id": "cmv2hm97206kstg3lgo44s3gv",
+            "contestId": "cmtr4grkd00056htzwpdv4fwu",
+            "modelVersion": "khl-opponent-explained-beta-v4",
+            "rulesVersion": "provider-official-fp",
+            "inputHash": "bf5f48685313d8134dd4d450f25c666c483499ad7948a4e5cc347180cf078cd2",
+            "dataRevision": 81217,
+            "asOf": "2026-10-10T14:26:24.706Z",
+            "horizonEnd": "2026-10-17T14:26:24.706Z",
+            "status": "PUBLISHED",
+            "quality": "BETA_BASELINE",
+            "diagnostics": {
+              "horizon": "NEXT_7_DAYS",
+              "xgReady": false,
+              "warnings": [
+                "BETA_UNCALIBRATED",
+                "XG_UNAVAILABLE"
+              ],
+              "fittedModel": false,
+              "participation": "Empirical appearances with previous-season prior; not probability of starting",
+              "historicalPlayers": 561
+            }
+          }
+        },
+        {
+          "source": "Очистка",
+          "status": "DONE",
+          "detail": {
+            "raw": 0,
+            "availability": 0,
+            "availabilityRevisions": 0,
+            "previews": 0,
+            "receipts": 0,
+            "jobs": 56
+          }
+        }
+      ]
+    }
+  ],
+  "diagnostics": {
+    "jobs": [
+      {
+        "provider": "SPORTS_RU",
+        "jobType": "CATALOG",
+        "status": "DONE",
+        "cursor": {
+          "players": 700,
+          "unchanged": true,
+          "fingerprint": "aaf6f9fce4c56791e959711d2109146520d8edeeea776f7ab945a49206a7b9a6"
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:31:35.812Z"
+      },
+      {
+        "provider": "SPORTS_RU",
+        "jobType": "CATALOG",
+        "status": "DONE",
+        "cursor": {
+          "players": 700,
+          "unchanged": true,
+          "fingerprint": "aaf6f9fce4c56791e959711d2109146520d8edeeea776f7ab945a49206a7b9a6"
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:30:50.602Z"
+      },
+      {
+        "provider": "SPORTS_RU",
+        "jobType": "CATALOG",
+        "status": "DONE",
+        "cursor": {
+          "players": 700,
+          "unchanged": true,
+          "fingerprint": "aaf6f9fce4c56791e959711d2109146520d8edeeea776f7ab945a49206a7b9a6"
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:30:05.391Z"
+      },
+      {
+        "provider": "SPORTS_RU",
+        "jobType": "CATALOG",
+        "status": "DONE",
+        "cursor": {
+          "players": 700,
+          "unchanged": true,
+          "fingerprint": "aaf6f9fce4c56791e959711d2109146520d8edeeea776f7ab945a49206a7b9a6"
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:29:20.093Z"
+      },
+      {
+        "provider": "SPORTS_RU",
+        "jobType": "CATALOG",
+        "status": "DONE",
+        "cursor": {
+          "players": 700,
+          "unchanged": true,
+          "fingerprint": "aaf6f9fce4c56791e959711d2109146520d8edeeea776f7ab945a49206a7b9a6"
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:28:34.868Z"
+      },
+      {
+        "provider": "SPORTS_RU",
+        "jobType": "CATALOG",
+        "status": "DONE",
+        "cursor": {
+          "players": 700,
+          "unchanged": true,
+          "fingerprint": "aaf6f9fce4c56791e959711d2109146520d8edeeea776f7ab945a49206a7b9a6"
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:27:49.688Z"
+      },
+      {
+        "provider": "SPORTS_RU",
+        "jobType": "CATALOG",
+        "status": "DONE",
+        "cursor": {
+          "players": 700,
+          "unchanged": true,
+          "fingerprint": "aaf6f9fce4c56791e959711d2109146520d8edeeea776f7ab945a49206a7b9a6"
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:27:04.459Z"
+      },
+      {
+        "provider": "FONBET_HOCKEY",
+        "jobType": "ODDS",
+        "status": "DONE",
+        "cursor": {
+          "events": 8,
+          "market": "1X2_REGULATION_60",
+          "source": "https://line-lb61-w.bk6bba-resources.com/ma/events/listBase?lang=ru&scopeMarket=1600",
+          "changed": 0,
+          "matched": 8,
+          "upcoming": 24
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:26:22.509Z"
+      },
+      {
+        "provider": "KHL_PROTOCOL",
+        "jobType": "PROTOCOLS",
+        "status": "DONE",
+        "cursor": {
+          "errors": [
+            {
+              "error": "PROTOCOL_COVERAGE_INVALID",
+              "scope": "cmtr4grkd00056htzwpdv4fwu:902123"
+            }
+          ],
+          "imported": 1,
+          "remaining": 0,
+          "accessError": null,
+          "deferredMatches": 1
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:26:21.774Z"
+      },
+      {
+        "provider": "KHL_PROTOCOL",
+        "jobType": "PROTOCOLS",
+        "status": "DONE",
+        "cursor": {
+          "errors": [
+            {
+              "error": "PROTOCOL_COVERAGE_INVALID",
+              "scope": "cmtr4grkd00056htzwpdv4fwu:902123"
+            }
+          ],
+          "imported": 2,
+          "remaining": 1,
+          "accessError": null,
+          "deferredMatches": 1
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:26:20.833Z"
+      },
+      {
+        "provider": "SPORTS_RU",
+        "jobType": "CATALOG",
+        "status": "DONE",
+        "cursor": {
+          "players": 700,
+          "unchanged": true,
+          "fingerprint": "aaf6f9fce4c56791e959711d2109146520d8edeeea776f7ab945a49206a7b9a6"
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:26:19.280Z"
+      },
+      {
+        "provider": "KHL_PROTOCOL",
+        "jobType": "PROTOCOLS",
+        "status": "DONE",
+        "cursor": {
+          "errors": [
+            {
+              "error": "PROTOCOL_COVERAGE_INVALID",
+              "scope": "cmtr4grkd00056htzwpdv4fwu:902123"
+            }
+          ],
+          "imported": 2,
+          "remaining": 3,
+          "accessError": null,
+          "deferredMatches": 1
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:26:18.957Z"
+      },
+      {
+        "provider": "KHL_PROTOCOL",
+        "jobType": "PROTOCOLS",
+        "status": "DONE",
+        "cursor": {
+          "errors": [
+            {
+              "error": "PROTOCOL_COVERAGE_INVALID",
+              "scope": "cmtr4grkd00056htzwpdv4fwu:902123"
+            }
+          ],
+          "imported": 2,
+          "remaining": 5,
+          "accessError": null,
+          "deferredMatches": 1
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:26:17.123Z"
+      },
+      {
+        "provider": "KHL_PROTOCOL",
+        "jobType": "PROTOCOLS",
+        "status": "DONE",
+        "cursor": {
+          "errors": [
+            {
+              "error": "PROTOCOL_COVERAGE_INVALID",
+              "scope": "cmtr4grkd00056htzwpdv4fwu:902123"
+            }
+          ],
+          "imported": 2,
+          "remaining": 7,
+          "accessError": null,
+          "deferredMatches": 1
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:26:15.205Z"
+      },
+      {
+        "provider": "KHL_PROTOCOL",
+        "jobType": "PROTOCOLS",
+        "status": "DONE",
+        "cursor": {
+          "errors": [
+            {
+              "error": "PROTOCOL_COVERAGE_INVALID",
+              "scope": "cmtr4grkd00056htzwpdv4fwu:902123"
+            }
+          ],
+          "imported": 2,
+          "remaining": 9,
+          "accessError": null,
+          "deferredMatches": 1
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:26:13.368Z"
+      },
+      {
+        "provider": "KHL_PROTOCOL",
+        "jobType": "PROTOCOLS",
+        "status": "DONE",
+        "cursor": {
+          "errors": [
+            {
+              "error": "PROTOCOL_COVERAGE_INVALID",
+              "scope": "cmtr4grkd00056htzwpdv4fwu:902123"
+            }
+          ],
+          "imported": 1,
+          "remaining": 11,
+          "accessError": null,
+          "deferredMatches": 1
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:26:11.690Z"
+      },
+      {
+        "provider": "SPORTS_RU_CALENDAR",
+        "jobType": "WEEKS",
+        "status": "DONE",
+        "cursor": {
+          "clubs": 22,
+          "agreed": 107,
+          "errors": [],
+          "changed": 0,
+          "cleared": 0,
+          "deferred": 0,
+          "unchanged": 107
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:26:10.235Z"
+      },
+      {
+        "provider": "SPORTS_RU_STATS",
+        "jobType": "HISTORY",
+        "status": "DONE",
+        "cursor": {
+          "dnp": 3434,
+          "played": 5776,
+          "catalog": 700,
+          "changed": 0,
+          "imported": 7,
+          "profiles": 700,
+          "remaining": 0,
+          "quarantined": [
+            "1923424:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "1863665:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "2203175:2026-09-25:amur",
+            "2203175:2026-09-23:admiral",
+            "2203175:2026-09-20:barys",
+            "2203175:2026-09-18:avangard",
+            "2203175:2026-09-15:traktor",
+            "2203175:2026-09-13:cska",
+            "2203175:2026-09-10:severstal",
+            "2203175:2026-09-08:shanghai-dragons",
+            "2203175:2026-09-05:traktor",
+            "1992791:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "2189209:2026-09-30:sibir",
+            "2189209:2026-09-27:sibir",
+            "2189209:2026-09-25:amur",
+            "2189209:2026-09-23:admiral",
+            "2189209:2026-09-20:barys",
+            "2189209:2026-09-18:avangard",
+            "2189209:2026-09-15:traktor",
+            "2189209:2026-09-13:cska",
+            "2189209:2026-09-10:severstal",
+            "2189209:2026-09-08:shanghai-dragons",
+            "2189209:2026-09-05:traktor",
+            "2085011:2026-09-30:salavat",
+            "2085011:2026-09-28:shanghai-dragons",
+            "2085011:2026-09-26:severstal",
+            "2085011:2026-09-24:torpedo-nn",
+            "2085011:2026-09-20:sibir",
+            "2085011:2026-09-18:ak-bars",
+            "2085011:2026-09-16:cska",
+            "2085011:2026-09-12:ska",
+            "2085011:2026-09-10:avangard",
+            "2085011:2026-09-08:neftekhimik",
+            "2036697:2026-10-06:avtomobilist",
+            "2036697:2026-10-02:lada",
+            "2036697:2026-09-28:metallurg-magnitogorsk",
+            "2036697:2026-09-24:spartak",
+            "2036697:2026-09-22:torpedo-nn",
+            "2036697:2026-09-20:traktor",
+            "2036697:2026-09-18:lokomotiv-yaroslavl",
+            "2036697:2026-09-15:avtomobilist",
+            "2036697:2026-09-13:metallurg-magnitogorsk",
+            "2036697:2026-09-10:sochi",
+            "2036697:2026-09-07:salavat",
+            "2179485:2026-10-06:amur",
+            "2179485:2026-10-02:ak-bars",
+            "2179485:2026-09-30:spartak",
+            "2179485:2026-09-28:dinamo",
+            "2179485:2026-09-25:ska",
+            "2179485:2026-09-20:avangard",
+            "2179485:2026-09-18:spartak",
+            "2179485:2026-09-15:lokomotiv-yaroslavl",
+            "2179485:2026-09-09:ak-bars",
+            "2179485:2026-09-07:avtomobilist",
+            "2179485:2026-09-05:lokomotiv-yaroslavl",
+            "2102034:2026-10-05:dynamo-minsk",
+            "2102034:2026-10-03:sochi",
+            "2102034:2026-10-01:dinamo",
+            "2102034:2026-09-28:salavat",
+            "2102034:2026-09-24:sochi",
+            "2102034:2026-09-22:avangard",
+            "2102034:2026-09-18:cska",
+            "2102034:2026-09-14:ak-bars",
+            "2102034:2026-09-11:lada",
+            "2102034:2026-09-09:cska",
+            "2102034:2026-09-07:dynamo-minsk",
+            "2102034:2026-09-05:spartak",
+            "2032905:2026-09-24:ak-bars",
+            "2032905:2026-09-20:sochi",
+            "2032905:2026-09-18:dynamo-minsk",
+            "2032905:2026-09-16:neftekhimik",
+            "2032905:2026-09-13:avtomobilist",
+            "2032905:2026-09-10:amur",
+            "2032905:2026-09-07:barys",
+            "2032905:2026-09-05:ak-bars",
+            "2121564:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "1873702:2026-09-20:sochi",
+            "1873702:2026-09-18:dynamo-minsk",
+            "1873702:2026-09-16:neftekhimik",
+            "1873702:2026-09-13:avtomobilist",
+            "1873702:2026-09-10:amur",
+            "1873702:2026-09-07:barys",
+            "1873702:2026-09-05:ak-bars",
+            "1952854:2026-09-18:cska",
+            "1952854:2026-09-14:ak-bars",
+            "1952854:2026-09-11:lada",
+            "1952854:2026-09-09:cska",
+            "1952854:2026-09-07:dynamo-minsk",
+            "1952854:2026-09-05:spartak",
+            "2157247:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "2150017:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "1952461:HISTORY_DNP_CONFLICT:2026-10-10:barys",
+            "2087083:HISTORY_DNP_CONFLICT:2026-10-10:barys",
+            "2028135:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "2134082:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "2046930:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "1983111:2026-09-07:admiral",
+            "1983111:2026-09-05:sibir",
+            "1930562:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "1975478:2026-09-15:ska"
+          ],
+          "failedProfiles": 0,
+          "quarantineCount": 123,
+          "incompleteProfiles": 18
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:25:56.219Z"
+      },
+      {
+        "provider": "SPORTS_RU_STATS",
+        "jobType": "HISTORY",
+        "status": "DONE",
+        "cursor": {
+          "dnp": 3434,
+          "played": 5776,
+          "catalog": 700,
+          "changed": 0,
+          "imported": 20,
+          "profiles": 693,
+          "remaining": 7,
+          "quarantined": [
+            "1923424:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "1863665:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "2203175:2026-09-25:amur",
+            "2203175:2026-09-23:admiral",
+            "2203175:2026-09-20:barys",
+            "2203175:2026-09-18:avangard",
+            "2203175:2026-09-15:traktor",
+            "2203175:2026-09-13:cska",
+            "2203175:2026-09-10:severstal",
+            "2203175:2026-09-08:shanghai-dragons",
+            "2203175:2026-09-05:traktor",
+            "1992791:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "2189209:2026-09-30:sibir",
+            "2189209:2026-09-27:sibir",
+            "2189209:2026-09-25:amur",
+            "2189209:2026-09-23:admiral",
+            "2189209:2026-09-20:barys",
+            "2189209:2026-09-18:avangard",
+            "2189209:2026-09-15:traktor",
+            "2189209:2026-09-13:cska",
+            "2189209:2026-09-10:severstal",
+            "2189209:2026-09-08:shanghai-dragons",
+            "2189209:2026-09-05:traktor",
+            "2085011:2026-09-30:salavat",
+            "2085011:2026-09-28:shanghai-dragons",
+            "2085011:2026-09-26:severstal",
+            "2085011:2026-09-24:torpedo-nn",
+            "2085011:2026-09-20:sibir",
+            "2085011:2026-09-18:ak-bars",
+            "2085011:2026-09-16:cska",
+            "2085011:2026-09-12:ska",
+            "2085011:2026-09-10:avangard",
+            "2085011:2026-09-08:neftekhimik",
+            "2036697:2026-10-06:avtomobilist",
+            "2036697:2026-10-02:lada",
+            "2036697:2026-09-28:metallurg-magnitogorsk",
+            "2036697:2026-09-24:spartak",
+            "2036697:2026-09-22:torpedo-nn",
+            "2036697:2026-09-20:traktor",
+            "2036697:2026-09-18:lokomotiv-yaroslavl",
+            "2036697:2026-09-15:avtomobilist",
+            "2036697:2026-09-13:metallurg-magnitogorsk",
+            "2036697:2026-09-10:sochi",
+            "2036697:2026-09-07:salavat",
+            "2179485:2026-10-06:amur",
+            "2179485:2026-10-02:ak-bars",
+            "2179485:2026-09-30:spartak",
+            "2179485:2026-09-28:dinamo",
+            "2179485:2026-09-25:ska",
+            "2179485:2026-09-20:avangard",
+            "2179485:2026-09-18:spartak",
+            "2179485:2026-09-15:lokomotiv-yaroslavl",
+            "2179485:2026-09-09:ak-bars",
+            "2179485:2026-09-07:avtomobilist",
+            "2179485:2026-09-05:lokomotiv-yaroslavl",
+            "2102034:2026-10-05:dynamo-minsk",
+            "2102034:2026-10-03:sochi",
+            "2102034:2026-10-01:dinamo",
+            "2102034:2026-09-28:salavat",
+            "2102034:2026-09-24:sochi",
+            "2102034:2026-09-22:avangard",
+            "2102034:2026-09-18:cska",
+            "2102034:2026-09-14:ak-bars",
+            "2102034:2026-09-11:lada",
+            "2102034:2026-09-09:cska",
+            "2102034:2026-09-07:dynamo-minsk",
+            "2102034:2026-09-05:spartak",
+            "2032905:2026-09-24:ak-bars",
+            "2032905:2026-09-20:sochi",
+            "2032905:2026-09-18:dynamo-minsk",
+            "2032905:2026-09-16:neftekhimik",
+            "2032905:2026-09-13:avtomobilist",
+            "2032905:2026-09-10:amur",
+            "2032905:2026-09-07:barys",
+            "2032905:2026-09-05:ak-bars",
+            "2121564:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "1873702:2026-09-20:sochi",
+            "1873702:2026-09-18:dynamo-minsk",
+            "1873702:2026-09-16:neftekhimik",
+            "1873702:2026-09-13:avtomobilist",
+            "1873702:2026-09-10:amur",
+            "1873702:2026-09-07:barys",
+            "1873702:2026-09-05:ak-bars",
+            "1952854:2026-09-18:cska",
+            "1952854:2026-09-14:ak-bars",
+            "1952854:2026-09-11:lada",
+            "1952854:2026-09-09:cska",
+            "1952854:2026-09-07:dynamo-minsk",
+            "1952854:2026-09-05:spartak",
+            "2157247:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "2150017:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "1952461:HISTORY_DNP_CONFLICT:2026-10-10:barys",
+            "2087083:HISTORY_DNP_CONFLICT:2026-10-10:barys",
+            "2028135:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "2134082:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "2046930:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "1983111:2026-09-07:admiral",
+            "1983111:2026-09-05:sibir",
+            "1930562:HISTORY_DNP_CONFLICT:2026-10-10:avangard",
+            "1975478:2026-09-15:ska"
+          ],
+          "failedProfiles": 0,
+          "quarantineCount": 123,
+          "incompleteProfiles": 18
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:25:50.260Z"
+      },
+      {
+        "provider": "SPORTS_RU",
+        "jobType": "CATALOG",
+        "status": "DONE",
+        "cursor": {
+          "players": 700,
+          "unchanged": true,
+          "fingerprint": "aaf6f9fce4c56791e959711d2109146520d8edeeea776f7ab945a49206a7b9a6"
+        },
+        "error": null,
+        "updatedAt": "2026-10-10T14:25:34.039Z"
+      }
+    ],
+    "protocol": {
+      "health": "DEGRADED",
+      "coverage": {
+        "errors": [
+          {
+            "error": "PROTOCOL_COVERAGE_INVALID",
+            "scope": "cmtr4grkd00056htzwpdv4fwu:902123"
+          }
+        ],
+        "imported": 1,
+        "remaining": 0,
+        "accessError": null,
+        "deferredMatches": 1
+      },
+      "lastSuccessAt": "2026-10-10T14:26:21.772Z"
+    }
+  }
+}

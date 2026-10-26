@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-10",
+  "release": "0.3.131 / 74a5f00",
+  "method": "Read-only browser inspection after user login; desktop and temporary 390x844 viewport",
+  "routes": ["/", "/machete/squad", "/machete/fpl/squad", "/machete/khl/squad", "/franchises"],
+  "observations": [
+    "Home freshness lists Copa America 2024 and World Cup 2026 as current with today's update date; code uses leagueSeason.updatedAt, not a successful source refresh timestamp.",
+    "Sports.ru Squad loads a 665-player EPL pool. Mobile Pool renders 18 cards and Show more (647). Searching for Холанд returns one player; search was cleared afterward.",
+    "Mobile cards show minutes and an unlabeled confidence percentage, Next, horizon, price, Alt, fixtures and Alt 5R. No Columns control or detailed-tooltip control was available in mobile Pool, including More filters and export.",
+    "Desktop Squad/FPL exposes configurable columns and confidence explanation in hover titles. Column resize separators have no tabindex or keyboard handler in code.",
+    "FPL page loads 667 players. Freshness popover shows FotMob 21.09.2026 03:05, FPL 10.10.2026 10:15, odds 10.10.2026 10:14, oldest XI Leeds 21.09.2026 and newest XI Chelsea 09.10.2026. This observation alone does not prove an incorrect forecast.",
+    "KHL reports partial source connectivity, no recorded fully successful refresh, and last attempt 10.10.2026 10:23:50 MSK with Sports previous-season failure; source details show remaining ten steps DONE.",
+    "Franchises loads 12 leagues, 75 franchises, 41948 filtered squads and 99676 purchases. Its source snapshot contains 45234 squads; filtered count is not a discrepancy.",
+    "No captured browser console errors or warnings on checked FPL and franchise screens. A short browser pass cannot prove absence of errors in other workflows."
+  ],
+  "cleanup": {
+    "temporaryViewportReset": true,
+    "temporaryLoginTabClosed": true,
+    "userTabPreserved": true,
+    "squadSaveImportAutopickOrSourceRefreshTriggered": false,
+    "languageThemeOrAccountSettingsChanged": false
+  }
+}

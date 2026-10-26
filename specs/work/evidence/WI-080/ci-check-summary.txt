@@ -1,0 +1,26 @@
+check	Install dependencies	2026-10-23T10:33:43.0010810Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+check	Install dependencies	2026-10-23T10:33:43.0366369Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+check	Install dependencies	2026-10-23T10:33:43.0918133Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+check	Audit production dependencies	2026-10-23T10:34:00.3820981Z found 0 vulnerabilities
+check	Run database integration tests	2026-10-23T10:34:07.6346473Z ✔ PostgreSQL: complete XI restores a corroborated inactive member atomically and repeat creates no duplicate refresh (209.764312ms)
+check	Run database integration tests	2026-10-23T10:34:12.0255460Z ℹ tests 20
+check	Run database integration tests	2026-10-23T10:34:12.0256294Z ℹ pass 20
+check	Run database integration tests	2026-10-23T10:34:12.0256632Z ℹ fail 0
+check	Run database integration tests	2026-10-23T10:34:15.4618733Z ℹ tests 3
+check	Run database integration tests	2026-10-23T10:34:15.4619667Z ℹ pass 3
+check	Run database integration tests	2026-10-23T10:34:15.4619998Z ℹ fail 0
+check	Run database integration tests	2026-10-23T10:34:19.1691303Z ℹ tests 2
+check	Run database integration tests	2026-10-23T10:34:19.1692662Z ℹ pass 2
+check	Run database integration tests	2026-10-23T10:34:19.1693037Z ℹ fail 0
+check	Run database integration tests	2026-10-23T10:34:36.4799003Z ℹ tests 7
+check	Run database integration tests	2026-10-23T10:34:36.4799682Z ℹ pass 7
+check	Run database integration tests	2026-10-23T10:34:36.4799926Z ℹ fail 0
+check	Run checks	2026-10-23T10:36:09.8015910Z ℹ tests 1332
+check	Run checks	2026-10-23T10:36:09.8016831Z ℹ pass 1332
+check	Run checks	2026-10-23T10:36:09.8017167Z ℹ fail 0
+check	Verify restricted runtime database permissions	2026-10-23T10:38:15.9029755Z Ran 2 tests in 6.904s
+check	Verify continuous deployment and rollback	2026-10-23T10:38:16.0346088Z Ran 14 tests in 0.047s
+check	Verify continuous deployment and rollback	2026-10-23T10:38:16.1052817Z Ran 3 tests in 0.006s
+check	Verify continuous deployment and rollback	2026-10-23T10:38:16.2416291Z ℹ tests 4
+check	Verify continuous deployment and rollback	2026-10-23T10:38:16.2417238Z ℹ pass 4
+check	Verify continuous deployment and rollback	2026-10-23T10:38:16.2417656Z ℹ fail 0

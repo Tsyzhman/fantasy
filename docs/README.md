@@ -69,6 +69,7 @@ later revision has passed the same checks.
 
 ## Design and historical planning
 
+- [Current design system: Midnight Scout / Pressbox](design/DESIGN.md)
 - [Squad-card design concepts](design/drafts/squad-player-card-concepts.html)
 - [Archive index](archive/README.md) — previous plans, original specification inputs, and imported design references.
 

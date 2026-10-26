@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { SPORTS_TRENDS_MAX_CANDIDATE_CONTESTS, SPORTS_TRENDS_OWNERSHIP_HISTORY_DAYS } from "./config";
 
 /**
@@ -54,7 +54,8 @@ async function loadCurrentOwnership(prisma: PrismaClient, contestId: string): Pr
   return entries;
 }
 
-async function createOwnershipSnapshot(
+/** @spec spec://modules/machete/FEAT-006-sports-popularity#data */
+export async function createOwnershipSnapshot(
   prisma: PrismaClient,
   contestId: string,
   season: string,
@@ -62,7 +63,14 @@ async function createOwnershipSnapshot(
   entries: Array<OwnershipEntry & { value: number }>,
   options: { category: "OWNERSHIP" | "OWNERSHIP_DELTA_PP"; metricKind: string; unit: string; statusReason: string }
 ) {
-  await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
+    const key = `sports-ownership:${contestId}:${options.category}:${observedAt.toISOString()}`;
+    await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
+    const existing = await tx.sportsTrendSnapshot.findFirst({
+      where: { contestId, category: options.category, populationScope: "ALL_MANAGERS", providerRoundId: null, sourceId: null, observedAt },
+      select: { id: true }
+    });
+    if (existing) return false;
     const snapshot = await tx.sportsTrendSnapshot.create({
       data: {
         contestId,
@@ -95,7 +103,8 @@ async function createOwnershipSnapshot(
         valueText: `${Math.round(entry.value * 100) / 100}%`
       }))
     });
-  });
+    return true;
+  }, { maxWait: 30_000, timeout: 30_000 });
 }
 
 /**
@@ -135,13 +144,14 @@ export async function captureSportsOwnershipSnapshots(
       result.skipped += 1;
       continue;
     }
-    await createOwnershipSnapshot(prisma, contest.id, contest.season, bucket, entries, {
+    const created = await createOwnershipSnapshot(prisma, contest.id, contest.season, bucket, entries, {
       category: "OWNERSHIP",
       metricKind: "ownership_percent",
       unit: "percent",
       statusReason: OWNERSHIP_STATUS_REASON
     });
-    result.snapshots += 1;
+    if (created) result.snapshots += 1;
+    else result.skipped += 1;
 
     const previous = await prisma.sportsTrendSnapshot.findFirst({
       where: {
@@ -170,13 +180,13 @@ export async function captureSportsOwnershipSnapshots(
       .sort((left, right) => Math.abs(right.value) - Math.abs(left.value))
       .slice(0, TOP_ENTRIES);
     if (deltas.length === 0) continue;
-    await createOwnershipSnapshot(prisma, contest.id, contest.season, bucket, deltas, {
+    const deltaCreated = await createOwnershipSnapshot(prisma, contest.id, contest.season, bucket, deltas, {
       category: "OWNERSHIP_DELTA_PP",
       metricKind: "ownership_delta_pp",
       unit: "pp",
       statusReason: DELTA_STATUS_REASON
     });
-    result.deltas += 1;
+    if (deltaCreated) result.deltas += 1;
   }
   return result;
 }

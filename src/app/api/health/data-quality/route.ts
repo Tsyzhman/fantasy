@@ -5,6 +5,7 @@ import { evaluateDataQualityAuditRunHealth } from "@/machete/data_quality_monito
 import { readDataQualityAuditScheduleConfig } from "@/machete/data_quality_schedule";
 import { evaluatePlannerDefaultScope, loadPlannerReadinessByScope, plannerReadinessKey } from "@/machete/planner_readiness";
 import { loadSharedLeagueSeasonOptions } from "@/machete/shared_read_model";
+import { loadActiveFantasySourceScopes } from "@/server/fantasy-source-registry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,11 +21,10 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json({ status: "error", reason: "CONFIG_INVALID", message: errorMessage(error) }, { status: 503 });
   }
-  if (config.scopes.length === 0) {
-    return NextResponse.json({ status: "error", reason: "SCOPES_NOT_CONFIGURED" }, { status: 503 });
-  }
 
   try {
+    config.scopes = await loadActiveFantasySourceScopes(prisma);
+    if (!config.scopes.length) return NextResponse.json({ status: "error", reason: "SCOPES_NOT_CONFIGURED" }, { status: 503 });
     const now = Date.now();
     const results = await Promise.all(
       config.scopes.map(async (scope) => {

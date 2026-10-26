@@ -1,0 +1,92 @@
+{
+  "verifiedAt": "2026-10-16 16:45:13 UTC",
+  "version": "0.3.139",
+  "commit": "df9f214a0ded3849308ef94cbf997ce1f6938961",
+  "tree": "5db0aa1dda596dd4fb3380ce49c42a4e3ff080a6",
+  "release": "20261016T162337Z-v0.3.139-df9f214",
+  "image": "sha256:1429e2900cc545241fbce244cdefc4c7653a370232d930bf534074d02ac651f8",
+  "ci": {
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/38931230094",
+    "checks": "success",
+    "images": "success",
+    "workflowConclusion": "cancelled",
+    "note": "Cancelled during slow SCP, before production promotion. Downloaded the exact retained CI artifact directly over HTTPS, verified all checksums, and ran the unchanged committed canonical promoter successfully."
+  },
+  "artifact": {
+    "id": 12058787977,
+    "sha256": "bc4de9e1c690727d90a2b0084047b51799602ca62956aafaeaf260c0df17fd82",
+    "sourceSha256": "733e15778c08e1008792243e8311f38dda3b96e99b287c61c86974a1ea5916c4",
+    "imagesSha256": "f595df138562115e539c7e1715341faa26c2f677eeeca8bf855e3383bd09ccf0"
+  },
+  "checks": {
+    "localCheck": "passed",
+    "testsPassed": 1323,
+    "testsSkipped": 2,
+    "testFailures": 0,
+    "lintErrors": 0,
+    "existingLintWarnings": 236,
+    "typecheck": "passed",
+    "build": "passed",
+    "focusedTestsPassed": 131,
+    "workflowValidation": "passed",
+    "specDiagnostics": []
+  },
+  "browser": {
+    "current": {
+      "providerTourId": "2391",
+      "label": "11 тур",
+      "metric": "0/6",
+      "description": "Sports.ru allows 6 transfers in this round."
+    },
+    "next": {
+      "providerTourId": "2392",
+      "label": "12 тур",
+      "metric": "0/3",
+      "description": "Sports.ru allows 3 transfers in this round."
+    },
+    "squadSaveSubmitted": false,
+    "temporaryTabClosed": true
+  },
+  "data": {
+    "savedSquads": 13,
+    "savedSquadDigestUnchanged": true,
+    "savedSquadDigest": "f1750a4eb6c872cb1026a15d6262033e6d4c79788ed18561ce68f991561730af",
+    "duplicateSquadPlayers": 0,
+    "cachedPlayerPoolId": "d402a989-045a-4fbd-860a-33f583d1ba3d",
+    "cachedMetadataUnchanged": true,
+    "poolRebuildRequested": false,
+    "migrations": 0
+  },
+  "rollout": {
+    "promoter": "scripts/deploy-production-docker.sh",
+    "promoterExitCode": 0,
+    "trafficSwitch": "3000->3001",
+    "drainSeconds": 30,
+    "publicHealthStatus": 200,
+    "manifestAndImageAndPublicCommitAgree": true,
+    "oldJavascriptStatus": 200,
+    "oldJavascriptBytes": 201055,
+    "observations": {
+      "count": 119,
+      "errors": 0,
+      "start": "2026-10-16T16:21:29.208Z",
+      "end": "2026-10-16T16:41:22.684Z",
+      "maxResponseMs": 2892
+    }
+  },
+  "resources": {
+    "webCount": 1,
+    "workerCount": 1,
+    "webMiB": 141.7,
+    "webLimitGiB": 2,
+    "workerGiB": 1.395,
+    "workerLimitGiB": 4,
+    "postgresMiB": 674,
+    "hostAvailableMiB": 6272,
+    "restarts": 0,
+    "oomKilled": false,
+    "retainedReleases": 2,
+    "existingHostBuildCacheGiB": 4.354,
+    "temporaryBytesRemoved": 872177728
+  }
+}

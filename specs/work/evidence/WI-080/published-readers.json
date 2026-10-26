@@ -1,0 +1,244 @@
+{
+  "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae",
+  "scopes": 12,
+  "freshSourceTeams": 227,
+  "queue": 0,
+  "errors": 0,
+  "results": [
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "snapshotId": "0ba04b35-a7a4-4654-924c-3bd13dfd3850",
+      "calculatedAt": "2026-10-23T11:02:54.422Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 29,
+      "provenanceErrors": [],
+      "poolPlayers": 1157,
+      "comparedFlags": 951,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 116,
+        "snapshotId": "0ba04b35-a7a4-4654-924c-3bd13dfd3850",
+        "errors": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "season": "2026/2027",
+      "snapshotId": "fa86d7fe-b1f2-4602-a4f3-a99544deb06b",
+      "calculatedAt": "2026-10-23T11:04:36.659Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 19,
+      "provenanceErrors": [],
+      "poolPlayers": 665,
+      "comparedFlags": 540,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 67,
+        "snapshotId": "fa86d7fe-b1f2-4602-a4f3-a99544deb06b",
+        "errors": []
+      }
+    },
+    {
+      "leagueId": "48",
+      "season": "2026/2027",
+      "snapshotId": "4ef3501c-2a75-4335-8016-260efdbb7fb9",
+      "calculatedAt": "2026-10-23T11:03:21.501Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 24,
+      "provenanceErrors": [],
+      "poolPlayers": 783,
+      "comparedFlags": 642,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 79,
+        "snapshotId": "4ef3501c-2a75-4335-8016-260efdbb7fb9",
+        "errors": []
+      }
+    },
+    {
+      "leagueId": "53",
+      "season": "2026/2027",
+      "snapshotId": "f02521ff-cc09-42a1-8c05-023c460c7c6b",
+      "calculatedAt": "2026-10-23T11:03:33.292Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 17,
+      "provenanceErrors": [],
+      "poolPlayers": 525,
+      "comparedFlags": 486,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 53,
+        "snapshotId": "f02521ff-cc09-42a1-8c05-023c460c7c6b",
+        "errors": []
+      }
+    },
+    {
+      "leagueId": "54",
+      "season": "2026/2027",
+      "snapshotId": "047b063d-66a8-4663-9447-48140f9e3ba9",
+      "calculatedAt": "2026-10-23T11:03:41.089Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 17,
+      "provenanceErrors": [],
+      "poolPlayers": 528,
+      "comparedFlags": 510,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 53,
+        "snapshotId": "047b063d-66a8-4663-9447-48140f9e3ba9",
+        "errors": []
+      }
+    },
+    {
+      "leagueId": "55",
+      "season": "2026/2027",
+      "snapshotId": "6c0439b3-8d93-4d91-a409-3f7a291fea25",
+      "calculatedAt": "2026-10-23T11:03:27.210Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 19,
+      "provenanceErrors": [],
+      "poolPlayers": 636,
+      "comparedFlags": 588,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 64,
+        "snapshotId": "6c0439b3-8d93-4d91-a409-3f7a291fea25",
+        "errors": []
+      }
+    },
+    {
+      "leagueId": "57",
+      "season": "2026/2027",
+      "snapshotId": "7d1225da-5c4b-42cb-a069-b1edc0792bfc",
+      "calculatedAt": "2026-10-23T11:04:23.619Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 18,
+      "provenanceErrors": [],
+      "poolPlayers": 611,
+      "comparedFlags": 523,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 62,
+        "snapshotId": "7d1225da-5c4b-42cb-a069-b1edc0792bfc",
+        "errors": []
+      }
+    },
+    {
+      "leagueId": "61",
+      "season": "2026/2027",
+      "snapshotId": "3b5a952c-01dc-48de-b663-0cd9a7718054",
+      "calculatedAt": "2026-10-23T11:04:13.251Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 17,
+      "provenanceErrors": [],
+      "poolPlayers": 625,
+      "comparedFlags": 536,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 63,
+        "snapshotId": "3b5a952c-01dc-48de-b663-0cd9a7718054",
+        "errors": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "season": "2026/2027",
+      "snapshotId": "b8caf8cc-a51d-41f4-9d26-842b51213cb9",
+      "calculatedAt": "2026-10-23T11:04:05.432Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 14,
+      "provenanceErrors": [],
+      "poolPlayers": 498,
+      "comparedFlags": 469,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 50,
+        "snapshotId": "b8caf8cc-a51d-41f4-9d26-842b51213cb9",
+        "errors": []
+      }
+    },
+    {
+      "leagueId": "71",
+      "season": "2026/2027",
+      "snapshotId": "cc24e6a1-2044-4e63-8cef-f66b3b6d170f",
+      "calculatedAt": "2026-10-23T11:03:48.571Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 18,
+      "provenanceErrors": [],
+      "poolPlayers": 563,
+      "comparedFlags": 507,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 57,
+        "snapshotId": "cc24e6a1-2044-4e63-8cef-f66b3b6d170f",
+        "errors": []
+      }
+    },
+    {
+      "leagueId": "73",
+      "season": "2026/2027",
+      "snapshotId": "e6ed9b2f-349d-444c-825f-8e9ed5fbd88b",
+      "calculatedAt": "2026-10-23T11:03:09.611Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 16,
+      "provenanceErrors": [],
+      "poolPlayers": 1133,
+      "comparedFlags": 1106,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 114,
+        "snapshotId": "e6ed9b2f-349d-444c-825f-8e9ed5fbd88b",
+        "errors": []
+      }
+    },
+    {
+      "leagueId": "87",
+      "season": "2026/2027",
+      "snapshotId": "a974709f-42b5-44d5-8193-744eb58105f4",
+      "calculatedAt": "2026-10-23T11:04:31.739Z",
+      "sourceRevisionMatches": true,
+      "freshSourceTeams": 19,
+      "provenanceErrors": [],
+      "poolPlayers": 734,
+      "comparedFlags": 516,
+      "poolErrors": [],
+      "api": {
+        "http": 200,
+        "batch": "progressive-snapshot-details-v3",
+        "players": 74,
+        "snapshotId": "a974709f-42b5-44d5-8193-744eb58105f4",
+        "errors": []
+      }
+    }
+  ],
+  "memory": {
+    "rss": 251539456,
+    "heapTotal": 102854656,
+    "heapUsed": 50315288,
+    "external": 5072186,
+    "arrayBuffers": 1073817
+  }
+}

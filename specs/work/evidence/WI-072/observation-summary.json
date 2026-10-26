@@ -1,0 +1,488 @@
+{
+  "observations": [
+    {
+      "file": "first-rollout-observation.jsonl",
+      "samples": 720,
+      "first": "2026-10-10T11:55:48.442683+00:00",
+      "last": "2026-10-10T12:55:46.413157+00:00",
+      "failedHealthSamples": 0
+    },
+    {
+      "file": "second-rollout-observation.jsonl",
+      "samples": 480,
+      "first": "2026-10-10T12:55:22.028455+00:00",
+      "last": "2026-10-10T13:35:19.009130+00:00",
+      "failedHealthSamples": 0
+    },
+    {
+      "file": "final-rollout-observation.jsonl",
+      "samples": 704,
+      "first": "2026-10-10T13:34:53.145365+00:00",
+      "last": "2026-10-10T14:33:31.029134+00:00",
+      "failedHealthSamples": 0
+    }
+  ],
+  "allHealthSamples": 1904,
+  "allFailedHealthSamples": 0,
+  "finalRelease": {
+    "version": "0.3.137",
+    "commit": "7d3f96ef8b7a6efe6ecf5442e061ea2c06fda980",
+    "firstAt": "2026-10-10T14:01:24.440867+00:00",
+    "lastAt": "2026-10-10T14:33:31.029134+00:00",
+    "seconds": 1926.588267,
+    "healthSamples": 386,
+    "resourceSamples": {
+      "fantasy-scout-web": {
+        "sampleCount": 129,
+        "peakMemoryBytes": 265768960,
+        "maxPids": 23,
+        "maxCpuPercent": 34.40095560281456,
+        "maxRestartCount": 0,
+        "oomFlagObserved": false,
+        "memoryEventsMax": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0
+        },
+        "lastMemoryBytes": 238489600,
+        "memoryEventsAtStart": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0
+        },
+        "memoryEventsAtEnd": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0
+        },
+        "memoryEventsDelta": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0
+        }
+      },
+      "fantasy-scout-worker": {
+        "sampleCount": 129,
+        "peakMemoryBytes": 1854881792,
+        "maxPids": 35,
+        "maxCpuPercent": 186.24964677677022,
+        "maxRestartCount": 0,
+        "oomFlagObserved": false,
+        "memoryEventsMax": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0
+        },
+        "lastMemoryBytes": 1182404608,
+        "memoryEventsAtStart": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0
+        },
+        "memoryEventsAtEnd": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0
+        },
+        "memoryEventsDelta": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0
+        }
+      },
+      "fantasy-scout-postgres": {
+        "sampleCount": 129,
+        "peakMemoryBytes": 1983270912,
+        "maxPids": 42,
+        "maxCpuPercent": 45.1520033551295,
+        "maxRestartCount": 0,
+        "oomFlagObserved": false,
+        "memoryEventsMax": {
+          "low": 0,
+          "high": 0,
+          "max": 159166,
+          "oom": 0,
+          "oom_kill": 0
+        },
+        "lastMemoryBytes": 1938149376,
+        "memoryEventsAtStart": {
+          "low": 0,
+          "high": 0,
+          "max": 159166,
+          "oom": 0,
+          "oom_kill": 0
+        },
+        "memoryEventsAtEnd": {
+          "low": 0,
+          "high": 0,
+          "max": 159166,
+          "oom": 0,
+          "oom_kill": 0
+        },
+        "memoryEventsDelta": {
+          "low": 0,
+          "high": 0,
+          "max": 0,
+          "oom": 0,
+          "oom_kill": 0
+        }
+      }
+    },
+    "minimumHostAvailableKiB": 5526648,
+    "databaseWindow": {
+      "firstAt": "2026-10-10T14:01:54.461353+00:00",
+      "lastAt": "2026-10-10T14:32:55.998204+00:00",
+      "updates": {
+        "UserSession": 0,
+        "deadline_campaigns": 6,
+        "deadline_stage_jobs": 18,
+        "khl_contests": 207,
+        "khl_fantasy_players": 0,
+        "khl_observation_revisions": 0,
+        "khl_sync_jobs": 132
+      },
+      "last": {
+        "tables": [
+          {
+            "relname": "UserSession",
+            "n_tup_ins": 172,
+            "n_tup_upd": 2,
+            "n_tup_del": 196,
+            "n_live_tup": 73,
+            "n_dead_tup": 3,
+            "seq_scan": 76579,
+            "seq_tup_read": 10446866,
+            "idx_scan": 1723
+          },
+          {
+            "relname": "deadline_campaigns",
+            "n_tup_ins": 36,
+            "n_tup_upd": 4031477,
+            "n_tup_del": 3,
+            "n_live_tup": 33,
+            "n_dead_tup": 18,
+            "seq_scan": 2965462,
+            "seq_tup_read": 24616388,
+            "idx_scan": 5595317
+          },
+          {
+            "relname": "deadline_stage_jobs",
+            "n_tup_ins": 177,
+            "n_tup_upd": 7169636,
+            "n_tup_del": 3,
+            "n_live_tup": 174,
+            "n_dead_tup": 0,
+            "seq_scan": 1504214,
+            "seq_tup_read": 40555704,
+            "idx_scan": 7779288
+          },
+          {
+            "relname": "khl_contests",
+            "n_tup_ins": 1,
+            "n_tup_upd": 144025,
+            "n_tup_del": 0,
+            "n_live_tup": 1,
+            "n_dead_tup": 22,
+            "seq_scan": 656606,
+            "seq_tup_read": 656602,
+            "idx_scan": 64412
+          },
+          {
+            "relname": "khl_fantasy_players",
+            "n_tup_ins": 704,
+            "n_tup_upd": 43543568,
+            "n_tup_del": 0,
+            "n_live_tup": 704,
+            "n_dead_tup": 131,
+            "seq_scan": 117374,
+            "seq_tup_read": 82067494,
+            "idx_scan": 331316
+          },
+          {
+            "relname": "khl_observation_revisions",
+            "n_tup_ins": 60486,
+            "n_tup_upd": 0,
+            "n_tup_del": 0,
+            "n_live_tup": 59112,
+            "n_dead_tup": 325,
+            "seq_scan": 31520,
+            "seq_tup_read": 1326333643,
+            "idx_scan": 6927
+          },
+          {
+            "relname": "khl_sync_jobs",
+            "n_tup_ins": 92400,
+            "n_tup_upd": 185695,
+            "n_tup_del": 9218,
+            "n_live_tup": 83182,
+            "n_dead_tup": 15358,
+            "seq_scan": 63917,
+            "seq_tup_read": 2952147902,
+            "idx_scan": 1060005
+          }
+        ],
+        "sessions": {
+          "active": 73,
+          "expired": 0
+        },
+        "fpl": {
+          "rows": 667,
+          "mapped": 667,
+          "sourceHash": "0d6ed43952e029b4d53d02c179f7cefb"
+        },
+        "campaignDuplicates": 0,
+        "stageDuplicates": 0,
+        "fplDuplicates": 0,
+        "khlRaw": {
+          "rows": 1032,
+          "liveBytes": 14962447,
+          "expired": 0
+        }
+      }
+    }
+  },
+  "comparableBefore30Minutes": {
+    "firstAt": "2026-10-10T11:55:48.442683+00:00",
+    "lastAt": "2026-10-10T12:25:49.963042+00:00",
+    "updates": {
+      "UserSession": 0,
+      "deadline_campaigns": 8320,
+      "deadline_stage_jobs": 21967,
+      "khl_contests": 132,
+      "khl_fantasy_players": 28000,
+      "khl_observation_revisions": 0,
+      "khl_sync_jobs": 154
+    },
+    "last": {
+      "tables": [
+        {
+          "relname": "UserSession",
+          "n_tup_ins": 169,
+          "n_tup_upd": 2,
+          "n_tup_del": 20,
+          "n_live_tup": 246,
+          "n_dead_tup": 75,
+          "seq_scan": 75444,
+          "seq_tup_read": 10359537,
+          "idx_scan": 1522
+        },
+        {
+          "relname": "deadline_campaigns",
+          "n_tup_ins": 36,
+          "n_tup_upd": 4027533,
+          "n_tup_del": 3,
+          "n_live_tup": 33,
+          "n_dead_tup": 59,
+          "seq_scan": 2964450,
+          "seq_tup_read": 24604692,
+          "idx_scan": 5583024
+        },
+        {
+          "relname": "deadline_stage_jobs",
+          "n_tup_ins": 99,
+          "n_tup_upd": 7158917,
+          "n_tup_del": 3,
+          "n_live_tup": 96,
+          "n_dead_tup": 90,
+          "seq_scan": 1504127,
+          "seq_tup_read": 40543620,
+          "idx_scan": 7758681
+        },
+        {
+          "relname": "khl_contests",
+          "n_tup_ins": 1,
+          "n_tup_upd": 143465,
+          "n_tup_del": 0,
+          "n_live_tup": 1,
+          "n_dead_tup": 20,
+          "seq_scan": 654148,
+          "seq_tup_read": 654144,
+          "idx_scan": 64412
+        },
+        {
+          "relname": "khl_fantasy_players",
+          "n_tup_ins": 704,
+          "n_tup_upd": 43530137,
+          "n_tup_del": 0,
+          "n_live_tup": 704,
+          "n_dead_tup": 700,
+          "seq_scan": 117139,
+          "seq_tup_read": 81902054,
+          "idx_scan": 329452
+        },
+        {
+          "relname": "khl_observation_revisions",
+          "n_tup_ins": 60095,
+          "n_tup_upd": 0,
+          "n_tup_del": 0,
+          "n_live_tup": 58721,
+          "n_dead_tup": 325,
+          "seq_scan": 31489,
+          "seq_tup_read": 1324924334,
+          "idx_scan": 6912
+        },
+        {
+          "relname": "khl_sync_jobs",
+          "n_tup_ins": 92114,
+          "n_tup_upd": 185114,
+          "n_tup_del": 8940,
+          "n_live_tup": 83174,
+          "n_dead_tup": 14503,
+          "seq_scan": 63894,
+          "seq_tup_read": 2950318059,
+          "idx_scan": 1056051
+        }
+      ],
+      "sessions": {
+        "active": 74,
+        "expired": 172
+      },
+      "fpl": {
+        "rows": 667,
+        "mapped": 589,
+        "sourceHash": "22ce233e91316f4474f49e6fe0a0e908"
+      },
+      "campaignDuplicates": 0,
+      "stageDuplicates": 0,
+      "fplDuplicates": 0,
+      "khlRaw": {
+        "rows": 1031,
+        "liveBytes": 14947904,
+        "expired": 0
+      }
+    }
+  },
+  "comparableAfter13530Minutes": {
+    "firstAt": "2026-10-10T13:04:22.458793+00:00",
+    "lastAt": "2026-10-10T13:34:23.961192+00:00",
+    "updates": {
+      "UserSession": 0,
+      "deadline_campaigns": 4,
+      "deadline_stage_jobs": 9,
+      "khl_contests": 131,
+      "khl_fantasy_players": 131,
+      "khl_observation_revisions": 0,
+      "khl_sync_jobs": 153
+    },
+    "last": {
+      "tables": [
+        {
+          "relname": "UserSession",
+          "n_tup_ins": 171,
+          "n_tup_upd": 2,
+          "n_tup_del": 194,
+          "n_live_tup": 74,
+          "n_dead_tup": 1,
+          "seq_scan": 76165,
+          "seq_tup_read": 10416459,
+          "idx_scan": 1713
+        },
+        {
+          "relname": "deadline_campaigns",
+          "n_tup_ins": 36,
+          "n_tup_upd": 4031467,
+          "n_tup_del": 3,
+          "n_live_tup": 33,
+          "n_dead_tup": 17,
+          "seq_scan": 2964978,
+          "seq_tup_read": 24613591,
+          "idx_scan": 5593425
+        },
+        {
+          "relname": "deadline_stage_jobs",
+          "n_tup_ins": 147,
+          "n_tup_upd": 7169606,
+          "n_tup_del": 3,
+          "n_live_tup": 144,
+          "n_dead_tup": 45,
+          "seq_scan": 1504185,
+          "seq_tup_read": 40551516,
+          "idx_scan": 7774926
+        },
+        {
+          "relname": "khl_contests",
+          "n_tup_ins": 1,
+          "n_tup_upd": 143732,
+          "n_tup_del": 0,
+          "n_live_tup": 1,
+          "n_dead_tup": 29,
+          "seq_scan": 655161,
+          "seq_tup_read": 655157,
+          "idx_scan": 64412
+        },
+        {
+          "relname": "khl_fantasy_players",
+          "n_tup_ins": 704,
+          "n_tup_upd": 43543568,
+          "n_tup_del": 0,
+          "n_live_tup": 704,
+          "n_dead_tup": 131,
+          "seq_scan": 117248,
+          "seq_tup_read": 81978790,
+          "idx_scan": 330982
+        },
+        {
+          "relname": "khl_observation_revisions",
+          "n_tup_ins": 60261,
+          "n_tup_upd": 0,
+          "n_tup_del": 0,
+          "n_live_tup": 58887,
+          "n_dead_tup": 325,
+          "seq_scan": 31518,
+          "seq_tup_read": 1326333641,
+          "idx_scan": 6921
+        },
+        {
+          "relname": "khl_sync_jobs",
+          "n_tup_ins": 92275,
+          "n_tup_upd": 185441,
+          "n_tup_del": 9070,
+          "n_live_tup": 83205,
+          "n_dead_tup": 14960,
+          "seq_scan": 63917,
+          "seq_tup_read": 2952147902,
+          "idx_scan": 1058075
+        }
+      ],
+      "sessions": {
+        "active": 74,
+        "expired": 0
+      },
+      "fpl": {
+        "rows": 667,
+        "mapped": 667,
+        "sourceHash": "0d6ed43952e029b4d53d02c179f7cefb"
+      },
+      "campaignDuplicates": 0,
+      "stageDuplicates": 0,
+      "fplDuplicates": 0,
+      "khlRaw": {
+        "rows": 1031,
+        "liveBytes": 14947904,
+        "expired": 0
+      }
+    }
+  },
+  "limitations": [
+    "Five-second health sampling does not represent every user request",
+    "Final-release observation is over 30 minutes, not a new 24-hour soak",
+    "Whole-table KHL update counts include valid changed observations, protocol and injury updates",
+    "Legacy worker OOM flag was historical; PostgreSQL memory-limit pressure remains visible"
+  ]
+}

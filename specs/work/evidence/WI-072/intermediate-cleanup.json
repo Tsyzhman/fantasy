@@ -1,0 +1,55 @@
+{
+  "at": "2026-10-10T13:28:06.328065+00:00",
+  "removedUnusedOwnedImages": [
+    {
+      "tag": "fantasy-scout-ci:34daf800c77d23ab650db2dd0b760b46f358f115-setup",
+      "id": "sha256:8cf10ac3bb5c4fb2e44149f7c37d013fd2d6527020d0070dbd46409ca1844e63",
+      "nominalBytes": 1743696712
+    },
+    {
+      "tag": "fantasy-scout-ci:4bda63bf423451f70749469cf34cecb65ee8899c-runtime",
+      "id": "sha256:21d871ecede5ccf6410e008bc96596f9d22a65f22ddecb01e9ee7f1c9a1da96b",
+      "nominalBytes": 920045417
+    },
+    {
+      "tag": "fantasy-scout-ci:4bda63bf423451f70749469cf34cecb65ee8899c-setup",
+      "id": "sha256:0181b702de45da345fc882ade01f72fc75c6d4014258484fc7206198174d19a3",
+      "nominalBytes": 1743774537
+    },
+    {
+      "tag": "fantasy-scout-ci:8520e9529685a6afb65bf7572f9921be67029bb6-runtime",
+      "id": "sha256:6e27222f0fd3c1efaf6ce46b67da28a9387b33148bc5ea51a94d2008a0274768",
+      "nominalBytes": 920043882
+    },
+    {
+      "tag": "fantasy-scout-ci:8520e9529685a6afb65bf7572f9921be67029bb6-setup",
+      "id": "sha256:61b391bcbd2e6f262fa4a3bb07a02ffe07fe66eca5cb158ffdadba501e7550b7",
+      "nominalBytes": 1743709510
+    }
+  ],
+  "preservedReferencedImages": [
+    "fantasy-scout-ci:34daf800c77d23ab650db2dd0b760b46f358f115-runtime"
+  ],
+  "removedOwnedTemporaryArchives": [
+    {
+      "name": "fantasy-scout-images-20261010T112916Z-v0.3.132-a69d45d.tar.gz",
+      "bytes": 912315756
+    },
+    {
+      "name": "fantasy-scout-images-20261010T124322Z-v0.3.135-ff6193b.tar.gz",
+      "bytes": 734530560
+    },
+    {
+      "name": "fantasy-scout-images-20261010T111012Z-v0.3.132-8520e95.tar.gz",
+      "bytes": 912282751
+    },
+    {
+      "name": "fantasy-scout-images-20261010T115253Z-v0.3.133-4bda63b.tar.gz",
+      "bytes": 912373938
+    }
+  ],
+  "freeBeforeBytes": 16853643264,
+  "freeAfterBytes": 32476434432,
+  "freedBytes": 15622791168,
+  "defaultBuilderPruned": false
+}

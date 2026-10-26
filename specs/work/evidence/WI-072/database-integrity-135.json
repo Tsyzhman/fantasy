@@ -1,0 +1,29 @@
+{
+  "migrationApplied": 61,
+  "migrationUnfinished": 0,
+  "invalidRetentionIndexes": 0,
+  "retentionIndexCount": 5,
+  "ownershipDuplicateBuckets": 0,
+  "ownershipLatest": [
+    {
+      "contest_id": "cmtzhksis0002yypwmrvcl90b",
+      "observed_at": "2026-10-10T13:06:47.126",
+      "entries": 6
+    },
+    {
+      "contest_id": "cmtzhksis0002yypwmrvcl90b",
+      "observed_at": "2026-10-10T13:06:47.126",
+      "entries": 5
+    },
+    {
+      "contest_id": "cmtzhksis0002yypwmrvcl90b",
+      "observed_at": "2026-10-10T13:06:47.126",
+      "entries": 5
+    },
+    {
+      "contest_id": "cmtzhksis0002yypwmrvcl90b",
+      "observed_at": "2026-10-10T13:06:47.126",
+      "entries": 7
+    }
+  ]
+}

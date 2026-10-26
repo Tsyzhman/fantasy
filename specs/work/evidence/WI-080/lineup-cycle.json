@@ -1,0 +1,1132 @@
+{
+  "observedAt": "2026-10-23T11:08:05.430143+00:00",
+  "events": [
+    {
+      "level": "info",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside sync finished",
+      "timestamp": "2026-10-23T11:04:35.516Z",
+      "status": "PARTIAL",
+      "totals": {
+        "NO_MATCH_OR_TEAM_MAPPING": 24,
+        "SOURCE_ERROR": 2,
+        "APPLIED": 135,
+        "UNCHANGED": 92,
+        "PLAYERS_UNMAPPED": 9
+      },
+      "startedAt": "2026-10-23T11:01:51.634Z",
+      "finishedAt": "2026-10-23T11:04:35.515Z",
+      "rssMiB": 1676
+    },
+    {
+      "level": "info",
+      "scope": "sorareinside:scheduler",
+      "message": "Next SorareInside sync scheduled",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "runAt": "2026-10-23T11:05:00.000Z"
+    },
+    {
+      "level": "info",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside sync finished",
+      "timestamp": "2026-10-23T11:06:43.696Z",
+      "status": "PARTIAL",
+      "totals": {
+        "NO_MATCH_OR_TEAM_MAPPING": 24,
+        "SOURCE_ERROR": 2,
+        "UNCHANGED": 227,
+        "PLAYERS_UNMAPPED": 9
+      },
+      "startedAt": "2026-10-23T11:05:00.005Z",
+      "finishedAt": "2026-10-23T11:06:43.695Z",
+      "rssMiB": 1788
+    },
+    {
+      "level": "info",
+      "scope": "sorareinside:scheduler",
+      "message": "Next SorareInside sync scheduled",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "runAt": "2026-10-23T12:05:00.000Z"
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.517Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "7787",
+      "team": "Slavia Prague",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.517Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8478",
+      "team": "Viking",
+      "status": "SOURCE_ERROR",
+      "problems": [
+        "SorareInside: expected 11 unique starters with one goalkeeper first"
+      ],
+      "sourceTeamId": "1d79081b-38e3-4fd4-8c87-9bfb6d89ba7c",
+      "fixtureId": "b081e6ef-8253-4db1-98cc-6a9723eab57c",
+      "kickoff": "2026-10-25T13:30:00.000Z",
+      "lineupId": "c068bf17-dafb-4f1b-9327-b1b3d066fa41"
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.517Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "6019",
+      "team": "Slovan Bratislava",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.517Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "951893",
+      "team": "Sabah FK",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.517Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8402",
+      "team": "Bod\u00f8/Glimt",
+      "status": "SOURCE_ERROR",
+      "problems": [
+        "SorareInside: expected 11 unique starters with one goalkeeper first"
+      ],
+      "sourceTeamId": "4baa67bf-772c-4e9b-8714-fdf29e16dfc6",
+      "fixtureId": "23ac7bc0-48f0-4fb7-b52d-ee1a40675613",
+      "kickoff": "2026-10-24T14:00:00.000Z",
+      "lineupId": "58995b7e-fb40-4303-812e-6cd6e785ff4f"
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.517Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8563",
+      "team": "AEK Athens",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.517Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "9728",
+      "team": "Shakhtar Donetsk",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.517Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8635",
+      "team": "Anderlecht",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.517Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "866109",
+      "team": "Ararat Armenia",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.517Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "1957",
+      "team": "Jagiellonia Bia\u0142ystok",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10156",
+      "team": "Dinamo Zagreb",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8476",
+      "team": "Lillestr\u00f8m",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "2182",
+      "team": "Lech Pozna\u0144",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8632",
+      "team": "Levski Sofia",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "9754",
+      "team": "Hapoel Beer Sheva",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "7753",
+      "team": "OFI Crete",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "4622",
+      "team": "NK Celje",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8638",
+      "team": "Olympiacos",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "7978",
+      "team": "Union St.Gilloise",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10014",
+      "team": "Sturm Graz",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10013",
+      "team": "Salzburg",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "6033",
+      "team": "Viktoria Plze\u0148",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "212820",
+      "team": "Torreense",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10247",
+      "team": "Sparta Prague",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8044",
+      "team": "Omonia Nicosia",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8472",
+      "team": "Sunderland",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "1405417a-df55-4c1e-9c71-a2ae20b122af",
+      "fixtureId": "11ae2adf-13c5-4123-8b0c-e167e59eabd1",
+      "kickoff": "2026-10-25T16:30:00.000Z",
+      "lineupId": "7dfdc046-4313-4cfa-a82c-5742e33ce7e0",
+      "players": [
+        {
+          "sourceId": "2df9a9f3-c00f-41c2-a87c-94484494967a",
+          "name": "Tymur Tutierov",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "47",
+      "season": "2026/2027",
+      "teamId": "8472",
+      "team": "Sunderland",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "1405417a-df55-4c1e-9c71-a2ae20b122af",
+      "fixtureId": "11ae2adf-13c5-4123-8b0c-e167e59eabd1",
+      "kickoff": "2026-10-25T16:30:00.000Z",
+      "lineupId": "7dfdc046-4313-4cfa-a82c-5742e33ce7e0",
+      "players": [
+        {
+          "sourceId": "2df9a9f3-c00f-41c2-a87c-94484494967a",
+          "name": "Tymur Tutierov",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8222",
+      "team": "Ferencv\u00e1ros",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.518Z",
+      "leagueId": "55",
+      "season": "2026/2027",
+      "teamId": "6504",
+      "team": "Monza",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "92ae0d34-64b2-4cfe-a2ed-47320e6ecf75",
+      "fixtureId": "810f5adc-012e-4825-9642-b6625b44db98",
+      "kickoff": "2026-10-23T18:45:00.000Z",
+      "lineupId": "a06650d3-f32a-4fea-a745-bc1547e331af",
+      "players": [
+        {
+          "sourceId": "433dce04-fb95-4e5b-ac23-be947c9266c6",
+          "name": "Samuele Birindelli",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "leagueId": "53",
+      "season": "2026/2027",
+      "teamId": "8689",
+      "team": "Lorient",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "73dccb34-e67a-4355-9815-dde3573865ed",
+      "fixtureId": "1038dc4a-ca15-454a-b30a-dc7748e8be75",
+      "kickoff": "2026-10-25T16:15:00.000Z",
+      "lineupId": "56dd213d-235a-480a-9955-ef232e0fb0d0",
+      "players": [
+        {
+          "sourceId": "db7a7683-b766-4926-a420-db7e31dc0191",
+          "name": "Ars\u00e8ne Kouassi",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "leagueId": "54",
+      "season": "2026/2027",
+      "teamId": "8149",
+      "team": "Union Berlin",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "972a5317-8d83-4fba-9731-8fa683e37544",
+      "fixtureId": "29a4f331-5be7-4cde-ae05-286c6d9d038b",
+      "kickoff": "2026-10-24T13:30:00.000Z",
+      "lineupId": "46b44533-9a4f-4b35-9d68-c46c8e22be7f",
+      "players": [
+        {
+          "sourceId": "54be3a13-3f0f-4872-b000-a1f1d0e810b2",
+          "name": "Emmanuel Latte Lath",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "leagueId": "63",
+      "season": "2026/2027",
+      "teamId": "8708",
+      "team": "FK Akhmat",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "b6afb3a9-2343-4b45-850d-5dcd44beb808",
+      "fixtureId": "762f049f-afb2-4b8c-a298-7e215877d80c",
+      "kickoff": "2026-10-23T16:30:00.000Z",
+      "lineupId": "05c05fd0-ae7b-4963-8380-9aacd4ffc047",
+      "players": [
+        {
+          "sourceId": "3bc265ca-e6c0-47c2-889d-564430a5dd3a",
+          "name": "Maksim Samorodov",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "leagueId": "63",
+      "season": "2026/2027",
+      "teamId": "8643",
+      "team": "Spartak Moscow",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "0bd65295-6396-4daf-91b3-dfc976c3fa43",
+      "fixtureId": "72fd3434-77b3-40aa-95e7-522139e8112c",
+      "kickoff": "2026-10-25T13:00:00.000Z",
+      "lineupId": "f5e7232e-ba5c-48ec-a576-4b9303a6806e",
+      "players": [
+        {
+          "sourceId": "ec3a018b-3fcd-48d4-ab8b-5cbb9caed921",
+          "name": "Marquinhos",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "leagueId": "61",
+      "season": "2026/2027",
+      "teamId": "1074320",
+      "team": "Estrela da Amadora",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "113f2f22-1d05-40a9-afe3-74732bf692e7",
+      "fixtureId": "1a080809-8e12-456c-a813-9cd55a3ae5e9",
+      "kickoff": "2026-10-24T14:30:00.000Z",
+      "lineupId": "886c7bc6-10fa-4ae2-aa80-c8f0c0d3b4ce",
+      "players": [
+        {
+          "sourceId": "d06164fb-a206-43b6-9828-66aa341d4caa",
+          "name": "Santiago Serra",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:04:35.519Z",
+      "leagueId": "87",
+      "season": "2026/2027",
+      "teamId": "8581",
+      "team": "Levante",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "689bed12-1d72-405c-84b3-e051e9580c6b",
+      "fixtureId": "e5124109-de39-4c97-89db-f67c0ea4399c",
+      "kickoff": "2026-10-25T17:30:00.000Z",
+      "lineupId": "7e8af52e-02eb-45ac-8b6e-e70ab34aca2f",
+      "players": [
+        {
+          "sourceId": "4a8749ff-503f-47c1-87bb-d0000122fa7b",
+          "name": "Nacho P\u00e9rez",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.696Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "7787",
+      "team": "Slavia Prague",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8478",
+      "team": "Viking",
+      "status": "SOURCE_ERROR",
+      "problems": [
+        "SorareInside: expected 11 unique starters with one goalkeeper first"
+      ],
+      "sourceTeamId": "1d79081b-38e3-4fd4-8c87-9bfb6d89ba7c",
+      "fixtureId": "b081e6ef-8253-4db1-98cc-6a9723eab57c",
+      "kickoff": "2026-10-25T13:30:00.000Z",
+      "lineupId": "c068bf17-dafb-4f1b-9327-b1b3d066fa41"
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "6019",
+      "team": "Slovan Bratislava",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "951893",
+      "team": "Sabah FK",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8402",
+      "team": "Bod\u00f8/Glimt",
+      "status": "SOURCE_ERROR",
+      "problems": [
+        "SorareInside: expected 11 unique starters with one goalkeeper first"
+      ],
+      "sourceTeamId": "4baa67bf-772c-4e9b-8714-fdf29e16dfc6",
+      "fixtureId": "23ac7bc0-48f0-4fb7-b52d-ee1a40675613",
+      "kickoff": "2026-10-24T14:00:00.000Z",
+      "lineupId": "58995b7e-fb40-4303-812e-6cd6e785ff4f"
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8563",
+      "team": "AEK Athens",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "9728",
+      "team": "Shakhtar Donetsk",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8635",
+      "team": "Anderlecht",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "866109",
+      "team": "Ararat Armenia",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "1957",
+      "team": "Jagiellonia Bia\u0142ystok",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10156",
+      "team": "Dinamo Zagreb",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8476",
+      "team": "Lillestr\u00f8m",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "2182",
+      "team": "Lech Pozna\u0144",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8632",
+      "team": "Levski Sofia",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "9754",
+      "team": "Hapoel Beer Sheva",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "7753",
+      "team": "OFI Crete",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "4622",
+      "team": "NK Celje",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8638",
+      "team": "Olympiacos",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "7978",
+      "team": "Union St.Gilloise",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10014",
+      "team": "Sturm Graz",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10013",
+      "team": "Salzburg",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "6033",
+      "team": "Viktoria Plze\u0148",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "212820",
+      "team": "Torreense",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.697Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "10247",
+      "team": "Sparta Prague",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8044",
+      "team": "Omonia Nicosia",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8472",
+      "team": "Sunderland",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "1405417a-df55-4c1e-9c71-a2ae20b122af",
+      "fixtureId": "11ae2adf-13c5-4123-8b0c-e167e59eabd1",
+      "kickoff": "2026-10-25T16:30:00.000Z",
+      "lineupId": "7dfdc046-4313-4cfa-a82c-5742e33ce7e0",
+      "players": [
+        {
+          "sourceId": "2df9a9f3-c00f-41c2-a87c-94484494967a",
+          "name": "Tymur Tutierov",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "47",
+      "season": "2026/2027",
+      "teamId": "8472",
+      "team": "Sunderland",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "1405417a-df55-4c1e-9c71-a2ae20b122af",
+      "fixtureId": "11ae2adf-13c5-4123-8b0c-e167e59eabd1",
+      "kickoff": "2026-10-25T16:30:00.000Z",
+      "lineupId": "7dfdc046-4313-4cfa-a82c-5742e33ce7e0",
+      "players": [
+        {
+          "sourceId": "2df9a9f3-c00f-41c2-a87c-94484494967a",
+          "name": "Tymur Tutierov",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "73",
+      "season": "2026/2027",
+      "teamId": "8222",
+      "team": "Ferencv\u00e1ros",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "55",
+      "season": "2026/2027",
+      "teamId": "6504",
+      "team": "Monza",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "92ae0d34-64b2-4cfe-a2ed-47320e6ecf75",
+      "fixtureId": "810f5adc-012e-4825-9642-b6625b44db98",
+      "kickoff": "2026-10-23T18:45:00.000Z",
+      "lineupId": "a06650d3-f32a-4fea-a745-bc1547e331af",
+      "players": [
+        {
+          "sourceId": "433dce04-fb95-4e5b-ac23-be947c9266c6",
+          "name": "Samuele Birindelli",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "53",
+      "season": "2026/2027",
+      "teamId": "8689",
+      "team": "Lorient",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "73dccb34-e67a-4355-9815-dde3573865ed",
+      "fixtureId": "1038dc4a-ca15-454a-b30a-dc7748e8be75",
+      "kickoff": "2026-10-25T16:15:00.000Z",
+      "lineupId": "56dd213d-235a-480a-9955-ef232e0fb0d0",
+      "players": [
+        {
+          "sourceId": "db7a7683-b766-4926-a420-db7e31dc0191",
+          "name": "Ars\u00e8ne Kouassi",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "54",
+      "season": "2026/2027",
+      "teamId": "8149",
+      "team": "Union Berlin",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "972a5317-8d83-4fba-9731-8fa683e37544",
+      "fixtureId": "29a4f331-5be7-4cde-ae05-286c6d9d038b",
+      "kickoff": "2026-10-24T13:30:00.000Z",
+      "lineupId": "46b44533-9a4f-4b35-9d68-c46c8e22be7f",
+      "players": [
+        {
+          "sourceId": "54be3a13-3f0f-4872-b000-a1f1d0e810b2",
+          "name": "Emmanuel Latte Lath",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "63",
+      "season": "2026/2027",
+      "teamId": "8708",
+      "team": "FK Akhmat",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "b6afb3a9-2343-4b45-850d-5dcd44beb808",
+      "fixtureId": "762f049f-afb2-4b8c-a298-7e215877d80c",
+      "kickoff": "2026-10-23T16:30:00.000Z",
+      "lineupId": "05c05fd0-ae7b-4963-8380-9aacd4ffc047",
+      "players": [
+        {
+          "sourceId": "3bc265ca-e6c0-47c2-889d-564430a5dd3a",
+          "name": "Maksim Samorodov",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "63",
+      "season": "2026/2027",
+      "teamId": "8643",
+      "team": "Spartak Moscow",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "0bd65295-6396-4daf-91b3-dfc976c3fa43",
+      "fixtureId": "72fd3434-77b3-40aa-95e7-522139e8112c",
+      "kickoff": "2026-10-25T13:00:00.000Z",
+      "lineupId": "f5e7232e-ba5c-48ec-a576-4b9303a6806e",
+      "players": [
+        {
+          "sourceId": "ec3a018b-3fcd-48d4-ab8b-5cbb9caed921",
+          "name": "Marquinhos",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "61",
+      "season": "2026/2027",
+      "teamId": "1074320",
+      "team": "Estrela da Amadora",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "113f2f22-1d05-40a9-afe3-74732bf692e7",
+      "fixtureId": "1a080809-8e12-456c-a813-9cd55a3ae5e9",
+      "kickoff": "2026-10-24T14:30:00.000Z",
+      "lineupId": "886c7bc6-10fa-4ae2-aa80-c8f0c0d3b4ce",
+      "players": [
+        {
+          "sourceId": "d06164fb-a206-43b6-9828-66aa341d4caa",
+          "name": "Santiago Serra",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "level": "warn",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside team preserved",
+      "timestamp": "2026-10-23T11:06:43.698Z",
+      "leagueId": "87",
+      "season": "2026/2027",
+      "teamId": "8581",
+      "team": "Levante",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "689bed12-1d72-405c-84b3-e051e9580c6b",
+      "fixtureId": "e5124109-de39-4c97-89db-f67c0ea4399c",
+      "kickoff": "2026-10-25T17:30:00.000Z",
+      "lineupId": "7e8af52e-02eb-45ac-8b6e-e70ab34aca2f",
+      "players": [
+        {
+          "sourceId": "4a8749ff-503f-47c1-87bb-d0000122fa7b",
+          "name": "Nacho P\u00e9rez",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    }
+  ]
+}

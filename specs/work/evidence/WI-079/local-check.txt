@@ -1,0 +1,1658 @@
+
+> fantasy-scout@0.3.141 check
+> npm run release:verify-version && npm run test && npm run lint && npm run typecheck && npm run build
+
+
+> fantasy-scout@0.3.141 release:verify-version
+> node scripts/verify-release-version.mjs
+
+{"status":"ok","version":"0.3.141","releaseDate":"2026-10-21","baseVersion":null,"changedPathCount":0}
+
+> fantasy-scout@0.3.141 test
+> tsx scripts/run-test-files.ts .test.ts
+
+Running 240 test file(s) ending in .test.ts.
+✔ franchise squads are lazy-loaded inside the selected squad league (1.4901ms)
+✔ franchise squads refresh live without repeatedly loading the heavy table (0.2283ms)
+✔ franchise previews batch shared pool metadata and skip irrelevant saved-squad reads (0.2748ms)
+✔ franchise API enforces viewer access and hides private user fields (0.2018ms)
+✔ the integrated table identifies players with zero or missing Alt (0.195ms)
+✔ expanded franchise squad is a read-only starting XI and bench preview (0.2885ms)
+✔ old franchise URLs redirect into the integrated squad page (0.1644ms)
+✔ admin users can create, update, and remove a Sports.ru profile link (0.9541ms)
+✔ admin users list loads only the Sports.ru external profile (0.2103ms)
+✔ fantasy source update routes are admin-only and validate against server-side scope allowlists (1.1583ms)
+✔ FPL price updates are admin-only and server-scoped (0.2339ms)
+✔ price updates use the mapping-preserving manual scheduler entry point (0.1526ms)
+✔ Foontasy updates use configured credentials without accepting a URL from the browser (0.1923ms)
+✔ probable-lineup updates are admin-only and select a server-defined source (0.1958ms)
+✔ anonymous client-error route rejects oversized bodies before database access (40.6899ms)
+✔ anonymous client-error route stops an oversized stream without content-length (1.9254ms)
+✔ anonymous client-error route rejects extra identifying fields (1.174ms)
+✔ anonymous client-error route fails closed without a configured database (0.9712ms)
+✔ cron routes reject requests without the bearer secret (55.208ms)
+✔ cron routes reject requests with the wrong bearer secret (2.774ms)
+✔ cron routes reject bearer tokens that only share a prefix (0.7423ms)
+✔ cron routes reject requests when CRON_SECRET is not configured (2.1001ms)
+✔ cron routes report missing database after bearer auth succeeds (3.4756ms)
+✔ data-quality cron requires configured audit scopes after auth and database checks (1.6398ms)
+✔ client-error health fails closed without a configured database (44.8465ms)
+✔ data-quality health reports an unconfigured database (53.166ms)
+✔ data-quality health accepts only recent completed passing runs (0.9966ms)
+✔ health route reports unhealthy when database is not configured (76.3038ms)
+✔ squad GET rejects non-allowlisted league seasons before loading the player pool (3.9303ms)
+✔ squad POST rejects non-allowlisted league seasons before loading planner data (0.6981ms)
+✔ squad export rejects non-allowlisted league seasons before loading planner data (0.256ms)
+✔ retired formula details remain authenticated and never load a player pool (0.2776ms)
+✔ projection details reject non-allowlisted league seasons before loading the cached pool (0.2581ms)
+✔ starter status requires a signed-in user but is not restricted to admins (15.7085ms)
+✔ starter status materializes only a verified Sports.ru authoritative roster candidate (1.462ms)
+✔ shot-map API routes require a valid user session (44.9316ms)
+✔ FPL has a separate fixed frontend and API context (1.0911ms)
+✔ beta acceptance evidence combines explicit config with the retained server snapshot (58.1256ms)
+✔ missing configuration remains fail-closed instead of inventing defaults (0.7875ms)
+✔ beta telemetry foreign key targets the canonical Prisma user table (1.3737ms)
+✔ beta moderator environment migration stores only the approved physical-device evidence values (0.2271ms)
+✔ beta submission expand migration adds only a nullable provenance field (0.227ms)
+✔ beta submission contract rejects new real valid runs without inventing provenance (0.6535ms)
+✔ client critical-error storage contains only coarse aggregate fields (0.3047ms)
+✔ client critical-error index rename matches Prisma's PostgreSQL identifier (0.2572ms)
+✔ classifies portrait and touch-capable phone landscape viewports as mobile (2.5501ms)
+✔ does not classify non-touch windows or touch laptops as mobile (1.032ms)
+✔ uses a narrow mobile-browser hint without treating desktop Android as a phone (0.2355ms)
+✔ a pending completion milestone is not presented as server-recorded (0.2646ms)
+✔ a pending completion milestone still selects the non-aborting finish path (24.921ms)
+✔ finish waits for an already active completion flush instead of reporting a false send failure (0.9733ms)
+✔ finishing an acknowledged run clears it without recording JOURNEY_ABORTED (0.6744ms)
+✔ finishing retains the local session until the server acknowledges submission (1.7461ms)
+✔ finishing keeps pending telemetry when the network does not acknowledge it (0.7229ms)
+✔ aborting records JOURNEY_ABORTED and clears only after acknowledgement (1.0857ms)
+✔ an explicit local discard clears an unsent run (0.6236ms)
+✔ submission receipt is tab-local, contains only the participant code, and is consumed once (3.0914ms)
+✔ invalid submission receipt is removed without being shown (0.4349ms)
+✔ telemetry input accepts bounded allowlisted observations and rejects arbitrary data (2.8182ms)
+✔ submitted or reviewed runs reject observations while finish remains idempotent (0.2368ms)
+✔ technical completion requires every milestone, correct order, and five-minute limit (1.0024ms)
+✔ beta gate passes exact SMART thresholds on first valid run per ten users (4.4888ms)
+✔ beta gate fails closed without explicit server-window and RUM acceptance evidence (0.8141ms)
+▶ server fixed-window evidence fails closed for every acceptance invariant
+  ✔ insufficient (0.6413ms)
+  ✔ breach (0.395ms)
+  ✔ stale (0.4101ms)
+  ✔ wrong start (0.4836ms)
+  ✔ missing retention (0.8029ms)
+  ✔ short span (0.442ms)
+  ✔ one percent (0.4713ms)
+  ✔ inconsistent counts (0.2849ms)
+✔ server fixed-window evidence fails closed for every acceptance invariant (5.3255ms)
+✔ RUM gate requires a real observation span and a fresh final observation (0.6788ms)
+✔ any real client error blocks an otherwise passing overall gate (0.3723ms)
+✔ beta gate rejects slow or insufficient real-user RUM (1.3372ms)
+✔ beta gate requires moderator-confirmed physical Safari iOS and Chrome Android (0.8754ms)
+✔ RUM includes every real run and excludes synthetic telemetry (0.3995ms)
+✔ repeat successes cannot erase a participant's first valid failure (0.2528ms)
+✔ synthetic, invalid, and unreviewed runs never satisfy the participant gate (0.2574ms)
+✔ pending real attempts keep an otherwise passing beta gate closed (0.3329ms)
+✔ an open run remains in RUM but is distinct from a submitted run awaiting review (0.3ms)
+✔ a legacy valid review without participant submission remains a blocker and never becomes a participant (0.1884ms)
+✔ an invalid abandoned run is auditable without inventing participant submission (0.1939ms)
+✔ invalid attempts remain auditable with environment, reason, and technical evidence (0.1924ms)
+✔ valid moderator review requires every human-only judgment (0.2534ms)
+✔ settlement whitelist agrees with the provider catalogue, including non-sequential away totals (9.6145ms)
+✔ competition names distinguish tiers and map the actual Fonbet labels (34.8029ms)
+✔ European league phase can use 90-minute models and settlement; knockout ambiguity stays explicit (0.4337ms)
+✔ missing match score can use exact team statistics, preserving zero and rejecting incomplete or conflicting data (1.1034ms)
+✔ fixed odds: two tickets for the same result pay their own prices (1.2723ms)
+✔ integer totals push; quarter lines split correctly, including negative handicaps (3.7139ms)
+✔ unknown and unsupported fractional factors are not guessed (0.4195ms)
+✔ models require history and are deterministic, with distinct published policies (18.9147ms)
+✔ full feed keeps nested markets, blocks suspended selections, and distinguishes parameter prices (1.1129ms)
+✔ European models retain domestic and previous European history in both model windows (4.5982ms)
+✔ five match-specific cards select each algorithm's best available market or explain skip (2.44ms)
+✔ closed, stale, missing and unsupported markets never produce an actionable tip (0.3678ms)
+✔ multiple outcomes are ranked once each, with all supporting algorithms and deterministic ties (24.0793ms)
+✔ unsupported, disabled, manual, nonfinite and non-BET outcomes are excluded (0.5116ms)
+✔ freshness boundaries apply to the entire opportunity block (0.3581ms)
+✔ summary cannot outlive its quote, kickoff or algorithm version (0.3611ms)
+✔ snapshot is bounded, rebuilt for changed odds, and does not retain markets (11.2683ms)
+✔ SQL ranks all filtered events before pagination, uses freshness and parameterized input (1.2555ms)
+✔ browser extension requests only the two hosts and cookie access required for transfer (1.8538ms)
+✔ Chromium and Firefox use their supported Manifest V3 background implementations (0.2416ms)
+✔ session cookie stays in the background while Sports.ru receives one atomic squad mutation (0.2565ms)
+✔ extension API authenticates the bearer session and never caches a squad plan (0.164ms)
+✔ admin ingestion controls expose one probable-lineup button per allowlisted league (5.7675ms)
+✔ probable-lineup controls report per-source applied, unchanged, skipped, and failed teams (1.406ms)
+✔ forecast table distinguishes missing Alt while legacy score displays retain zero fallback (54.5088ms)
+✔ global header contains only the requested product navigation (1.4133ms)
+✔ desktop header pins the navigation cluster to the right (0.2019ms)
+✔ squad navigation opens the integrated squad page directly (0.7715ms)
+✔ DatabaseSetupNotice renders local database setup commands (9.0755ms)
+✔ Editorial Sport semantic tokens define both complete themes (1.6244ms)
+✔ theme and density controls expose independent persisted choices (6.4129ms)
+✔ ordinary surfaces have no decorative gradients or elevation (0.677ms)
+✔ Onest is self-hosted by Next instead of relying on a system font (0.2166ms)
+✔ semantic 950 text cannot collapse onto its soft alert background (0.6312ms)
+✔ fixture neutral fallback has zero specificity so known FDR colours win in either CSS order (0.456ms)
+✔ system theme follows OS changes, explicit choice persists, cross-tab removal returns to system (165.6117ms)
+✔ denied browser storage preserves usable theme and density controls (35.2643ms)
+✔ density persists independently and cross-tab changes synchronize without theme changes (31.2396ms)
+✔ Sports.ru placeholders stay visible in the squad with their price but never enter the transfer pool (2.1432ms)
+✔ Sports.ru import can complete from response players while the full player pool is still loading (1.0067ms)
+✔ player pool loads saved squads first, then complete snapshot forecasts in ten-percent popularity batches (0.8677ms)
+✔ Sports.ru page renders a persisted-squad shell without forecast work on the SSR path (0.3829ms)
+✔ round forecast totals available alternative projections and keeps missing players visible through warnings (0.6743ms)
+✔ primary round forecast doubles only the captain (0.2277ms)
+✔ FPL chips change only the documented forecast scope (0.5555ms)
+✔ Foontasy total doubles the captain and never treats a missing forecast as zero (0.3135ms)
+✔ transfer suggestions expose FO, ALT, and FFO, while FFO remains a current-round source (4.2089ms)
+✔ compact transfer suggestions include bookmaker favorites with separate clean-sheet and over-1.5 probabilities (5.3551ms)
+✔ auto-pick ignores audit-only warnings but still requires real projections and fresh source data (0.261ms)
+✔ top forecast metrics use only the starting XI and expose Alt totals (0.457ms)
+✔ stored Sports squad action sits immediately left of save in the one-line squad header (1.2317ms)
+✔ squad planner keeps one unnamed current squad and places transfer usage over the lineup (1.4212ms)
+✔ fixture chips hide H/A from visible labels but retain side and original title (0.6095ms)
+✔ fixture chips keep compact labels but expose full opponent names (0.3111ms)
+✔ bench order is persisted by slot and always places its goalkeeper last (0.4124ms)
+✔ dropping a bench card on another swaps their persisted order (0.4046ms)
+✔ dropping a starter on a bench player swaps their roles (0.4377ms)
+✔ goalkeepers can swap only with goalkeepers and the bench goalkeeper stays rightmost (0.8289ms)
+✔ click replacement targets only the opposite squad group and the same goalkeeper class (0.9255ms)
+✔ pool replacement is atomic and preserves the outgoing player's squad role (0.278ms)
+✔ pool replacement refuses a player who is already selected (0.1061ms)
+✔ squad exposes a localized click replacement mode and reuses formation validation (0.3399ms)
+✔ desktop fixture window uses five compact opponent codes before overflow (0.3508ms)
+✔ desktop planner keeps the club column readable without horizontal overflow (1.263ms)
+✔ custom player pool uses horizontal scrolling when selected columns exceed the container (1.3603ms)
+✔ every desktop player-pool column has a tooltip (18.5276ms)
+✔ Russian player-pool headers stay compact and contained inside their columns (0.6147ms)
+✔ pitch cards expose direct captain and removal actions, with replacement outside the card (0.3882ms)
+✔ squad cards show three upcoming opponents without a remaining-fixtures counter (0.218ms)
+✔ squad player pool offers imported Wyscout aggregates as optional columns (0.236ms)
+✔ custom player table keeps one-line headers and the action as fixed column five (0.4534ms)
+✔ custom player table keeps the player name visible during horizontal scrolling (0.7649ms)
+✔ player table exposes per-field advanced filters and detailed forecast cell tooltips (2.0112ms)
+✔ custom player pool restores minutes and confidence under the name with detailed column help (2.5658ms)
+✔ each account can resize player-pool columns and persist the widths (0.8854ms)
+✔ squad player pool exposes a real five-round alternative forecast (0.3154ms)
+✔ squad cards distinguish next-round FP from a three-round forecast (0.6107ms)
+✔ squad cards retain a compact position badge (0.2971ms)
+✔ squad cards place the compact team name in the top-left corner (0.3614ms)
+✔ squad cards show captain to the left and price to the right of the player photo (1.9327ms)
+✔ squad cards lazy-load locally cached FotMob player photos with a fallback (0.408ms)
+✔ planner exposes five persisted round snapshots and shifts forecasts to the active round (0.3099ms)
+✔ display-only Alt FP renders in the desktop pool, mobile pool, and squad card (42.5443ms)
+✔ planner removes planning settings but keeps the current history settings when saving (0.7368ms)
+✔ player pool exposes team, price, local match-scope and typed XLSX export controls (0.9214ms)
+✔ player-pool XLSX follows the selected optional-column order (1.021ms)
+✔ every one-round forecast exposes sortable points-per-price asset efficiency (0.4981ms)
+✔ squad drops retired columns and preserves primary/Alt formula tooltips (1.2713ms)
+✔ player-pool controls use two desktop rows and the search targets only player names (0.7445ms)
+✔ preset and advanced-filter popovers are not clipped by the player-pool toolbar (0.2435ms)
+✔ name search, sorting and rendering operate on arrays before virtual rows mount (0.4667ms)
+✔ player pool keeps desktop virtualization but uses bounded normal page flow on touch screens (0.7734ms)
+✔ touch roster exposes visible large actions and one-step pool replacement (0.689ms)
+✔ table forecast tooltips and compact controls cover both English and Russian (1.0694ms)
+✔ every player-pool value cell gets player-specific provenance and arithmetic (1.0638ms)
+✔ player-pool columns use compact padding and allow narrow saved widths (0.4195ms)
+✔ Sports.ru XLSX price import is not exposed on the squad page (0.0925ms)
+✔ squad page shows source freshness and has no data-tools menu (0.2133ms)
+✔ worker handler calculates transfer suggestions without using the UI thread contract (1.7985ms)
+✔ formula adaptation detail URL preserves the active history sample and removes squad state (2.8563ms)
+✔ formula adaptation detail URL is unavailable when the player pool has no server source (0.1601ms)
+✔ short formula tooltip keeps the arithmetic but omits coefficient tables (37.7526ms)
+✔ detailed formula tooltip preserves every coefficient table (3.3334ms)
+✔ double-round formula tooltip shows the summed total and both fixture calculations (3.5602ms)
+✔ advanced panel filters every visible franchise-squad column (1.946ms)
+✔ numeric ranges exclude missing values only when that column is filtered (0.5267ms)
+✔ live rows are re-sorted by the active metric and missing values stay last (1.0854ms)
+✔ verified Sports.ru name replaces the FotMob label without losing the fallback (2.3011ms)
+✔ compact Machete player table displays provider short names with full-name fallback (1.205ms)
+✔ team cell tooltip expands the compact club name (33.8344ms)
+✔ value tooltip expands a concrete total with its selected sample (0.8344ms)
+✔ form tooltip still explains match scores when the display value is null (1.2107ms)
+✔ raw appearance probability never invents a matches over matches numerator (0.9364ms)
+✔ rating tooltip explains its independent 10-match FotMob sample (0.7581ms)
+✔ forecast efficiency tooltip shows the exact points divided by price arithmetic (0.5418ms)
+✔ draft survives reload with captain, locks, rounds and transfers; saved/expired/foreign drafts are rejected (2.3811ms)
+✔ draft retention keeps at most eight entries without touching other session storage (2.884ms)
+✔ draft quota uses encoded bytes for Unicode as well as ASCII (1.116ms)
+✔ keyboard resize honors bounds and accelerated steps without handling unrelated keys (0.2954ms)
+✔ projection detail URL preserves history filters and drops squad state (2.2357ms)
+✔ compact FO/Alt tooltip keeps only total and every arithmetic term (49.0361ms)
+✔ projection detail tooltip renders formula arithmetic lazily returned by the detail route (14.3455ms)
+✔ projection detail request cache is bounded by entries and bytes (19.5529ms)
+✔ short FP and Alt tooltips stay narrow while detailed calculations keep extra room (5.1524ms)
+✔ price header becomes a dollar sign only below the compact threshold (0.9472ms)
+✔ auto-submit cancels a delayed filter navigation before explicit actions (0.943ms)
+✔ auto-submit clears its timer on submit and unmount (0.2077ms)
+✔ the delayed callback stops being pending before it navigates (0.1759ms)
+✔ empty sortable values stay after numbers in both directions (1.1341ms)
+✔ numeric zero sorts as a number rather than an empty value (0.2295ms)
+✔ segmented control arrow keys move and wrap across options (1.0034ms)
+✔ segmented control Home and End keys select boundaries (0.1664ms)
+✔ segmented control ignores unrelated or invalid keyboard input (0.2299ms)
+✔ LeagueFlag renders an accessible SVG flag (11.4951ms)
+✔ ScoreHeatCell renders formatted values with heat variables (33.8415ms)
+✔ ActiveFilterChips renders removal and reset links (5.1103ms)
+✔ buildCurrentLinkHref preserves query state (0.7594ms)
+✔ FDR components keep one fixture fill while showing difficulty with a separate class (1.1959ms)
+✔ PlayerHoverCard content renders player summary and fixture pills (3.0132ms)
+✔ league scopes run sequentially and a failed league does not stop later leagues (38.0505ms)
+✔ explicit cancellation still stops the sequential scope runner (0.266ms)
+✔ job-level incremental scopes retain upcoming fixtures for a targeted league (1.6229ms)
+✔ targeted incremental scopes reject disabled or unknown leagues (0.7365ms)
+✔ canonical scope evidence fails when any required alias scope fails (0.6557ms)
+✔ canonical scope evidence deduplicates fixture ids across successful aliases (0.2503ms)
+✔ a newer failed exact ingestion attempt invalidates an older success (1.8006ms)
+✔ a failed tournament does not invalidate successful RPL evidence from the same job (0.2253ms)
+[core_data] FotMob matchDetails unavailable for 1000008820: empty payload; skipping matchDetails fetch until FotMob exposes a usable payload.
+[core_data] Requested FotMob match 4813374 resolved to canonical match 4813595; storing canonical payload under its real id.
+✔ scope discovery uses league-season fixtures only and does not load team history (5.1755ms)
+✔ scope validation blocks before matchDetails fetching (3.6812ms)
+✔ upcoming fixtures are persisted without requesting unavailable match details (0.194ms)
+✔ scheduled fixture-only ingestion persists the match and never requests details (3.5462ms)
+✔ finished fixture metadata is re-applied after detailed ingestion (2.8639ms)
+✔ unavailable FotMob matchDetails are skipped instead of failed (2.1697ms)
+✔ required detailed FotMob matchDetails fail instead of creating partial data (0.9285ms)
+✔ canonical FotMob matchDetails keep the requested scope league and season (18.6755ms)
+✔ shallow FotMob payloads are not marked final raw payloads (37.7431ms)
+✔ match payload persistence creates placeholder teams for player stat team references (8.8252ms)
+✔ match payload persistence repairs player stat team links from shot ownership (2.8802ms)
+✔ player placeholder creation ignores invalid ids and deduplicates references (0.3624ms)
+✔ stats repositories skip invalid required ids and null invalid optional relation ids (1.8027ms)
+✔ canonical league matcher folds known split tournament names (5.919ms)
+✔ league alias env parser supports compact target-source groups (1.1343ms)
+✔ alias expansion keeps canonical scope first and appends source scopes (0.4327ms)
+✔ initial backfill seasons follow calendar policy (2.8047ms)
+✔ UEFA club tournaments use only the current autumn-spring season (2.6838ms)
+✔ domestic cup tournaments use the latest two autumn-spring seasons (0.2674ms)
+✔ incremental updates use current seasons instead of initial backfill seasons (0.4015ms)
+✔ summer incremental updates scan national leagues and omit every tournament (0.3925ms)
+✔ incremental tournament scans resume outside the June 5 through September 1 window (0.3093ms)
+✔ quick current league backfill uses only Premier League current season (0.2615ms)
+✔ quick current league backfill follows new season after summer rollover (0.4017ms)
+✔ Eerste Divisie backfill keeps two complete feeder seasons plus the upcoming season (0.27ms)
+✔ Liga Portugal 2 backfill keeps two complete feeder seasons plus the upcoming season (0.2677ms)
+✔ production ingestion excludes non-target leagues (0.7999ms)
+✔ January retention keeps only the latest two spring-autumn seasons (35.424ms)
+✔ July retention keeps only the latest two autumn-spring seasons (0.9925ms)
+✔ non-retention dates do not activate cleanup by default (0.3116ms)
+✔ tournament league config is not inferred as a domestic retention season (0.712ms)
+✔ shared parser normalizes match payload without embedding raw shot payloads (6.5265ms)
+✔ shared parser uses the first valid match date candidate (2.6712ms)
+✔ shared parser reads nested lineup player stats for fantasy scoring (3.1276ms)
+✔ shared parser reads FotMob page playerStats maps (2.4677ms)
+✔ shared parser creates players referenced only by match events (1.807ms)
+✔ production deploy automatically applies bounded retention after promotion (1.0338ms)
+✔ production retention keeps current plus one rollback release by default (1.6647ms)
+✔ production forecast working sets run in a disposable child process (0.3793ms)
+✔ a roster without a birthday preserves the verified player birthday through repeated imports (2.2866ms)
+✔ core team repository does not overwrite a named team with a FotMob placeholder (1.5333ms)
+✔ FotMob roster deactivation preserves Sports.ru authoritative starter rows (0.4174ms)
+✔ deactivating missing season teams also retires their active roster and starter flags (0.4182ms)
+✔ FotMob roster sync takes ownership when an authoritative Sports.ru row appears in FotMob (1.1142ms)
+✔ stale FotMob membership cannot reclaim a player from an official transfer override (0.3531ms)
+✔ FotMob refreshes the target club without removing an official transfer marker (0.4539ms)
+✔ scope guard blocks excessive match counts before detail fetching (6.3837ms)
+✔ scope guard blocks implausible date spans (0.3926ms)
+✔ scope guard rejects matches from another league (0.2608ms)
+✔ scope guard allows alias fixtures for canonical league scopes (0.3365ms)
+✔ season roster sync normalizes FotMob short season labels (1.9763ms)
+✔ incremental roster planning can follow FotMob provider current season (0.3076ms)
+✔ equal league weights and the inclusive calendar range (19.5311ms)
+✔ calendar dates include different round numbers across leagues without complete xFO (1.5531ms)
+✔ legacy and base-XI scoring stay distinguishable during snapshot replacement (0.7572ms)
+✔ missing model / xFO values do not become a zero or rank (0.693ms)
+✔ freeze rate uses filtered denominator and excludes current outcomes (1.026ms)
+✔ reject bad bounds, unrecognized leagues and previous seasons (1.7563ms)
+✔ Moscow dates include the whole final day and normalize legacy naive UTC cutoffs (0.8017ms)
+✔ personal style and xFO comparisons include reserve, frozen and personal-only rounds (0.6865ms)
+✔ virtual group aggregates personal histories and has no freeze denominator (0.6677ms)
+✔ unavailable lineups remain in personal history and coverage without invented metrics (1.2502ms)
+✔ franchise purchase explanations keep tournament scope while virtual groups use personal rounds (0.7405ms)
+✔ current forecasts describe only the last selected lineup, historical values retain the full range (0.4338ms)
+✔ display abbreviations remove whole filler words, preserving canonical names (2.2797ms)
+✔ ambiguous abbreviations fall back to distinguishable full names (0.2292ms)
+✔ bounded layout keeps every label and never mutates chart coordinates (340.1276ms)
+✔ dense labels stay close to their own point without moving data (79.3435ms)
+✔ joint layout is deterministic across input order and uses measured widths (55.8434ms)
+✔ crowding never discards the distinguishing second word entirely (1.8891ms)
+✔ sorted ranks are exactly equal to the historical algorithm for ties, nulls, empty and singleton populations (2572.382ms)
+✔ API-01: streamed body limit cannot be bypassed by omitted Content-Length (56.3395ms)
+✔ OPT-01 full 1000-player pool returns a valid bounded incumbent (545.5458ms)
+✔ RULE-01: 17 active, positions, duplicates, clubs and appreciated capital (1.1418ms)
+✔ RULE-03: official week remains week 1 on 7 September, unknown boundaries do not reset (0.3112ms)
+✔ RULE-04/ING-03: exact seconds, null, odd saves and Isaev control (0.7259ms)
+✔ RULE-05/OPT-02: sequential return purchase spends two operations; no official mutation (0.9442ms)
+✔ UI-02: provider lock and time guard are independent from keep (1.5971ms)
+✔ MOD-02: E[floor(SV/2)], exclusive starter distribution and no future leakage (0.7147ms)
+✔ OPT-01: exact small pool matches brute force; timeout is not infeasible (3.8348ms)
+✔ ING-02: actual Sports.ru envelope, sport gate and duplicate quarantine (1.0542ms)
+✔ UI-03: null sorts last in both directions (0.7005ms)
+✔ raw expected goals and source inputs explain FP without reversing rounded contributions (2.2466ms)
+✔ each opponent changes attacks, preserves penalties and accounts for participation exactly once (3.1357ms)
+✔ unavailable, mixed, stale, future, suspended and started markets never change expectations (0.4454ms)
+✔ both clubs corroborate the current provider week rather than an earlier assignment (32.7953ms)
+✔ a single club and disagreeing club weeks cannot authorize a correction (1.144ms)
+✔ stale, future, missing and invalid week observations preserve last-good data (2ms)
+✔ exact Moscow date, opponent and home/away are required; ambiguous official matches are deferred (1.9344ms)
+✔ contradictory duplicate rows from one club cannot masquerade as agreement (0.5149ms)
+✔ joint forecast applies participation once and retains odd saves (2.0599ms)
+✔ ownership intervals lose sold games and never acquire games already played (4.5477ms)
+✔ historical prior stabilizes a short season without adding 68 old games as current facts (2.22ms)
+✔ goals, assists, shots, penalties and plus-minus affect one additive points formula (2.0146ms)
+✔ missing observations retain null; goalies use official scores and formatting never leaks long decimals (0.9346ms)
+✔ protocol archive sums exact seconds, excludes DNP, validates identity and keeps missing telemetry null (2.7736ms)
+✔ archive shots enter EP with capped paired history; FP/participation and larger Sports coverage stay intact (2.1294ms)
+✔ catalog freshness and unknown full-success time remain separate before the first completed cycle (6.0239ms)
+✔ legacy pending and partial cycles do not prove a full successful refresh (0.2256ms)
+✔ source failure and pending work preserve the previous full success across process restarts (1.6959ms)
+✔ only DONE advances full success to completion time (14.391ms)
+✔ interrupted refresh retains the latest completed error without appearing permanently active (0.8011ms)
+✔ status storage and public summaries stay bounded without accumulating run history (1.2553ms)
+✔ date and time always use Moscow instead of the visitor timezone (0.202ms)
+✔ requiredStringParam accepts short non-empty strings (0.9135ms)
+✔ requiredStringParam rejects missing strings with structured api errors (0.5218ms)
+✔ requiredSearchParam reads required URLSearchParams values (0.2191ms)
+✔ withApiHandler converts ApiError into structured JSON (4.2794ms)
+✔ finiteNumberQueryParam distinguishes missing values from explicit zero (0.9514ms)
+✔ finiteNumberQueryParam accepts finite numbers only (0.1832ms)
+✔ auth rate-limit buckets include normalized email and client IP (2.4946ms)
+✔ client IP parser prefers the first x-forwarded-for address (34.025ms)
+✔ internal returns reject external and ambiguous URL interpretations (1.7938ms)
+✔ auth helpers fail softly when DATABASE_URL is missing (58.9185ms)
+✔ safe brace expansion remains callable for legacy minimatch consumers (39.0073ms)
+✔ toCsv escapes commas, quotes, and new lines (4.2067ms)
+✔ independent production server bundles reuse one database client and query listener (139.2853ms)
+✔ database URL detection ignores empty env values (0.9793ms)
+✔ expiring promise cache coalesces concurrent loaders (2.1043ms)
+✔ expiring promise cache reloads expired values and removes rejections (0.7891ms)
+✔ expiring promise cache enforces a bounded entry count (0.4537ms)
+✔ expiring promise cache evicts the least recently used value by byte budget (0.6033ms)
+✔ expiring promise cache reports hit, miss, build, byte and entry metrics (0.3215ms)
+✔ formatDateTime includes date, hours, and minutes in Moscow time (35.0628ms)
+✔ formatDateTime keeps an unknown starting-XI change visibly empty (0.1981ms)
+✔ formatCompactScore keeps narrow squad-card values readable (5.1717ms)
+✔ Wyscout player importer reads generated xlsx rows and market values (168.8104ms)
+✔ Wyscout team stats importer reads generated xlsx match pairs (54.3686ms)
+✔ Machete leagues put the requested priority competitions first (27.6096ms)
+✔ fantasy squad leagues use the explicit product competition allowlist (0.2456ms)
+✔ logger writes readable text logs (1.4661ms)
+✔ logger writes structured JSON logs (3.779ms)
+✔ logger redacts sensitive fields recursively (5.6445ms)
+✔ all user-facing player tables and visuals use the shared compact display helper (64.4622ms)
+✔ legacy surface-specific player-name compactors are removed (14.8ms)
+✔ player display names use first initial and surname (1.2403ms)
+✔ player display names preserve multi-word surname particles (0.1882ms)
+✔ player display names normalize surrounding whitespace without mutating the full source name (0.1803ms)
+✔ fantasy positions use the site-wide forward-to-goalkeeper order (1.9874ms)
+✔ fantasy position aliases share ranks and unknown values remain last (0.3239ms)
+✔ watchlist metadata preserves existing data and round-trips a normalized short team name (1.9163ms)
+✔ watchlist metadata ignores malformed short names (0.2352ms)
+✔ FPL forecast adapter uses FPL weights, excludes recoveries and marks missing official history (1.9028ms)
+✔ FPL forecast recoveries never create points directly (0.2464ms)
+✔ official-history bonus and defensive-contribution estimates are appearance weighted and capped (1.0032ms)
+✔ FPL position scoring matches the 2026/27 direct-points table (0.36ms)
+✔ goalkeeper never receives defensive-contribution forecast points (0.6581ms)
+✔ FPL double gameweek forecast sums independently scored fixtures (0.8039ms)
+✔ FPL official live stats map to the versioned rules input (0.3904ms)
+✔ FPL bootstrap preserves provider ids/codes and never derives identity from names (5.2065ms)
+✔ FPL bootstrap fails closed for malformed or ambiguous collections (0.7233ms)
+✔ FPL fixtures keep provider event membership and preserve unassigned postponed matches (1.6378ms)
+✔ FPL public client retries unavailable responses and omits credentials (45.9901ms)
+✔ FPL public client does not retry permanent HTTP errors (0.7012ms)
+✔ FPL relay derives only allowlisted paths from official URLs (0.5995ms)
+✔ FPL relay refuses invalid socket paths, credentials, hosts, and paths (0.4466ms)
+✔ FPL picks parser accepts only a complete published 15-player snapshot (0.7407ms)
+✔ published gameweek selection is deadline- and release-gated (0.43ms)
+✔ FPL chip definitions preserve official halves and all four chip types (1.5515ms)
+✔ FPL squad rules enforce the 15/100/club/formation contract (0.7776ms)
+✔ FPL chip validation and scoring are provider-specific (0.9175ms)
+✔ FPL live event parser keeps official totals, raw stats and per-fixture explanations (0.7937ms)
+✔ FPL live parser accepts numeric ancillary metrics but protects scoring fields (0.5492ms)
+✔ Championship calendar uses the canonical Sports.ru fantasy route (0.9958ms)
+✔ Sports.ru GraphQL snapshot loads every position from the current season (35.991ms)
+✔ Sports.ru snapshot fails closed when no current season exists (0.9563ms)
+✔ Sports.ru snapshot retains the hidden stat-player identity and birth date (13.7515ms)
+✔ Sports.ru snapshot keeps same-name players from different teams (2.407ms)
+✔ Sports.ru snapshot corrects Arman Nahany before a provider typo can overwrite Hakeem Agboluaje (1.4521ms)
+✔ Sports.ru snapshot uses the public mononym instead of an unwanted legal surname (1.1632ms)
+✔ Sports.ru tournament HRU is derived from a fantasy URL (0.2453ms)
+✔ Sports.ru profile accepts only a numeric ID or canonical profile URL (0.311ms)
+✔ latest published Sports.ru squad falls back from an open tour to the latest public tour (1.3081ms)
+✔ expected Sports.ru tour ID skips an exposed future current squad and loads the matching archive (0.9236ms)
+✔ readFormDataOrNull returns parsed form data (31.6211ms)
+✔ readFormDataOrNull returns null for non-form request bodies (0.9851ms)
+✔ readFormDataWithLimit rejects oversized requests before parsing form data (1.1969ms)
+✔ multipartBodyLimitForFileBytes allows fixed multipart overhead per file set (0.217ms)
+✔ readJsonObject returns parsed JSON objects (27.365ms)
+✔ readJsonObject falls back to an empty object for non-object JSON (1.5104ms)
+✔ readJsonObject falls back to an empty object for malformed or empty bodies (0.907ms)
+✔ readJsonObjectOrNull preserves the difference between empty objects and invalid bodies (1.5184ms)
+✔ keeps arithmetic precedence, parentheses, unary operators and metric normalization (9.8664ms)
+✔ power is right associative and binds more tightly than unary signs (1.4656ms)
+✔ supports the whitelisted numeric functions (1.9735ms)
+✔ if is lazy and treats zero as false (0.6124ms)
+✔ comparison functions return numeric booleans for editable thresholds (2.5462ms)
+✔ poisson_groups returns the expected number of complete scoring groups (1.171ms)
+✔ coalesce is lazy and distinguishes missing metrics from numeric zero (0.2884ms)
+✔ validation parses without evaluating runtime metric values (1.1342ms)
+✔ rejects unknown functions, invalid arity and malformed calls (0.672ms)
+✔ reports runtime domain, division and finite-result errors (0.614ms)
+✔ returns both value and term-by-term decomposition (0.6628ms)
+✔ breakdown preserves the structural sign even for double negatives (0.2874ms)
+✔ resolved formula arithmetic keeps real inputs readable to four decimal places (0.2415ms)
+✔ enforces formula length, token and nesting limits (1.2145ms)
+✔ reuses parsed formulas across scoring, validation and breakdown calls (0.2589ms)
+✔ keeps the parsed formula cache bounded by entries and estimated bytes (3.0774ms)
+✔ custom Expected FP formulas use one-match projected values (5.9558ms)
+✔ custom Actual FP formulas keep aggregate values (60.4186ms)
+✔ default Expected FP prefers xG and xA when projection stats are available (0.416ms)
+✔ 80-minute full-match bonus does not inflate per-90 event rates to 90 minutes (0.1843ms)
+✔ built-in Machete model does not leak fixture Alt formulas into historical aggregates (0.503ms)
+✔ Machete user settings are account-scoped and never trigger global snapshot recalculation (1.1837ms)
+✔ global Machete model editing remains on an admin-only route (0.1717ms)
+✔ user scoring preferences are source-keyed, user-owned, and cascade on account deletion (1.1101ms)
+✔ user preference overlays only Alt FP while Expected FP and Actual FP stay global (3.9127ms)
+✔ empty user positions inherit global Alt formulas and disabled preferences use the complete global model (50.263ms)
+✔ resolving one user's model does not mutate the global model or another user's result (0.2816ms)
+✔ user settings parser accepts only Alt fields and clears stale personal Actual fields (40.1178ms)
+✔ database resolver reads only the requested user and source (1.222ms)
+✔ normalizes FotMob metric pitch coordinates to percentages (1.1827ms)
+✔ stored normalized coordinates are authoritative for drawing (0.2025ms)
+✔ raw FotMob coordinates are normalized only when stored percentages are missing (0.1584ms)
+✔ fractional stored normalized coordinates are accepted as 0 to 1 percentages (0.1447ms)
+✔ player last team matches uses latest team matches, not player appearances (2.7429ms)
+✔ team conceded shots returns shots by opponents (0.381ms)
+✔ overlay comparison keeps attacking and conceded layers separate (0.6067ms)
+✔ local upload root stays bounded to storage/uploads by default (1.3216ms)
+✔ the documented relative upload root resolves to the same bounded directory (0.3694ms)
+✔ an explicit absolute upload root remains supported (0.3751ms)
+✔ upload filenames stay sanitized (0.2531ms)
+✔ parseTableExportFormat accepts csv and xlsx only (1.5873ms)
+✔ Russian Excel CSV uses a UTF-8 BOM and semicolon columns (1.2019ms)
+✔ tableExportResponse emits csv files (27.3286ms)
+✔ tableExportResponse emits xlsx files (128.3687ms)
+✔ compact team display prefers the explicit provider short name (0.9958ms)
+✔ compact team display reads normalized FotMob season metadata (0.181ms)
+✔ compact team display falls back to the canonical full name for unsafe or empty short data (0.1682ms)
+✔ workflow validator: explicit standalone receipt passes both mirrored CLIs without a connection kit (1136.4401ms)
+✔ workflow validator: explicit entrypoint supplies standalone mode without a local receipt (491.6034ms)
+✔ workflow validator: standalone still requires local canon/bootstrap files (572.8826ms)
+✔ workflow validator: invalid standalone status fails (460.8273ms)
+✔ workflow validator: invalid standalone stateSource fails (515.815ms)
+✔ workflow validator: invalid standalone schemaVersion fails (627.66ms)
+✔ workflow validator: an unsupported explicit mode does not fall back to the entrypoint (602.4024ms)
+✔ workflow validator: conflicting explicit declarations fail (707.29ms)
+✔ workflow validator: malformed workflow { fails with structured output (499.117ms)
+✔ workflow validator: malformed workflow null fails with structured output (501.8474ms)
+✔ workflow validator: malformed workflow [] fails with structured output (576.4337ms)
+✔ workflow validator: valid managed receipt and matching setup context pass (497.8773ms)
+✔ workflow validator: managed setup context bundleVersion mismatch fails (258.8627ms)
+✔ workflow validator: managed setup context stateSource mismatch fails (254.2497ms)
+✔ workflow validator: existing managed receipt without an explicit mode remains supported (274.973ms)
+✔ workflow validator: a managed connection without its receipt fails (240.1208ms)
+✔ workflow validator: managed receipt cannot omit its file manifest (236.8083ms)
+✔ workflow validator: malformed managed connection fails with structured output (234.8561ms)
+✔ workflow validator: contradictory entrypoint modes fail (247.8337ms)
+✔ Alt warning checks only the starting XI and ignores the bench (2.2943ms)
+✔ franchise preview keeps squad order and read-only selection flags (35.6429ms)
+✔ squad planner always uses the current league season without a season control (1.131ms)
+✔ team page keeps season selection inside Stats window only (0.2291ms)
+✔ forecast availability requires history, position, score, minutes, confidence, and update date (3.1845ms)
+✔ basic stat completeness accepts numeric zero but rejects absent performance data (0.7856ms)
+✔ data quality gate reports coverage and unverifiable ingestion latency (1.3144ms)
+✔ data-quality schedule parses multiple league seasons and removes duplicates (1.6ms)
+✔ data-quality schedule rejects malformed and non-positive league ids (0.5247ms)
+✔ data-quality schedule applies beta defaults (0.4121ms)
+✔ data-quality schedule validates configured thresholds (0.3297ms)
+✔ team projection uses multiplicative venue strengths and Poisson clean sheets (3.5409ms)
+✔ minutes-weighted participant shares conserve every forecast team total (8.5058ms)
+✔ per-90 exposure cannot exceed the player's expected-minutes share (1.0898ms)
+✔ Sports.ru components use P(appearance), P60, P90 and P60 clean-sheet eligibility (1.6024ms)
+✔ threshold components use expected official scoring groups without rounding (0.8357ms)
+✔ zero-minute players may omit event rates without producing NaN (0.3582ms)
+✔ missing relevant player data is an explicit structured error (1.0348ms)
+✔ positive team mass with a zero allocation denominator fails closed (0.6676ms)
+✔ incoherent probability and minute inputs fail closed (0.4103ms)
+{"level":"info","scope":"fantasy-player-pool-refresh-queue","message":"Processed CURRENT_XI team refresh requests.","timestamp":"2026-10-21T07:45:01.910Z","leagueId":"48","season":"2026/2027","teamIds":["10","20"],"snapshotId":"ready","acknowledged":2}
+{"level":"info","scope":"fantasy-player-pool-refresh-queue","message":"Processed CURRENT_XI team refresh requests.","timestamp":"2026-10-21T07:45:01.912Z","leagueId":"55","season":"2026/2027","teamIds":["30"],"snapshotId":"ready","acknowledged":1}
+{"level":"info","scope":"fantasy-player-pool-refresh-queue","message":"Processed CURRENT_XI team refresh requests.","timestamp":"2026-10-21T07:45:01.914Z","leagueId":"48","season":"2026/2027","teamIds":["10"],"snapshotId":"ready","acknowledged":0}
+{"level":"info","scope":"fantasy-player-pool-refresh-queue","message":"Processed CURRENT_XI team refresh requests.","timestamp":"2026-10-21T07:45:01.914Z","leagueId":"48","season":"2026/2027","teamIds":["10"],"snapshotId":"new-ready","acknowledged":1}
+✔ enqueue deduplicates a mass-import team list into one atomic upsert without calculating (13.83ms)
+✔ worker groups teams by league and season and drains only a bounded batch (3.4177ms)
+✔ a new flag event arriving during a calculation survives acknowledgment even at the same timestamp (0.5673ms)
+✔ failed calculations retain requests with backoff and do not overwrite a newer event (0.7276ms)
+✔ future retries do not run until available and an empty queue does no computation (0.2518ms)
+✔ manual and imported XI enqueue with their transaction client; no heavy refresh in web writers (2.4848ms)
+{"level":"error","scope":"fantasy-player-pool-refresh-queue","message":"CURRENT_XI refresh failed; preserved READY snapshot and queued a bounded-backoff retry.","timestamp":"2026-10-21T07:45:01.914Z","leagueId":"48","season":"2026/2027","teamIds":["10","20"],"error":"Error: XI changed during calculation"}
+✔ team refresh includes Sports.ru players missing from the active FotMob roster (1.7565ms)
+✔ team refresh follows authoritative transfers and does not retain a player in the old team (0.1962ms)
+✔ mass team refresh deduplicates overlapping roster sources (0.1863ms)
+✔ a Sports.ru-only team is still recalculated when it has no FotMob memberships (0.1887ms)
+✔ XI vectors are independent of query order and repeated identical memberships (34.7613ms)
+✔ a flag edit changes only its team's revision, including removal of the last starter (0.3937ms)
+✔ a second team changed before queue pickup cannot disappear behind a global revision (0.3852ms)
+✔ a nonstarter transfer refreshes both old and new teams even without changing starter IDs (0.3554ms)
+✔ Foontasy admin scopes accept only numeric league IDs and safe assistant slugs (3.9484ms)
+✔ Foontasy catalog covers every national assistant and keeps cup variants distinct (0.4275ms)
+✔ current Foontasy scopes expose the exact UEFA query and hide stale European cup seasons (0.9091ms)
+✔ admin requests cannot inject an unconfigured league scope (0.3697ms)
+✔ forecast asset efficiency is points per one Sports.ru price unit (1.468ms)
+✔ forecast asset efficiency stays empty without a valid forecast and price (0.2979ms)
+✔ rolling backtest predicts a match from earlier matches only (6.1365ms)
+✔ changing the target outcome cannot change its prediction or baseline (33.9732ms)
+✔ zero-minute matchday rows reduce the round forecast instead of disappearing (0.9268ms)
+✔ playing-time groups use historical starts and minutes (0.2253ms)
+✔ quality gate requires the configured improvement in three position groups (0.3196ms)
+✔ shared match player stats expose the metrics expected by the Machete fantasy model (2.7061ms)
+✔ clean sheets and goals conceded are derived from shared match/team relations when player stats omit them (40.0551ms)
+✔ fantasy price workbook normalizes Sports.ru position labels (7.8677ms)
+✔ fantasy price workbook keeps FotMob player-name hints from the first column (0.5899ms)
+✔ calibration does not learn from another target on the same date (34.9166ms)
+✔ five-observation horizon uses only complete chronological player windows (32.9389ms)
+✔ fixed production fit is deterministic and exposes the preselected holdout (2.0264ms)
+✔ maps supported Fonbet competition labels and rejects outright/result groups (3.294ms)
+✔ matches transliterated teams only inside the same league and kickoff (3.5799ms)
+✔ does not guess when two candidates have effectively equal names (0.8892ms)
+✔ keeps a fixture when only one team has both direct markets (0.2429ms)
+✔ Foontasy archive waits for five distinct rounds before proposing a replacement formula (1.4806ms)
+✔ Foontasy archive proposes a round-held-out calibration after five rounds (1.5734ms)
+✔ first fixture points are extracted only from a valid model breakdown (0.2626ms)
+✔ Foontasy source contract keeps the 0.3.19 rollback writer compatible (8.6488ms)
+✔ Foontasy round parser recognizes the Russian tour heading without source-encoding ambiguity (1.7323ms)
+✔ new Foontasy session cookies replace pre-login values (20.1995ms)
+✔ Foontasy parser rejects a structurally populated but uncalculated all-zero draft (1.3238ms)
+✔ Foontasy parser requires at least 100 calculated player forecasts (0.8747ms)
+✔ Foontasy cup gate accepts a calculated final-sized squad pool but still rejects all-zero rows (0.7816ms)
+✔ Foontasy UEFA import requires a distinct payload and a preserved source marker (23.5675ms)
+✔ Foontasy round parser understands domestic ordinals and cup stages (0.94ms)
+✔ Foontasy import gates reject the wrong provider phase and an unmapped player universe (0.6049ms)
+✔ Foontasy cup rounds keep the Sports phase ID and continue canonical numbering (2.3634ms)
+✔ inverse Poisson reconstructs P(G >= 2) (2.7811ms)
+✔ team source follows odds -> xG form -> goals fallback (0.6992ms)
+✔ history and odds newer than fixture are not leaked (0.5845ms)
+✔ expected minutes formula, XI flag and prior prevent a short sample from becoming full per90 exposure (0.8829ms)
+✔ new starter uses a roster-adjusted team-position fallback (0.3227ms)
+✔ current roster XI flag separates new starters from bench players (0.2274ms)
+✔ double gameweek is two fixtures and partial T5 reports honest coverage (5.5765ms)
+✔ xg_share v2 allocates team goals by blended observed shares, capped by team totals (0.8078ms)
+✔ a part-time per-90 outlier can never receive more than the whole team expectation (0.5408ms)
+✔ without team xG history the model degrades to exposure rates and reports null shares (0.5077ms)
+✔ a league without any player xG data splits the team total uniformly instead of failing (0.6239ms)
+✔ team without a recognized goalkeeper does not allocate fictional saves (0.4058ms)
+✔ model calculation has no Foontasy T1 input and cannot modify imported T1 (1.0728ms)
+✔ six adaptations are independent finite forecasts and the artifact excludes weather (4.4361ms)
+✔ detailed adaptations expose every additive term and reproduce the displayed forecast (0.9146ms)
+✔ double round adaptations score each fixture independently and expose both breakdowns (2.4832ms)
+✔ player adaptations calculate 3/5/10 form and recovery/pass interactions from prior matches (1.4869ms)
+✔ team profiles expose possession, opponent pass accuracy, zones and rest without weather (5.3202ms)
+✔ Joint receives the same expected-minute and event-exposure inputs as FO and Alt (0.306ms)
+✔ minute exposure changes Joint but does not alter position-only calibration (1.6697ms)
+✔ Joint keeps the FO/Alt starter-minute decline below 60 without rescaling 60+ forecasts (1.5838ms)
+✔ promoted Formula Joint profiles use the top-flight FNL adapter without overriding an RPL team (0.7977ms)
+✔ an agreeing FPL price/map exposes inactive players and provider clubs without shared roster writes (76.5063ms)
+✔ published FPL import accepts active wingers while preserving FPL midfield positions and lineup (8.907ms)
+✔ published FPL import rejects invalid inactive roster membership before writes (2.942ms)
+✔ published FPL import rejects invalid different club roster membership before writes (0.5073ms)
+✔ ordinary users cannot override their franchise through a query parameter (1.1622ms)
+✔ admins can switch between both franchises (0.1896ms)
+✔ an unassigned ordinary user gets no franchise data (0.1654ms)
+✔ a completed Worker result rejects expiry or revised ownership/forecast when applied (36.2575ms)
+✔ weak rare players cannot exceed the whole-XI loss budget; inputs are unchanged (3.514ms)
+✔ captain uses this round, while horizon includes each round's XI and captain; bench scores zero (5.3868ms)
+✔ missing ownership/provider mapping and expiry fall back with explicit unavailable status (2.861ms)
+✔ no-op, transfer penalties and symmetric rarity do not reward useless moves (3.6781ms)
+✔ a small negative transfer EP delta is admitted only with a positive strategy delta and B (3.0417ms)
+✔ keeping the squad retains the best observed EP baseline, and cannot exceed its loss budget (2.2278ms)
+✔ five published examples, exact arithmetic and displayed four-digit rounding (2.2201ms)
+✔ monotonic rank, gap and urgency in small and multimillion fields (0.6997ms)
+✔ invalid input and stale state never masquerade as neutral (0.6276ms)
+✔ neutral, single-round and completed competitions (0.5507ms)
+✔ ownership and negative EP do not invent forecasts; deterministic and immutable (3.374ms)
+✔ whole-plan loss budget uses full precision and requires a positive strategic gain (0.5536ms)
+✔ history retains zero/negative scores and no more than six observations (0.8651ms)
+✔ starting XI export uses one team per column and compact FotMob names (19.7037ms)
+✔ starting XI export keeps every active team even when no starter is marked (0.476ms)
+✔ starting XI export uses the model ranking and caps every club at eleven players (1.0824ms)
+✔ player table settings retain ordered columns and clamp per-user widths (2.0162ms)
+✔ advanced player-table presets validate every field and reject unsafe keys (0.3413ms)
+✔ player table persistence uses isolated authenticated saved-view sources (7.2779ms)
+✔ Machete players does not load player statistics until explicit leagues are selected (8.1625ms)
+✔ Machete players accepts multiple explicit league scopes (0.2195ms)
+✔ Machete player table matches the planner customization controls (0.3401ms)
+✔ Machete player cards keep the complete selected metric set and report export failures (0.2389ms)
+✔ raw provider metrics do not duplicate represented base columns (0.2221ms)
+✔ Machete player export preserves selected column order and typed numeric cells (0.2014ms)
+✔ client sorting survives filters and controls exported row order (12.7759ms)
+✔ players table reuses squad forecasts for 1 round and 3, 5 or 10 round horizons (0.4043ms)
+✔ players table omits the six retired formulas while keeping FFO, FO and ALT (0.5633ms)
+✔ value-cell tooltips explain the concrete player value instead of repeating header help (0.3638ms)
+✔ team starting-XI table attaches verified Sports.ru names to FotMob roster rows (8.3174ms)
+✔ planner readiness requires fixtures, an exact passing audit, and a fresh completed ingestion audited afterwards (4.9953ms)
+✔ transfer suggestions stay available for audit-only warnings but stop for missing or stale source data (0.2376ms)
+✔ auto-pick and transfer suggestions share the same source-data blockers (0.1923ms)
+✔ a fresh audit cannot hide missing fixtures, a failed latest ingestion, or an audit made before ingestion (0.3447ms)
+✔ preseason planner readiness uses forecast coverage without pretending the full match-data gate passed (0.3073ms)
+✔ preseason planner readiness still rejects forecast coverage below the configured threshold (0.2248ms)
+✔ planner readiness rejects partial fixture discovery even when the database already contains the full schedule (0.2505ms)
+✔ planner readiness does not treat a normal kickoff after ingestion as a missing fixture (0.2258ms)
+✔ incremental evidence requires an exact successful league-season scope (0.4139ms)
+✔ exact upcoming fixture evidence is deduplicated across canonical source scopes (0.6453ms)
+✔ automatic selection uses only a ready exact scope while an explicit unready season remains selected and flagged (1.6485ms)
+✔ automatic selection returns no season when no exact scope is ready (0.2333ms)
+✔ health rejects a ready automatic planner scope when that exact scope is not scheduled for audit (0.6222ms)
+✔ counts net squad membership including bench, percentages use comparable unchanged participants (2.3848ms)
+✔ returning to baseline, captain and slot changes yield no purchases or sales (0.2293ms)
+✔ reject incomplete, duplicate and malformed rosters without manufacturing sales (0.5181ms)
+✔ top five uses descending unique counts with deterministic ties (14.1144ms)
+✔ round identity chooses the right future plan, and stale or broken plans stay excluded (0.3811ms)
+✔ player search finds canonical nicknames and accented Latin names while preserving Russian name search (1.3711ms)
+✔ the real Rønnow identity is accepted without a core birthday and without losing ø (18.7452ms)
+✔ non-decomposing Latin letters retain their identity tokens across source spellings (0.3502ms)
+✔ player photo URLs accept only numeric FotMob IDs (1.2208ms)
+✔ player photo cache rejects non-PNG payloads (0.2445ms)
+✔ prior-season rate remains after one RPL match and disappears after 900 minutes (1.5599ms)
+✔ unknown archive assists are not treated as confirmed zero (0.1687ms)
+✔ FNL goal and assist proxies use real archive minutes when detailed xG/xA is unavailable (0.364ms)
+✔ archive appearance share supports minutes and fades after eight covered team matches (0.3172ms)
+✔ detailed club-match minutes take precedence over a coarse season appearance archive (0.1945ms)
+✔ short history archive uses real prior minutes instead of assuming 70 minutes per appearance (0.1652ms)
+✔ player identities retain FotMob players when Sports.ru prices are absent (1.9383ms)
+✔ player identities prefer mapped Sports.ru names and positions without hiding fallback rows (0.3177ms)
+✔ player search matches names and teams case-insensitively with accents normalized (1.6215ms)
+✔ all-league player scope uses only forecast-ready seasons (1.9959ms)
+✔ an explicitly selected unready season remains inspectable (0.2241ms)
+✔ Fantasy Football Scout parser isolates team blocks and extracts official player codes (13.4029ms)
+✔ Gazzetta parser extracts both formations, lineups, shirt numbers and entities (4.2064ms)
+✔ LigaInsider directory deduplicates desktop/mobile menus and keeps per-team URLs (1.0215ms)
+✔ LigaInsider team parser selects the visible player, excludes alternatives and derives formation (4.4375ms)
+✔ Fantasy Coach parser selects primary players and records the source gameweek (4.5122ms)
+✔ Fantasy Coach metadata and lineup parser fail closed on malformed or partial payloads (2.7904ms)
+✔ completeness checks reject a partial source page instead of clearing valid starters (1.7339ms)
+✔ player matching handles FFS full names, accents, initials and unique surnames (3.1681ms)
+✔ provider player code is authoritative only when its player is active in the resolved roster (0.2797ms)
+✔ ambiguous duplicate surnames remain unresolved until shirt number disambiguates them (14.2302ms)
+✔ Gazzetta matching handles joined surnames and a FotMob nickname only with the matching shirt number (0.3462ms)
+✔ Bundesliga team matching handles LigaInsider prefixes and German/English aliases (0.6399ms)
+✔ Ligue 1 team matching distinguishes Paris Saint-Germain from Paris FC (0.1966ms)
+✔ source fetch retries a transient failure and validates all twenty teams (63.5774ms)
+✔ LigaInsider fetch discovers and loads all eighteen team pages sequentially (25.9322ms)
+✔ Fantasy Coach fetch selects the latest advertised gameweek and validates 18 by 11 (3.1777ms)
+✔ sync planning resolves all eleven players inside each active team roster (34.0574ms)
+✔ probable XI application is transactional and stores compact provenance without raw HTML (9.2959ms)
+✔ SorareInside unchanged XI records new fixture provenance without cache refresh or flag writes (4.7792ms)
+✔ other automatic source cannot replace protected upcoming XI (1.6118ms)
+✔ a fixture that starts after planning cannot be applied (0.5ms)
+✔ name normalization covers punctuation and non-decomposing Latin letters (0.1229ms)
+✔ Expected and friend Alt defaults contain valid formulas for the full pipeline (6.8468ms)
+✔ legacy Alt per-90 allocations fall back to minute-scaled formulas (0.6579ms)
+✔ friend Alt history formula reproduces minute-adjusted 40/35/25 weighting (0.1902ms)
+✔ expected minutes are stabilized instead of taking a recent-window maximum (0.1791ms)
+✔ default primary and Alt history formulas stay neutral to the fixture-scoped starter floor (0.2974ms)
+✔ 80 expected minutes count as a full match in both projection defaults (0.2379ms)
+✔ Expected team formula uses bookmaker xG only when the line is available (0.2137ms)
+✔ partial override is merged over a selected safe fallback (0.2738ms)
+✔ invalid individual formulas fall back without discarding valid siblings (0.3195ms)
+✔ unsupported version rejects the complete override (0.3123ms)
+✔ full validator reports every missing or malformed formula (0.61ms)
+✔ parser clones its fallback and never mutates shared defaults (0.2231ms)
+✔ Expected and personal Alt pipelines have separate JSON persistence (1.0672ms)
+✔ both web editors post the complete staged formula configuration (0.209ms)
+✔ old snapshot fields are discarded without mutating FFO, FO, ALT or the original row (2.3821ms)
+✔ snapshot batches read older revisions without returning retired fields or duplicate players (39.2386ms)
+✔ all player-table preference versions lose only retired columns and their widths (6.7176ms)
+✔ saved player filters keep the surviving criteria when retired criteria are present (1.3494ms)
+✔ planner and shared history no longer load adaptation models, features, shots or breakdown caches (14.6018ms)
+✔ roster coverage distinguishes empty, partial, full, and oversized XIs (1.1002ms)
+✔ forecast coverage does not mistake a roster with no forecast rows for a complete team (0.2109ms)
+✔ league coverage summarizes complete XIs, rosters, forecasts, and latest flag update (1.0609ms)
+✔ RR baseline exact example, bounds, invalid values and every rest threshold (1.8575ms)
+✔ known lineups are chronological, deduplicated, bounded and immutable; unknown/future rows excluded (69.5617ms)
+✔ short windows use known counts; missing lineups, rest or next fixture remain unknown (0.7705ms)
+✔ RR survives list/Worker serialization, columns persist and explanation shows counts (1.0136ms)
+✔ reliable uses current RR once, preserves EP and keeps old fallback on expiry (0.8167ms)
+✔ legacy/expired snapshots require sequential RR refresh without rejecting old metadata (0.4092ms)
+✔ shared projections move history inputs to the Sports.ru authoritative team (2.2832ms)
+✔ shared league options collapse seasons and prefer the default season per league (70.1706ms)
+✔ shared league season falls back to the league default when requested season is absent (0.449ms)
+✔ shared team options expose the FotMob short name from season metadata (311.0265ms)
+✔ shared team match ids load all finished matches across seasons (1.2695ms)
+✔ shared team match ids take the last N finished matches across seasons (0.3059ms)
+✔ shared team season windows remain scoped to current or previous season (2.0552ms)
+✔ shared team day windows apply a rolling date cutoff (0.3565ms)
+✔ friend window metrics renormalize reduced sample weights without rounding (2.008ms)
+✔ friend window metrics use actual goals and assists only where FotMob xG/xA is missing (0.5334ms)
+✔ friend actual-event fallback preserves the previous-club rate penalty denominator (1.1723ms)
+✔ friend window metrics expose stable raw primitives for every rolling window (0.5798ms)
+✔ friend window primitive metrics use zeroes and an explicit no-data flag (0.2623ms)
+✔ friend expected minutes uses the maximum minutes per match across rolling windows (0.2853ms)
+✔ combined player rows aggregate all selected team scope matches even when roster exists only in one season (10.4664ms)
+✔ combined last match window is applied across selected competitions without hiding statless fixtures (0.9671ms)
+✔ club-minute history counts every recent club match instead of only the player's appearances (2.553ms)
+✔ a new player uses the previous club's recent match calendar including matches he missed (2.102ms)
+✔ shared player rows normalize FotMob positions before applying the position filter (1.4878ms)
+✔ shared player rows calculate visible FotMob rating over 10 matches without widening other metrics (1.1652ms)
+✔ explicit roster scopes keep all-season history inside the selected competition (1.0189ms)
+✔ selected season without matching history keeps the current roster with zero aggregates (0.3796ms)
+✔ new transfers use five recent previous-club matches with a ten-percent penalty and exclude national-team history (1.11ms)
+✔ production club fallback loads only the selected previous club and ten bounded rows (1.5533ms)
+✔ request read context coalesces concurrent roster reads (1.2042ms)
+✔ batch match loader maps multiple exact league-team scopes in one query (0.8004ms)
+✔ match window summary reports official matches separately from parsed player-stat coverage (0.418ms)
+✔ initial exact club-roster match becomes an ID match even after display-name changes (3.0598ms)
+✔ an ID missing from the active club never falls back to a same-name player (0.1596ms)
+✔ ambiguous names and conflicting birthdays are blocked (0.4054ms)
+✔ birthday supports abbreviated names but cannot map an unrelated same-birthday player (0.3723ms)
+✔ reviewed UUID does not confuse two players with the same birthday (0.2726ms)
+✔ verified Alejandro/Alex Pozo UUID still requires the correct date and active club membership (0.199ms)
+✔ reviewed team aliases distinguish Celta from its reserve team (0.7031ms)
+✔ other sources respect upcoming SorareInside predictions only while fixture is future (0.2607ms)
+✔ a price foreign key needs the matching provider, contest, season and player binding (2.9157ms)
+✔ stale, future and undated identity evidence is rejected (0.3417ms)
+✔ competing club or birth-date assignments contribute no identity alias (0.2654ms)
+✔ Rodri resolves through his verified full name and date, without a nickname guess (1.2433ms)
+✔ Makhachkala transliteration resolves by the verified source slug (0.4388ms)
+✔ inactive Groningen member needs corroborated name, full date, exact scope and no competing club (0.5395ms)
+✔ a reviewed UUID cannot bypass independent name corroboration for an inactive member (0.4161ms)
+✔ a current academy identity remains available without an active shared roster (10.2562ms)
+✔ catalog matching rejects contradictory or missing birthdays, weak names and stale evidence (1.7935ms)
+✔ duplicate canonical identities cannot become a catalog match (16.6307ms)
+✔ reviewed Europa club aliases distinguish OFI, Omonia and the two Unions (1.3203ms)
+✔ Sports.ru extension transfer exports the full XI, captains, and goalkeeper-last bench priorities (4.1192ms)
+✔ Sports.ru extension transfer prefers the current season provider ID over an alias (48.9025ms)
+✔ Sports.ru extension transfer fails closed when even one provider mapping is absent (0.8864ms)
+✔ Sports.ru contest HRU uses structured rules and retains the source URL fallback (0.3902ms)
+✔ Sports.ru extension selects the current contest even when an archived season was synced later (0.2891ms)
+✔ Sports.ru CLI accepts both inline and separate argument values (1.7963ms)
+✔ Sports.ru CLI parses explicit booleans without treating false as true (0.8113ms)
+✔ only explicit reviewed exclusions leave the mapping denominator; missing mappings still fail (1.1639ms)
+✔ Sports.ru price health passes only a fresh, complete and mapped snapshot (0.2375ms)
+✔ Sports.ru price health fails for stale, missing, sparse or weakly mapped data (0.2593ms)
+✔ Sports.ru contest names disambiguate identical Premier League titles by HRU (1.8713ms)
+✔ Sports.ru sync preserves the database when the current season is unavailable (102.5254ms)
+✔ Sports.ru dry run validates a full current-season snapshot without database writes (4.4519ms)
+✔ Sports.ru sync rejects an implausibly small current-season snapshot before database writes (5.2329ms)
+✔ routine price refreshes send only previously unmapped rows to identity matching (2.0796ms)
+✔ Sports.ru price refresh persists provider popularity with the price row (1.25ms)
+✔ Sports.ru provider IDs remain distinct when players share a name and club (20.1263ms)
+✔ Sports.ru contest rules preserve phase history and continue cup round offsets (2.9905ms)
+✔ Sports.ru schedule team mapping tolerates isolated stale player-team assignments (0.443ms)
+✔ Netherlands and Portugal verified mapping plan is complete and unambiguous (1.3365ms)
+✔ known false automatic mappings are repaired before the remaining plan (0.9672ms)
+✔ verified missing FotMob profiles have unique seed records (0.2668ms)
+✔ Spain, Championship and Turkey Sports.ru club names resolve to their FotMob season teams (1.7222ms)
+✔ provider club changes repair team assignments without touching player identities or manual team locks (1.0909ms)
+✔ an exact birth date safely bridges poor transliteration and rejects a conflicting birthday (3.2074ms)
+✔ automatic mapping rejects a weak same-first-name candidate even when team and position add bonuses (0.7781ms)
+✔ automatic mapping retains an exact identity when the provider birthday conflicts (0.3163ms)
+✔ team roster exposes only verified Sports.ru player names (6.1498ms)
+✔ team mapping treats a verified Sports.ru price as an effective roster row when FotMob keeps the player in the reserve team (1.3399ms)
+✔ starter candidate resolves Daal only through a consistent matched price, player and AZ team (1.0959ms)
+✔ starter candidate rejects a false matched map whose internal player differs from the price relation (0.3551ms)
+✔ team mapping does not report MATCHED when neither FotMob nor the verified price resolves an effective roster row (0.8292ms)
+✔ team mapping does not infer MATCHED from price foreign keys without a verified map (0.3629ms)
+✔ team mapping rejects a matched map that disagrees with price identity even when that mapped player is in the roster (0.5739ms)
+✔ sports ru mapping matches transliterated surname to FotMob roster name (2.4217ms)
+✔ sports ru mapping uses FotMob player-name hints from imported sheets (0.3403ms)
+✔ sports ru mapping matches a public name contained in a provider legal name (0.5324ms)
+✔ sports ru mapping matches a provider legal name to a FotMob mononym (0.3093ms)
+✔ sports ru mapping does not confuse players who only share a first name (0.2107ms)
+✔ sports ru mapping prefers same-position team roster candidate (0.3648ms)
+✔ sports ru mapping penalizes known position mismatch (0.2644ms)
+✔ sports ru mapping treats a FotMob winger as a Sports.ru fantasy midfielder (0.1872ms)
+✔ sports ru mapping rejects a similar name from another known team (0.1918ms)
+✔ sports ru mapping rejects an exact identity from a stale different-team roster (0.1516ms)
+✔ sports ru mapping accepts an exact stale-roster identity when Sports.ru supplies an active target team (0.1369ms)
+✔ sports ru mapping resolves the authoritative current-season team uniquely (0.1535ms)
+✔ Sports.ru resync moves a verified manual mapping away from the stale FotMob club (2.1496ms)
+✔ Sports.ru resync retains a verified current-team transfer override (0.7654ms)
+✔ Sports.ru resync keeps a verified transferred-out price excluded (0.7069ms)
+✔ Sports.ru resync preserves an explicit source-identity exclusion despite an exact roster candidate (0.6263ms)
+✔ sports ru mapping recognizes transliterated Sports.ru team names (0.146ms)
+✔ sports ru mapping canonicalizes current RPL team transliteration variants (0.2766ms)
+✔ sports ru mapping resolves Moscow Dinamo without tying Makhachkala (0.3712ms)
+✔ sports ru mapping canonicalizes every current EPL team (1.186ms)
+✔ sports ru mapping canonicalizes every current Ligue 1 team (0.7524ms)
+✔ sports ru mapping keeps Paris, Le Havre and Le Mans distinct (0.3931ms)
+✔ sports ru mapping canonicalizes every current Eredivisie and Liga Portugal team (1.0135ms)
+✔ sports ru mapping does not match a full two-part name by surname alone (0.3279ms)
+✔ sports ru mapping accepts a transliterated first name and omitted middle name (0.2192ms)
+✔ sports ru mapping remap moves stale squad picks and removes same-squad duplicates (0.2336ms)
+✔ sports ru mapping does not move a squad selection from an identity still claimed by another price (0.1353ms)
+✔ manual transfer override does not fall back to the player's stale active team (0.1685ms)
+✔ manual transfer override survives a Sports.ru resync with a non-empty team name (0.1303ms)
+✔ UCL Sports.ru club names resolve to the exact active team (0.383ms)
+✔ Sports.ru import keeps an unknown provider player as a priced placeholder (37.9061ms)
+✔ Sports.ru import creates a placeholder when the provider player has no local price row at all (0.8463ms)
+✔ Sports.ru availability reconciliation reuses an existing placeholder without duplicating it (2.604ms)
+✔ Sports.ru import replaces current and linked rounds while retaining a valid independent future plan (1.986ms)
+✔ Sports.ru squad publication is scheduled 30 minutes after the first match of the latest started round (3.4435ms)
+✔ Sports.ru squad schedule ignores cancelled, future, and roundless fixtures (40.2325ms)
+✔ Sports.ru snapshots select the exact provider tour ID and never compare it with a FotMob round (0.3879ms)
+✔ Sports.ru snapshot schedule follows provider tour 3 even when it contains a league-round-6 fixture (0.5869ms)
+✔ the one-click import route reuses a stored snapshot or starts a targeted on-demand sync (0.2734ms)
+✔ unmapped Sports.ru players complete the snapshot as provider placeholders (0.236ms)
+✔ stored Sports.ru snapshot turns a transferred-out mapped player into a priced placeholder (2.66ms)
+✔ a button request revives an exhausted snapshot without waiting for the background scheduler (1.697ms)
+✔ four Sports.ru leagues accept the second club player and reject the third (3.5876ms)
+✔ Sports.ru club limits are explicit for every supported competition (50.3652ms)
+✔ all Sports.ru contest writers and Squad fallback share the ID-based limit (16.9613ms)
+✔ Squad fallback allows three same-club players in UCL, Europa League, LaLiga and RPL (0.3003ms)
+✔ migration corrects persisted LaLiga and RPL contest limits (0.8685ms)
+✔ migration corrects the current Europa League contest limit (0.8969ms)
+✔ squad filter presets retain every portable player-pool filter (2.7612ms)
+✔ squad filter presets reject malformed ranges, columns and scopes (0.4217ms)
+✔ old squad presets discard retired forecast filters without resetting useful criteria (1.2471ms)
+✔ saved squad presets use the authenticated user and no league scope (1.0891ms)
+✔ calendar uses the existing player FDR thresholds without changing FO/ALT or position weighting (6.7753ms)
+✔ calendar reuses provider rounds, stores each match once and includes season teams without fixtures or players (60.9459ms)
+✔ attack/defence and every 5–10 round horizon rerank only the selected distance without mutating the snapshot (0.9452ms)
+✔ double fixtures count separately, blanks and unknown signals never become easy zeros (0.3796ms)
+✔ an unmapped opponent retains its name and missing signals stay neutral (0.3941ms)
+✔ calendar metadata rejects duplicates and malformed ratings instead of breaking a background refresh (0.6223ms)
+✔ old snapshots remain readable while the sequential worker upgrades calendar metadata once (3.4167ms)
+✔ calendar is lazy, memoized and shared once per snapshot update, not duplicated in each player batch (10.0103ms)
+✔ history settings default safely and preserve repeated exact seasons (4.8289ms)
+✔ all-player history explicitly enables cross-team matches such as national teams (1.2972ms)
+✔ empty selected-season mode falls back to last five (0.1956ms)
+✔ same-country scope resolves each UCL team to its own national competitions (1.3613ms)
+✔ selected plus UEFA includes selected competition and Champions or Europa League only (0.7658ms)
+✔ domestic forecast minutes use only the selected competition (0.7457ms)
+✔ UCL forecast minutes combine UCL with each club's primary domestic league and exclude cups or UEL (0.4886ms)
+✔ UEL forecast minutes combine UEL with each club's primary domestic league without adding UCL (0.4001ms)
+✔ primary domestic league selection ignores a newer Turkish cup and an older pre-promotion league (0.8351ms)
+✔ selected season without selected-competition matches keeps current roster scopes (0.4687ms)
+✔ league navigation keeps normalized history and drops state owned by the old league (1.1491ms)
+✔ the latest requested league owns the navigation marker (0.3075ms)
+✔ league navigation subscribers see only real marker changes (0.2123ms)
+✔ squad switch cancels old batches and has a deterministic stalled-navigation fallback (0.3312ms)
+✔ initial squad render defers the all-player formula projection (1.3554ms)
+✔ navigation prefetches only the link the user intends to open (0.2364ms)
+✔ shared fixture and full player-pool work is coalesced for five minutes (0.2221ms)
+✔ Squad planning snapshot scheduler starts with the server (11.2772ms)
+✔ Squad planning rounds are grouped by normalized tour label with the earliest kickoff (36.9654ms)
+✔ Fully finished tours are not scheduled again, unfinished ones stay capturable (0.362ms)
+✔ Snapshot dueAt lands exactly one minute before the first kickoff (0.2126ms)
+✔ Only due pending snapshots inside their attempt window are captured (0.3193ms)
+✔ Matches without a tour label fall back to a stable per-match key (0.2039ms)
+✔ Provider tours use the first non-cancelled fixture kickoff and canonical round keys (0.4074ms)
+✔ squad list DTO preserves provider identity, strips breakdowns and keeps projection metrics (4.4465ms)
+✔ progressive pool puts saved-squad players first, then Sports.ru popularity (1.9656ms)
+✔ base and detail stages each cover the ordered pool in real batches (0.4663ms)
+✔ progressive batch size is ten percent of the current league pool (0.2282ms)
+✔ progressive cursor parser rejects malformed and unsafe offsets (0.2918ms)
+✔ squad table columns default excludes the invented Foontasy horizon (3.5181ms)
+✔ legacy and current squad preferences discard retired columns without changing order (0.6051ms)
+✔ squad table columns accept known and dynamic player stats but reject arbitrary keys (0.4986ms)
+✔ visible squad table columns can be reordered without mutating the saved preference (0.2666ms)
+✔ legacy 3R and 5R model columns migrate to one stable horizon column (1.3645ms)
+✔ per-user column widths accept fixed, optional, and dynamic columns within safe bounds (0.3213ms)
+✔ user column persistence has a dedicated migration and authenticated route (4.2083ms)
+✔ advanced column filters support numeric ranges and case-insensitive text (0.3756ms)
+✔ provider placeholders retain source price without becoming real database players (5.0142ms)
+✔ squad summary enforces budget and max players per team (1.0708ms)
+✔ round plans inherit forward until a later round has its own changes (0.4011ms)
+✔ UCL allows a third same-club player and rejects a fourth (1.0054ms)
+✔ Europa League allows a third same-club player and rejects a fourth (0.4621ms)
+✔ can add rejects players that break a team cap (0.2013ms)
+✔ squad summary counts projected points from starters only (0.2413ms)
+✔ squad summary doubles the starting captain in next-round and horizon totals (0.2402ms)
+✔ full squad enforces roster shape and starting formation (0.5609ms)
+✔ optimizer picks the best valid starting XI while respecting locks (18.3641ms)
+✔ full-squad optimizer returns a legal squad within budget and respects locks and exclusions (780.9194ms)
+✔ alternative forecasts steer the optimizer through bounded consensus weights (3369.5519ms)
+✔ full-squad optimizer spends available budget on a higher forecast without selecting an unaffordable star (1.4123ms)
+✔ auto-pick strategies produce distinct legal squads when risk profiles differ (5.0428ms)
+✔ every auto-pick strategy stays below the five-second beta limit for a 640-player pool (7377.5728ms)
+✔ save validation ignores client prices and enforces the authoritative budget (0.3742ms)
+✔ save validation requires an exact full squad and canonicalizes server prices (0.3766ms)
+✔ save validation rejects players outside the active league-season pool (0.1107ms)
+✔ player additions are blocked when position or team slots are full (0.2805ms)
+✔ add evaluator preserves validation and reuses equivalent candidate work (0.2235ms)
+✔ Fits reserves enough budget to complete every remaining position (3.6958ms)
+✔ Fits includes team limits when pricing the remaining squad (3.0839ms)
+✔ Fits evaluator reuses the result for equivalent candidates (1.1345ms)
+✔ transfer suggestions improve next round and stay non-negative over horizon (0.3921ms)
+✔ transfer plans return at least three alternatives when three valid upgrades exist (2.5308ms)
+✔ transfer plans use the selected FO, ALT, or FFO forecast without treating FFO as a multi-round source (1.2011ms)
+✔ linked transfer plan can fund an upgrade that is invalid as a single move (0.4609ms)
+✔ transfer plans put zero-FP starting outfield players ahead of higher raw gains (0.2882ms)
+✔ transfer plans never replace the bench goalkeeper and consider the starter only at zero FP (0.3173ms)
+✔ an eligible zero-FP starting goalkeeper stays below field-player transfers (0.2398ms)
+✔ transfer plans ignore bench-only FO upgrades that do not enter the max-FO XI (1.4189ms)
+✔ full-squad optimizer spends leftover budget on the XI, not a luxury bench (0.6192ms)
+✔ transfer plan recommends the best projected starter as captain after transfers (0.2391ms)
+✔ transfer plans reject fast-path candidates that break the budget or team cap (0.2557ms)
+✔ linked transfer recommendations stay below the ten-second beta limit for a 500-player pool (7422.5236ms)
+✔ transfer limit scales with forecast horizon (0.2149ms)
+✔ configured RPL transfer limit remains three regardless of forecast horizon (0.1201ms)
+✔ Sports.ru grants three transfers each round while FPL banks unused transfers (0.7344ms)
+✔ Championship tour 2391 allows six transfers, rejects seven and returns to three without banking (0.5388ms)
+✔ Champions League tour 2755 allows six only on its exact deadline and never banks the exception (0.3815ms)
+✔ forecast horizon accepts only configured options (0.1448ms)
+✔ transfer counter treats a paired out and in as one move (0.0895ms)
+✔ next fantasy points fall back to predicted FP when no fixture rounds are loaded (0.1078ms)
+✔ alternative forecasts preserve missing values and sum only available round projections (0.1178ms)
+✔ consensus blends primary, alternative and external forecasts (0.1957ms)
+✔ reliable strategy caps rotation-risk fringe players below safe scorers (0.251ms)
+✔ upside strategy prefers the same-total option with the higher ceiling (0.0913ms)
+✔ transfer candidates break score ties toward confident low-owned differentials (0.529ms)
+✔ captain suggestion breaks next-round ties by ceiling volatility (0.1676ms)
+✔ position normalizer accepts Sports.ru labels (0.3027ms)
+✔ saving GLOBAL_AUTO preserves user filters and binding, and replaces a cleared transfer baseline (3.469ms)
+✔ Sports.ru configured transfer allowance remains three for both default and contest rules (36.5243ms)
+✔ Sports.ru snapshot readers replace legacy transfer banking without changing the stored snapshot (7.1133ms)
+✔ Sports.ru shell applies the current club limit to a frozen legacy pool snapshot (1.6405ms)
+✔ Sports.ru price popularity takes precedence over the forecast fallback (0.5532ms)
+✔ FPL official forecast history applies position thresholds instead of recoveries groups (0.8732ms)
+✔ FPL forecast history keeps double-gameweek fixtures as separate appearances (2.8682ms)
+✔ FPL per-fixture history treats omitted bonus and defensive-contribution awards as zero (0.2557ms)
+✔ a new Foontasy fetch timestamp creates a new fantasy player pool cache key (1.7237ms)
+✔ shared player features ignore personal formula revisions while scoring overlays do not (0.3688ms)
+✔ component xFP is the default primary engine and legacy remains a one-flag rollback (0.1854ms)
+✔ franchise previews share the global player pool but isolate personal formulas (0.3675ms)
+✔ promoted-player archive prefers the feeder league over a one-match cup row (2.6207ms)
+✔ Eredivisie promoted-player archive prefers Eerste Divisie over a one-match KNVB Cup row (0.116ms)
+✔ Liga Portugal promoted-player archive prefers Liga Portugal 2 over a cup cameo (0.1138ms)
+✔ editable pipeline applies history, fixture, allocation and final score formulas in order (6.5587ms)
+✔ double provider round evaluates the formula for both opponents and sums the results (1.9262ms)
+✔ formula pipeline scales a raw per-90 allocation by expected minutes (2.0361ms)
+✔ FPL projection scope does not evaluate or allocate generic recoveries (0.4016ms)
+✔ primary and Alt apply position-specific starter minutes only to the chronologically nearest fixture (2.7179ms)
+✔ Alt limits only the nearest fixture to the marked XI and uses every player's ordinary minutes later (6.1273ms)
+✔ Alt keeps a promoted club marked XI calculable without assigning all missing attack to zero-history starters (4.1994ms)
+✔ missing lower-league xG/xA cannot allocate the whole team attack to one sparse top-flight profile (3.9113ms)
+✔ an incomplete team history cannot give all team xG and xA to its only evidenced player (6.0269ms)
+✔ a short history sample applies the starter uplift cautiously to per-90 events (1.5986ms)
+✔ a substitute-heavy history caps the manual starter uplift in every formula (0.689ms)
+✔ previous-club fallback applies a real penalty to per-90 forecast rates (1.5643ms)
+✔ friend Alt is shared in the squad while a personal formula overrides only its own position (0.324ms)
+✔ fixture formula metrics expose direct de-vigged bookmaker inputs without replacing FotMob xG (0.2519ms)
+✔ admin Expected FP formula overrides COMPONENT_XFP_V1 totals with visible component fields (1.7305ms)
+✔ friend Alt uses fixture components without bookmaker adjustment and includes goals-conceded penalties (0.4304ms)
+✔ friend Alt probable XI prioritizes starter flags and is capped at eleven (0.3601ms)
+✔ default forecasts use only the bookmaker delta from the FotMob xG baseline (2.1018ms)
+✔ legacy squads expand to five linked planning rounds and saved round plans stay independent (1.0334ms)
+✔ saved five-round plans roll forward and keep only valid future variants (3.4921ms)
+✔ rollover retains a six-transfer exceptional future plan but rejects four in the following ordinary tour (1.2978ms)
+✔ live and frozen cached Championship pools apply the exact tour exception without rebuilding metadata (1.2745ms)
+✔ live and frozen cached Champions League pools apply the exact tour exception without rebuilding metadata (0.3441ms)
+✔ round rollover resolves exact stored rounds, numeric gaps, and legacy filters safely (0.4016ms)
+✔ planner extracts team and player IDs from selected and combined history rows (0.7899ms)
+✔ squad planner groups upcoming matches into fixture rounds (5.5126ms)
+✔ Sports.ru provider tour keeps 14 fixtures and eight double-fixture teams in one round (1.0949ms)
+✔ squad planner advances past a finished Sports.ru tour with a leftover unplayed fixture (0.313ms)
+✔ squad planner retains completed fixtures in an active split round (0.2246ms)
+✔ bookmaker favorites select one available team per unfinished fixture by team over 1.5 probability (0.8568ms)
+✔ squad planner uses provider team short names with a full-name fallback (0.3029ms)
+✔ squad planner keeps the selected-season short name and fills gaps from another season (0.2912ms)
+✔ sports ru season aliases support long and compact FotMob season labels (0.1256ms)
+✔ squad planner prefers Sports.ru position over FotMob roster position (0.1519ms)
+✔ squad planner uses Sports.ru teams for stale and missing FotMob roster transfers (0.8096ms)
+✔ an official transfer stays ahead of a stale Sports.ru price team (0.4372ms)
+✔ squad planner does not create an authoritative roster row from an unverified price foreign key (0.1558ms)
+✔ squad save validation lets Sports.ru override or supply the locked roster team (0.153ms)
+✔ squad planner falls back to estimated prices when Sports.ru price is missing (0.2558ms)
+✔ squad planner ranks real Sports.ru prices before estimated price ties (0.4098ms)
+✔ squad planner exposes only players with a real Sports.ru price (0.4317ms)
+✔ forecast explanation exposes positive factors and playing-time risks (0.3339ms)
+✔ squad planner normalizes saved forecast horizon on load (8.1595ms)
+✔ squad planner normalizes forecast horizon and stores its round anchors before creating a variant (2.536ms)
+✔ squad save persists a Sports.ru placeholder in filters and never inserts a fake CorePlayer relation (3.472ms)
+✔ squad planner updates only the requested owned variant (0.5432ms)
+✔ squad save rejects a player deactivated before the transactional lock (0.8723ms)
+✔ squad save rechecks position limits after locking the authoritative roster (1.6703ms)
+✔ squad variant names are normalized and copies receive a unique suffix (0.7737ms)
+✔ squad planner resolves Sports.ru positions through manual mappings (0.2311ms)
+✔ squad planner resolves scoped Sports.ru price refs through manual mappings and season aliases (0.4357ms)
+✔ squad planner recovers Sports.ru positions from typed price metadata (0.2123ms)
+✔ full-match minute threshold starts at 80 minutes (0.1333ms)
+✔ team strength profiles derive attack and defense from parsed match xG (0.6246ms)
+✔ team strength gives recent xG more weight and shrinks it toward the league (0.3094ms)
+✔ fixture strength is normalized against the league instead of the team's own level (0.581ms)
+✔ fixture strength blends bookmaker attack and clean-sheet expectations into its multipliers (1.4564ms)
+✔ fixture difficulty keeps easy fixtures green-side and hard fixtures red-side (0.2536ms)
+✔ fixture multipliers use overall league xG and xGA averages without a second venue adjustment (0.8089ms)
+✔ forward fixture difficulty ignores clean-sheet strength just like the forward forecast multiplier (0.1259ms)
+✔ double-round difficulty averages both fixtures instead of keeping only the hardest one (0.4322ms)
+✔ bookmaker snapshots remain usable across the month-long fixture horizon and then expire (0.1852ms)
+✔ promoted teams use compressed lower-league strength without overriding top-flight evidence (0.5877ms)
+✔ an average FNL newcomer is discounted to 81 percent of RPL strength (0.2589ms)
+✔ promoted teams fall back to lower-league goals when xG is unavailable (0.2168ms)
+✔ team strength fills missing team-stat goals from the official score (0.4127ms)
+✔ fixture projection weights opponent difficulty by fantasy position (0.2123ms)
+✔ squad planner applies the fitted production calibration to upcoming fixture points (30.2032ms)
+✔ one to eleven unique starters are accepted and a larger lineup is blocked (1.4065ms)
+✔ a repeated or older result cannot overwrite the latest lineup (0.2485ms)
+✔ a partial FotMob lineup replaces the flags with every available starter (8.5324ms)
+✔ incremental ingestion applies match starters instead of clearing the whole league (2.2175ms)
+✔ actual-match and manual starter updates share the per-team lock namespace (4.8523ms)
+✔ starting XI accepts exactly one goalkeeper and ten outfield players (1.5423ms)
+✔ an already selected player can always be removed from an invalid starting XI (0.1996ms)
+✔ middleware reports missing database before API auth checks (8.6923ms)
+✔ middleware allows logout even when database is missing (1.1142ms)
+✔ middleware lets health route report database status (0.6721ms)
+✔ middleware lets nested health routes report operational status (0.6431ms)
+✔ middleware lets anonymous client-error collection enforce its own bounds (0.804ms)
+✔ middleware lets cron routes enforce their bearer secret (0.5951ms)
+✔ middleware does not make cron-like API paths public (0.9047ms)
+✔ middleware lets the exact browser extension endpoint enforce its bearer session (4.2752ms)
+✔ middleware does not make browser-extension-like API paths public (4.2282ms)
+✔ middleware redirects every anonymous service page to login and preserves the destination (0.9419ms)
+✔ middleware allows a service page when a session cookie is present (0.7305ms)
+✔ FotMob open play situations are treated as open play (0.9822ms)
+✔ open play filter is inverse of penalties and set pieces (0.1849ms)
+✔ FotMob set-piece situations are grouped together (0.1573ms)
+✔ Empty shot list produces an empty heat field (1.2501ms)
+✔ A single shot peaks at its own cell with decaying neighbors (0.4306ms)
+✔ xG weighting concentrates the hot zone on the heavier shot (0.4099ms)
+✔ Intensities stay normalized to [0, 1] (0.5876ms)
+✔ Heat color ramps from warm yellow to red (4.3518ms)
+✔ production health probes cannot dilute a real user error breach (496.8241ms)
+✔ access-log audit fails closed when the 5xx rate reaches the one-percent limit (448.2572ms)
+✔ access-log audit reports insufficient data without inventing a passing rate (575.4459ms)
+✔ access-log audit excludes warning health endpoints from user error rate (578.7314ms)
+✔ access-log audit excludes known synthetic probes by User-Agent without excluding real traffic (398.6533ms)
+✔ fixed access window retains its exact start without inventing a duration (418.521ms)
+✔ fixed access window distinguishes malformed configuration from a rate breach (485.6728ms)
+✔ fixed audit reports when retained logs do not cover the configured start (560.8764ms)
+﹣ audit wrapper fails a malformed retained window start (0.173ms) # SKIP
+✔ client critical-error payload accepts only coarse allowlisted fields (1.996ms)
+✔ client route grouping discards nested paths and unknown route names (0.2282ms)
+✔ client error health window remains operationally bounded (0.2832ms)
+✔ client error health includes the whole oldest minute bucket (1.6774ms)
+✔ client error request limiter bounds anonymous work before the database (1.1949ms)
+✔ production monitor opens a warning issue for a failed data-update gate without failing the workflow (309.9987ms)
+✔ production monitor opens an issue and fails when application health is unavailable (261.2448ms)
+✔ production monitor reports unverified anonymous client errors as a warning (285.2228ms)
+✔ production monitor retries transient GitHub API failures before synchronizing the issue (262.0222ms)
+✔ production monitor keeps a retained beta-window breach visible as a warning (263.6445ms)
+✔ production monitor warns when fixed-window acceptance variables are absent (276.953ms)
+✔ production monitor requires exact fixed start, minimum span, and retention coverage (284.7478ms)
+✔ operational monitoring warns on truncated 24-hour retention while keeping historical beta mode separate (262.2731ms)
+✔ nearest-rank percentiles match the production performance convention (1.1943ms)
+✔ load sample summary keeps latency, payload, and status evidence (1.0227ms)
+✔ load gate treats the one-percent error limit as exclusive (0.3938ms)
+✔ load URL preserves target query parameters and adds a cache buster (0.3185ms)
+✔ load test safety limits reject external cleartext targets and excessive concurrency (0.7651ms)
+✔ 12 observed KHL fixtures use only verified regulation 1/X/2; aggregates and child/live events excluded (26.0333ms)
+✔ runtime dictionary validates labels, not mere occurrence of football factor IDs (0.4188ms)
+✔ ODD-01/03: complete and compatible market only (1.4831ms)
+✔ ODD-04: outage and delta omission are not withdrawal (14.0032ms)
+✔ ODD-02: reversed sides, child events and ambiguous candidates never match (0.4889ms)
+✔ parses direct team markets and maps opponent under 0.5 to clean-sheet probability (5.3271ms)
+✔ missing or duplicate sides stay null instead of becoming zero or stale odds (0.4039ms)
+✔ de-vig normalizes a valid pair and rejects malformed decimal odds (0.1801ms)
+✔ list parser skips ambiguous duplicate events (0.2328ms)
+✔ client calls the verified listBase endpoint once with configurable transport (23.6381ms)
+✔ client does not retry a failed public-line request (1.1522ms)
+✔ normal standings payload still works (2.134ms)
+✔ real fixtures with home/away returns teams (1.0677ms)
+✔ real fixtures with homeTeam/awayTeam returns teams (0.3347ms)
+✔ placeholder fixtures are ignored (0.636ms)
+✔ mixed real and placeholder fixtures return only real teams (0.7428ms)
+✔ empty payload returns empty array (0.1886ms)
+✔ duplicate teams are deduplicated and numeric ids are preferred (0.2974ms)
+✔ World Cup fallback warns when more than 48 teams remain after filtering (2.9168ms)
+✔ placeholder team detection covers known playoff labels (0.376ms)
+✔ unofficial client uses a safe request interval by default (2.8967ms)
+✔ team payload prefers FotMob compact fixture code for the requested team (4.6433ms)
+✔ team payload ignores long or unrelated next-opponent labels (0.16ms)
+✔ unofficial client allows request throttling to be disabled explicitly (0.3176ms)
+✔ unofficial client fetches matchDetails via the playbyplay next-data endpoint (27.5829ms)
+✔ unofficial client retries transient FotMob API failures (29.6546ms)
+✔ unofficial fixture discovery preserves league round numbers and scoreStr results (2.3583ms)
+✔ unofficial client refetches buildId after a stale playbyplay 404 (2.5235ms)
+✔ extractPlayerSeasonAggregates keeps competitive seasons and preserves null semantics (2.2935ms)
+✔ single tournament may inherit an exact team-season assist total (0.2848ms)
+✔ extracts one normalized row per FotMob content shotmap shot (4.2473ms)
+✔ normalizes FotMob 105 by 68 pitch coordinates to percentages (0.3821ms)
+✔ FotMob penalty coordinates land on the metric penalty spot (0.1821ms)
+✔ right-to-left shot direction flips depth without mirroring flanks (0.7989ms)
+✔ missing shotmap returns an empty array (1.2692ms)
+✔ opponent team detection works for home and away shots (0.4318ms)
+✔ goal and on-target detection uses event fields defensively (0.3331ms)
+✔ shot situation keeps FotMob situation separate from match period (0.3164ms)
+✔ left center right zone classification works (0.2279ms)
+✔ metadata sync discovers the provider's current season instead of pinning the stored season (2.0956ms)
+✔ World Cup team sync ignores teams without players (3.4401ms)
+✔ normal league team sync keeps teams without players (0.1791ms)
+✔ stale team cleanup includes null provider ids (0.253ms)
+✔ normal FotMob all-period team stats return one row per team (3.2342ms)
+✔ stat values are parsed safely (0.2353ms)
+✔ shotmap fallback computes xG and shot counts when ready-made stats are missing (0.3897ms)
+✔ ready-made stats are preferred over shotmap aggregation (0.3607ms)
+✔ xA is null when unavailable and summed from player stats when present (0.4253ms)
+✔ missing optional stats and shotmap do not crash (0.256ms)
+✔ unknown stat labels remain in raw_stats (0.243ms)
+✔ ING-02/03: mobile and official IDs differ, milliseconds, scopes and overtime (4.0471ms)
+✔ ING-02: all pages required, repeated page rejected (0.8878ms)
+✔ injuries require exact season/club and unique roster IDs; absent list does not claim healthy (3.4985ms)
+✔ real public REST protocol preserves exact times, attack, blocks, shifts and goalie saves (3.9462ms)
+✔ REST refuses empty success, wrong season/match, missing fields and duplicate players (2.3593ms)
+✔ real KHL protocol: 44 identities, match TOI and PP/PK, empty attack telemetry stays unknown (58.4735ms)
+✔ protocol rejects cross-match identity and a truncated group (50.5256ms)
+✔ a blocked HTTP source is surfaced and its body is not ingested (26.489ms)
+✔ mobile date-rounded upper bound is filtered locally without rejecting the whole calendar (51.3153ms)
+✔ XG-01 publication is insufficient; each independent coverage gate must pass (1.0888ms)
+✔ nearest fixture is selected across windows before checking prediction availability (19.7012ms)
+✔ past, playing, postponed and cancelled games never supply next XI (0.3178ms)
+✔ identical duplicates collapse; conflicting and simultaneous games fail closed (0.6795ms)
+✔ only eleven starters belonging to selected fixture are accepted, alternatives ignored (2.4851ms)
+✔ invalid payloads and malformed IDs cannot create requests or clear flags (0.406ms)
+✔ HTTP errors do not leak response secrets and sessions reuse cookies (309.4983ms)
+✔ archived season uses published selector and ignores the current-season calendar (128.436ms)
+✔ Sports hockey malformed tbody preserves actual TOI, FP and separate future weeks (23.9763ms)
+✔ goalie stats retain saves and goals against independently of team score (38.1859ms)
+✔ vanity profile identity and players without history are supported without invented zeroes (55.8507ms)
+✔ identity, season and provider column drift fail closed (29.8117ms)
+✔ blank archive headers require the same provider route, verified current tag and selected season (156.0841ms)
+✔ a vanity current profile needs a verified numeric-tag redirect to the exact same canonical profile (201.6536ms)
+✔ verified historical D/F classification is retained while goalkeeper/skater conflicts are rejected (93.7144ms)
+✔ biography date uses the independently verified Sports tag, never age (15.3834ms)
+✔ public Sports hockey roster retains 17 IDs, verified zero bank and source week (20.0499ms)
+✔ wrong owner, contest, duplicate IDs, missing bank and partial source never become a roster (3.413ms)
+✔ adapter uses only bounded read-only Sports URLs and rejects caller URLs (36.47ms)
+✔ real Sports article parses 10 buys and 10 sells with signed popularity change (35.4431ms)
+✔ short JSON-LD articleBody does not replace real HTML lists (7.3308ms)
+✔ position ownership article keeps separate position sections and comma decimals (9.5978ms)
+✔ top-1000 article is marked with the manager population scope and parses 15 entries (2.813ms)
+✔ lists longer than 15 keep the first 15 in source order and report the available count (2.4674ms)
+✔ zero published lists produce no sections (0.8726ms)
+✔ a repeated player inside one category is rejected once and counted as duplicate (0.5477ms)
+✔ feed discovery keeps only fantasy-tagged Sports articles (62.9026ms)
+✔ unknown Sports list formats are ignored without inventing entries (0.8619ms)
+✔ fetch rejects hosts outside Sports before any HTTP call (1.5301ms)
+✔ fetch waits for Retry-After on 429 and then succeeds (28.0065ms)
+✔ fetch does not retry a protection page and reports FORBIDDEN (0.6587ms)
+✔ fetch rejects bodies above the bounded limit (0.9272ms)
+✔ release identity has explicit safe development fallbacks (4.462ms)
+✔ Docker runtime carries the same version and commit in env and OCI labels (0.8909ms)
+✔ Docker dependency builds include local packages and cannot download an unpinned Prisma CLI (0.4636ms)
+✔ production workflow packages committed Git source and never deploys the legacy PM2 checkout (0.4771ms)
+✔ CI requires a synchronized version bump against the base revision (1.6609ms)
+✔ standalone builds exclude and scrub local state, secrets, and generated QA artifacts (3.5529ms)
+✔ production fantasy price sync is an exact, non-runtime operator job (2.29ms)
+✔ server promoter verifies formula files, rehearses migrations, and checks exact runtime commit (0.7918ms)
+✔ release-source verifier requires formula and version artifacts to be tracked (0.4543ms)
+✔ VPN relay proxies allowlisted Telegram Bot API methods over the shared socket (1.0131ms)
+✔ release version verifier accepts synchronized release files (130.7274ms)
+▶ release version verifier rejects manifest, lock, and changelog drift
+  ✔ top-level lock version (98.0917ms)
+  ✔ root-package lock version (144.1084ms)
+  ✔ newest changelog version (142.6968ms)
+✔ release version verifier rejects manifest, lock, and changelog drift (385.8016ms)
+✔ release version verifier requires a newer synchronized version for a change set (1625.9944ms)
+✔ parses and serializes last 3 team match window (2.6854ms)
+✔ day windows filter fixtures against an explicit reference date (0.2749ms)
+✔ calculates the baseline penalty potential formula with position multiplier (1.4953ms)
+✔ uses requested position multipliers including winger as midfielder (0.9291ms)
+✔ filters invalid or low-minute rows and treats null metrics as zero (0.2379ms)
+✔ extracts FotMob metric labels from nested player stats payloads (1.133ms)
+✔ aggregates match rows by player-team-league-season and finds value candidates (1.2785ms)
+✔ recent team fixture ids use latest played matches only (3.0073ms)
+✔ recent player stats aggregate only selected team fixtures (36.6218ms)
+✔ match window parser supports presets and custom match counts (0.4928ms)
+✔ team fixture ids support current, previous, and all season windows (0.8371ms)
+✔ previous season labels support domestic seasons and World Cup tournaments (0.3625ms)
+✔ World Cup 2026 provider season stats are ignored for seeded and FotMob season formats (1.8352ms)
+✔ non World Cup leagues keep provider season stats (0.1827ms)
+✔ unchanged delivered campaigns perform zero writes across repeated delivery ticks (38.6105ms)
+✔ blank is reported only when the calendar is complete (3.0246ms)
+✔ out-of-XI requires coverage of every fixture in a double round (0.4879ms)
+✔ true ALT zero differs from a rounded zero (0.2518ms)
+✔ missing ALT, mapping or a stale forecast produce an explicit unknown cause (0.481ms)
+✔ an absent forecast is unavailable, while a stale forecast cannot establish out-of-XI (1.1731ms)
+✔ one player keeps several distinct reasons and the bench split follows the squad (0.2557ms)
+✔ report contains the tag, source, risks, plain schedule and popularity (3.7479ms)
+✔ the Russia example groups identical causes without repeating player degradation (5.4165ms)
+✔ out-of-XI groups by visible reasons and hides only missing ALT (0.9163ms)
+✔ grouped findings preserve lineup roles and partial coverage without duplicate summaries (0.6992ms)
+✔ general degradation stays visible once and never implies a completed risk check (0.3442ms)
+✔ published buys and sells are included up to 10 with source; missing publication omits the block (0.5614ms)
+✔ transfer popularity sections render the official top without points and without ownership deltas (4.9507ms)
+✔ report escapes HTML from dynamic values (0.3087ms)
+✔ missing kickoff no longer needs a fabricated time column (0.1657ms)
+✔ long reports split deterministically with the same tag and part numbers (7.8106ms)
+✔ deadline tags recognise Russian and English contest names (1.5259ms)
+✔ unknown contests require an explicit alias instead of a guessed tag (0.209ms)
+✔ missing or foreign-source evidence is unavailable rather than stale (1.4639ms)
+✔ the same kickoff for another club does not prove fixture coverage (0.3242ms)
+✔ one lineup does not cover two matches or an ambiguous fixture (0.3026ms)
+✔ a newly checked past fixture remains inapplicable (0.1668ms)
+✔ successful unchanged checks refresh freshness; genuinely old or undated evidence remains stale (0.2467ms)
+✔ recalculation interval honors the configured hours and clamps below the minimum (1.8304ms)
+✔ forecast scopes use Squad leagues and current seasons without scanning player memberships (58.6797ms)
+✔ forecast scopes intersect the shared Squad allowlist with active Sports.ru contests (0.5915ms)
+✔ forecast scopes keep one default current season per Squad league (0.2916ms)
+✔ forecast scopes never fall back to archived seasons or unrelated tournaments (0.2667ms)
+✔ forecast scope selection is refreshed each cycle without retaining a cached league list (0.2977ms)
+✔ forecast scope lookup failure does not fall back to all active player memberships (0.5857ms)
+✔ forecast working-set collection is optional and invokes the exposed collector once (0.1859ms)
+✔ isolated forecast child keeps database access but disables every parent scheduler (0.323ms)
+✔ isolated refresh passes bootstrap mode and waits for exit, not just a result message (487.4106ms)
+✔ isolated refresh refuses missing results and nonzero exits even after a message (224.7024ms)
+✔ player-pool snapshots run at every exact Moscow hour from 10 through 23 (43.9665ms)
+✔ a due hourly refresh is queued behind incremental work instead of skipped (33.562ms)
+✔ provider schedule accepts an unassigned FPL fixture and rejects duplicate identities (1.5771ms)
+✔ provider schedule revision is order-independent and changes when a fixture moves gameweek (20.0101ms)
+✔ season metadata cannot make an ended tournament or an absent source fresh (3.0334ms)
+✔ fixture odds are scheduled daily for a month and finally three hours before the first match of a round (4.2053ms)
+✔ a snapshot made before a trigger does not suppress the required later refresh (39.8824ms)
+✔ a refresh after both triggers satisfies the round and match schedules (0.3172ms)
+✔ overdue unavailable lines retry later without hiding an earlier future trigger (0.3506ms)
+✔ matches without a provider round use an independent month-long schedule (17.9963ms)
+✔ Foontasy sync is scheduled ten hours before the first match of the active round (34.1983ms)
+✔ an early manual import does not cancel the scheduled ten-hour refresh (31.6784ms)
+✔ a round fetched at the cutoff is complete and the next active round is selected (0.5754ms)
+✔ an overdue active round is synchronized immediately and finished rounds are ignored (0.3919ms)
+✔ sync writes FPL ownership on create and update, repairs old format and deduplicates current runs (78.5006ms)
+✔ FPL full-name mapping accepts provider position groups and retains exact club/uniqueness guards (4.0082ms)
+✔ FPL price scheduler uses 00:01 and 12:01 Europe/London wall-clock slots (40.9662ms)
+✔ FPL scheduler follows London DST without changing the local trigger time (38.6837ms)
+✔ FPL scheduler startup catch-up selects the next wall-clock slot (1.9986ms)
+✔ FPL snapshot keys are idempotent for a London wall-clock slot (2.4306ms)
+✔ FPL schema is provider/contest-scoped over the existing fantasy tables (5.2711ms)
+✔ provider schedule migration keeps provider rounds normalized and fixture identities unique (0.2181ms)
+✔ provider isolation migration backfills before enforcing contest keys (0.9754ms)
+✔ league merge preserves contest-bound FPL artifacts before source deletion (0.2999ms)
+✔ FPL public sync is fail-closed and never mutates shared starter flags (1.9389ms)
+✔ FPL imports use the public profile gate, contest scope, and chip ledger (0.2054ms)
+✔ FPL planner, API, and health checks retain provider in their scopes (0.3239ms)
+✔ twenty concurrent identical requests share one render and failed flights can retry (15.6737ms)
+✔ report cache preserves the complete JSON and invalidates immediately on snapshot replacement (1.1699ms)
+✔ report cache bounds retained strings and expires them while idle (42.1758ms)
+✔ failed renders are retryable and never poison other filters (1.0086ms)
+✔ cached calendar and league selections keep separate populations and empty ranges (9.2357ms)
+✔ source recovery preserves existing files and reads only missing payloads in bounded batches (263.2609ms)
+✔ one source may belong to two report groups without duplicate observations (2.4086ms)
+✔ invalid histories, unknown groups, duplicate rounds and excessive payloads fail publication (35.1507ms)
+✔ bounded caches stabilize under eviction, expire and deduplicate repeated keys (122.7438ms)
+✔ at most two source loaders run per provider and failures release permits (75.659ms)
+✔ FPL coherent official stage, zero-score observation and exact deadline (4.177ms)
+✔ FPL mixed revisions, live scores and incomplete calendar are rejected (0.8635ms)
+✔ relay permits only exact numeric history/standings routes on official origin (0.6632ms)
+✔ Sports.ru 429 does not retry before Retry-After; temporary 503 retries once (297.7798ms)
+✔ recorded anonymized Sports.ru response supplies real score history but refuses live standings (3.1198ms)
+﹣ heavy jobs retain child IPC, wait for one another and release the lock after SIGKILL (0.9021ms) # SKIP
+✔ new verified identity invalidates archive coverage even when fantasy pool is unchanged (3.3688ms)
+✔ archived calendar excludes all four All-Star games but keeps league clubs (1.643ms)
+✔ deployment and daily collector share a lock before any worker interruption (2.0187ms)
+✔ official-only archive fills real statistics without invented fantasy points or appearance denominator (2.1752ms)
+✔ official archive creates a missing history, deduplicates, and cannot replace recovered Sports FP (6.2544ms)
+✔ audit rejects duplicate links and source/date disagreements; accepts verified nickname (9.5101ms)
+✔ official biography must belong to requested ID and have a real date (2.3719ms)
+✔ XLSX contains all 603 unique players on each period sheet, real numbers, missing values, exact long times and formula-safe names (825.7998ms)
+✔ cell help distinguishes zero from missing, states coverage/source and explains this player EP (0.8978ms)
+✔ XLSX expectations retain numerical precision and source formulas for every player (48.1477ms)
+✔ new archive identity needs full name, position and complete matching season fingerprint (2.5749ms)
+✔ DOB resolves independently verified nickname variants but rejects another birthday or club (3.8771ms)
+✔ verified ID survives fantasy position differences, but never a DOB conflict or different canonical ID (35.0817ms)
+✔ protocol corrections are incremental and same-hour retries do not redownload settled facts (1.773ms)
+✔ incomplete protocol retries next hour even for old matches; access and lease failures remain global (32.9396ms)
+✔ nightly follow-up waits until the queued FotMob job completes (29.1685ms)
+✔ nightly follow-up does not treat failed FotMob ingestion as completed (0.3249ms)
+✔ probable lineups are scheduled every day at 14:30 UTC (3.0787ms)
+✔ production starts one probable-lineup scheduler and canaries cannot run it (46.9867ms)
+✔ manual probable-lineup runs can select one allowlisted source (2.6621ms)
+✔ production logs identify skipped teams and unresolved source players (0.2223ms)
+✔ production AmneziaWG promotion uses the reviewed immutable AWG2 client and a candidate probe (1.3636ms)
+✔ production AmneziaWG config stays secret, bounded, and serialized with deploys (0.349ms)
+✔ the existing production workflow can rotate AmneziaWG before promotion (0.2052ms)
+✔ reader deduplicates IDs, bounds batches to 250 and history to 50; repeated calls retain no cache (33.2845ms)
+✔ missing DB observations are unavailable and database failures are not masked (1.0349ms)
+✔ independent server bundle copies share SQL summaries and start one process timer (102.9395ms)
+✔ SQL diagnostics bound cardinality and retain no query text or parameters (18.8336ms)
+✔ production web loads only request-coordinated schedulers (1.5394ms)
+✔ production worker loads background schedulers without duplicating web schedules (0.1949ms)
+✔ canary role loads no scheduler modules (0.1737ms)
+✔ instrumentation and production promotion enforce one owner per scheduler (0.4596ms)
+✔ schedule runs at :05 every hour, including midnight rollover (3.0752ms)
+✔ five campaigns join one refresh and reuse its completed morning summary (28.6699ms)
+✔ campaigns waiting for an older hourly run start only one refresh after 08:10 (0.3117ms)
+✔ failed and already-running refreshes are not reused as successful freshness (0.5426ms)
+✔ Sports.ru fantasy sync scopes retain slash-form seasons (3.5281ms)
+✔ Sports.ru fantasy sync rejects ambiguous scope syntax (0.8249ms)
+✔ Sports.ru fantasy sync interval and health thresholds reject unsafe configuration (1.0393ms)
+✔ Sports.ru squad scheduler checks frequently without accepting unsafe intervals (1.7038ms)
+✔ Sports.ru squad snapshot scheduler starts with the server (24.9769ms)
+✔ cycle planning skips fresh sources, deduplicates and bounds the batch (2.3922ms)
+✔ stale sources are fetched again on the next cycle (0.187ms)
+✔ tournament hints resolve a single contest and reject ambiguity (0.4257ms)
+✔ English Sports contest names resolve hints and stay unambiguous (0.3172ms)
+✔ deltas use the requested tour against the previous one and rank both directions (2.509ms)
+✔ without a requested tour the newest published tour is used (0.2175ms)
+✔ players without the previous tour are not invented (0.1778ms)
+✔ an unpublished target tour falls back to the newest charted tour (0.2069ms)
+✔ zero deltas and entries above the top-10 are skipped (0.4418ms)
+✔ Squad planning snapshot scheduler starts with the server (1.4407ms)
+✔ Capture timer lands exactly on the pending snapshot due moment (20.8885ms)
+✔ Long idle periods are capped so newly synced tours get planned (0.2192ms)
+✔ Failed captures retry quickly without waiting for the next tour (0.1486ms)
+✔ code generation uses 12 Crockford characters in three groups (1.5522ms)
+✔ manual code normalization accepts separators and Crockford confusions (0.3369ms)
+✔ secret generation returns 128-bit base64url (0.2634ms)
+✔ challenge derivation is stable per session and slot (0.907ms)
+✔ digests depend on kind and key (0.2832ms)
+✔ slot advances every 15 seconds (0.2117ms)
+{"level":"warn","scope":"telegram:polling","message":"Telegram returned a webhook conflict; delete the webhook before polling.","timestamp":"2026-10-21T07:45:08.496Z","description":"Conflict: can't use getUpdates method while webhook is active"}
+✔ poll offset starts at one for an empty inbox and continues after the maximum (1.2895ms)
+✔ polling processes a batch once and advances the offset (2.0377ms)
+✔ polling resumes after the stored inbox maximum and does not replay old updates (0.5629ms)
+✔ a webhook conflict stops polling instead of retrying blindly (9.2185ms)
+✔ relay path validation accepts only allowlisted bot methods (1.3873ms)
+✔ telegram socket path prefers its own variable and falls back to the shared VPN relay (0.1918ms)
+﹣ sendTelegramMessage posts JSON through the relay socket without touching api.telegram.org (0.1196ms) # Unix sockets are not available on Windows.
+✔ relay transport refuses non-allowlisted bot methods before connecting (0.7305ms)
+✔ candidate web defers its schedules until its exact commit is activated, then starts once (1.6358ms)
+✔ missing activation file keeps candidate schedules idle until the file appears (1.2096ms)
+✔ cancelling an idle candidate clears its timer and prevents late activation (0.6026ms)
+✔ web without a rollout activation file retains immediate schedule startup (0.331ms)
+✔ withEnv restores environment variables (1.2717ms)
+✔ withEnv serializes concurrent environment mutations (5.7891ms)
+ℹ tests 1329
+ℹ suites 0
+ℹ pass 1326
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 3
+ℹ todo 0
+ℹ duration_ms 25506.0594
+
+> fantasy-scout@0.3.141 lint
+> eslint .
+
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\app\betting\ui.tsx
+   50:5     warning  React Hook useEffect has a missing dependency: 'slip'. Either include it or remove the dependency array                                   react-hooks/exhaustive-deps
+   50:6     warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+   72:116   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   72:155   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   75:18    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   77:18    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   79:41    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   79:291   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   80:98    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   82:30    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   84:300   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   84:399   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   85:61    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   89:65    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   91:57    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   92:53    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   93:530   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   95:53    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  103:51    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  104:17    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  105:80    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  105:170   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  105:513   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  112:131   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  113:31    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  116:75    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  117:38    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  119:68    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  120:72    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  120:93    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  120:165   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  123:58    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  123:92    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  124:79    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  124:219   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  124:345   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  124:366   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  124:954   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  125:373   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  125:404   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  125:674   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  126:39    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:282   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:644   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:1064  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:1451  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:1559  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:1708  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:2176  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:2481  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\app\franchises\ui.tsx
+    85:11  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   142:36  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   482:45  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   494:18  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   510:16  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   513:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   517:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   523:18  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   528:13  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   540:41  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   556:14  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   582:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   604:44  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   606:17  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   778:42  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   780:12  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   827:13  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   836:17  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   842:43  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   879:83  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   883:61  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   884:96  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   893:33  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   904:34  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   914:28  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   919:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   924:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   925:61  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   931:24  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   936:22  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   959:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   978:42  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1023:23  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1030:56  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1047:56  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1065:56  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1082:56  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1102:26  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1102:44  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1107:26  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1107:49  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1115:23  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1131:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1172:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1214:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1239:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1254:23  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1284:65  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1293:26  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1295:32  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1299:24  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1310:24  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1317:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1359:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1413:23  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1451:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1483:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1489:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1525:28  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1560:28  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1572:22  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1574:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1575:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1582:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1583:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1591:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1592:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1601:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1607:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1608:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1616:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1624:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1636:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1642:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\app\machete\khl\[view]\page.tsx
+  20:143  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\components\beta\BetaTelemetryReporter.tsx
+  105:11  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\components\beta\BetaTestStart.tsx
+  38:7  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\components\khl\KhlDataPanels.tsx
+  10:104   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  10:149   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  20:19    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  35:270   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  35:339   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  38:91    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:199   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:636   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:710   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:844   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:862   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:1140  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  42:969   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  43:191   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\components\khl\KhlForecastBreakdown.tsx
+   8:21   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   9:21   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  12:39   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  13:56   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  13:119  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  14:105  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  15:148  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  15:195  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  17:65   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  19:28   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  20:32   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  23:193  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  23:328  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  23:387  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  23:547  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  25:104  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  26:10   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  26:77   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  26:225  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  27:106  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  29:50   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  30:10   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  31:10   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  32:10   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  33:10   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\components\khl\KhlSquadCard.tsx
+  30:12   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  31:12   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  32:35   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  33:37   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  38:14   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  38:168  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\components\khl\KhlSquadPlanner.tsx
+   22:93    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  208:91    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  208:150   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  208:307   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  214:252   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  215:30    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  215:217   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  215:272   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  216:73    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  216:237   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  220:110   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  221:32    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  221:57    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  222:190   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  222:221   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  222:482   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  222:513   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  223:161   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  226:10    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  226:112   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  228:36    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  236:258   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  239:51    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  240:92    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  240:851   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  243:150   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  243:242   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  244:73    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  244:215   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  244:779   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  245:295   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  254:90    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  256:30    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  256:202   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  256:266   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  256:325   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  257:58    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  257:153   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  258:30    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:51    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:311   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:391   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:435   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:476   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:1055  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:1165  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  261:97    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  261:138   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  261:303   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  263:95    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  265:67    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\components\khl\KhlSyncStatusPanel.tsx
+  41:19   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  42:35   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  43:8    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  44:8    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  45:30   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  45:234  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  47:133  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  48:91   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  49:38   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\components\machete\FantasySquadPlanner.tsx
+  1235:6  warning  React Hook useEffect has a missing dependency: 'setSelections'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\components\machete\FranchiseSquadPreview.tsx
+  142:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\components\machete\PlayerPool.tsx
+  1401:5  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Nik\.codex\worktrees\franchise-refresh\fantasy_export\src\components\telegram-settings.tsx
+  144:6  warning  React Hook useEffect has a missing dependency: 'challenge'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 236 problems (0 errors, 236 warnings)
+
+
+> fantasy-scout@0.3.141 typecheck
+> next typegen && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully
+src/server/franchises/restore-sources.ts(38,11): error TS7022: 'rows' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/server/franchises/restore-sources.ts(45,34): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/server/franchises/restore-sources.ts(49,39): error TS7006: Parameter 'row' implicitly has an 'any' type.
+src/server/franchises/restore-sources.ts(54,33): error TS7006: Parameter 'entry' implicitly has an 'any' type.
+src/server/khl/catalog-scheduler.db-test.ts(31,22): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/catalog-scheduler.db-test.ts(31,48): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/catalog-scheduler.ts(33,49): error TS2339: Property 'catalogHash' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/catalog-scheduler.ts(33,82): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/catalog-scheduler.ts(33,110): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/catalog-scheduler.ts(34,73): error TS2353: Object literal may only specify known properties, and 'catalogCheckedAt' does not exist in type '(Without<KhlContestUpdateInput, KhlContestUncheckedUpdateInput> & KhlContestUncheckedUpdateInput) | (Without<...> & KhlContestUpdateInput)'.
+src/server/khl/catalog-sync.ts(16,19): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/catalog-sync.ts(16,60): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/catalog-sync.ts(45,7): error TS2353: Object literal may only specify known properties, and 'catalogCheckedAt' does not exist in type '(Without<KhlContestUpdateInput, KhlContestUncheckedUpdateInput> & KhlContestUncheckedUpdateInput) | (Without<...> & KhlContestUpdateInput)'.
+src/server/khl/daily-sync.ts(35,11): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/daily-sync.ts(35,33): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/daily-sync.ts(35,96): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/daily-sync.ts(41,13): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/daily-sync.ts(41,35): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/daily-sync.ts(41,98): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ name: string; id: string; seasonId: string; publishedAt: Date | null; provider: string; providerContestId: string; revision: number; calendarComplete: boolean; calendarObservedAt: Date | null; calendarFrom: Date | null; calendarTo: Date | null; catalogComplete: boolean; }'.
+src/server/khl/read-model.ts(55,40): error TS2339: Property 'catalogCheckedAt' does not exist on type '{ season: { label: string; id: string; startsAt: Date | null; endsAt: Date | null; seasonKey: string; phase: string; competitionId: string; }; } & { name: string; id: string; seasonId: string; ... 8 more ...; catalogComplete: boolean; }'.

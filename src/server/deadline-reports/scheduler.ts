@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import { expireTelegramLinkArtifacts } from "@/server/telegram/link-service";
 import { deadlineReportsEnabled, deadlineSendEnabled, DEADLINE_DEFAULT_BATCH } from "./config";
-import { executeDueStageJobs, planDeadlineCampaigns, type CampaignPlanSummary, type StageExecutionSummary } from "./campaigns";
+import { deadlinePlanningVersion, executeDueStageJobs, planDeadlineCampaigns, type CampaignPlanSummary, type StageExecutionSummary } from "./campaigns";
 import { expireOverdueOutbox, markBuiltCampaignsDelivering, runDeadlineDeliveryTick, type DeliveryTickResult } from "./delivery";
 
 /**
@@ -11,6 +11,7 @@ import { expireOverdueOutbox, markBuiltCampaignsDelivering, runDeadlineDeliveryT
  */
 const TICK_INTERVAL_MS = 5_000;
 const STARTUP_DELAY_MS = 15_000;
+const PLAN_RECONCILE_MS = 5 * 60_000;
 const ARTIFACT_PURGE_EVERY_TICKS = 12;
 const logger = createLogger("deadline-reports:scheduler");
 
@@ -19,6 +20,8 @@ type SchedulerState = {
   running: boolean;
   timer?: ReturnType<typeof setTimeout>;
   ticks: number;
+  planningVersion?: string;
+  plannedAt?: number;
 };
 
 const globalForScheduler = globalThis as unknown as {
@@ -36,17 +39,25 @@ export interface DeadlineTickSummary {
 
 export async function runDeadlineTick(
   prismaClient = prisma,
-  options: { now?: Date; send?: boolean; maxBatch?: number } = {}
+  options: { now?: Date; send?: boolean; maxBatch?: number; forcePlan?: boolean } = {}
 ): Promise<DeadlineTickSummary> {
   const now = options.now ?? new Date();
-  const campaigns = await planDeadlineCampaigns(prismaClient, { now });
+  const state = schedulerState();
+  const planningVersion = await deadlinePlanningVersion(prismaClient);
+  const needsPlan = options.forcePlan || state.planningVersion !== planningVersion
+    || state.plannedAt == null || now.getTime() < state.plannedAt || now.getTime() - state.plannedAt >= PLAN_RECONCILE_MS;
+  const campaigns = needsPlan ? await planDeadlineCampaigns(prismaClient, { now })
+    : { created: 0, updated: 0, blocked: 0, skipped: 0, details: [] };
+  if (needsPlan) {
+    state.planningVersion = planningVersion;
+    state.plannedAt = now.getTime();
+  }
   const stages = await executeDueStageJobs(prismaClient, { now });
   const delivering = await markBuiltCampaignsDelivering(prismaClient, now);
   const expired = await expireOverdueOutbox(prismaClient, now);
   const delivery = options.send ?? deadlineSendEnabled()
     ? await runDeadlineDeliveryTick(prismaClient, { now, maxBatch: options.maxBatch ?? DEADLINE_DEFAULT_BATCH })
     : null;
-  const state = schedulerState();
   state.ticks += 1;
   const purged = state.ticks % ARTIFACT_PURGE_EVERY_TICKS === 0;
   if (purged) await expireTelegramLinkArtifacts(prismaClient, now).catch(() => undefined);
@@ -69,8 +80,11 @@ export async function runDeadlineReportsNow(trigger: "startup" | "interval" | "m
   }
   state.running = true;
   try {
-    const summary = await runDeadlineTick(prisma);
-    logger.info("Deadline report tick finished.", { trigger, summary });
+    const summary = await runDeadlineTick(prisma, { forcePlan: trigger === "manual" });
+    if (trigger !== "interval" || state.ticks % 12 === 0 || summary.campaigns.created
+      || summary.campaigns.updated || summary.delivering || summary.expired) {
+      logger.info("Deadline report tick finished.", { trigger, summary });
+    }
     return summary;
   } catch (error) {
     logger.error("Deadline report tick failed.", { trigger, error });
@@ -86,7 +100,7 @@ function scheduleNextRun(state: SchedulerState, delayMs = TICK_INTERVAL_MS) {
     scheduleNextRun(state);
   }, delayMs);
   state.timer.unref?.();
-  logger.info("Scheduled deadline report tick.", { delayMs });
+  if (delayMs === STARTUP_DELAY_MS) logger.info("Scheduled deadline report tick.", { delayMs });
 }
 
 function schedulerState() {

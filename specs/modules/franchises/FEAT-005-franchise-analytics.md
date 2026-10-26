@@ -50,6 +50,8 @@ League choices remain visible in the filter form alongside the date controls. Us
 ## Прогнозы и время {#time}
 Для решения используются только матчи до начала тура (консервативно kickoff+3h) и снимки, сохранённые до kickoff. Текущий пересчёт сервера подписан отдельно и не объясняет прошлые решения. Гипотезы причин расхождений не используют бюджет и не выдаются за причинные доказательства.
 
+Исторический снимок планирования связывается с туром по лиге и точному времени первого матча в UTC: номера тура у провайдеров могут различаться и иметь алиасы. Из подходящих снимков выбирается последний сохранённый до дедлайна. Совпадающие алиасы дедуплицируются; разные данные с одинаковым временем сбора останавливают расчёт. Отсутствие снимка для точного дедлайна остаётся отсутствием прогноза, без подстановки соседнего тура.
+
 ## xФО {#xfo}
 Это ретроспективная оценка сыгранного матча: xG×стоимость гола +3×xA +очки времени +карточки +возвраты/сейвы +ожидаемые очки обороны +явная поправка за спарку. Стоимость гола GK/DEF=6, MID=5,FWD=4. Очки времени: выход +1, >=60 минут +1, >=90 минут MID/FWD +1. Карточки: −YC−3×RC; GK saves//3, остальные recoveries//3. Поправка за спарку по умолчанию 0, для двойного тура считаются отдельные матчи, не повторный бонус.
 
@@ -63,7 +65,15 @@ League choices remain visible in the filter form alongside the date controls. Us
 ## Данные и обновление {#data}
 Повторно используемый Python-сборщик читает публичный H2H и БД, не использует LLM. Подготовка тяжёлых признаков выполняется пакетно, браузер получает агрегаты. Составы, пулы владения и доски сохраняются в `franchise_h2h_squads`, `franchise_h2h_rounds`, `franchise_h2h_states`. Готовый снимок хранится в PostgreSQL в `franchise_analytics_snapshots`; файловый источник допускается только через явную настройку для локального анализа. Версионированный компактный снимок содержит показатели составов по турам, покрытие, события замен и ссылки на источники. Публикация снимка атомарна; ошибка сохраняет предыдущий валидный снимок. Завершённые составы и пулы восстанавливаются из БД при отсутствии локального кэша. CLI `franchises:sync` выполняет весь цикл; готовый systemd-таймер обновляет данные раз в 3 часа после отдельного включения оператором. Дата сбора видна. Ключи составов/игроков/туров уникальны. HTTP-кэш ограничен сроком, текущие туры обновляются. Память ограничена одним актуальным снимком и одним процессом сбора; запрос посетителя не запускает полный парсинг сайта.
 
+В production сбор проходит через общую блокировку тяжёлых заданий `spec://common/INFRA-006-continuous-deployment#heavy-jobs`: полный пересчёт пула, модель и сбор франшиз выполняются последовательно. Таймер сохраняет период три часа и запускается в :10 MSK. Восстановление запрашивает JSON только для отсутствующих файлов и ограничивает размер пакетов; уже сохранённые источники не загружаются целиком в память.
+
+Календарный индекс H2H берётся из явных списков составов/популярности; числовые ID могут иметь пропуски. Для ушедшего из этих списков тура используется сохранённый индекс только при совпадении лиги, номера тура и H2H ID. Вычитание индексов запрещено. Отсутствующий, противоречивый или повторяющийся индекс останавливает сбор и сохраняет предыдущий опубликованный снимок.
+
+Production CLI выполняется в отдельном одноразовом контейнере с памятью до 5 GiB, без swap, web-сервера и планировщиков. Он использует неизменяемый образ worker, общую БД и source volume; основному worker сохраняется собственный лимит 4 GiB. Перед стартом на хосте требуется 6 GiB доступной памяти. Общая блокировка тяжёлых вычислений сохраняется между контейнерами.
+
 ## API и ошибки {#api}
+
+One worker thread owns snapshot decompression, JSON parsing, validation, aggregation and serialization. Sorted metric ranks preserve existing ties/nulls/weights exactly, including the final epsilon comparison. HTTP authentication is checked on every request. The async report cache retains the existing 24 MiB/four-entry/60-second limits, shares concurrent loads of one revision/filter key, and never publishes an old pending result after invalidation. The worker has a 768 MiB old-heap limit, at most eight pending jobs and a two-minute timeout; idle termination after one minute releases its parsed snapshot. Queue/worker/revision failures return 503 without weakening filters or serving another revision as current.
 GET `/api/franchises` валидирует сезон, лиги и диапазон, возвращает агрегаты выбранной дистанции. Нет снимка: явное состояние «данные ещё не собраны». Некорректный диапазон: 400. Доступ к служебному обновлению ограничен оператором/cron. Внешние адреса формируются только из проверенных H2H путей; секреты и сырые серверные payload не передаются браузеру.
 
 ## Проверки и трассировка {#acceptance}
@@ -84,6 +94,8 @@ GET `/api/franchises` валидирует сезон, лиги и диапаз�
 Локальные отчёты WI-025/WI-027 — предшествующие артефакты. Используются существующие normalized core_data, архивные planning snapshots и исходные токены дизайна Fantasy.
 
 ## История {#changelog}
+
+- 2026-10-21: WI-079 — serialize memory-heavy worker jobs and restore only missing franchise payloads; retain collection cadence.
 - 2026-10-08: WI-054 — visible combined league selection and automatic calendar/completion filtering, retaining immediate submit/retry and URL restoration.
 - 2026-10-04: PR #37 review — split the ownership/captain plot at 35% starting-lineup ownership (horizontal axis), with the higher group above the lower group.
 - 2026-10-04: WI-048 — small abbreviated names restored beside points following user review.

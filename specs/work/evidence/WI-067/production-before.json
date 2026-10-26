@@ -1,0 +1,612 @@
+{
+  "captured_at_utc": "2026-10-10T09:30:25.795109+00:00",
+  "memory": {
+    "code": 0,
+    "stdout": "total        used        free      shared  buff/cache   available\nMem:           11876        6180        2000         306        3695        5069\nSwap:              0           0           0",
+    "stderr": ""
+  },
+  "disk": {
+    "code": 0,
+    "stdout": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/vda3       119G   77G   36G  69% /",
+    "stderr": ""
+  },
+  "cpu": {
+    "code": 0,
+    "stdout": "8",
+    "stderr": ""
+  },
+  "uptime": {
+    "code": 0,
+    "stdout": "12:30:25 up 51 days, 19:44,  0 users,  load average: 0.94, 0.92, 0.83",
+    "stderr": ""
+  },
+  "current_release": "/var/www/fantasy-scout-releases/20261010T071043Z-v0.3.131-74a5f00",
+  "containers": [
+    {
+      "name": "/fantasy-scout-audit-db",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "image_id": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "state": {
+        "Status": "removing",
+        "OOMKilled": false,
+        "StartedAt": "2026-10-10T09:29:47.339160057Z",
+        "FinishedAt": "2026-10-10T09:30:25.794969799Z"
+      },
+      "health": null,
+      "restarts": 0,
+      "user": "",
+      "resources": {
+        "Memory": 536870912,
+        "MemoryReservation": 0,
+        "MemorySwap": 1073741824,
+        "NanoCpus": 1000000000,
+        "CpuShares": 0,
+        "PidsLimit": 128,
+        "ReadonlyRootfs": false,
+        "Privileged": false,
+        "CapDrop": null,
+        "SecurityOpt": null,
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {}
+        }
+      },
+      "safe_env": {},
+      "database_pool_options": null,
+      "mounts": [],
+      "healthcheck": null
+    },
+    {
+      "name": "/fantasy-scout-worker",
+      "image": "fantasy-scout:20261010T071043Z-v0.3.131-74a5f00",
+      "image_id": "sha256:87ee11ab88faf8d4c498ce6f3d38c05ce7f4f20d154b4adf6c4bf212d49f84a2",
+      "state": {
+        "Status": "running",
+        "OOMKilled": false,
+        "StartedAt": "2026-10-10T07:14:43.876205394Z",
+        "FinishedAt": "0001-01-01T00:00:00Z"
+      },
+      "health": "healthy",
+      "restarts": 0,
+      "user": "",
+      "resources": {
+        "Memory": 0,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "NanoCpus": 0,
+        "CpuShares": 0,
+        "PidsLimit": null,
+        "ReadonlyRootfs": false,
+        "Privileged": false,
+        "CapDrop": null,
+        "SecurityOpt": null,
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {
+            "max-file": "5",
+            "max-size": "20m"
+          }
+        }
+      },
+      "safe_env": {
+        "INGESTION_WORKER_IN_PROCESS": "true",
+        "FPL_PRICE_SYNC_ENABLED": "false",
+        "PROBABLE_LINEUP_SYNC_ENABLED": "false",
+        "APP_RELEASE_VERSION": "0.3.131",
+        "APP_RELEASE_COMMIT": "74a5f00f162b1d22a6bc7344ee6630e0c354a595"
+      },
+      "database_pool_options": null,
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout-franchises",
+          "Source": "/var/lib/docker/volumes/fantasy-scout-franchises/_data",
+          "Destination": "/app/storage/franchises",
+          "RW": true
+        },
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout-fpl-relay-candidate-20261010T071043Z-v0.3.131-74a5f00",
+          "Source": "/var/lib/docker/volumes/fantasy-scout-fpl-relay-candidate-20261010T071043Z-v0.3.131-74a5f00/_data",
+          "Destination": "/run/fpl-relay",
+          "RW": false
+        },
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout_fantasy-scout-uploads",
+          "Source": "/var/lib/docker/volumes/fantasy-scout_fantasy-scout-uploads/_data",
+          "Destination": "/app/storage/uploads",
+          "RW": true
+        }
+      ],
+      "healthcheck": {
+        "Test": [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+        ],
+        "Interval": 30000000000,
+        "Timeout": 5000000000,
+        "StartPeriod": 30000000000,
+        "Retries": 5
+      }
+    },
+    {
+      "name": "/fantasy-scout-web",
+      "image": "fantasy-scout:20261010T071043Z-v0.3.131-74a5f00",
+      "image_id": "sha256:87ee11ab88faf8d4c498ce6f3d38c05ce7f4f20d154b4adf6c4bf212d49f84a2",
+      "state": {
+        "Status": "running",
+        "OOMKilled": false,
+        "StartedAt": "2026-10-10T07:14:39.622732547Z",
+        "FinishedAt": "0001-01-01T00:00:00Z"
+      },
+      "health": "healthy",
+      "restarts": 0,
+      "user": "",
+      "resources": {
+        "Memory": 0,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "NanoCpus": 0,
+        "CpuShares": 0,
+        "PidsLimit": null,
+        "ReadonlyRootfs": false,
+        "Privileged": false,
+        "CapDrop": null,
+        "SecurityOpt": null,
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {
+            "max-file": "5",
+            "max-size": "20m"
+          }
+        }
+      },
+      "safe_env": {
+        "INGESTION_WORKER_IN_PROCESS": "false",
+        "APP_RELEASE_VERSION": "0.3.131",
+        "APP_RELEASE_COMMIT": "74a5f00f162b1d22a6bc7344ee6630e0c354a595"
+      },
+      "database_pool_options": null,
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout_fantasy-scout-uploads",
+          "Source": "/var/lib/docker/volumes/fantasy-scout_fantasy-scout-uploads/_data",
+          "Destination": "/app/storage/uploads",
+          "RW": true
+        },
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout-fpl-relay-candidate-20261010T071043Z-v0.3.131-74a5f00",
+          "Source": "/var/lib/docker/volumes/fantasy-scout-fpl-relay-candidate-20261010T071043Z-v0.3.131-74a5f00/_data",
+          "Destination": "/run/fpl-relay",
+          "RW": false
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/var/www/fantasy-scout-releases/20261010T071043Z-v0.3.131-74a5f00/runtime-static",
+          "Destination": "/app/.next/static",
+          "RW": false
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/var/www/fantasy-scout-releases/20261010T071043Z-v0.3.131-74a5f00/.web-schedulers-active",
+          "Destination": "/run/fantasy-scout/web-schedulers-active",
+          "RW": false
+        }
+      ],
+      "healthcheck": {
+        "Test": [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+        ],
+        "Interval": 30000000000,
+        "Timeout": 5000000000,
+        "StartPeriod": 30000000000,
+        "Retries": 5
+      }
+    },
+    {
+      "name": "/fantasy-scout-fpl-relay",
+      "image": "fantasy-scout:20261010T071043Z-v0.3.131-74a5f00",
+      "image_id": "sha256:87ee11ab88faf8d4c498ce6f3d38c05ce7f4f20d154b4adf6c4bf212d49f84a2",
+      "state": {
+        "Status": "running",
+        "OOMKilled": false,
+        "StartedAt": "2026-10-10T07:14:33.677392382Z",
+        "FinishedAt": "0001-01-01T00:00:00Z"
+      },
+      "health": null,
+      "restarts": 0,
+      "user": "",
+      "resources": {
+        "Memory": 0,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "NanoCpus": 0,
+        "CpuShares": 0,
+        "PidsLimit": null,
+        "ReadonlyRootfs": true,
+        "Privileged": false,
+        "CapDrop": [
+          "ALL"
+        ],
+        "SecurityOpt": [
+          "no-new-privileges:true"
+        ],
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {
+            "max-file": "5",
+            "max-size": "20m"
+          }
+        }
+      },
+      "safe_env": {
+        "APP_RELEASE_VERSION": "0.3.131",
+        "APP_RELEASE_COMMIT": "74a5f00f162b1d22a6bc7344ee6630e0c354a595"
+      },
+      "database_pool_options": null,
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout-fpl-relay-candidate-20261010T071043Z-v0.3.131-74a5f00",
+          "Source": "/var/lib/docker/volumes/fantasy-scout-fpl-relay-candidate-20261010T071043Z-v0.3.131-74a5f00/_data",
+          "Destination": "/run/fpl-relay",
+          "RW": true
+        }
+      ],
+      "healthcheck": {
+        "Test": [
+          "NONE"
+        ],
+        "Interval": 30000000000,
+        "Timeout": 5000000000,
+        "StartPeriod": 30000000000,
+        "Retries": 5
+      }
+    },
+    {
+      "name": "/fantasy-scout-worker-rollback-pre-20261010T071043Z-v0.3.131-74a5f00",
+      "image": "fantasy-scout:20261009T184704Z-v0.3.130-39e65c1",
+      "image_id": "sha256:1601d287ffcc72e849f5a4ae7872debaac76a818ced64e3142a0119493a275d0",
+      "state": {
+        "Status": "exited",
+        "OOMKilled": false,
+        "StartedAt": "2026-10-09T18:51:31.748034143Z",
+        "FinishedAt": "2026-10-10T07:14:43.376395378Z"
+      },
+      "health": "unhealthy",
+      "restarts": 0,
+      "user": "",
+      "resources": {
+        "Memory": 0,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "NanoCpus": 0,
+        "CpuShares": 0,
+        "PidsLimit": null,
+        "ReadonlyRootfs": false,
+        "Privileged": false,
+        "CapDrop": null,
+        "SecurityOpt": null,
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {
+            "max-file": "5",
+            "max-size": "20m"
+          }
+        }
+      },
+      "safe_env": {
+        "INGESTION_WORKER_IN_PROCESS": "true",
+        "FPL_PRICE_SYNC_ENABLED": "false",
+        "PROBABLE_LINEUP_SYNC_ENABLED": "false",
+        "APP_RELEASE_VERSION": "0.3.130",
+        "APP_RELEASE_COMMIT": "39e65c199a331751f9d7ce12d65d35810531da79"
+      },
+      "database_pool_options": null,
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout_fantasy-scout-uploads",
+          "Source": "/var/lib/docker/volumes/fantasy-scout_fantasy-scout-uploads/_data",
+          "Destination": "/app/storage/uploads",
+          "RW": true
+        },
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout-franchises",
+          "Source": "/var/lib/docker/volumes/fantasy-scout-franchises/_data",
+          "Destination": "/app/storage/franchises",
+          "RW": true
+        },
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout-fpl-relay-candidate-20261009T184704Z-v0.3.130-39e65c1",
+          "Source": "/var/lib/docker/volumes/fantasy-scout-fpl-relay-candidate-20261009T184704Z-v0.3.130-39e65c1/_data",
+          "Destination": "/run/fpl-relay",
+          "RW": false
+        }
+      ],
+      "healthcheck": {
+        "Test": [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+        ],
+        "Interval": 30000000000,
+        "Timeout": 5000000000,
+        "StartPeriod": 30000000000,
+        "Retries": 5
+      }
+    },
+    {
+      "name": "/fantasy-scout-web-rollback-pre-20261010T071043Z-v0.3.131-74a5f00",
+      "image": "fantasy-scout:20261009T184704Z-v0.3.130-39e65c1",
+      "image_id": "sha256:1601d287ffcc72e849f5a4ae7872debaac76a818ced64e3142a0119493a275d0",
+      "state": {
+        "Status": "exited",
+        "OOMKilled": false,
+        "StartedAt": "2026-10-09T18:51:27.56166153Z",
+        "FinishedAt": "2026-10-10T07:15:21.70189071Z"
+      },
+      "health": "unhealthy",
+      "restarts": 0,
+      "user": "",
+      "resources": {
+        "Memory": 0,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "NanoCpus": 0,
+        "CpuShares": 0,
+        "PidsLimit": null,
+        "ReadonlyRootfs": false,
+        "Privileged": false,
+        "CapDrop": null,
+        "SecurityOpt": null,
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {
+            "max-file": "5",
+            "max-size": "20m"
+          }
+        }
+      },
+      "safe_env": {
+        "INGESTION_WORKER_IN_PROCESS": "false",
+        "APP_RELEASE_VERSION": "0.3.130",
+        "APP_RELEASE_COMMIT": "39e65c199a331751f9d7ce12d65d35810531da79"
+      },
+      "database_pool_options": null,
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout_fantasy-scout-uploads",
+          "Source": "/var/lib/docker/volumes/fantasy-scout_fantasy-scout-uploads/_data",
+          "Destination": "/app/storage/uploads",
+          "RW": true
+        },
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout-fpl-relay-candidate-20261009T184704Z-v0.3.130-39e65c1",
+          "Source": "/var/lib/docker/volumes/fantasy-scout-fpl-relay-candidate-20261009T184704Z-v0.3.130-39e65c1/_data",
+          "Destination": "/run/fpl-relay",
+          "RW": false
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/var/www/fantasy-scout-releases/20261009T184704Z-v0.3.130-39e65c1/runtime-static",
+          "Destination": "/app/.next/static",
+          "RW": false
+        },
+        {
+          "Type": "bind",
+          "Name": null,
+          "Source": "/var/www/fantasy-scout-releases/20261009T184704Z-v0.3.130-39e65c1/.web-schedulers-active",
+          "Destination": "/run/fantasy-scout/web-schedulers-active",
+          "RW": false
+        }
+      ],
+      "healthcheck": {
+        "Test": [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+        ],
+        "Interval": 30000000000,
+        "Timeout": 5000000000,
+        "StartPeriod": 30000000000,
+        "Retries": 5
+      }
+    },
+    {
+      "name": "/fantasy-scout-fpl-relay-rollback-pre-20261010T071043Z-v0.3.131-74a5f00",
+      "image": "fantasy-scout:20261009T184704Z-v0.3.130-39e65c1",
+      "image_id": "sha256:1601d287ffcc72e849f5a4ae7872debaac76a818ced64e3142a0119493a275d0",
+      "state": {
+        "Status": "exited",
+        "OOMKilled": false,
+        "StartedAt": "2026-10-09T18:51:21.338095738Z",
+        "FinishedAt": "2026-10-10T07:15:22.157240147Z"
+      },
+      "health": null,
+      "restarts": 0,
+      "user": "",
+      "resources": {
+        "Memory": 0,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "NanoCpus": 0,
+        "CpuShares": 0,
+        "PidsLimit": null,
+        "ReadonlyRootfs": true,
+        "Privileged": false,
+        "CapDrop": [
+          "ALL"
+        ],
+        "SecurityOpt": [
+          "no-new-privileges:true"
+        ],
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {
+            "max-file": "5",
+            "max-size": "20m"
+          }
+        }
+      },
+      "safe_env": {
+        "APP_RELEASE_VERSION": "0.3.130",
+        "APP_RELEASE_COMMIT": "39e65c199a331751f9d7ce12d65d35810531da79"
+      },
+      "database_pool_options": null,
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout-fpl-relay-candidate-20261009T184704Z-v0.3.130-39e65c1",
+          "Source": "/var/lib/docker/volumes/fantasy-scout-fpl-relay-candidate-20261009T184704Z-v0.3.130-39e65c1/_data",
+          "Destination": "/run/fpl-relay",
+          "RW": true
+        }
+      ],
+      "healthcheck": {
+        "Test": [
+          "NONE"
+        ],
+        "Interval": 30000000000,
+        "Timeout": 5000000000,
+        "StartPeriod": 30000000000,
+        "Retries": 5
+      }
+    },
+    {
+      "name": "/fantasy-scout-postgres",
+      "image": "postgres:16-alpine",
+      "image_id": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "state": {
+        "Status": "running",
+        "OOMKilled": false,
+        "StartedAt": "2026-08-19T13:45:47.229418796Z",
+        "FinishedAt": "2026-08-19T13:45:21.262825921Z"
+      },
+      "health": "healthy",
+      "restarts": 0,
+      "user": "",
+      "resources": {
+        "Memory": 0,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "NanoCpus": 0,
+        "CpuShares": 0,
+        "PidsLimit": null,
+        "ReadonlyRootfs": false,
+        "Privileged": false,
+        "CapDrop": null,
+        "SecurityOpt": null,
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {
+            "max-file": "5",
+            "max-size": "20m"
+          }
+        }
+      },
+      "safe_env": {},
+      "database_pool_options": null,
+      "mounts": [
+        {
+          "Type": "volume",
+          "Name": "fantasy-scout_fantasy-scout-postgres",
+          "Source": "/var/lib/docker/volumes/fantasy-scout_fantasy-scout-postgres/_data",
+          "Destination": "/var/lib/postgresql/data",
+          "RW": true
+        }
+      ],
+      "healthcheck": {
+        "Test": [
+          "CMD-SHELL",
+          "pg_isready -U fantasy_app -d fantasy_scout"
+        ],
+        "Interval": 5000000000,
+        "Timeout": 5000000000,
+        "Retries": 20
+      }
+    }
+  ],
+  "runtime_versions": {
+    "code": 0,
+    "stdout": "{\"node\":\"v20.20.2\",\"next\":\"16.3.8\",\"react\":\"18.3.1\",\"prisma\":\"5.22.0\"}",
+    "stderr": ""
+  },
+  "stats": {
+    "code": 0,
+    "stdout": "{\"BlockIO\":\"15.4MB / 12.3kB\",\"CPUPerc\":\"0.00%\",\"Container\":\"fantasy-scout-web\",\"ID\":\"af302b402098\",\"MemPerc\":\"8.25%\",\"MemUsage\":\"979.8MiB / 11.6GiB\",\"Name\":\"fantasy-scout-web\",\"NetIO\":\"330MB / 73.8MB\",\"PIDs\":\"21\"}\n{\"BlockIO\":\"51MB / 0B\",\"CPUPerc\":\"0.30%\",\"Container\":\"fantasy-scout-worker\",\"ID\":\"07bf77a81987\",\"MemPerc\":\"13.67%\",\"MemUsage\":\"1.586GiB / 11.6GiB\",\"Name\":\"fantasy-scout-worker\",\"NetIO\":\"6.07GB / 1.51GB\",\"PIDs\":\"21\"}\n{\"BlockIO\":\"225GB / 2.1TB\",\"CPUPerc\":\"8.44%\",\"Container\":\"fantasy-scout-postgres\",\"ID\":\"325e03666369\",\"MemPerc\":\"11.85%\",\"MemUsage\":\"1.375GiB / 11.6GiB\",\"Name\":\"fantasy-scout-postgres\",\"NetIO\":\"495GB / 1.51TB\",\"PIDs\":\"36\"}\n{\"BlockIO\":\"705kB / 0B\",\"CPUPerc\":\"0.01%\",\"Container\":\"fantasy-scout-fpl-relay\",\"ID\":\"e9da7e5c57f9\",\"MemPerc\":\"0.22%\",\"MemUsage\":\"25.86MiB / 11.6GiB\",\"Name\":\"fantasy-scout-fpl-relay\",\"NetIO\":\"1.41GB / 458MB\",\"PIDs\":\"11\"}",
+    "stderr": ""
+  },
+  "docker_disk": {
+    "code": 0,
+    "stdout": "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          76        43        61.94GB   6.441GB (10%)\nContainers      53        45        190.5MB   749.6kB (0%)\nLocal Volumes   72        39        4.891GB   94.01MB (1%)\nBuild Cache     503       0         40.4GB    939.6MB",
+    "stderr": ""
+  },
+  "timers": {
+    "code": 0,
+    "stdout": "NEXT                        LEFT       LAST                        PASSED       UNIT                          ACTIVATES\nSat 2026-10-10 12:31:25 MSK 53s left   Sat 2026-10-10 12:30:25 MSK 6s ago       fantasy-fpl-vpn-routing.timer fantasy-fpl-vpn-routing.service\nSat 2026-10-10 12:36:27 MSK 5min left  Sat 2026-10-10 12:20:57 MSK 9min ago     fantasy-access-audit.timer    fantasy-access-audit.service\nSat 2026-10-10 12:47:00 MSK 16min left Sat 2026-10-10 09:47:01 MSK 2h 43min ago fantasy-franchises.timer      fantasy-franchises.service\nSat 2026-10-10 13:22:00 MSK 51min left Sat 2026-10-10 12:22:00 MSK 8min ago     fantasy-khl-statistics.timer  fantasy-khl-statistics.service\nSun 2026-10-11 00:00:00 MSK 11h left   Sat 2026-10-10 00:00:00 MSK 12h ago      dpkg-db-backup.timer          dpkg-db-backup.service\nSun 2026-10-11 02:16:44 MSK 13h left   Sat 2026-10-10 02:23:55 MSK 10h ago      sipuni-blacklist-backup.timer sipuni-blacklist-backup.service\n\n6 timers listed.",
+    "stderr": ""
+  },
+  "backup_files": {
+    "code": 0,
+    "stdout": "2026-09-07 13:30 109073250 pre-20260907T102720Z-v0.3.58-a23d3a0-migration.dump\n2026-09-08 11:54 828350 uefa-md1-20260908-prices-before.json\n2026-09-21 19:03 210273538 pre-20260921T155858Z-v0.3.84-0d2e823-migration.dump\n2026-09-11 13:36 122477285 pre-20260911T103306Z-v0.3.67-dd49fb0-migration.dump\n2026-09-07 14:09 583373 betting-before-user-reset-20260907-v0359.dump\n2026-10-09 17:30 315433244 pre-20261009T142552Z-v0.3.127-b7682f3-migration.dump\n2026-09-08 11:50 730907 uefa-md1-20260908-before.json\n2026-09-16 18:30 180705164 pre-20260916T152502Z-v0.3.75-5719460-migration.dump\n2026-09-08 18:51 114333068 pre-20260908T154729Z-v0.3.66-92f3731-migration.dump\n2026-09-07 14:09 3220 betting-before-user-reset-20260907-v0359.dump.list\n2026-09-07 12:47 107945118 pre-20260907T094424Z-v0.3.57-d9abf51-migration.dump\n2026-10-09 18:42 315477604 pre-20261009T153717Z-v0.3.128-c24772b-migration.dump\n2026-09-08 14:30 44848 wi015-ffo-mappings-before.json\n2026-09-13 22:53 139021462 pre-20260913T194921Z-v0.3.71-7e07bae-migration.dump\n2026-09-08 11:28 159476 wi013-ucl-mapping-20260908.json\n2026-08-31 12:51 89321080 pre-20260831T094816Z-v0.3.50-3450941-migration.dump\n2026-09-25 11:33 235617103 pre-20260925T082846Z-v0.3.86-e14f27c-migration.dump",
+    "stderr": ""
+  },
+  "directory_sizes": {
+    "code": 0,
+    "stdout": "1.9G\t/var/backups/fantasy-scout\n90M\t/var/www/fantasy-scout-releases\n17M\t/var/www/fantasy-scout",
+    "stderr": ""
+  },
+  "database_settings": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n[{\"name\":\"archive_mode\",\"setting\":\"off\",\"unit\":null}, \n {\"name\":\"archive_timeout\",\"setting\":\"0\",\"unit\":\"s\"}, \n {\"name\":\"checkpoint_timeout\",\"setting\":\"300\",\"unit\":\"s\"}, \n {\"name\":\"effective_cache_size\",\"setting\":\"524288\",\"unit\":\"8kB\"}, \n {\"name\":\"log_min_duration_statement\",\"setting\":\"-1\",\"unit\":\"ms\"}, \n {\"name\":\"max_connections\",\"setting\":\"100\",\"unit\":null}, \n {\"name\":\"max_wal_size\",\"setting\":\"1024\",\"unit\":\"MB\"}, \n {\"name\":\"shared_buffers\",\"setting\":\"16384\",\"unit\":\"8kB\"}, \n {\"name\":\"shared_preload_libraries\",\"setting\":\"\",\"unit\":null}, \n {\"name\":\"wal_level\",\"setting\":\"replica\",\"unit\":null}, \n {\"name\":\"work_mem\",\"setting\":\"4096\",\"unit\":\"kB\"}]\nROLLBACK",
+    "stderr": ""
+  },
+  "database_size": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n3188317207\nROLLBACK",
+    "stderr": ""
+  },
+  "database_connections": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n[{\"state\":\"active\",\"count\":1}, \n {\"state\":\"idle\",\"count\":29}, \n {\"state\":\"idle in transaction\",\"count\":1}]\nROLLBACK",
+    "stderr": ""
+  },
+  "database_tables": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n[{\"relname\":\"khl_observation_receipts\",\"n_live_tup\":1189458,\"n_dead_tup\":36420,\"seq_scan\":12,\"idx_scan\":1359515,\"last_autovacuum\":\"2026-10-06T12:48:56.622375+00:00\",\"last_autoanalyze\":\"2026-10-09T08:30:33.421849+00:00\",\"bytes\":578854912}, \n {\"relname\":\"fantasy_point_breakdown\",\"n_live_tup\":1592697,\"n_dead_tup\":0,\"seq_scan\":15,\"idx_scan\":254944,\"last_autovacuum\":null,\"last_autoanalyze\":\"2026-09-14T00:45:09.706551+00:00\",\"bytes\":396083200}, \n {\"relname\":\"khl_player_match_forecasts\",\"n_live_tup\":145792,\"n_dead_tup\":3040,\"seq_scan\":49,\"idx_scan\":220852,\"last_autovacuum\":\"2026-10-10T09:29:19.483791+00:00\",\"last_autoanalyze\":\"2026-10-10T09:27:11.334745+00:00\",\"bytes\":395501568}, \n {\"relname\":\"match_shots\",\"n_live_tup\":296650,\"n_dead_tup\":2475,\"seq_scan\":25,\"idx_scan\":837448,\"last_autovacuum\":null,\"last_autoanalyze\":\"2026-09-19T02:27:39.531435+00:00\",\"bytes\":221544448}, \n {\"relname\":\"fantasy_model_forecasts\",\"n_live_tup\":182220,\"n_dead_tup\":7840,\"seq_scan\":278,\"idx_scan\":11150779,\"last_autovacuum\":\"2026-10-10T07:17:11.610542+00:00\",\"last_autoanalyze\":\"2026-10-10T07:18:07.259564+00:00\",\"bytes\":198279168}, \n {\"relname\":\"match_player_stats\",\"n_live_tup\":500046,\"n_dead_tup\":40,\"seq_scan\":25963,\"idx_scan\":102652585,\"last_autovacuum\":null,\"last_autoanalyze\":\"2026-09-14T02:35:12.418169+00:00\",\"bytes\":185524224}, \n {\"relname\":\"franchise_h2h_squads\",\"n_live_tup\":44842,\"n_dead_tup\":437,\"seq_scan\":10,\"idx_scan\":2871483,\"last_autovacuum\":\"2026-10-10T07:12:08.996766+00:00\",\"last_autoanalyze\":\"2026-10-10T07:12:09.729294+00:00\",\"bytes\":142598144}, \n {\"relname\":\"fantasy_points\",\"n_live_tup\":500086,\"n_dead_tup\":6053,\"seq_scan\":5294,\"idx_scan\":743282,\"last_autovacuum\":null,\"last_autoanalyze\":\"2026-09-16T00:22:54.832969+00:00\",\"bytes\":127320064}, \n {\"relname\":\"fantasy_player_pool_snapshot_players\",\"n_live_tup\":25197,\"n_dead_tup\":1811,\"seq_scan\":196,\"idx_scan\":851006,\"last_autovacuum\":\"2026-10-10T09:06:08.531055+00:00\",\"last_autoanalyze\":\"2026-10-10T09:06:08.663867+00:00\",\"bytes\":121298944}, \n {\"relname\":\"foontasy_forecast_samples\",\"n_live_tup\":42214,\"n_dead_tup\":0,\"seq_scan\":165,\"idx_scan\":99576,\"last_autovacuum\":\"2026-09-18T07:47:02.448934+00:00\",\"last_autoanalyze\":\"2026-10-09T09:16:33.403888+00:00\",\"bytes\":114720768}, \n {\"relname\":\"sports_trend_entries\",\"n_live_tup\":308749,\"n_dead_tup\":0,\"seq_scan\":6,\"idx_scan\":4872,\"last_autovacuum\":\"2026-10-10T02:08:57.429017+00:00\",\"last_autoanalyze\":\"2026-10-10T06:14:14.88038+00:00\",\"bytes\":87408640}, \n {\"relname\":\"squad_planning_snapshots\",\"n_live_tup\":151,\"n_dead_tup\":32,\"seq_scan\":4137,\"idx_scan\":340,\"last_autovacuum\":\"2026-09-16T16:45:01.810712+00:00\",\"last_autoanalyze\":\"2026-09-20T17:18:05.656606+00:00\",\"bytes\":80142336}, \n {\"relname\":\"match_events\",\"n_live_tup\":235607,\"n_dead_tup\":22170,\"seq_scan\":285,\"idx_scan\":208435,\"last_autovacuum\":\"2026-10-02T01:54:01.648562+00:00\",\"last_autoanalyze\":\"2026-10-09T00:13:18.819166+00:00\",\"bytes\":78102528}, \n {\"relname\":\"khl_observation_revisions\",\"n_live_tup\":58336,\"n_dead_tup\":325,\"seq_scan\":31255,\"idx_scan\":6906,\"last_autovacuum\":\"2026-10-09T13:31:39.026758+00:00\",\"last_autoanalyze\":\"2026-10-09T19:27:47.695039+00:00\",\"bytes\":60915712}, \n {\"relname\":\"team_player_seasons\",\"n_live_tup\":124531,\"n_dead_tup\":20729,\"seq_scan\":8652,\"idx_scan\":5725190,\"last_autovacuum\":\"2026-09-28T00:22:46.76387+00:00\",\"last_autoanalyze\":\"2026-10-10T02:24:58.025208+00:00\",\"bytes\":50356224}, \n {\"relname\":\"khl_sync_jobs\",\"n_live_tup\":83151,\"n_dead_tup\":13241,\"seq_scan\":63657,\"idx_scan\":1050494,\"last_autovacuum\":\"2026-10-08T22:05:15.83767+00:00\",\"last_autoanalyze\":\"2026-10-09T18:03:45.789463+00:00\",\"bytes\":39321600}, \n {\"relname\":\"betting_events\",\"n_live_tup\":941,\"n_dead_tup\":264,\"seq_scan\":141497,\"idx_scan\":11562265,\"last_autovacuum\":\"2026-10-10T09:30:08.80898+00:00\",\"last_autoanalyze\":\"2026-10-10T09:30:08.829274+00:00\",\"bytes\":30531584}, \n {\"relname\":\"sports_trend_snapshots\",\"n_live_tup\":35381,\"n_dead_tup\":2,\"seq_scan\":1000,\"idx_scan\":331319,\"last_autovacuum\":\"2026-10-10T08:19:07.213611+00:00\",\"last_autoanalyze\":\"2026-10-09T03:54:24.54767+00:00\",\"bytes\":27762688}, \n {\"relname\":\"franchise_analytics_snapshots\",\"n_live_tup\":1,\"n_dead_tup\":0,\"seq_scan\":177,\"idx_scan\":182,\"last_autovacuum\":null,\"last_autoanalyze\":\"2026-10-04T04:04:02.085159+00:00\",\"bytes\":26279936}, \n {\"relname\":\"foontasy_forecasts\",\"n_live_tup\":42214,\"n_dead_tup\":2437,\"seq_scan\":205,\"idx_scan\":63038,\"last_autovacuum\":\"2026-09-18T07:47:02.003865+00:00\",\"last_autoanalyze\":\"2026-10-09T09:16:32.849566+00:00\",\"bytes\":22315008}, \n {\"relname\":\"ingestion_jobs\",\"n_live_tup\":146,\"n_dead_tup\":4,\"seq_scan\":202099,\"idx_scan\":2065274,\"last_autovacuum\":\"2026-10-10T02:28:57.82331+00:00\",\"last_autoanalyze\":\"2026-10-10T02:28:57.829755+00:00\",\"bytes\":18792448}, \n {\"relname\":\"khl_raw_payloads\",\"n_live_tup\":1026,\"n_dead_tup\":220,\"seq_scan\":29871,\"idx_scan\":94222,\"last_autovacuum\":\"2026-10-08T00:23:54.798401+00:00\",\"last_autoanalyze\":\"2026-10-09T18:25:45.436177+00:00\",\"bytes\":17776640}, \n {\"relname\":\"khl_player_match_stats\",\"n_live_tup\":9175,\"n_dead_tup\":532,\"seq_scan\":114395,\"idx_scan\":610814,\"last_autovacuum\":\"2026-10-10T04:23:01.237265+00:00\",\"last_autoanalyze\":\"2026-10-10T09:23:08.927499+00:00\",\"bytes\":16883712}, \n {\"relname\":\"fantasy_player_prices\",\"n_live_tup\":10405,\"n_dead_tup\":0,\"seq_scan\":673,\"idx_scan\":2143385,\"last_autovacuum\":\"2026-10-10T07:17:05.69853+00:00\",\"last_autoanalyze\":\"2026-10-10T07:16:05.566469+00:00\",\"bytes\":15056896}, \n {\"relname\":\"franchise_h2h_rounds\",\"n_live_tup\":73,\"n_dead_tup\":57,\"seq_scan\":171,\"idx_scan\":9644,\"last_autovacuum\":\"2026-10-08T04:01:01.995545+00:00\",\"last_autoanalyze\":\"2026-10-10T07:10:05.124023+00:00\",\"bytes\":13950976}]\nROLLBACK",
+    "stderr": ""
+  },
+  "database_extensions": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n[\"plpgsql\"]\nROLLBACK",
+    "stderr": ""
+  },
+  "database_stats": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n[{\"stats_reset\":null,\"xact_commit\":61662473,\"xact_rollback\":273788,\"deadlocks\":0,\"temp_files\":50450,\"temp_bytes\":419661551880,\"blks_read\":534770880,\"blks_hit\":5516509125}]\nROLLBACK",
+    "stderr": ""
+  },
+  "health": {
+    "code": 0,
+    "stdout": "{\"status\":\"ok\",\"uptimeSeconds\":8154,\"release\":{\"version\":\"0.3.131\",\"commit\":\"74a5f00f162b1d22a6bc7344ee6630e0c354a595\"}}",
+    "stderr": ""
+  }
+}

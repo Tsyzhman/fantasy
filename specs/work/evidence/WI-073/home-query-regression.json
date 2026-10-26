@@ -1,0 +1,17 @@
+{
+  "beforeRelease": "0.3.135",
+  "database": "disposable isolated fantasy_scout_audit_test via loopback tunnel",
+  "before": {
+    "passed": 0,
+    "failed": 1,
+    "error": "Unknown argument tournamentHru"
+  },
+  "after": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "meaning": "Generated Prisma query validation and actual source receipt; transaction rolls fixture back.",
+  "afterImplementationVersion": "0.3.136",
+  "afterReleasedVersion": "0.3.137"
+}

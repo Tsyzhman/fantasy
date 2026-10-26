@@ -1,0 +1,6 @@
+
+> fantasy-scout@0.3.138 typecheck
+> next typegen && tsc --noEmit
+
+Generating route types...
+✓ Types generated successfully

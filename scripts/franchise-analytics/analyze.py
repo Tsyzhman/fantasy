@@ -1,6 +1,7 @@
 """Pre-round features. @spec spec://modules/franchises/FEAT-005-franchise-analytics#time"""
 from research import ROOT,save,read_db,IDS
 from sources import read_squads
+from forecast_sources import pre_round_snapshots
 import json,gzip,collections,datetime as dt,bisect,math,sys,statistics,hashlib
 import numpy as np
 import pandas as pd
@@ -45,19 +46,8 @@ def features():
  del pts,seen
  dates={}
  for pid,h in hist.items():h.sort(key=lambda x:(x['date'],x['match_id']));dates[pid]=[x['date'] for x in h]
- snaps={};snapmeta=[];invalid=0;forecastdates=[]
  fields=['playerId','providerPlayerId','name','price','position','teamName','predictedFp','alternativePredictedFp','foontasyPoints','expectedMinutes','startProbability','forecastModelVersion','forecastCalculatedAt','foontasyFetchedAt','forecastDataUpdatedAt','fixtures','fixtureDifficulties','rotationRisk','projectionListMetrics']
- for r in stream('planning'):
-  cutoff=date_iso(r['first_kickoff_at']);capt=date_iso(r['captured_at']);rn=int(r['round_key'].split(':')[2]);key=(r['league_id'],rn)
-  if capt>cutoff:invalid+=1;continue
-  pmap={}
-  for p in r['players']:
-   p={k:p.get(k) for k in fields}
-   if date_iso(p.get('forecastCalculatedAt')) and date_iso(p['forecastCalculatedAt'])>cutoff:
-    p['predictedFp']=None;p['alternativePredictedFp']=None;invalid+=1
-   if date_iso(p.get('foontasyFetchedAt')) and date_iso(p['foontasyFetchedAt'])>cutoff:p['foontasyPoints']=None
-   pmap[str(p['playerId'])]=p
-  snaps[key]=pmap;snapmeta.append({k:r[k] for k in ['league_id','round_key','first_kickoff_at','captured_at','players_count']})
+ snaps,snapmeta,invalid=pre_round_snapshots(stream('planning'),fields)
  ffo={};ffopools=collections.defaultdict(dict);ffodup=0
  for r in stream('foontasy'):
   if r['player_id']:
@@ -78,13 +68,10 @@ def features():
  rows=[];round_meta=[]
  for lg in leagues:
   for rd in lg['rounds']:
-   cutoff=min(date_ru(m['date']) for m in rd['matches']);key=(lg['league_id'],rd['round']);snap=snaps.get(key,{})
+   cutoff=min(date_ru(m['date']) for m in rd['matches']);key=(lg['league_id'],rd['round']);snap=snaps.get((lg['league_id'],cutoff),{})
    pct={c:percentiles(snap,f) for c,f in [('fo','predictedFp'),('alt','alternativePredictedFp'),('ffo','foontasyPoints')]}
    fpool={pid:v for pid,v in ffopools.get(key,{}).items() if date_iso(v['at'])<cutoff}
    fpct=percentiles(fpool,'ffo')
-   if snap:
-    sm=next(x for x in snapmeta if x['league_id']==key[0] and int(x['round_key'].split(':')[2])==key[1])
-    if date_iso(sm['first_kickoff_at'])!=cutoff:raise ValueError(('deadline mismatch',key,cutoff,sm))
    site=json.loads((ROOT/'source'/f"players-{lg['slug']}-{rd['round']}.json").read_text('utf-8'));assert len({x['id'] for x in site})==len(site)
    for p in site:
     sid=sports.get((lg['slug'],p['id']));mp=mapping.get((lg['league_id'],sid));pid=mp['player_id'] if mp else None

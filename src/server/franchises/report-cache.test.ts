@@ -12,18 +12,27 @@ const snapshot = (): Snapshot => ({
 });
 const filters: Filters = { from: "2026-07-01", to: "2027-06-30", leagues: [], completed: false };
 
-test("report cache preserves the complete JSON and invalidates immediately on snapshot replacement", () => {
+test("twenty concurrent identical requests share one render and failed flights can retry", async () => {
+  let builds = 0;
+  const cache = new FranchiseReportCache<string>(undefined, async () => { builds++; await delay(10); return "{}"; });
+  try {
+    assert.deepEqual(await Promise.all(Array.from({ length: 20 }, () => cache.get("revision", filters))), Array(20).fill("{}"));
+    assert.equal(builds, 1);
+  } finally { cache.clear(); }
+});
+
+test("report cache preserves the complete JSON and invalidates immediately on snapshot replacement", async () => {
   let builds = 0;
   const cache = new FranchiseReportCache(undefined, (s, f) => { builds++; return JSON.stringify(aggregate(s, f)); });
   const first = snapshot();
   try {
-    assert.equal(cache.get(first, filters), JSON.stringify(aggregate(first, filters)));
-    for (let i = 0; i < 10; i++) cache.get(first, filters);
+    assert.equal(await cache.get(first, filters), JSON.stringify(aggregate(first, filters)));
+    for (let i = 0; i < 10; i++) await cache.get(first, filters);
     assert.equal(builds, 1);
     const next = { ...first, generated: "2026-10-04T11:00:00Z" };
-    assert.equal(JSON.parse(cache.get(next, filters)).generated, next.generated);
+    assert.equal(JSON.parse(await cache.get(next, filters)).generated, next.generated);
     assert.equal(builds, 2);
-    cache.get(next, { ...filters, completed: true });
+    await cache.get(next, { ...filters, completed: true });
     assert.equal(builds, 3);
   } finally { cache.clear(); }
 });
@@ -31,17 +40,17 @@ test("report cache preserves the complete JSON and invalidates immediately on sn
 test("report cache bounds retained strings and expires them while idle", async () => {
   const cache = new FranchiseReportCache({ maxBytes: 16, maxEntries: 2, ttlMs: 15 }, (_s, f) => f.from);
   const s = snapshot();
-  cache.get(s, { ...filters, from: "1234" });
-  cache.get(s, { ...filters, from: "5678" });
-  cache.get(s, { ...filters, from: "abcd" });
+  await cache.get(s, { ...filters, from: "1234" });
+  await cache.get(s, { ...filters, from: "5678" });
+  await cache.get(s, { ...filters, from: "abcd" });
   assert.deepEqual(cache.metrics(), { entries: 2, bytes: 16 });
-  cache.get(s, filters); // Oversized entries are served without being retained.
+  await cache.get(s, filters); // Oversized entries are served without being retained.
   assert.deepEqual(cache.metrics(), { entries: 2, bytes: 16 });
   await delay(40);
   assert.deepEqual(cache.metrics(), { entries: 0, bytes: 0 });
 });
 
-test("failed renders are retryable and never poison other filters", () => {
+test("failed renders are retryable and never poison other filters", async () => {
   let builds = 0;
   const cache = new FranchiseReportCache(undefined, () => {
     if (++builds === 1) throw new Error("render failed");
@@ -49,13 +58,13 @@ test("failed renders are retryable and never poison other filters", () => {
   });
   const s = snapshot();
   try {
-    assert.throws(() => cache.get(s, filters), /render failed/);
-    assert.equal(cache.get(s, filters), "{}");
+    await assert.rejects(cache.get(s, filters), /render failed/);
+    assert.equal(await cache.get(s, filters), "{}");
     assert.equal(builds, 2);
   } finally { cache.clear(); }
 });
 
-test("cached calendar and league selections keep separate populations and empty ranges", () => {
+test("cached calendar and league selections keep separate populations and empty ranges", async () => {
   const s = snapshot();
   s.leagues = { a: "Англия", b: "Италия" };
   s.franchises = [{ id: 1, name: "Франшиза" }];
@@ -74,13 +83,13 @@ test("cached calendar and league selections keep separate populations and empty 
   const empty = { ...september, from: "2027-01-01", to: "2027-01-01" };
   try {
     for (const f of [filters, september, england, empty, england, september, filters]) {
-      const report = JSON.parse(cache.get(s, f));
+      const report = JSON.parse(await cache.get(s, f));
       const expected = aggregate(s, f);
       assert.deepEqual(report, expected);
     }
-    assert.equal(JSON.parse(cache.get(s, england)).squads, 1);
-    assert.equal(JSON.parse(cache.get(s, england)).franchises[0].metrics.own, 10);
-    assert.equal(JSON.parse(cache.get(s, empty)).squads, 0);
+    assert.equal(JSON.parse(await cache.get(s, england)).squads, 1);
+    assert.equal(JSON.parse(await cache.get(s, england)).franchises[0].metrics.own, 10);
+    assert.equal(JSON.parse(await cache.get(s, empty)).squads, 0);
     assert.equal(cache.metrics().entries, 4);
     assert.ok(cache.metrics().bytes <= 24 * 1024 * 1024);
   } finally { cache.clear(); }

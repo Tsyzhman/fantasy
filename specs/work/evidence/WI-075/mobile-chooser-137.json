@@ -1,0 +1,53 @@
+{
+  "version": "0.3.137",
+  "geometry": {
+    "panel": {
+      "x": 15,
+      "y": 60,
+      "width": 361,
+      "height": 769
+    },
+    "ffo": {
+      "x": 38.5,
+      "y": 661.25,
+      "width": 15,
+      "height": 15
+    },
+    "rr": {
+      "x": 38.5,
+      "y": 980,
+      "width": 15,
+      "height": 15
+    },
+    "viewport": {
+      "width": 391,
+      "height": 844
+    },
+    "ffoSelected": true,
+    "rrSelected": true
+  },
+  "escape": {
+    "columnsOpen": false,
+    "focusText": "ColumnsСтолбцы11",
+    "overflow": 0
+  },
+  "observation": {
+    "touch": true,
+    "overflow": 0,
+    "mobileCards": 41,
+    "selectedColumns": [
+      "FP",
+      "FP/price",
+      "5R FP",
+      "FFO",
+      "FFO/price",
+      "5R FFO",
+      "Alt",
+      "Alt/price",
+      "Alt 5R",
+      "Fixtures",
+      "RR %"
+    ],
+    "openDetails": []
+  }
+}

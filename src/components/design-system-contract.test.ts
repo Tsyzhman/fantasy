@@ -1,3 +1,4 @@
+/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -5,10 +6,10 @@ import test from "node:test";
 const globals = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 const layout = readFileSync(new URL("../app/layout.tsx", import.meta.url), "utf8");
 const themeToggle = readFileSync(new URL("./theme-toggle.tsx", import.meta.url), "utf8");
-const appHeader = readFileSync(new URL("./app-header.tsx", import.meta.url), "utf8");
+const densityToggle = readFileSync(new URL("./density-toggle.tsx", import.meta.url), "utf8");
 const tailwindConfig = readFileSync(new URL("../../tailwind.config.ts", import.meta.url), "utf8");
 
-test("Cloudline semantic tokens define both complete themes", () => {
+test("Editorial Sport semantic tokens define both complete themes", () => {
   for (const token of [
     "--bg-page",
     "--surface-1",
@@ -16,8 +17,7 @@ test("Cloudline semantic tokens define both complete themes", () => {
     "--accent-primary",
     "--focus-ring",
     "--page-atmosphere",
-    "--button-primary-bg",
-    "--chart-8"
+    "--button-primary-bg"
   ]) {
     const declarations = globals.match(new RegExp(`${token}:`, "g")) ?? [];
     assert.equal(declarations.length, 2, `${token} must exist once per theme`);
@@ -25,25 +25,24 @@ test("Cloudline semantic tokens define both complete themes", () => {
 
   assert.match(globals, /html\[data-theme="light"\]/);
   assert.match(globals, /html\[data-theme="dark"\]/);
-  assert.match(globals, /--bg-page:\s*#f4f8fd/);
-  assert.match(globals, /--bg-page:\s*#0d1727/);
+  assert.match(globals, /--bg-page:\s*#F5F3EC/);
+  assert.match(globals, /--bg-page:\s*#10171F/);
   assert.match(globals, /body\s*\{[\s\S]*background:\s*var\(--page-atmosphere\)/);
 });
 
-test("theme control stays centered and meets the shared touch target", () => {
-  assert.match(themeToggle, /data-icon-button/);
-  assert.match(themeToggle, /className="ui-icon-button !justify-center"/);
-  assert.match(themeToggle, /aria-hidden="true"/);
-  assert.match(themeToggle, /aria-pressed=\{theme === "dark"\}/);
-  assert.match(globals, /\.ui-icon-button\s*\{[\s\S]*width:\s*var\(--control-default\)/);
-  assert.match(globals, /@media \(pointer: coarse\)[\s\S]*width:\s*var\(--control-touch\)/);
-  assert.match(appHeader, /button:not\(\[data-icon-button\]\)/);
+test("theme and density controls expose independent persisted choices", () => {
+  for (const option of ["system", "light", "dark"]) assert.ok(themeToggle.includes(`value="${option}"`));
+  for (const option of ["comfortable", "compact"]) assert.ok(densityToggle.includes(`value="${option}"`));
+  assert.match(themeToggle, /aria-label=/);
+  assert.match(densityToggle, /aria-label=/);
+  assert.match(layout, /fantasy-density/);
+  assert.match(layout, /prefers-color-scheme: dark/);
 });
 
-test("ordinary cards have borders and Cloudline elevation", () => {
-  assert.match(globals, /\.ui-card\s*\{[\s\S]*border: 1px solid var\(--border\)/);
-  assert.match(globals, /\.ui-card\s*\{[\s\S]*box-shadow: var\(--shadow-sm\)/);
-  assert.match(globals, /\.shadow-soft\s*\{[\s\S]*box-shadow: var\(--shadow-sm\)/);
+test("ordinary surfaces have no decorative gradients or elevation", () => {
+  assert.match(globals, /--shadow-sm: none/);
+  assert.doesNotMatch(globals, /radial-gradient|backdrop-filter/);
+  assert.match(globals, /--button-primary-bg: var\(--accent\)/);
 });
 
 test("Onest is self-hosted by Next instead of relying on a system font", () => {
@@ -58,10 +57,17 @@ test("semantic 950 text cannot collapse onto its soft alert background", () => {
   assert.match(tailwindConfig, /950: `rgb\(var\(--\$\{name\}-rgb\)/);
   assert.doesNotMatch(tailwindConfig, /950: `rgb\(var\(--\$\{name\}-soft-rgb\)/);
 
-  assert.ok(contrastRatio("#7b5a13", "#fff4d8") >= 4.5);
-  assert.ok(contrastRatio("#efc56d", "#3b3120") >= 4.5);
-  assert.ok(contrastRatio("#61718a", "#f4f8fd") >= 4.5);
-  assert.ok(contrastRatio("#91a2ba", "#0d1727") >= 4.5);
+  const themes = [
+    { surfaces: ["#F5F3EC", "#FFFFFF", "#F0F1EC", "#E0EEE7"], text: ["#202925", "#42534A", "#5D6D63"], accent: "#206854", on: "#FFFFFF", warning: "#915B19", warningBg: "#FFF0D9" },
+    { surfaces: ["#10171F", "#1C2732", "#24313C", "#1A3938"], text: ["#EAF1F5", "#B8C5CE", "#93A5B4"], accent: "#63CDB8", on: "#102721", warning: "#F1C379", warningBg: "#3B3120" }
+  ];
+  for (const theme of themes) {
+    for (const background of theme.surfaces) {
+      for (const foreground of theme.text) assert.ok(contrastRatio(foreground, background) >= 4.5, `${foreground} on ${background}`);
+    }
+    assert.ok(contrastRatio(theme.on, theme.accent) >= 4.5);
+    assert.ok(contrastRatio(theme.warning, theme.warningBg) >= 4.5);
+  }
 });
 
 /** @spec spec://modules/machete/FEAT-003-squad-player-card#contracts */

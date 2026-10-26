@@ -1,0 +1,8 @@
+{
+  "samples": 148,
+  "non_200": 0,
+  "first_utc": "2026-10-21T09:51:39.280663+00:00",
+  "last_utc": "2026-10-21T10:04:07.419598+00:00",
+  "last_revision": "6da22c0c23a85066f847750a3ecbd69807cbf37f",
+  "max_response_ms": 126
+}

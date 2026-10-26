@@ -115,6 +115,9 @@ def main() -> int:
     report = {
         "status": status,
         "generatedAt": iso_time(now),
+        "logCoverageStart": iso_time(log_coverage_start) if log_coverage_start else None,
+        "logCoverageEnd": iso_time(log_coverage_end) if log_coverage_end else None,
+        "retentionCoversWindowStart": log_coverage_start is not None and log_coverage_start <= cutoff,
         **(
             {"windowMinutes": since_minutes}
             if args.window_start is None

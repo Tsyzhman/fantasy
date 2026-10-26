@@ -1,0 +1,19 @@
+{
+  "status": "current",
+  "commit": "4dc5e5a84150008ad267e3630003d28241758a12",
+  "source": "working_tree",
+  "fingerprint": "94b5b1d857d0139b2b960b96c4ef98a658a13b62f5ff0c087e5a3a3cf8958406",
+  "diagnostics": [],
+  "provenance": {
+    "commit": "4dc5e5a84150008ad267e3630003d28241758a12",
+    "source": "working_tree",
+    "observedAt": "2026-10-23T11:36:33.075Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": [
+        "scripts/deploy-production-docker.sh",
+        "src/core_data/production-retention-contract.test.ts"
+      ]
+    }
+  }
+}

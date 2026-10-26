@@ -5,6 +5,7 @@ export type SportsRuFantasyPriceHealthInput = {
   lastSyncedAt: Date | null;
   priceCount: number;
   mappedCount: number;
+  excludedCount?: number;
 };
 
 export function evaluateSportsRuFantasyPriceHealth(
@@ -14,9 +15,12 @@ export function evaluateSportsRuFantasyPriceHealth(
 ) {
   const exactAgeHours = input.lastSyncedAt ? (now.getTime() - input.lastSyncedAt.getTime()) / 3_600_000 : null;
   const ageHours = exactAgeHours === null ? null : round(exactAgeHours);
-  const mappedPercent = input.priceCount > 0 ? round((input.mappedCount / input.priceCount) * 100) : 0;
+  const excludedCount = input.excludedCount ?? 0;
+  const eligibleCount = input.priceCount - excludedCount;
+  const validExclusions = Number.isInteger(excludedCount) && excludedCount >= 0 && eligibleCount >= input.mappedCount;
+  const mappedPercent = eligibleCount > 0 ? round((input.mappedCount / eligibleCount) * 100) : 0;
   const healthy =
-    exactAgeHours !== null &&
+    validExclusions && exactAgeHours !== null &&
     exactAgeHours >= 0 &&
     exactAgeHours <= thresholds.maximumAgeHours &&
     input.priceCount >= thresholds.minimumPlayers &&
@@ -31,6 +35,8 @@ export function evaluateSportsRuFantasyPriceHealth(
     ageHours,
     priceCount: input.priceCount,
     mappedCount: input.mappedCount,
+    excludedCount,
+    eligibleCount,
     mappedPercent
   };
 }

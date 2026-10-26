@@ -40,3 +40,39 @@ test('identity, season and provider column drift fail closed',()=>{
  assert.throws(()=>parseHockeyHistory(html,{...expected,season:'2025\/2026'}),/IDENTITY|SEASON/);
  assert.throws(()=>parseHockeyHistory(html.replace('МИН','MIN'),expected),/COLUMNS/);
 });
+
+test('blank archive headers require the same provider route, verified current tag and selected season',()=>{
+ const currentHtml=fixture('blank-current'), archive=fixture('blank-archive');
+ const tagId=/\/tags\/(\d+)\//.exec(currentHtml)![1];
+ const current=parseHockeyHistory(currentHtml,{tagId,season:'2026/2027',position:'F'});
+ const currentUrl='https://www.sports.ru/fantasy/hockey/player/info/107/2152421.html';
+ const verifiedArchiveIdentity={current,currentUrl,archiveUrl:currentUrl+'?s=1317639',providerSeasonId:'1317639'};
+ const expected={tagId,season:'2025/2026',position:'F' as const,historyOnly:true,verifiedArchiveIdentity};
+ const result=parseHockeyHistory(archive,expected);
+ assert.equal(result.tagId,tagId);assert.equal(result.name,current.name);assert.ok(result.rows.length>0);
+ assert.throws(()=>parseHockeyHistory(archive,{...expected,verifiedArchiveIdentity:undefined}),/IDENTITY/);
+ assert.throws(()=>parseHockeyHistory(archive,{...expected,verifiedArchiveIdentity:{...verifiedArchiveIdentity,archiveUrl:currentUrl.replace('2152421','123')+'?s=1317639'}}),/IDENTITY/);
+ assert.throws(()=>parseHockeyHistory(archive,{...expected,tagId:'123'}),/IDENTITY/);
+ assert.throws(()=>parseHockeyHistory(archive.replace('<b></b>','<b>Другой игрок</b>'),expected),/IDENTITY/);
+});
+
+test('a vanity current profile needs a verified numeric-tag redirect to the exact same canonical profile',()=>{
+ const profileUrl='https://www.sports.ru/hockey/person/thomas-gregoire/';
+ const current=parseHockeyHistory(fixture('skater').replace('https://www.sports.ru/tags/161159685/',profileUrl),expected);
+ assert.equal(current.tagId,null);
+ const currentUrl='https://www.sports.ru/fantasy/hockey/player/info/107/123.html';
+ const context={current,currentUrl,archiveUrl:currentUrl+'?s=1317639',providerSeasonId:'1317639'};
+ const input={...expected,season:'2025/2026',historyOnly:true,verifiedArchiveIdentity:context};
+ assert.throws(()=>parseHockeyHistory(fixture('previous'),input),/IDENTITY/);
+ assert.ok(parseHockeyHistory(fixture('previous'),{...input,verifiedArchiveIdentity:{...context,tagProfile:{tagId:expected.tagId,url:profileUrl}}}).rows.length>0);
+ assert.throws(()=>parseHockeyHistory(fixture('previous'),{...input,verifiedArchiveIdentity:{...context,tagProfile:{tagId:'999',url:profileUrl}}}),/IDENTITY/);
+ assert.throws(()=>parseHockeyHistory(fixture('previous'),{...input,verifiedArchiveIdentity:{...context,tagProfile:{tagId:expected.tagId,url:profileUrl+'other'}}}),/IDENTITY/);
+});
+
+test('verified historical D/F classification is retained while goalkeeper/skater conflicts are rejected',()=>{
+ const current=parseHockeyHistory(fixture('skater'),expected);
+ const currentUrl='https://www.sports.ru/fantasy/hockey/player/info/107/123.html';
+ const input={...expected,season:'2025/2026',historyOnly:true,verifiedArchiveIdentity:{current,currentUrl,archiveUrl:currentUrl+'?s=1317639',providerSeasonId:'1317639'}};
+ assert.equal(parseHockeyHistory(fixture('previous').replace('Защитник','Нападающий'),input).position,'F');
+ assert.throws(()=>parseHockeyHistory(fixture('previous').replace('Защитник','Вратарь'),input),/IDENTITY/);
+});

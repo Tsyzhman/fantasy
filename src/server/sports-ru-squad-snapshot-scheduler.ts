@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { loadActiveFantasySourceScopes } from "./fantasy-source-registry";
 import { createLogger } from "@/lib/logger";
 import { parseSportsRuFantasySyncScopes } from "@/machete/sports_ru_fantasy_config";
 import { syncSportsRuSquadSnapshots } from "@/machete/sports_ru_squad_snapshots";
@@ -22,13 +23,7 @@ export function startSportsRuSquadSnapshotScheduler() {
     process.env.SPORTS_RU_FANTASY_SYNC_ENABLED === "false"
     || process.env.SPORTS_RU_SQUAD_SYNC_ENABLED === "false"
   ) return;
-  const scopes = parseSportsRuFantasySyncScopes(process.env.SPORTS_RU_FANTASY_SYNC_SCOPES ?? "");
-  if (scopes.length === 0) {
-    logger.warn("Scheduled Sports.ru squad snapshots are not configured.", {
-      requiredEnvironment: "SPORTS_RU_FANTASY_SYNC_SCOPES"
-    });
-    return;
-  }
+  parseSportsRuFantasySyncScopes(process.env.SPORTS_RU_FANTASY_SYNC_SCOPES ?? "");
 
   const state = schedulerState();
   if (state.started) return;
@@ -44,7 +39,7 @@ export async function runSportsRuSquadSnapshotSyncNow(trigger: "startup" | "inte
   }
   state.running = true;
   try {
-    const scopes = parseSportsRuFantasySyncScopes(process.env.SPORTS_RU_FANTASY_SYNC_SCOPES ?? "");
+    const scopes = await loadActiveFantasySourceScopes(prisma);
     const result = await syncSportsRuSquadSnapshots(prisma, scopes);
     logger.info("Sports.ru squad snapshot sync finished.", { trigger, ...result });
     return result;

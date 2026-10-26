@@ -383,7 +383,7 @@ export function parseFantasyPlayerPoolSnapshotMetadata(value: unknown): FantasyP
   if (!metadata.dataFreshness || typeof metadata.dataFreshness !== "object") return null;
   return {
     ...(metadata as FantasyPlayerPoolSnapshotMetadata),
-    rules: sportsRuTransferRules(metadata.rules)
+    rules: sportsRuTransferRules(metadata.rules, metadata.rounds)
   };
 }
 

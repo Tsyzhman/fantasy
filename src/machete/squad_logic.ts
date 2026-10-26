@@ -29,6 +29,8 @@ export type FantasySquadRules = {
   benchSize: number;
   maxPlayersPerTeam: number;
   transferLimitPerRound?: number | null;
+  /** Explicit allowances aligned with the planner's current ordered rounds. */
+  transferLimitsByRound?: number[];
   maxBankedTransfers?: number | null;
   paidTransferPointCost?: number | null;
   positionLimits: Record<Exclude<FantasyPositionGroup, "UNK">, number>;
@@ -473,10 +475,23 @@ export const transfersPerFantasyRound = 3;
 export const sportsRuMaxBankedTransfers = transfersPerFantasyRound;
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
-export function sportsRuTransferRules(rules: FantasySquadRules): FantasySquadRules {
+export function sportsRuTransferRules(
+  rules: FantasySquadRules,
+  rounds: ReadonlyArray<Pick<FantasyRoundProjection, "id" | "startsAt">> = []
+): FantasySquadRules {
+  // Sports.ru tour IDs are globally unique. The local ordinal can differ when a
+  // postponed/missing tour is absent, so it must not identify these exceptions.
+  const exceptionalRound = rounds.findIndex((round) =>
+    (/^sports-ru:tour:\d+:2391$/.test(round.id) &&
+      Date.parse(round.startsAt ?? "") === Date.UTC(2026, 9, 16, 19)) ||
+    (/^sports-ru:tour:\d+:2755$/.test(round.id) &&
+      Date.parse(round.startsAt ?? "") === Date.UTC(2026, 9, 20, 16, 45))
+  );
   return {
     ...rules,
     transferLimitPerRound: transfersPerFantasyRound,
+    // Recompute from tour identities on every read; never retain shifted cache offsets.
+    transferLimitsByRound: exceptionalRound < 0 ? undefined : rounds.map((_, offset) => offset === exceptionalRound ? 6 : transfersPerFantasyRound),
     maxBankedTransfers: sportsRuMaxBankedTransfers,
     paidTransferPointCost: 0
   };
@@ -557,10 +572,12 @@ export type FantasyTransferBudget = {
   perRound: number;
   maxBanked: number;
   paidPointCost: number;
+  byRound?: number[];
 };
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
 export function fantasyTransferBudget(
-  rules: Pick<FantasySquadRules, "transferLimitPerRound" | "maxBankedTransfers" | "paidTransferPointCost">
+  rules: Pick<FantasySquadRules, "transferLimitPerRound" | "transferLimitsByRound" | "maxBankedTransfers" | "paidTransferPointCost">
 ): FantasyTransferBudget {
   const perRound = Number.isInteger(rules.transferLimitPerRound) && (rules.transferLimitPerRound ?? 0) > 0
     ? rules.transferLimitPerRound!
@@ -571,13 +588,16 @@ export function fantasyTransferBudget(
   const paidPointCost = typeof rules.paidTransferPointCost === "number" && Number.isFinite(rules.paidTransferPointCost)
     ? Math.max(0, rules.paidTransferPointCost)
     : 0;
-  return { perRound, maxBanked, paidPointCost };
+  const byRound = rules.transferLimitsByRound?.map((limit) => Number.isInteger(limit) && limit > 0 ? limit : perRound);
+  return { perRound, maxBanked, paidPointCost, ...(byRound?.length ? { byRound } : {}) };
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
 export function openingAvailableTransfers(
   budget: FantasyTransferBudget,
   storedOpening?: number | null
 ) {
+  if (budget.byRound?.[0] !== undefined) return budget.byRound[0];
   if (Number.isInteger(storedOpening) && (storedOpening ?? 0) > 0) {
     return Math.min(budget.maxBanked, storedOpening!);
   }
@@ -589,6 +609,7 @@ export function nextBankedTransfers(available: number, used: number, budget: Fan
   return Math.min(budget.maxBanked, unused + budget.perRound);
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
 export function availableTransfersByRound(input: {
   roundPlans: Array<{ selections: Array<Pick<FantasySquadSelection, "playerId">> }>;
   baselineSelections: Array<Pick<FantasySquadSelection, "playerId">>;
@@ -598,6 +619,7 @@ export function availableTransfersByRound(input: {
   const rows: Array<{ used: number; available: number }> = [];
   let available = openingAvailableTransfers(input.budget, input.openingAvailable);
   for (let offset = 0; offset < input.roundPlans.length; offset += 1) {
+    available = input.budget.byRound?.[offset] ?? available;
     const previous = offset === 0 ? input.baselineSelections : input.roundPlans[offset - 1].selections;
     const used = countFantasySquadTransfers(previous, input.roundPlans[offset].selections);
     rows.push({ used, available });

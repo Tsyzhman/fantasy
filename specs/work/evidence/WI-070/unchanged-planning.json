@@ -1,0 +1,10 @@
+{
+  "synthetic": true,
+  "unchangedDeliveryTicks": 360,
+  "writes": 0,
+  "realScheduleRevisionChangeWrites": 1,
+  "deliveryCadenceSeconds": 5,
+  "periodicPlanningMinutes": 5,
+  "source": "src/server/deadline-reports/campaign-planning.test.ts",
+  "productionWindow": "pending rollout"
+}

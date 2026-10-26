@@ -42,6 +42,8 @@ Persistent UUIDs are stored in a common mapping table, the calendar is selected 
 ## Source and match selection {#source}
 Authorized API `https://platform-api.sorareinside.com`, the same one the site uses. `/gameweeks` sets the current windows, `/games` returns the schedule along with nullable links to forecasts, `/lineups/:id` returns the published forecast. All windows with an end in the future and a start within 14 days are loaded, as well as scheduledLineups. First, the minimum future date of the team is selected, then its lineupId; matches without a forecast cannot be discarded until the minimum is selected. Past, canceled, postponed and already started matches are excluded. Unknown format/status closes the entry. Conflicting schedule duplicates block the cycle. Incomplete loading of any window prevents the entire loop from being applied.
 
+The scheduledLineups projection may omit a club's country. Reuse country only from complete gameweek data loaded in the same cycle for the identical source UUID, name, slug and club/national-team type. Full gameweeks still require country; missing or conflicting corroborating metadata aborts the cycle. Never infer country from a club name, discard an unparseable window, or choose a later fixture to obtain a prediction.
+
 <a name="mapping"></a>
 
 ## Identity and data {#mapping}
@@ -53,6 +55,8 @@ Mapped Sports.ru prices checked within 48 hours may supply a full-name alias and
 
 ## Application and competition {#apply}
 Only `lineup_players.starting_players`, exactly 11 unique players and one goalkeeper; not alternate_players and not the total start percentage. Game_id, team.id, is_published and future date are checked immediately before recording. In one transaction, under the existing starting-xi lock, the checkboxes are changed and a CURRENT_XI snapshot update request is written. An existing framework application implementation is used. Metadata stores match ID, kickoff, lineup ID, check time, source and fingerprint, including the case of permanent checkmarks. As long as the prediction is for a future match, other automated sources will not overwrite it. Manually setting the base retains the same scenario; the next import applies the current forecast according to the schedule.
+
+Ordinary club-roster refreshes atomically merge their metadata into the current database row and never replace the `probableLineup` field. Logo/short-name updates preserve the forecast's source, selected fixture, check time and fingerprint, including when a lineup publication happens concurrently.
 
 <a name="data"></a>
 
@@ -104,6 +108,8 @@ Existing probable-lineup sync, starting-xi-from-match, fantasy-player-pool-refre
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-10-23: WI-080 — accept the sparse scheduled-lineups club projection only with exact same-cycle complete identity metadata; retain all schedule and XI safeguards.
 
 - 2026-10-09: Verified fresh Sports.ru full-name aliases and atomic corroborated restoration of inactive current-club members prevent valid XI rejection without guessing identities (WI-058).
 - 2026-10-09: Bound the corroborating Sports.ru price write batch to 60 seconds so startup load does not cancel a normal tournament at the default five seconds (WI-058).

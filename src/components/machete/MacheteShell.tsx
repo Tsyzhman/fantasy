@@ -53,7 +53,7 @@ export function MacheteShell({
       <SectionCrumb items={items} tools={tools} note={scheduleNote} />
       {children}
       {compact ? (
-        <nav aria-labelledby="machete-mobile-nav-label" className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.10)] backdrop-blur sm:hidden">
+        <nav aria-labelledby="machete-mobile-nav-label" className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] sm:hidden">
           <span id="machete-mobile-nav-label" className="sr-only"><I18nText en="Main Machete sections" ru="Основные разделы Machete" /></span>
           <div className="mx-auto grid max-w-lg grid-cols-4 px-1.5 py-1">
             {mobileItems.map((item) => {

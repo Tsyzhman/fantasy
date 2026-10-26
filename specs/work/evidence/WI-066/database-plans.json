@@ -1,0 +1,27 @@
+{
+  "job_retention": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n[\n  {\n    \"Plan\": {\n      \"Node Type\": \"ModifyTable\",\n      \"Operation\": \"Delete\",\n      \"Parallel Aware\": false,\n      \"Async Capable\": false,\n      \"Relation Name\": \"khl_sync_jobs\",\n      \"Alias\": \"khl_sync_jobs\",\n      \"Startup Cost\": 0.00,\n      \"Total Cost\": 5438.00,\n      \"Plan Rows\": 0,\n      \"Plan Width\": 0,\n      \"Plans\": [\n        {\n          \"Node Type\": \"Seq Scan\",\n          \"Parent Relationship\": \"Outer\",\n          \"Parallel Aware\": false,\n          \"Async Capable\": false,\n          \"Relation Name\": \"khl_sync_jobs\",\n          \"Alias\": \"khl_sync_jobs\",\n          \"Startup Cost\": 0.00,\n          \"Total Cost\": 5438.00,\n          \"Plan Rows\": 1926,\n          \"Plan Width\": 6,\n          \"Filter\": \"((status = ANY ('{DONE,FAILED}'::text[])) AND (\\\"updatedAt\\\" < (now() - '30 days'::interval)))\"\n        }\n      ]\n    }\n  }\n]\nROLLBACK\n",
+    "stderr": ""
+  },
+  "revision_retention": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n[\n  {\n    \"Plan\": {\n      \"Node Type\": \"ModifyTable\",\n      \"Operation\": \"Delete\",\n      \"Parallel Aware\": false,\n      \"Async Capable\": false,\n      \"Relation Name\": \"khl_observation_revisions\",\n      \"Alias\": \"khl_observation_revisions\",\n      \"Startup Cost\": 0.00,\n      \"Total Cost\": 4654.16,\n      \"Plan Rows\": 0,\n      \"Plan Width\": 0,\n      \"Plans\": [\n        {\n          \"Node Type\": \"Seq Scan\",\n          \"Parent Relationship\": \"Outer\",\n          \"Parallel Aware\": false,\n          \"Async Capable\": false,\n          \"Relation Name\": \"khl_observation_revisions\",\n          \"Alias\": \"khl_observation_revisions\",\n          \"Startup Cost\": 0.00,\n          \"Total Cost\": 4654.16,\n          \"Plan Rows\": 1343,\n          \"Plan Width\": 6,\n          \"Filter\": \"((\\\"streamId\\\" ~~ 'availability:%'::text) AND (\\\"observedAt\\\" < (now() - '30 days'::interval)))\"\n        }\n      ]\n    }\n  }\n]\nROLLBACK\n",
+    "stderr": ""
+  },
+  "catalog_updates": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n[{\"relname\":\"khl_contests\",\"n_live_tup\":1,\"n_tup_ins\":1,\"n_tup_upd\":142371,\"n_tup_del\":0,\"n_dead_tup\":19,\"bytes\":90112}, \n {\"relname\":\"khl_fantasy_players\",\"n_live_tup\":704,\"n_tup_ins\":704,\"n_tup_upd\":43283737,\"n_tup_del\":0,\"n_dead_tup\":441,\"bytes\":1654784}, \n {\"relname\":\"khl_sync_jobs\",\"n_live_tup\":83139,\"n_tup_ins\":91460,\"n_tup_upd\":183803,\"n_tup_del\":8321,\"n_dead_tup\":12575,\"bytes\":39313408}]\nROLLBACK\n",
+    "stderr": ""
+  },
+  "job_duplicate_active": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n0\nROLLBACK\n",
+    "stderr": ""
+  },
+  "new_slow_stats": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n[{\"temp_files\":50276,\"temp_bytes\":418159556872,\"deadlocks\":0}]\nROLLBACK\n",
+    "stderr": ""
+  }
+}

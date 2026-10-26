@@ -1,0 +1,23 @@
+{
+  "status": "current",
+  "diagnostics": [],
+  "fingerprint": "88b7bc5061e0174ae4c76bacb86fb67d161b0e321a73fb0356a218c340a99b46",
+  "provenance": {
+    "commit": "2709eaeaf28223b53aca7f66f54c32cdf2a235b8",
+    "source": "working_tree",
+    "observedAt": "2026-10-20T07:29:01.852Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": [
+        ".tmp-wi078-spec-snapshot.json",
+        "package-lock.json",
+        "package.json",
+        "specs/modules/machete/FEAT-001-global-ranking-strategy.md",
+        "src/machete/squad_logic.test.ts",
+        "src/machete/squad_logic.ts",
+        "src/machete/squad_planner.test.ts",
+        "src/machete/squad_planner.ts"
+      ]
+    }
+  }
+}

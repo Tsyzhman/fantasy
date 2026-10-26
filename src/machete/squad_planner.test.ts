@@ -1500,6 +1500,64 @@ test("saved five-round plans roll forward and keep only valid future variants", 
   assert.deepEqual(rolled[4].selections.map((selection) => selection.playerId), validAfterRejectedRound.map((selection) => selection.playerId));
 });
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
+test("rollover retains a six-transfer exceptional future plan but rejects four in the following ordinary tour", () => {
+  const pool = rolloverPlayerPool();
+  const base = rolloverSelections();
+  const swaps = [["3", "31"], ["4", "32"], ["5", "33"], ["8", "34"], ["9", "35"], ["13", "36"]];
+  for (const [outId, inId] of swaps) {
+    const original = pool.find((player) => player.id === outId)!;
+    pool.push({ ...original, id: inId, playerId: inId });
+  }
+  const six = swaps.reduce((selections, [outId, inId]) => replaceSelection(selections, outId, inId), base);
+  const fourBack = swaps.slice(0, 4).reduce((selections, [outId, inId]) => replaceSelection(selections, inId, outId), six);
+  const rolled = rolloverFantasySquadRoundPlans({
+    plans: [base, base, six, fourBack, six].map((selections, roundOffset) => ({ roundOffset, linkedToPrevious: false, selections })),
+    shift: 1, fallbackSelections: base, pool,
+    rules: { ...defaultFantasySquadRules, transferLimitPerRound: 3, maxBankedTransfers: 3, transferLimitsByRound: [3, 6, 3, 3, 3] }
+  });
+  assert.deepEqual(rolled[1].selections.map((selection) => selection.playerId), six.map((selection) => selection.playerId));
+  assert.deepEqual(rolled[2].selections.map((selection) => selection.playerId), six.map((selection) => selection.playerId));
+  assert.equal(rolled[2].linkedToPrevious, true);
+});
+
+for (const { leagueId, name, rounds } of [
+  { leagueId: 48n, name: "Championship", rounds: [
+    { id: "sports-ru:tour:10:2391", label: "11 тур", startsAt: "2026-10-16T19:00:00.000Z", fixtureCount: 13 },
+    { id: "sports-ru:tour:11:2392", label: "12 тур", startsAt: "2026-10-23T19:00:00.000Z", fixtureCount: 12 }
+  ] },
+  { leagueId: 42n, name: "Champions League", rounds: [
+    { id: "sports-ru:tour:2:2755", label: "3 тур", startsAt: "2026-10-20T16:45:00.000Z", fixtureCount: 18 },
+    { id: "sports-ru:tour:3:2756", label: "4 тур", startsAt: "2026-11-03T17:45:00.000Z", fixtureCount: 18 }
+  ] }
+]) {
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
+test(`live and frozen cached ${name} pools apply the exact tour exception without rebuilding metadata`, async () => {
+  const league = { leagueId, season: "2026/2027", name, displayName: name,
+    country: null, providerLeagueId: String(leagueId), isCurrent: true, updatedAt: new Date("2026-10-20T00:00:00Z") };
+  const storedRules = Object.freeze({ ...defaultFantasySquadRules, transferLimitPerRound: 3, maxBankedTransfers: 3 });
+  const metadata = Object.freeze({ version: 1, readiness: {}, rules: storedRules, rounds,
+    bookmakerFavorites: [], historySeasonOptions: ["2026/2027"], priceStatus: {}, dataFreshness: {} });
+  const parsed = parseFantasyPlayerPoolSnapshotMetadata(metadata)!;
+  const shell = await loadSportsRuFantasySquadPlannerShellData({
+    fantasyContest: { findFirst: async () => ({ id: "championship-contest", maxPlayersPerTeam: 2 }) },
+    userScoringPreference: { findUnique: async () => null },
+    fantasyPlayerPoolSnapshot: { findFirst: async () => ({ id: "unchanged-snapshot", metadata }) },
+    userFantasySquad: { findMany: async () => [] }
+  } as never, "user", league, null, {});
+  assert.ok(shell);
+  for (const rules of [parsed.rules, shell.rules, fantasyRulesForLeague(league, null, "SPORTS_RU", rounds)]) {
+    assert.deepEqual(fantasyTransferBudget(rules).byRound, [6, 3]);
+  }
+  assert.equal(shell.playerPoolSnapshotId, "unchanged-snapshot");
+  assert.equal("transferLimitsByRound" in storedRules, false);
+  for (const other of [{ ...league, leagueId: 57n }, { ...league, season: "2027/2028" }]) {
+    assert.equal(fantasyTransferBudget(fantasyRulesForLeague(other, null, "SPORTS_RU", rounds)).byRound, undefined);
+  }
+  assert.deepEqual(fantasyTransferBudget(fantasyRulesForLeague(league, null, "FPL", rounds)), { perRound: 1, maxBanked: 5, paidPointCost: 4 });
+});
+}
+
 test("round rollover resolves exact stored rounds, numeric gaps, and legacy filters safely", () => {
   assert.equal(fantasySquadRoundShift(["round:12", "round:13", "round:14"], ["round:13", "round:14"]), 1);
   assert.equal(fantasySquadRoundShift(["round:12", "round:13"], ["round:17"]), 5);

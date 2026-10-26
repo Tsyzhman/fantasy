@@ -1,0 +1,5 @@
+{
+  "mode": "online",
+  "sqlSha256": "b35a640a873a175ce581cc10f69d10a18d3aac683a7c9f1d6703b8eee58b8e21",
+  "compatibility": "One concurrent index per migration, outside a transaction. Additive indexes preserve old runtime behavior; ingestion is idle during promotion."
+}

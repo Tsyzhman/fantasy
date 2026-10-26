@@ -1,0 +1,39 @@
+{
+  "values": [
+    {
+      "key": "initial",
+      "width": 190
+    },
+    {
+      "key": "ArrowRight",
+      "width": 198
+    },
+    {
+      "key": "Shift+ArrowRight",
+      "width": 230
+    },
+    {
+      "key": "ArrowLeft",
+      "width": 222
+    },
+    {
+      "key": "Home",
+      "width": 40
+    },
+    {
+      "key": "End",
+      "width": 640
+    },
+    {
+      "key": "Enter",
+      "width": 190
+    }
+  ],
+  "focusable": "0",
+  "bounds": [
+    "40",
+    "640"
+  ],
+  "sameRows": true,
+  "overflow": -15
+}

@@ -1,0 +1,21 @@
+{
+  "issue": "Compiler encryption key was embedded in five publicly retained image artifacts. Download history is unavailable; absence of external access is not asserted.",
+  "deletedArtifactIds": [
+    11668628885,
+    11668233993,
+    11668000918,
+    11667762786,
+    11667584729
+  ],
+  "privateRuntimeKeyRotatedAt": "2026-10-10T12:22:00Z",
+  "rotationTimePrecision": "minute approximation; first new-runtime activation recorded in deployment evidence",
+  "compilerIdSaltRetained": true,
+  "activeKeyEqualsCompilerSalt": false,
+  "activeKeyNeverSuppliedToCI": true,
+  "newBuildGuard": "same-layer Node manifest clearing, edge runtime-reference assertion, private cache removal, bounded full-output salt scan",
+  "tests": {
+    "passed": 4,
+    "failed": 0
+  },
+  "publicSourceArchiveUnchanged": "Source-only 74a5f00 artifact contains no server key."
+}

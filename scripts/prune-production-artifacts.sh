@@ -1,20 +1,23 @@
 #!/usr/bin/env bash
+# @spec spec://common/INFRA-006-continuous-deployment#recovery
 set -euo pipefail
 
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 mode="dry-run"
-if [[ "${1:-}" == "--apply" ]]; then
-  mode="apply"
-elif [[ $# -gt 0 ]]; then
-  echo "Usage: $0 [--apply]" >&2
-  exit 2
-fi
+prune_host_build_cache=0
+for argument in "$@"; do
+  case "$argument" in
+    --apply) mode="apply" ;;
+    --prune-host-build-cache) prune_host_build_cache=1 ;;
+    *) echo "Usage: $0 [--apply] [--prune-host-build-cache]" >&2; exit 2 ;;
+  esac
+done
+script_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 release_root_input="${FANTASY_RELEASE_ROOT:-/var/www/fantasy-scout-releases}"
 current_link="${FANTASY_CURRENT_LINK:-/var/www/fantasy-scout-current}"
 keep_recent="${FANTASY_RELEASE_KEEP_RECENT:-2}"
-build_cache_limit="${FANTASY_BUILD_CACHE_LIMIT:-1GB}"
 
 if [[ ! "$keep_recent" =~ ^[1-9][0-9]*$ ]]; then
   echo "FANTASY_RELEASE_KEEP_RECENT must be a positive integer." >&2
@@ -162,10 +165,20 @@ while IFS= read -r image_ref; do
   fi
 done < <(docker image ls fantasy-scout --format '{{.Repository}}:{{.Tag}}' | sort -u)
 
-if [[ "$mode" == "apply" ]]; then
-  docker builder prune --force --max-used-space "$build_cache_limit"
+backup_arguments=()
+if [[ "$mode" == "apply" ]]; then backup_arguments+=(--apply); fi
+python3 "$script_root/prune-production-backups.py" "${backup_arguments[@]}"
+
+# CI builds never create host cache. Host-wide cache removal is an explicit
+# operator action; unlike system prune it preserves every image and container.
+if [[ "$prune_host_build_cache" == "1" ]]; then
+  if [[ "$mode" == "apply" ]]; then
+    docker builder prune --all --force
+  else
+    echo "PRUNE_HOST_BUILD_CACHE=all-unused"
+  fi
 else
-  echo "PRUNE_BUILD_CACHE=max-used-space:$build_cache_limit"
+  echo "BUILD_CACHE=CI_OWNED; HOST_DEFAULT_BUILDER=UNCHANGED"
 fi
 
 echo "RELEASE_COUNT=$(find "$release_root" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"

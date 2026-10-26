@@ -1,11 +1,11 @@
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
-import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import { refreshFantasyPlayerPoolSnapshots, type FantasyPlayerPoolSnapshotRefreshResult } from "@/machete/fantasy-player-pool-snapshots";
 import { drainCurrentXiTeamSnapshotRefreshQueue } from "@/machete/fantasy-player-pool-refresh-queue";
+import { spawnHeavyJob } from "@/server/heavy-job-process";
 
 export const FANTASY_PLAYER_POOL_SNAPSHOT_TIME_ZONE = "Europe/Moscow";
 export const FANTASY_PLAYER_POOL_SNAPSHOT_MINUTE = 0;
@@ -70,7 +70,7 @@ export async function runFantasyPlayerPoolSnapshotRefreshNow(
 /** Full refresh keeps the scheduler's running lock until the child has exited. */
 export function runPlayerPoolRefreshProcess(script: string, onlyMissing: boolean) {
   return new Promise<FantasyPlayerPoolSnapshotRefreshResult>((resolve, reject) => {
-    const child = spawn(process.execPath, [script, ...(onlyMissing ? ["--only-missing"] : [])], {
+    const child = spawnHeavyJob([script, ...(onlyMissing ? ["--only-missing"] : [])], {
       cwd: process.cwd(),
       env: process.env,
       stdio: ["ignore", "inherit", "inherit", "ipc"],

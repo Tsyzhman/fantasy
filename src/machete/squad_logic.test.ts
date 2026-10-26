@@ -22,6 +22,7 @@ import {
   nextBankedTransfers,
   openingAvailableTransfers,
   sportsRuMaxBankedTransfers,
+  sportsRuTransferRules,
   nextAlternativeFantasyPoints,
   nextFantasyPoints,
   normalizeFantasyHorizon,
@@ -973,6 +974,65 @@ test("Sports.ru grants three transfers each round while FPL banks unused transfe
     { used: 3, available: 5 },
     { used: 0, available: 3 }
   ]);
+});
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
+test("Championship tour 2391 allows six transfers, rejects seven and returns to three without banking", () => {
+  const current = { id: "sports-ru:tour:10:2391", startsAt: "2026-10-16T19:00:00.000Z" };
+  const next = { id: "sports-ru:tour:11:2392", startsAt: "2026-10-23T19:00:00.000Z" };
+  const rules = sportsRuTransferRules(defaultFantasySquadRules, [current, next]);
+  const budget = fantasyTransferBudget(rules);
+  const baseline = Array.from({ length: 15 }, (_, index) => ({ playerId: String(index) }));
+  const changed = (count: number) => baseline.map((selection, index) => index < count ? { playerId: `new-${index}` } : selection);
+  assert.equal(openingAvailableTransfers(budget, 3), 6, "legacy opening allowance must not hide the exceptional quota");
+  for (const used of [0, 3, 6, 7]) {
+    const rows = availableTransfersByRound({ baselineSelections: baseline, budget, roundPlans: [
+      { selections: changed(used) }, { selections: baseline }
+    ] });
+    assert.equal(rows[0].available, 6);
+    assert.equal(rows[0].used <= rows[0].available, used <= 6);
+    assert.equal(rows[1].available, 3);
+  }
+  for (const other of [next, { ...current, id: "sports-ru:tour:11:2469" }, { ...current, startsAt: "2027-10-16T19:00:00Z" }]) {
+    const normalized = sportsRuTransferRules(rules, [other]);
+    assert.equal(openingAvailableTransfers(fantasyTransferBudget(normalized), 6), 3);
+    assert.equal(normalized.transferLimitsByRound, undefined, "shifted cached offsets must be discarded");
+  }
+  const later = fantasyTransferBudget(sportsRuTransferRules(defaultFantasySquadRules, [next, { ...current, id: "sports-ru:tour:11:2391" }]));
+  assert.deepEqual(availableTransfersByRound({ baselineSelections: baseline, budget: later, roundPlans: [
+    { selections: baseline }, { selections: changed(6) }, { selections: changed(6) }
+  ] }).map((row) => row.available), [3, 6, 3]);
+});
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
+test("Champions League tour 2755 allows six only on its exact deadline and never banks the exception", () => {
+  // Sports.ru omits tour two, so the third tour currently has local ordinal two.
+  const current = { id: "sports-ru:tour:2:2755", startsAt: "2026-10-20T16:45:00.000Z" };
+  const next = { id: "sports-ru:tour:3:2756", startsAt: "2026-11-03T17:45:00.000Z" };
+  const rules = sportsRuTransferRules(defaultFantasySquadRules, [current, next]);
+  const budget = fantasyTransferBudget(rules);
+  const baseline = Array.from({ length: 15 }, (_, index) => ({ playerId: String(index) }));
+  const changed = (count: number) => baseline.map((selection, index) => index < count ? { playerId: `new-${index}` } : selection);
+  assert.equal(openingAvailableTransfers(budget, 3), 6);
+  for (const used of [0, 3, 6, 7]) {
+    const rows = availableTransfersByRound({ baselineSelections: baseline, budget, roundPlans: [
+      { selections: changed(used) }, { selections: changed(used) }
+    ] });
+    assert.equal(rows[0].available, 6);
+    assert.equal(rows[0].used <= rows[0].available, used <= 6);
+    assert.equal(rows[1].available, 3);
+  }
+  for (const other of [next, { ...current, id: "sports-ru:tour:2:2754" }, { ...current, startsAt: "2027-10-20T16:45:00Z" }]) {
+    const normalized = sportsRuTransferRules(rules, [other]);
+    assert.equal(openingAvailableTransfers(fantasyTransferBudget(normalized), 6), 3);
+    assert.equal(normalized.transferLimitsByRound, undefined);
+  }
+  const later = fantasyTransferBudget(sportsRuTransferRules(defaultFantasySquadRules, [
+    { ...current, id: "sports-ru:tour:1:2753" }, { ...current, id: "sports-ru:tour:3:2755" }, next
+  ]));
+  assert.deepEqual(availableTransfersByRound({ baselineSelections: baseline, budget: later, roundPlans: [
+    { selections: baseline }, { selections: changed(6) }, { selections: changed(6) }
+  ] }).map((row) => row.available), [3, 6, 3]);
 });
 
 test("forecast horizon accepts only configured options", () => {

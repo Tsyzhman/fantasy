@@ -1,0 +1,648 @@
+{
+  "source": "74a5f00",
+  "method": "TypeScript AST function bodies and variable initializers, normalized printer excluding comments; UI feature changes tested separately",
+  "checked": 80,
+  "equal": 80,
+  "rows": [
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "defaultTeamXgPerMatch",
+      "equal": true,
+      "beforeSha256": "004a9e0878ff83e6b91f50d50dad439d2065c6cbb0d20f1f328b2fd75e085d6a",
+      "afterSha256": "004a9e0878ff83e6b91f50d50dad439d2065c6cbb0d20f1f328b2fd75e085d6a"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "promotedTeamPriorMatches",
+      "equal": true,
+      "beforeSha256": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3",
+      "afterSha256": "2c624232cdd221771294dfbb310aca000a0df6ac8b66b696d90ef06fdefb64a3"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "promotedTeamStrengthFactor",
+      "equal": true,
+      "beforeSha256": "b899163340fa26e67c8fadcd69cf4789185726d0e4fdfd91e31d6fdf2c8bc5f5",
+      "afterSha256": "b899163340fa26e67c8fadcd69cf4789185726d0e4fdfd91e31d6fdf2c8bc5f5"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "promotedTeamRatioExponent",
+      "equal": true,
+      "beforeSha256": "b4af4e0d40391d3a00179d935c63b7e15ba8cd3dfa29f218dedc270bd3eb3e79",
+      "afterSha256": "b4af4e0d40391d3a00179d935c63b7e15ba8cd3dfa29f218dedc270bd3eb3e79"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "fixtureOddsMaximumAgeMs",
+      "equal": true,
+      "beforeSha256": "5e427a6172e7e9990827bac271763dcfb30a7fd230c5ed3f993bd9c1f4c96065",
+      "afterSha256": "5e427a6172e7e9990827bac271763dcfb30a7fd230c5ed3f993bd9c1f4c96065"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "inversePoissonOver15Probability",
+      "equal": true,
+      "beforeSha256": "dcc7103862942fbea2fb8825396cbbbfc27aa36d473395c6f624f48c7a9a3a7a",
+      "afterSha256": "dcc7103862942fbea2fb8825396cbbbfc27aa36d473395c6f624f48c7a9a3a7a"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "fixtureStrengthProjection",
+      "equal": true,
+      "beforeSha256": "bed87d51eda7da538e2d7f9f0665ed7f3b50446b82589fbd711cc6c2a4145954",
+      "afterSha256": "bed87d51eda7da538e2d7f9f0665ed7f3b50446b82589fbd711cc6c2a4145954"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "fixtureStrengthWithBookmaker",
+      "equal": true,
+      "beforeSha256": "eb53042335d9617b9da328c38f08335057c0af44e8d5b5016bd1635ead49da0f",
+      "afterSha256": "eb53042335d9617b9da328c38f08335057c0af44e8d5b5016bd1635ead49da0f"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "bookmakerImpliedGoalsAgainst",
+      "equal": true,
+      "beforeSha256": "a77201e945dd51e721aa03a3cdd243d931c42dc04856f25a00e81bc6e59a96cc",
+      "afterSha256": "a77201e945dd51e721aa03a3cdd243d931c42dc04856f25a00e81bc6e59a96cc"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "blendModelAndBookmakerExpectation",
+      "equal": true,
+      "beforeSha256": "0eefb86fe152227312cae48169d6f732b5df072b14a41e173d929b114f6b4340",
+      "afterSha256": "0eefb86fe152227312cae48169d6f732b5df072b14a41e173d929b114f6b4340"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "fillTeamStrengthStatsFromScore",
+      "equal": true,
+      "beforeSha256": "6fd3df7541f4bb4263140a3fb0dbe2daf811b3dfd70386bb6deb5f9474987b09",
+      "afterSha256": "6fd3df7541f4bb4263140a3fb0dbe2daf811b3dfd70386bb6deb5f9474987b09"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "addPromotedTeamStrengthProfiles",
+      "equal": true,
+      "beforeSha256": "b8d3e0878fee0d77ffaec9e6f91d3f7bf4e4326128000f70d47d87ad14b76ea3",
+      "afterSha256": "b8d3e0878fee0d77ffaec9e6f91d3f7bf4e4326128000f70d47d87ad14b76ea3"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "promotedStrengthBlock",
+      "equal": true,
+      "beforeSha256": "335eef4aa2683e588136d637f54f95cb5698cdcccaf9a22abf82e2fa4c5536a4",
+      "afterSha256": "335eef4aa2683e588136d637f54f95cb5698cdcccaf9a22abf82e2fa4c5536a4"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "promotedStrengthRatio",
+      "equal": true,
+      "beforeSha256": "aabe9b6d06c4962816fe4bc2a329bb83ead39391af9ab4c763dfc578842c5ead",
+      "afterSha256": "aabe9b6d06c4962816fe4bc2a329bb83ead39391af9ab4c763dfc578842c5ead"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "strengthRatio",
+      "equal": true,
+      "beforeSha256": "c45a01a3eb044f83e6fea211c2337afb39c447c9a25a313a21de83afb1e97992",
+      "afterSha256": "c45a01a3eb044f83e6fea211c2337afb39c447c9a25a313a21de83afb1e97992"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "strengthBlockForSide",
+      "equal": true,
+      "beforeSha256": "13b38a28916e217c6a2f72a87c9c75830c571cdc6fc10b10cca6843ed4446181",
+      "afterSha256": "13b38a28916e217c6a2f72a87c9c75830c571cdc6fc10b10cca6843ed4446181"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "hasStrengthSignal",
+      "equal": true,
+      "beforeSha256": "691fce2415e969051aa49b0a71214711e2f35f851d5d9b194fa40f55c0be2117",
+      "afterSha256": "691fce2415e969051aa49b0a71214711e2f35f851d5d9b194fa40f55c0be2117"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "ratioMultiplier",
+      "equal": true,
+      "beforeSha256": "fda794876dc87639e6ac8a65ce95217e7398a95afcec42745df16b98afe36d9b",
+      "afterSha256": "fda794876dc87639e6ac8a65ce95217e7398a95afcec42745df16b98afe36d9b"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "numericOrNull",
+      "equal": true,
+      "beforeSha256": "03d1b2c91cd78ebef0ffd7cf8a7f0e02fd555cfb5b758c7fa717dd4a3911b7bb",
+      "afterSha256": "03d1b2c91cd78ebef0ffd7cf8a7f0e02fd555cfb5b758c7fa717dd4a3911b7bb"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "poissonOver15Probability",
+      "equal": true,
+      "beforeSha256": "e492b01816081804d493183644d202a2782a116f15d13f44840652bea7662735",
+      "afterSha256": "e492b01816081804d493183644d202a2782a116f15d13f44840652bea7662735"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "fixtureOddsAreFresh",
+      "equal": true,
+      "beforeSha256": "2e9d2e4b74e10dd85b87ec08d26b4689cc1a862357eda4664432d785c467a704",
+      "afterSha256": "2e9d2e4b74e10dd85b87ec08d26b4689cc1a862357eda4664432d785c467a704"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-team-strength.ts",
+      "name": "clamp",
+      "equal": true,
+      "beforeSha256": "1a1d2272f41463c5346c06b47210b1df5c5a02293d3e36178c3dbf253f953e84",
+      "afterSha256": "1a1d2272f41463c5346c06b47210b1df5c5a02293d3e36178c3dbf253f953e84"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "buildFixtureComponentInputs",
+      "equal": true,
+      "beforeSha256": "03129febc35d6521ca2ea51e464272a5888d328e5126643be7af7a4094bea81a",
+      "afterSha256": "03129febc35d6521ca2ea51e464272a5888d328e5126643be7af7a4094bea81a"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "numericProjectionMetric",
+      "equal": true,
+      "beforeSha256": "831da1482a669cbe2bc07ba5b7bbcc1b6cc0e67e61b86441ae00d00acaa0411b",
+      "afterSha256": "831da1482a669cbe2bc07ba5b7bbcc1b6cc0e67e61b86441ae00d00acaa0411b"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "stringProjectionMetric",
+      "equal": true,
+      "beforeSha256": "7722f1ee2514df3ceaef29e9dcade744d679fd2574286b11fe64e6af39f6fa53",
+      "afterSha256": "7722f1ee2514df3ceaef29e9dcade744d679fd2574286b11fe64e6af39f6fa53"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "minuteHistorySourceMetric",
+      "equal": true,
+      "beforeSha256": "446907731cf2934c11b6bcd9a6c6e6d5e3bb0fc6e7934bb9d4caf28abc57fe26",
+      "afterSha256": "446907731cf2934c11b6bcd9a6c6e6d5e3bb0fc6e7934bb9d4caf28abc57fe26"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "buildComponentProjectionIndex",
+      "equal": true,
+      "beforeSha256": "2da4966c2902b463176a376ecf7fde192cf93cf47582a21f92253fba02cffde4",
+      "afterSha256": "2da4966c2902b463176a376ecf7fde192cf93cf47582a21f92253fba02cffde4"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "starterPer90FullReliabilityMinutes",
+      "equal": true,
+      "beforeSha256": "83151157c10d85af7c84657c71c3e3603d955160f0526fce672481da83a2e090",
+      "afterSha256": "83151157c10d85af7c84657c71c3e3603d955160f0526fce672481da83a2e090"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "starterPer90MinimumReliability",
+      "equal": true,
+      "beforeSha256": "a30a043314fa89294fa2c1c989a01fbb5329e5c085a5c5a8d27317656de24ae0",
+      "afterSha256": "a30a043314fa89294fa2c1c989a01fbb5329e5c085a5c5a8d27317656de24ae0"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "completeTeamPlayerMinutes",
+      "equal": true,
+      "beforeSha256": "efdd03670858ea476341ebdc453730e4fa4fa04101cf01a13097e2c52eaa94ae",
+      "afterSha256": "efdd03670858ea476341ebdc453730e4fa4fa04101cf01a13097e2c52eaa94ae"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "minimumSparseGuardRosterSize",
+      "equal": true,
+      "beforeSha256": "4fc82b26aecb47d2868c4efbe3581732a3e7cbcc6c2efb32062c08170a05eeb8",
+      "afterSha256": "4fc82b26aecb47d2868c4efbe3581732a3e7cbcc6c2efb32062c08170a05eeb8"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "minimumMeaningfulAllocationPlayers",
+      "equal": true,
+      "beforeSha256": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451",
+      "afterSha256": "7902699be42c8a8e46fbbb4501726517e86b22c56a189f7625a6da49081b2451"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "meaningfulAllocationMinutes",
+      "equal": true,
+      "beforeSha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb",
+      "afterSha256": "e629fa6598d732768f7c726b4b621285f9c3b85303900aa912017db7617d8bdb"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "minimumTeamAllocationEventMinutes",
+      "equal": true,
+      "beforeSha256": "838f461c2fa673cec73e6eecdafa88b127802d6cb0a61c53175197a122cb645a",
+      "afterSha256": "838f461c2fa673cec73e6eecdafa88b127802d6cb0a61c53175197a122cb645a"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "teamAttackAllocationReservePlayerId",
+      "equal": true,
+      "beforeSha256": "ba58efc83ee771ea51b5c09f972d5326ad37861dc71820753448df2363a6d240",
+      "afterSha256": "ba58efc83ee771ea51b5c09f972d5326ad37861dc71820753448df2363a6d240"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "standardAttackAllocationPositions",
+      "equal": true,
+      "beforeSha256": "bc819de6af34dd6d7775779347ec396500a5fcdc6dd749db386f0e9acbacd573",
+      "afterSha256": "bc819de6af34dd6d7775779347ec396500a5fcdc6dd749db386f0e9acbacd573"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "buildFormulaProjectionIndex",
+      "equal": true,
+      "beforeSha256": "ff8536f96018808681a9d2ac88729cf9bcc87fed87a1c4c79544a6cc85be742c",
+      "afterSha256": "ff8536f96018808681a9d2ac88729cf9bcc87fed87a1c4c79544a6cc85be742c"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "rankPipelineCandidates",
+      "equal": true,
+      "beforeSha256": "8235258fe73fdf41e72be407df68fc9bb6cf1d6d007a9e61a6c1ff63d0e9c58a",
+      "afterSha256": "8235258fe73fdf41e72be407df68fc9bb6cf1d6d007a9e61a6c1ff63d0e9c58a"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "pipelineParticipant",
+      "equal": true,
+      "beforeSha256": "5c49426816da68065f5e2d952230d5d698b2f2c4a3687ab16ec23bb158a96f21",
+      "afterSha256": "5c49426816da68065f5e2d952230d5d698b2f2c4a3687ab16ec23bb158a96f21"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "blendStarterRoleRate",
+      "equal": true,
+      "beforeSha256": "61344edeb3d0372a8be65d64c2bc7be7c010efe3540a1ee27fef0b1c11d703c9",
+      "afterSha256": "61344edeb3d0372a8be65d64c2bc7be7c010efe3540a1ee27fef0b1c11d703c9"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "blendedTransferRatePenalty",
+      "equal": true,
+      "beforeSha256": "9eb2b291762e464eeb905fbfa45198d5f1946e74d0e26b6e8c4f9bc9a11003d6",
+      "afterSha256": "9eb2b291762e464eeb905fbfa45198d5f1946e74d0e26b6e8c4f9bc9a11003d6"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "nearestFixtureIdsByTeam",
+      "equal": true,
+      "beforeSha256": "bba647d7a432e19e5b0019e17356d41e0de9a3a7916c4ac424e022c35dcf7d1b",
+      "afterSha256": "bba647d7a432e19e5b0019e17356d41e0de9a3a7916c4ac424e022c35dcf7d1b"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "comparePlannerFixtures",
+      "equal": true,
+      "beforeSha256": "ef82a2206fb2626f26af8d1fe49f2698a434a0f3f84bf581f319d0974e16b94f",
+      "afterSha256": "ef82a2206fb2626f26af8d1fe49f2698a434a0f3f84bf581f319d0974e16b94f"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "countsAsFullFantasyMatch",
+      "equal": true,
+      "beforeSha256": "0277b96108367806636d9412577d169f9738594eebfcaea82c701c304b082e3f",
+      "afterSha256": "0277b96108367806636d9412577d169f9738594eebfcaea82c701c304b082e3f"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "pipelineAllocationParticipant",
+      "equal": true,
+      "beforeSha256": "8470c496d84920cc10e0ef442865b77c0671ff5dc3203ad53a2199e1fb5890e7",
+      "afterSha256": "8470c496d84920cc10e0ef442865b77c0671ff5dc3203ad53a2199e1fb5890e7"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "applySparseHistoryAllocationFallbacks",
+      "equal": true,
+      "beforeSha256": "3bfcb8f235ca676976d92996d4d9a709be996e94a2dce0ccdde82fbe251f9d6d",
+      "afterSha256": "3bfcb8f235ca676976d92996d4d9a709be996e94a2dce0ccdde82fbe251f9d6d"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "applySparseTeamAttackAllocationGuard",
+      "equal": true,
+      "beforeSha256": "6977b2e0c9eaaa481395cadb7e26ecc84914e76e1a34348aed0b0064dab336bc",
+      "afterSha256": "6977b2e0c9eaaa481395cadb7e26ecc84914e76e1a34348aed0b0064dab336bc"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "allocationWeightTotal",
+      "equal": true,
+      "beforeSha256": "1a1b5b7a51d2f82aa4a89300f3544807289e7bac7ccafc8baed75a9812299164",
+      "afterSha256": "1a1b5b7a51d2f82aa4a89300f3544807289e7bac7ccafc8baed75a9812299164"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "applyPositionAllocationFallback",
+      "equal": true,
+      "beforeSha256": "845e73118facc7c3dabd9b63f63e95e54d073b39c50501fe89b0aba0a052ce62",
+      "afterSha256": "845e73118facc7c3dabd9b63f63e95e54d073b39c50501fe89b0aba0a052ce62"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "pipelineTeamContext",
+      "equal": true,
+      "beforeSha256": "005bde7a5a092bcfcf772f17162d10fd5813c8b22e68409bf7c3c980a1222f60",
+      "afterSha256": "005bde7a5a092bcfcf772f17162d10fd5813c8b22e68409bf7c3c980a1222f60"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "pipelineTeamTotals",
+      "equal": true,
+      "beforeSha256": "1b77e06060a81a06c3491fc79cbef60e14ae7dc9a57658aefb7fe3f73c47c90a",
+      "afterSha256": "1b77e06060a81a06c3491fc79cbef60e14ae7dc9a57658aefb7fe3f73c47c90a"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "formulaValue",
+      "equal": true,
+      "beforeSha256": "8fab176f470a58ed3f2a221aabe01da5884a19784b8dcd310f03b6442db05a43",
+      "afterSha256": "8fab176f470a58ed3f2a221aabe01da5884a19784b8dcd310f03b6442db05a43"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "nonNegativeFormulaValue",
+      "equal": true,
+      "beforeSha256": "485b7dd958458ccf861211920a25ef5af1f648d67b16cbca6ccb1812b907a07e",
+      "afterSha256": "485b7dd958458ccf861211920a25ef5af1f648d67b16cbca6ccb1812b907a07e"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "per90AwareAllocationValue",
+      "equal": true,
+      "beforeSha256": "a7e57a5e6f64d4676ac6093c4cee1f659b50c513561eafaa0ff7c224503ea5f4",
+      "afterSha256": "a7e57a5e6f64d4676ac6093c4cee1f659b50c513561eafaa0ff7c224503ea5f4"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "componentParticipant",
+      "equal": true,
+      "beforeSha256": "6d88b1a914bb94af37121c81f48eb7e42d2e33c68a9e6e77c273639e61905470",
+      "afterSha256": "6d88b1a914bb94af37121c81f48eb7e42d2e33c68a9e6e77c273639e61905470"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "componentTeamTotals",
+      "equal": true,
+      "beforeSha256": "5974ec60a124dbfd7bd3fac84809b43f7cc75e175c26915acb0b48f4bc7cf926",
+      "afterSha256": "5974ec60a124dbfd7bd3fac84809b43f7cc75e175c26915acb0b48f4bc7cf926"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "participantExposureFactor",
+      "equal": true,
+      "beforeSha256": "f9d4d963d218dd81a610ce6f1a6480a1419610631df609996ff2ed29334247ee",
+      "afterSha256": "f9d4d963d218dd81a610ce6f1a6480a1419610631df609996ff2ed29334247ee"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "friendStartingRows",
+      "equal": true,
+      "beforeSha256": "f3531af68a958f49295cbdfcec40c5c6716e8dea8e3820a866769c77c27a6f44",
+      "afterSha256": "f3531af68a958f49295cbdfcec40c5c6716e8dea8e3820a866769c77c27a6f44"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "componentMetric",
+      "equal": true,
+      "beforeSha256": "9d30f7831347ed941e7cfd35eb16c678b6548001612d9eaa90700119dff0ef6e",
+      "afterSha256": "9d30f7831347ed941e7cfd35eb16c678b6548001612d9eaa90700119dff0ef6e"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "componentRatePer90",
+      "equal": true,
+      "beforeSha256": "82952c456294c845edaa21c0446d7ea43c066802340f61c77458baeed0274d95",
+      "afterSha256": "82952c456294c845edaa21c0446d7ea43c066802340f61c77458baeed0274d95"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "fixtureTeamProjectionKey",
+      "equal": true,
+      "beforeSha256": "f84aee205a646d585883e584bd026f2a6836609ca306190c57f1f60fcf0b591a",
+      "afterSha256": "f84aee205a646d585883e584bd026f2a6836609ca306190c57f1f60fcf0b591a"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "fixturePlayerProjectionKey",
+      "equal": true,
+      "beforeSha256": "ac93db784472de94bdf64ef2215ebc8162a1bebac8800b6a5b88a03442da53d6",
+      "afterSha256": "ac93db784472de94bdf64ef2215ebc8162a1bebac8800b6a5b88a03442da53d6"
+    },
+    {
+      "from": "src/machete/squad_planner.ts",
+      "to": "src/machete/squad-projection.ts",
+      "name": "fantasyPlannerPosition",
+      "equal": true,
+      "beforeSha256": "d3ca29b8237a90e9aca35eaf919b38548f1c4a8120e03a5090e6034079eaeea4",
+      "afterSha256": "d3ca29b8237a90e9aca35eaf919b38548f1c4a8120e03a5090e6034079eaeea4"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-squad-commands.ts",
+      "name": "readStoredSquadCaptains",
+      "equal": true,
+      "beforeSha256": "0f81598af970be1624ff964c0162bdd1b3c5d67c293d319e807a030a03487719",
+      "afterSha256": "0f81598af970be1624ff964c0162bdd1b3c5d67c293d319e807a030a03487719"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-squad-commands.ts",
+      "name": "writeStoredSquadCaptains",
+      "equal": true,
+      "beforeSha256": "0eb401903e596c562f073cc5a8c517c1f868036ab9a110368d075148aefcc74e",
+      "afterSha256": "0eb401903e596c562f073cc5a8c517c1f868036ab9a110368d075148aefcc74e"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-squad-commands.ts",
+      "name": "withCaptainState",
+      "equal": true,
+      "beforeSha256": "5f5b30ae69d0533a3d696067d7d8b92eb5385dad292ac524f63367e861f7effb",
+      "afterSha256": "5f5b30ae69d0533a3d696067d7d8b92eb5385dad292ac524f63367e861f7effb"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-squad-commands.ts",
+      "name": "sanitizeCaptainRoles",
+      "equal": true,
+      "beforeSha256": "5f7b41a3768ed592348e60c4c6bae8b92a281d8a5f58ecf69258a08c99302365",
+      "afterSha256": "5f7b41a3768ed592348e60c4c6bae8b92a281d8a5f58ecf69258a08c99302365"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-squad-commands.ts",
+      "name": "normalizeInitialSelections",
+      "equal": true,
+      "beforeSha256": "60dd7bbdb347d1ff75a6f097b5a6825bc08300884e17f79fdc23a5b9278cb9b9",
+      "afterSha256": "60dd7bbdb347d1ff75a6f097b5a6825bc08300884e17f79fdc23a5b9278cb9b9"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-squad-commands.ts",
+      "name": "fantasyPlayerAtRoundOffset",
+      "equal": true,
+      "beforeSha256": "90878e774f3e28e863b876bad983ff4c5d45a68759e847309610f8a3287a62d8",
+      "afterSha256": "90878e774f3e28e863b876bad983ff4c5d45a68759e847309610f8a3287a62d8"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-squad-commands.ts",
+      "name": "cloneFantasyRoundPlans",
+      "equal": true,
+      "beforeSha256": "9ce3d042a78b9cd79ebc2c78dfa8d941e24401151c269250db2c111342d2cc56",
+      "afterSha256": "9ce3d042a78b9cd79ebc2c78dfa8d941e24401151c269250db2c111342d2cc56"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-squad-commands.ts",
+      "name": "fantasyRoundPlansFingerprint",
+      "equal": true,
+      "beforeSha256": "a835c938a9baa29997b752df357c68727b0a106183c486896f7f860fd275aaf6",
+      "afterSha256": "a835c938a9baa29997b752df357c68727b0a106183c486896f7f860fd275aaf6"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-squad-commands.ts",
+      "name": "normalizePlannerRoundPlans",
+      "equal": true,
+      "beforeSha256": "98a3613d8303287b6613252664aa90c6aa8f1abd752d1125cef7d338dcdce099",
+      "afterSha256": "98a3613d8303287b6613252664aa90c6aa8f1abd752d1125cef7d338dcdce099"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-squad-commands.ts",
+      "name": "promoteStarter",
+      "equal": true,
+      "beforeSha256": "267353d81fff102b32a31aa7c9e7533a243cc927719eb9421ab3b1ef3fb61dea",
+      "afterSha256": "267353d81fff102b32a31aa7c9e7533a243cc927719eb9421ab3b1ef3fb61dea"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-data.ts",
+      "name": "recordGlobalRecommendation",
+      "equal": true,
+      "beforeSha256": "ede7a8aa913281a8bcae55c738eed4cce5283b74b30b67bcea69fd7e821daaf4",
+      "afterSha256": "ede7a8aa913281a8bcae55c738eed4cce5283b74b30b67bcea69fd7e821daaf4"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-data.ts",
+      "name": "downloadPlayerPoolXlsx",
+      "equal": true,
+      "beforeSha256": "68f3204924e497050f347f28adc7b9777c6f788ac52821cfde9bf50961cad5a8",
+      "afterSha256": "68f3204924e497050f347f28adc7b9777c6f788ac52821cfde9bf50961cad5a8"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-data.ts",
+      "name": "loadSquadFilterPresets",
+      "equal": true,
+      "beforeSha256": "8c2c2710c5a702e3f306f8d956364a63516e354626ff628211b5283854e2db99",
+      "afterSha256": "8c2c2710c5a702e3f306f8d956364a63516e354626ff628211b5283854e2db99"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-data.ts",
+      "name": "saveSquadFilterPreset",
+      "equal": true,
+      "beforeSha256": "4e84b3a05683fbc742a6176aac46d5e87e7040b85b3c788f6271365b6bad0d8c",
+      "afterSha256": "4e84b3a05683fbc742a6176aac46d5e87e7040b85b3c788f6271365b6bad0d8c"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-data.ts",
+      "name": "removeSquadFilterPreset",
+      "equal": true,
+      "beforeSha256": "0fe0526aa860fadb799a19951145c29952b64fd3901d75bdcdf86a4c9c3fd2dd",
+      "afterSha256": "0fe0526aa860fadb799a19951145c29952b64fd3901d75bdcdf86a4c9c3fd2dd"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-data.ts",
+      "name": "squadFilterPresetsFromPayload",
+      "equal": true,
+      "beforeSha256": "8fe7304060b0c8d7c11682ebe8e3baa848d98e2a97d4b3b0c9df6bc210bec2c8",
+      "afterSha256": "8fe7304060b0c8d7c11682ebe8e3baa848d98e2a97d4b3b0c9df6bc210bec2c8"
+    },
+    {
+      "from": "src/components/machete/FantasySquadPlanner.tsx",
+      "to": "src/components/machete/planner-data.ts",
+      "name": "playerPoolExportCellValue",
+      "equal": true,
+      "beforeSha256": "7ba616bf9433679cf960a4be34e65d1df71e8366648bdb6a00b1b2945a82835b",
+      "afterSha256": "7ba616bf9433679cf960a4be34e65d1df71e8366648bdb6a00b1b2945a82835b"
+    }
+  ]
+}

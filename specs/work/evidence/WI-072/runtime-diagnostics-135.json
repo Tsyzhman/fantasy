@@ -1,0 +1,2669 @@
+[
+  {
+    "container": "fantasy-scout-web",
+    "rows": [
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:05:11.277Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 323186688,
+          "heapTotal": 144080896,
+          "heapUsed": 96522800,
+          "external": 9614180,
+          "arrayBuffers": 1940165
+        },
+        "cpuPercent": 12.264935584406926,
+        "eventLoopMs": {
+          "p95": 20.561919,
+          "max": 189.661183
+        },
+        "sql": {
+          "windowStart": 1791637451276,
+          "fingerprints": 44,
+          "top": [
+            {
+              "fingerprint": "ea58eb3980d9af36",
+              "count": 1,
+              "totalMs": 31,
+              "maxMs": 31
+            },
+            {
+              "fingerprint": "5f08c84a0b795a52",
+              "count": 1,
+              "totalMs": 26,
+              "maxMs": 26
+            },
+            {
+              "fingerprint": "14edb37f5460f085",
+              "count": 380,
+              "totalMs": 25,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "503946ffbb987bdc",
+              "count": 667,
+              "totalMs": 21,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "ee38cb7d1e2c5ffa",
+              "count": 1,
+              "totalMs": 13,
+              "maxMs": 13
+            },
+            {
+              "fingerprint": "7255e812fbb5dc54",
+              "count": 1,
+              "totalMs": 11,
+              "maxMs": 11
+            },
+            {
+              "fingerprint": "0ac565bb00b2fa4e",
+              "count": 1,
+              "totalMs": 9,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "a34b62fa52adc477",
+              "count": 1,
+              "totalMs": 8,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "701afdb852a48b7d",
+              "count": 1,
+              "totalMs": 8,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "de0f8c5a58b65f85",
+              "count": 1,
+              "totalMs": 7,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "798413a6a0a765a5",
+              "count": 1,
+              "totalMs": 6,
+              "maxMs": 6
+            },
+            {
+              "fingerprint": "61fb1e5057065873",
+              "count": 2,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "4a5259ca20704495",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "513c4d600ab4c2c0",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "4326535cb0693f6d",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "3016965991284577",
+              "count": 1,
+              "totalMs": 4,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "f5b6d7c9237cf497",
+              "count": 1,
+              "totalMs": 4,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "85ea22df3e4d46bb",
+              "count": 1,
+              "totalMs": 4,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "15d5cbe0b7ecad1b",
+              "count": 2,
+              "totalMs": 3,
+              "maxMs": 3
+            },
+            {
+              "fingerprint": "f96cff7916fda519",
+              "count": 1,
+              "totalMs": 3,
+              "maxMs": 3
+            }
+          ]
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:06:11.278Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 227332096,
+          "heapTotal": 49954816,
+          "heapUsed": 44513192,
+          "external": 4710468,
+          "arrayBuffers": 563953
+        },
+        "cpuPercent": 1.8977283711938135,
+        "eventLoopMs": {
+          "p95": 20.267007,
+          "max": 75.169791
+        },
+        "sql": {
+          "windowStart": 1791637451276,
+          "fingerprints": 45,
+          "top": [
+            {
+              "fingerprint": "ea58eb3980d9af36",
+              "count": 1,
+              "totalMs": 31,
+              "maxMs": 31
+            },
+            {
+              "fingerprint": "5f08c84a0b795a52",
+              "count": 1,
+              "totalMs": 26,
+              "maxMs": 26
+            },
+            {
+              "fingerprint": "14edb37f5460f085",
+              "count": 380,
+              "totalMs": 25,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "503946ffbb987bdc",
+              "count": 667,
+              "totalMs": 21,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "ee38cb7d1e2c5ffa",
+              "count": 1,
+              "totalMs": 13,
+              "maxMs": 13
+            },
+            {
+              "fingerprint": "7255e812fbb5dc54",
+              "count": 1,
+              "totalMs": 11,
+              "maxMs": 11
+            },
+            {
+              "fingerprint": "0ac565bb00b2fa4e",
+              "count": 1,
+              "totalMs": 9,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "85ea22df3e4d46bb",
+              "count": 2,
+              "totalMs": 9,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "a34b62fa52adc477",
+              "count": 1,
+              "totalMs": 8,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "701afdb852a48b7d",
+              "count": 1,
+              "totalMs": 8,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "de0f8c5a58b65f85",
+              "count": 1,
+              "totalMs": 7,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "459f6aee8a2d6983",
+              "count": 1,
+              "totalMs": 7,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "61fb1e5057065873",
+              "count": 3,
+              "totalMs": 6,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "798413a6a0a765a5",
+              "count": 1,
+              "totalMs": 6,
+              "maxMs": 6
+            },
+            {
+              "fingerprint": "4a5259ca20704495",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "513c4d600ab4c2c0",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "4326535cb0693f6d",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "3016965991284577",
+              "count": 1,
+              "totalMs": 4,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "f5b6d7c9237cf497",
+              "count": 1,
+              "totalMs": 4,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "15d5cbe0b7ecad1b",
+              "count": 2,
+              "totalMs": 3,
+              "maxMs": 3
+            }
+          ]
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:07:11.278Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 228970496,
+          "heapTotal": 48906240,
+          "heapUsed": 46130320,
+          "external": 4710468,
+          "arrayBuffers": 563953
+        },
+        "cpuPercent": 0.8933283333333333,
+        "eventLoopMs": {
+          "p95": 20.250623,
+          "max": 25.444351
+        },
+        "sql": {
+          "windowStart": 1791637451276,
+          "fingerprints": 45,
+          "top": [
+            {
+              "fingerprint": "ea58eb3980d9af36",
+              "count": 1,
+              "totalMs": 31,
+              "maxMs": 31
+            },
+            {
+              "fingerprint": "5f08c84a0b795a52",
+              "count": 1,
+              "totalMs": 26,
+              "maxMs": 26
+            },
+            {
+              "fingerprint": "14edb37f5460f085",
+              "count": 380,
+              "totalMs": 25,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "503946ffbb987bdc",
+              "count": 667,
+              "totalMs": 21,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "ee38cb7d1e2c5ffa",
+              "count": 1,
+              "totalMs": 13,
+              "maxMs": 13
+            },
+            {
+              "fingerprint": "7255e812fbb5dc54",
+              "count": 1,
+              "totalMs": 11,
+              "maxMs": 11
+            },
+            {
+              "fingerprint": "0ac565bb00b2fa4e",
+              "count": 1,
+              "totalMs": 9,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "85ea22df3e4d46bb",
+              "count": 2,
+              "totalMs": 9,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "a34b62fa52adc477",
+              "count": 1,
+              "totalMs": 8,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "701afdb852a48b7d",
+              "count": 1,
+              "totalMs": 8,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "de0f8c5a58b65f85",
+              "count": 1,
+              "totalMs": 7,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "459f6aee8a2d6983",
+              "count": 1,
+              "totalMs": 7,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "61fb1e5057065873",
+              "count": 3,
+              "totalMs": 6,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "798413a6a0a765a5",
+              "count": 1,
+              "totalMs": 6,
+              "maxMs": 6
+            },
+            {
+              "fingerprint": "4a5259ca20704495",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "513c4d600ab4c2c0",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "4326535cb0693f6d",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "3016965991284577",
+              "count": 1,
+              "totalMs": 4,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "f5b6d7c9237cf497",
+              "count": 1,
+              "totalMs": 4,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "15d5cbe0b7ecad1b",
+              "count": 2,
+              "totalMs": 3,
+              "maxMs": 3
+            }
+          ]
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:08:11.278Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 235470848,
+          "heapTotal": 53624832,
+          "heapUsed": 50917048,
+          "external": 4601429,
+          "arrayBuffers": 433421
+        },
+        "cpuPercent": 3.799006666666667,
+        "eventLoopMs": {
+          "p95": 20.267007,
+          "max": 110.952447
+        },
+        "sql": {
+          "windowStart": 1791637451276,
+          "fingerprints": 45,
+          "top": [
+            {
+              "fingerprint": "ea58eb3980d9af36",
+              "count": 1,
+              "totalMs": 31,
+              "maxMs": 31
+            },
+            {
+              "fingerprint": "5f08c84a0b795a52",
+              "count": 1,
+              "totalMs": 26,
+              "maxMs": 26
+            },
+            {
+              "fingerprint": "14edb37f5460f085",
+              "count": 380,
+              "totalMs": 25,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "503946ffbb987bdc",
+              "count": 667,
+              "totalMs": 21,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "ee38cb7d1e2c5ffa",
+              "count": 1,
+              "totalMs": 13,
+              "maxMs": 13
+            },
+            {
+              "fingerprint": "7255e812fbb5dc54",
+              "count": 1,
+              "totalMs": 11,
+              "maxMs": 11
+            },
+            {
+              "fingerprint": "0ac565bb00b2fa4e",
+              "count": 1,
+              "totalMs": 9,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "85ea22df3e4d46bb",
+              "count": 2,
+              "totalMs": 9,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "a34b62fa52adc477",
+              "count": 1,
+              "totalMs": 8,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "701afdb852a48b7d",
+              "count": 1,
+              "totalMs": 8,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "de0f8c5a58b65f85",
+              "count": 1,
+              "totalMs": 7,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "459f6aee8a2d6983",
+              "count": 1,
+              "totalMs": 7,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "61fb1e5057065873",
+              "count": 3,
+              "totalMs": 6,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "798413a6a0a765a5",
+              "count": 1,
+              "totalMs": 6,
+              "maxMs": 6
+            },
+            {
+              "fingerprint": "4a5259ca20704495",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "513c4d600ab4c2c0",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "4326535cb0693f6d",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "3016965991284577",
+              "count": 1,
+              "totalMs": 4,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "f5b6d7c9237cf497",
+              "count": 1,
+              "totalMs": 4,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "15d5cbe0b7ecad1b",
+              "count": 2,
+              "totalMs": 3,
+              "maxMs": 3
+            }
+          ]
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:09:11.279Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 236281856,
+          "heapTotal": 53624832,
+          "heapUsed": 52013184,
+          "external": 4601429,
+          "arrayBuffers": 433421
+        },
+        "cpuPercent": 0.9167847202546623,
+        "eventLoopMs": {
+          "p95": 20.250623,
+          "max": 24.494079
+        },
+        "sql": {
+          "windowStart": 1791637451276,
+          "fingerprints": 45,
+          "top": [
+            {
+              "fingerprint": "ea58eb3980d9af36",
+              "count": 1,
+              "totalMs": 31,
+              "maxMs": 31
+            },
+            {
+              "fingerprint": "5f08c84a0b795a52",
+              "count": 1,
+              "totalMs": 26,
+              "maxMs": 26
+            },
+            {
+              "fingerprint": "14edb37f5460f085",
+              "count": 380,
+              "totalMs": 25,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "503946ffbb987bdc",
+              "count": 667,
+              "totalMs": 21,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "ee38cb7d1e2c5ffa",
+              "count": 1,
+              "totalMs": 13,
+              "maxMs": 13
+            },
+            {
+              "fingerprint": "7255e812fbb5dc54",
+              "count": 1,
+              "totalMs": 11,
+              "maxMs": 11
+            },
+            {
+              "fingerprint": "0ac565bb00b2fa4e",
+              "count": 1,
+              "totalMs": 9,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "85ea22df3e4d46bb",
+              "count": 2,
+              "totalMs": 9,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "a34b62fa52adc477",
+              "count": 1,
+              "totalMs": 8,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "701afdb852a48b7d",
+              "count": 1,
+              "totalMs": 8,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "de0f8c5a58b65f85",
+              "count": 1,
+              "totalMs": 7,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "459f6aee8a2d6983",
+              "count": 1,
+              "totalMs": 7,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "61fb1e5057065873",
+              "count": 3,
+              "totalMs": 6,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "798413a6a0a765a5",
+              "count": 1,
+              "totalMs": 6,
+              "maxMs": 6
+            },
+            {
+              "fingerprint": "4a5259ca20704495",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "513c4d600ab4c2c0",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "4326535cb0693f6d",
+              "count": 1,
+              "totalMs": 5,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "3016965991284577",
+              "count": 1,
+              "totalMs": 4,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "f5b6d7c9237cf497",
+              "count": 1,
+              "totalMs": 4,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "15d5cbe0b7ecad1b",
+              "count": 2,
+              "totalMs": 3,
+              "maxMs": 3
+            }
+          ]
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:10:11.279Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 237092864,
+          "heapTotal": 54673408,
+          "heapUsed": 52541336,
+          "external": 4600907,
+          "arrayBuffers": 432899
+        },
+        "cpuPercent": 0.9684633333333333,
+        "eventLoopMs": {
+          "p95": 20.283391,
+          "max": 23.724031
+        },
+        "sql": {
+          "windowStart": 1791637751279,
+          "fingerprints": 0,
+          "top": []
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:11:11.280Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 238174208,
+          "heapTotal": 55984128,
+          "heapUsed": 53800072,
+          "external": 4600907,
+          "arrayBuffers": 432899
+        },
+        "cpuPercent": 0.9620406326561224,
+        "eventLoopMs": {
+          "p95": 20.267007,
+          "max": 26.116095
+        },
+        "sql": {
+          "windowStart": 1791637751279,
+          "fingerprints": 0,
+          "top": []
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:12:11.280Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 239251456,
+          "heapTotal": 57556992,
+          "heapUsed": 55232776,
+          "external": 4600907,
+          "arrayBuffers": 432899
+        },
+        "cpuPercent": 0.903295,
+        "eventLoopMs": {
+          "p95": 20.250623,
+          "max": 25.116671
+        },
+        "sql": {
+          "windowStart": 1791637751279,
+          "fingerprints": 0,
+          "top": []
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:13:11.281Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 240328704,
+          "heapTotal": 58605568,
+          "heapUsed": 56640464,
+          "external": 4601429,
+          "arrayBuffers": 433421
+        },
+        "cpuPercent": 0.9138581023649607,
+        "eventLoopMs": {
+          "p95": 20.250623,
+          "max": 24.494079
+        },
+        "sql": {
+          "windowStart": 1791637751279,
+          "fingerprints": 0,
+          "top": []
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:14:11.281Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 241676288,
+          "heapTotal": 59654144,
+          "heapUsed": 57517696,
+          "external": 4600907,
+          "arrayBuffers": 432899
+        },
+        "cpuPercent": 0.8646849999999999,
+        "eventLoopMs": {
+          "p95": 20.250623,
+          "max": 23.412735
+        },
+        "sql": {
+          "windowStart": 1791637751279,
+          "fingerprints": 0,
+          "top": []
+        }
+      }
+    ]
+  },
+  {
+    "container": "fantasy-scout-worker",
+    "rows": [
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:05:15.487Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "worker",
+        "memory": {
+          "rss": 856952832,
+          "heapTotal": 317317120,
+          "heapUsed": 200246352,
+          "external": 15056667,
+          "arrayBuffers": 10865100
+        },
+        "cpuPercent": 87.960415659739,
+        "eventLoopMs": {
+          "p95": 22.429695,
+          "max": 4622.123007
+        },
+        "sql": {
+          "windowStart": 1791637455485,
+          "fingerprints": 128,
+          "top": [
+            {
+              "fingerprint": "other",
+              "count": 1989,
+              "totalMs": 3222,
+              "maxMs": 266
+            },
+            {
+              "fingerprint": "587fa628a9fe4642",
+              "count": 16,
+              "totalMs": 2473,
+              "maxMs": 2473
+            },
+            {
+              "fingerprint": "5f3b4799a14f603e",
+              "count": 6108,
+              "totalMs": 775,
+              "maxMs": 225
+            },
+            {
+              "fingerprint": "91ab9e257dc6d96b",
+              "count": 1,
+              "totalMs": 453,
+              "maxMs": 453
+            },
+            {
+              "fingerprint": "14edb37f5460f085",
+              "count": 2910,
+              "totalMs": 432,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "8c7f3575ca39b3f7",
+              "count": 1,
+              "totalMs": 431,
+              "maxMs": 431
+            },
+            {
+              "fingerprint": "74fbea3f2eb125d8",
+              "count": 1,
+              "totalMs": 310,
+              "maxMs": 310
+            },
+            {
+              "fingerprint": "3f9d85bf8c6fad1a",
+              "count": 6109,
+              "totalMs": 244,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "56212366e5f858dc",
+              "count": 204,
+              "totalMs": 218,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 390,
+              "totalMs": 165,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "6d59a2e0d82a2e44",
+              "count": 1,
+              "totalMs": 145,
+              "maxMs": 145
+            },
+            {
+              "fingerprint": "4ae421c4c8ed84b2",
+              "count": 1,
+              "totalMs": 141,
+              "maxMs": 141
+            },
+            {
+              "fingerprint": "facbc7de885b2307",
+              "count": 1,
+              "totalMs": 113,
+              "maxMs": 113
+            },
+            {
+              "fingerprint": "c1485648c9f6bc25",
+              "count": 151,
+              "totalMs": 110,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "e53732c1066efbae",
+              "count": 222,
+              "totalMs": 81,
+              "maxMs": 12
+            },
+            {
+              "fingerprint": "a34b62fa52adc477",
+              "count": 9,
+              "totalMs": 76,
+              "maxMs": 13
+            },
+            {
+              "fingerprint": "84aaae85b6ad8c56",
+              "count": 1,
+              "totalMs": 71,
+              "maxMs": 71
+            },
+            {
+              "fingerprint": "0616f2bec8904941",
+              "count": 9,
+              "totalMs": 63,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "cdc8340bbd1ac2fd",
+              "count": 1200,
+              "totalMs": 52,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "deb53dde17c1f5b9",
+              "count": 1,
+              "totalMs": 42,
+              "maxMs": 42
+            }
+          ]
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:05:46.170Z",
+        "pid": 88,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 868184064,
+          "heapTotal": 222601216,
+          "heapUsed": 89935416,
+          "external": 4194131,
+          "arrayBuffers": 146751
+        },
+        "cpuPercent": 97.0587573540441,
+        "eventLoopMs": {
+          "p95": 20.824063,
+          "max": 9445.572607
+        },
+        "sql": {
+          "windowStart": 1791637486169,
+          "fingerprints": 36,
+          "top": [
+            {
+              "fingerprint": "c55b648e157a2255",
+              "count": 4634,
+              "totalMs": 3537,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "b52558183ae30311",
+              "count": 1,
+              "totalMs": 490,
+              "maxMs": 490
+            },
+            {
+              "fingerprint": "f291159c37655bcc",
+              "count": 1,
+              "totalMs": 300,
+              "maxMs": 300
+            },
+            {
+              "fingerprint": "4dc775a30a63f156",
+              "count": 1,
+              "totalMs": 266,
+              "maxMs": 266
+            },
+            {
+              "fingerprint": "f9b50a68963a8671",
+              "count": 1,
+              "totalMs": 225,
+              "maxMs": 225
+            },
+            {
+              "fingerprint": "212e296aab5b2ecb",
+              "count": 1,
+              "totalMs": 218,
+              "maxMs": 218
+            },
+            {
+              "fingerprint": "0616f2bec8904941",
+              "count": 5,
+              "totalMs": 34,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "bb14469e0951fb97",
+              "count": 1,
+              "totalMs": 20,
+              "maxMs": 20
+            },
+            {
+              "fingerprint": "fdb08cb2b54b7b83",
+              "count": 1,
+              "totalMs": 16,
+              "maxMs": 16
+            },
+            {
+              "fingerprint": "50c562230da6ab9f",
+              "count": 3,
+              "totalMs": 15,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "55a85092c9def6b2",
+              "count": 1,
+              "totalMs": 14,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "74b896e6d00ce206",
+              "count": 1,
+              "totalMs": 14,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "fd3d638c7796dbd7",
+              "count": 1,
+              "totalMs": 13,
+              "maxMs": 13
+            },
+            {
+              "fingerprint": "f6771b1725df33ad",
+              "count": 1,
+              "totalMs": 13,
+              "maxMs": 13
+            },
+            {
+              "fingerprint": "cf32ccd33af65691",
+              "count": 1,
+              "totalMs": 12,
+              "maxMs": 12
+            },
+            {
+              "fingerprint": "ba9ae7cff7ad7b95",
+              "count": 1,
+              "totalMs": 10,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "b730f735a5d7fc1a",
+              "count": 1,
+              "totalMs": 10,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 4,
+              "totalMs": 9,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "d61ab3f5d9379315",
+              "count": 1,
+              "totalMs": 9,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "8b5122a31e00c302",
+              "count": 2,
+              "totalMs": 8,
+              "maxMs": 4
+            }
+          ]
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:06:15.487Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "worker",
+        "memory": {
+          "rss": 738902016,
+          "heapTotal": 77045760,
+          "heapUsed": 68716928,
+          "external": 6242403,
+          "arrayBuffers": 1700312
+        },
+        "cpuPercent": 42.225584999999995,
+        "eventLoopMs": {
+          "p95": 20.758527,
+          "max": 2311.061503
+        },
+        "sql": {
+          "windowStart": 1791637455485,
+          "fingerprints": 128,
+          "top": [
+            {
+              "fingerprint": "other",
+              "count": 3400,
+              "totalMs": 5199,
+              "maxMs": 450
+            },
+            {
+              "fingerprint": "587fa628a9fe4642",
+              "count": 45,
+              "totalMs": 2473,
+              "maxMs": 2473
+            },
+            {
+              "fingerprint": "5f3b4799a14f603e",
+              "count": 8495,
+              "totalMs": 866,
+              "maxMs": 225
+            },
+            {
+              "fingerprint": "8c7f3575ca39b3f7",
+              "count": 2,
+              "totalMs": 670,
+              "maxMs": 431
+            },
+            {
+              "fingerprint": "14edb37f5460f085",
+              "count": 3750,
+              "totalMs": 650,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "74fbea3f2eb125d8",
+              "count": 2,
+              "totalMs": 578,
+              "maxMs": 310
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 576,
+              "totalMs": 477,
+              "maxMs": 51
+            },
+            {
+              "fingerprint": "91ab9e257dc6d96b",
+              "count": 1,
+              "totalMs": 453,
+              "maxMs": 453
+            },
+            {
+              "fingerprint": "3f9d85bf8c6fad1a",
+              "count": 8495,
+              "totalMs": 265,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "4ae421c4c8ed84b2",
+              "count": 2,
+              "totalMs": 229,
+              "maxMs": 141
+            },
+            {
+              "fingerprint": "facbc7de885b2307",
+              "count": 2,
+              "totalMs": 227,
+              "maxMs": 114
+            },
+            {
+              "fingerprint": "56212366e5f858dc",
+              "count": 204,
+              "totalMs": 218,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "6d59a2e0d82a2e44",
+              "count": 1,
+              "totalMs": 145,
+              "maxMs": 145
+            },
+            {
+              "fingerprint": "e53732c1066efbae",
+              "count": 355,
+              "totalMs": 136,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "c1485648c9f6bc25",
+              "count": 151,
+              "totalMs": 110,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "cdc8340bbd1ac2fd",
+              "count": 2208,
+              "totalMs": 105,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "0616f2bec8904941",
+              "count": 12,
+              "totalMs": 93,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "a34b62fa52adc477",
+              "count": 12,
+              "totalMs": 92,
+              "maxMs": 13
+            },
+            {
+              "fingerprint": "f8fdcdd38ab914ca",
+              "count": 2208,
+              "totalMs": 83,
+              "maxMs": 11
+            },
+            {
+              "fingerprint": "84aaae85b6ad8c56",
+              "count": 1,
+              "totalMs": 71,
+              "maxMs": 71
+            }
+          ]
+        }
+      },
+      {
+        "scope": "database-window",
+        "timestamp": "2026-10-10T13:06:15.487Z",
+        "start": "2026-10-10T13:05:15.487Z",
+        "seconds": 60,
+        "tempBytes": "21659648",
+        "tempFiles": "3"
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:06:48.687Z",
+        "pid": 88,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "web",
+        "memory": {
+          "rss": 1110466560,
+          "heapTotal": 342917120,
+          "heapUsed": 253530312,
+          "external": 4194171,
+          "arrayBuffers": 146751
+        },
+        "cpuPercent": 97.52165650942943,
+        "eventLoopMs": {
+          "p95": 20.725759,
+          "max": 10116.661247
+        },
+        "sql": {
+          "windowStart": 1791637486169,
+          "fingerprints": 71,
+          "top": [
+            {
+              "fingerprint": "c55b648e157a2255",
+              "count": 11902,
+              "totalMs": 7531,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "b52558183ae30311",
+              "count": 1,
+              "totalMs": 490,
+              "maxMs": 490
+            },
+            {
+              "fingerprint": "ba4ab11166e7a4fa",
+              "count": 1,
+              "totalMs": 340,
+              "maxMs": 340
+            },
+            {
+              "fingerprint": "067261fbf59eab65",
+              "count": 1,
+              "totalMs": 308,
+              "maxMs": 308
+            },
+            {
+              "fingerprint": "f291159c37655bcc",
+              "count": 1,
+              "totalMs": 300,
+              "maxMs": 300
+            },
+            {
+              "fingerprint": "4dc775a30a63f156",
+              "count": 1,
+              "totalMs": 266,
+              "maxMs": 266
+            },
+            {
+              "fingerprint": "fff4247a26d2fe92",
+              "count": 1,
+              "totalMs": 260,
+              "maxMs": 260
+            },
+            {
+              "fingerprint": "f9b50a68963a8671",
+              "count": 1,
+              "totalMs": 225,
+              "maxMs": 225
+            },
+            {
+              "fingerprint": "212e296aab5b2ecb",
+              "count": 1,
+              "totalMs": 218,
+              "maxMs": 218
+            },
+            {
+              "fingerprint": "8049e88631a8fc8e",
+              "count": 1,
+              "totalMs": 172,
+              "maxMs": 172
+            },
+            {
+              "fingerprint": "013d4c649e7828e7",
+              "count": 1,
+              "totalMs": 172,
+              "maxMs": 172
+            },
+            {
+              "fingerprint": "ede8eca7c69ae019",
+              "count": 1,
+              "totalMs": 89,
+              "maxMs": 89
+            },
+            {
+              "fingerprint": "0616f2bec8904941",
+              "count": 11,
+              "totalMs": 71,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "069d882dbaca4d6c",
+              "count": 11,
+              "totalMs": 23,
+              "maxMs": 6
+            },
+            {
+              "fingerprint": "bb14469e0951fb97",
+              "count": 1,
+              "totalMs": 20,
+              "maxMs": 20
+            },
+            {
+              "fingerprint": "f716d308ffb86a05",
+              "count": 1,
+              "totalMs": 18,
+              "maxMs": 18
+            },
+            {
+              "fingerprint": "66cac9d1cfdad0d5",
+              "count": 1,
+              "totalMs": 18,
+              "maxMs": 18
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 10,
+              "totalMs": 16,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "fdb08cb2b54b7b83",
+              "count": 1,
+              "totalMs": 16,
+              "maxMs": 16
+            },
+            {
+              "fingerprint": "50c562230da6ab9f",
+              "count": 3,
+              "totalMs": 15,
+              "maxMs": 7
+            }
+          ]
+        }
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:07:15.487Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "worker",
+        "memory": {
+          "rss": 1050861568,
+          "heapTotal": 207069184,
+          "heapUsed": 99039496,
+          "external": 13239889,
+          "arrayBuffers": 9054993
+        },
+        "cpuPercent": 18.196401666666667,
+        "eventLoopMs": {
+          "p95": 20.594687,
+          "max": 305.659903
+        },
+        "sql": {
+          "windowStart": 1791637455485,
+          "fingerprints": 128,
+          "top": [
+            {
+              "fingerprint": "other",
+              "count": 4582,
+              "totalMs": 6832,
+              "maxMs": 450
+            },
+            {
+              "fingerprint": "587fa628a9fe4642",
+              "count": 71,
+              "totalMs": 2473,
+              "maxMs": 2473
+            },
+            {
+              "fingerprint": "8c7f3575ca39b3f7",
+              "count": 3,
+              "totalMs": 906,
+              "maxMs": 431
+            },
+            {
+              "fingerprint": "5f3b4799a14f603e",
+              "count": 8495,
+              "totalMs": 866,
+              "maxMs": 225
+            },
+            {
+              "fingerprint": "74fbea3f2eb125d8",
+              "count": 3,
+              "totalMs": 777,
+              "maxMs": 310
+            },
+            {
+              "fingerprint": "14edb37f5460f085",
+              "count": 3750,
+              "totalMs": 650,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 724,
+              "totalMs": 597,
+              "maxMs": 51
+            },
+            {
+              "fingerprint": "91ab9e257dc6d96b",
+              "count": 1,
+              "totalMs": 453,
+              "maxMs": 453
+            },
+            {
+              "fingerprint": "facbc7de885b2307",
+              "count": 3,
+              "totalMs": 338,
+              "maxMs": 114
+            },
+            {
+              "fingerprint": "4ae421c4c8ed84b2",
+              "count": 3,
+              "totalMs": 274,
+              "maxMs": 141
+            },
+            {
+              "fingerprint": "3f9d85bf8c6fad1a",
+              "count": 8495,
+              "totalMs": 265,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "56212366e5f858dc",
+              "count": 204,
+              "totalMs": 218,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "6d59a2e0d82a2e44",
+              "count": 1,
+              "totalMs": 145,
+              "maxMs": 145
+            },
+            {
+              "fingerprint": "e53732c1066efbae",
+              "count": 355,
+              "totalMs": 136,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "c1485648c9f6bc25",
+              "count": 151,
+              "totalMs": 110,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "cdc8340bbd1ac2fd",
+              "count": 2208,
+              "totalMs": 105,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "fa099668d92ad254",
+              "count": 3,
+              "totalMs": 100,
+              "maxMs": 35
+            },
+            {
+              "fingerprint": "0616f2bec8904941",
+              "count": 12,
+              "totalMs": 93,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "a34b62fa52adc477",
+              "count": 12,
+              "totalMs": 92,
+              "maxMs": 13
+            },
+            {
+              "fingerprint": "32c949729c13ccb8",
+              "count": 3,
+              "totalMs": 83,
+              "maxMs": 32
+            }
+          ]
+        }
+      },
+      {
+        "scope": "database-window",
+        "timestamp": "2026-10-10T13:07:15.487Z",
+        "start": "2026-10-10T13:06:15.487Z",
+        "seconds": 60,
+        "tempBytes": "17465344",
+        "tempFiles": "2"
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:08:15.487Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "worker",
+        "memory": {
+          "rss": 932388864,
+          "heapTotal": 212779008,
+          "heapUsed": 93439776,
+          "external": 6231646,
+          "arrayBuffers": 2046750
+        },
+        "cpuPercent": 14.90495,
+        "eventLoopMs": {
+          "p95": 20.463615,
+          "max": 299.106303
+        },
+        "sql": {
+          "windowStart": 1791637455485,
+          "fingerprints": 128,
+          "top": [
+            {
+              "fingerprint": "other",
+              "count": 5566,
+              "totalMs": 8602,
+              "maxMs": 466
+            },
+            {
+              "fingerprint": "587fa628a9fe4642",
+              "count": 109,
+              "totalMs": 2473,
+              "maxMs": 2473
+            },
+            {
+              "fingerprint": "8c7f3575ca39b3f7",
+              "count": 4,
+              "totalMs": 1101,
+              "maxMs": 431
+            },
+            {
+              "fingerprint": "74fbea3f2eb125d8",
+              "count": 4,
+              "totalMs": 1005,
+              "maxMs": 310
+            },
+            {
+              "fingerprint": "5f3b4799a14f603e",
+              "count": 8495,
+              "totalMs": 866,
+              "maxMs": 225
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 809,
+              "totalMs": 693,
+              "maxMs": 51
+            },
+            {
+              "fingerprint": "14edb37f5460f085",
+              "count": 3750,
+              "totalMs": 650,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "91ab9e257dc6d96b",
+              "count": 1,
+              "totalMs": 453,
+              "maxMs": 453
+            },
+            {
+              "fingerprint": "facbc7de885b2307",
+              "count": 4,
+              "totalMs": 434,
+              "maxMs": 114
+            },
+            {
+              "fingerprint": "4ae421c4c8ed84b2",
+              "count": 4,
+              "totalMs": 313,
+              "maxMs": 141
+            },
+            {
+              "fingerprint": "3f9d85bf8c6fad1a",
+              "count": 8495,
+              "totalMs": 265,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "56212366e5f858dc",
+              "count": 204,
+              "totalMs": 218,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "6d59a2e0d82a2e44",
+              "count": 1,
+              "totalMs": 145,
+              "maxMs": 145
+            },
+            {
+              "fingerprint": "e53732c1066efbae",
+              "count": 355,
+              "totalMs": 136,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "fa099668d92ad254",
+              "count": 4,
+              "totalMs": 128,
+              "maxMs": 35
+            },
+            {
+              "fingerprint": "c1485648c9f6bc25",
+              "count": 151,
+              "totalMs": 110,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "32c949729c13ccb8",
+              "count": 4,
+              "totalMs": 106,
+              "maxMs": 32
+            },
+            {
+              "fingerprint": "cdc8340bbd1ac2fd",
+              "count": 2208,
+              "totalMs": 105,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "0616f2bec8904941",
+              "count": 12,
+              "totalMs": 93,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "a34b62fa52adc477",
+              "count": 12,
+              "totalMs": 92,
+              "maxMs": 13
+            }
+          ]
+        }
+      },
+      {
+        "scope": "database-window",
+        "timestamp": "2026-10-10T13:08:15.487Z",
+        "start": "2026-10-10T13:07:15.487Z",
+        "seconds": 60,
+        "tempBytes": "17465344",
+        "tempFiles": "2"
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:09:15.487Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "worker",
+        "memory": {
+          "rss": 945954816,
+          "heapTotal": 200351744,
+          "heapUsed": 62366064,
+          "external": 4981057,
+          "arrayBuffers": 796161
+        },
+        "cpuPercent": 13.591613333333333,
+        "eventLoopMs": {
+          "p95": 20.365311,
+          "max": 221.511679
+        },
+        "sql": {
+          "windowStart": 1791637455485,
+          "fingerprints": 128,
+          "top": [
+            {
+              "fingerprint": "other",
+              "count": 6335,
+              "totalMs": 10042,
+              "maxMs": 466
+            },
+            {
+              "fingerprint": "587fa628a9fe4642",
+              "count": 127,
+              "totalMs": 2473,
+              "maxMs": 2473
+            },
+            {
+              "fingerprint": "8c7f3575ca39b3f7",
+              "count": 5,
+              "totalMs": 1246,
+              "maxMs": 431
+            },
+            {
+              "fingerprint": "74fbea3f2eb125d8",
+              "count": 5,
+              "totalMs": 1227,
+              "maxMs": 310
+            },
+            {
+              "fingerprint": "5f3b4799a14f603e",
+              "count": 8495,
+              "totalMs": 866,
+              "maxMs": 225
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 888,
+              "totalMs": 759,
+              "maxMs": 51
+            },
+            {
+              "fingerprint": "14edb37f5460f085",
+              "count": 3750,
+              "totalMs": 650,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "facbc7de885b2307",
+              "count": 5,
+              "totalMs": 535,
+              "maxMs": 114
+            },
+            {
+              "fingerprint": "91ab9e257dc6d96b",
+              "count": 1,
+              "totalMs": 453,
+              "maxMs": 453
+            },
+            {
+              "fingerprint": "4ae421c4c8ed84b2",
+              "count": 5,
+              "totalMs": 348,
+              "maxMs": 141
+            },
+            {
+              "fingerprint": "3f9d85bf8c6fad1a",
+              "count": 8495,
+              "totalMs": 265,
+              "maxMs": 9
+            },
+            {
+              "fingerprint": "56212366e5f858dc",
+              "count": 204,
+              "totalMs": 218,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "fa099668d92ad254",
+              "count": 5,
+              "totalMs": 150,
+              "maxMs": 35
+            },
+            {
+              "fingerprint": "6d59a2e0d82a2e44",
+              "count": 1,
+              "totalMs": 145,
+              "maxMs": 145
+            },
+            {
+              "fingerprint": "e53732c1066efbae",
+              "count": 355,
+              "totalMs": 136,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "32c949729c13ccb8",
+              "count": 5,
+              "totalMs": 131,
+              "maxMs": 32
+            },
+            {
+              "fingerprint": "c1485648c9f6bc25",
+              "count": 151,
+              "totalMs": 110,
+              "maxMs": 5
+            },
+            {
+              "fingerprint": "cdc8340bbd1ac2fd",
+              "count": 2208,
+              "totalMs": 105,
+              "maxMs": 10
+            },
+            {
+              "fingerprint": "4e8339df6bdc325e",
+              "count": 5,
+              "totalMs": 100,
+              "maxMs": 30
+            },
+            {
+              "fingerprint": "0616f2bec8904941",
+              "count": 12,
+              "totalMs": 93,
+              "maxMs": 14
+            }
+          ]
+        }
+      },
+      {
+        "scope": "database-window",
+        "timestamp": "2026-10-10T13:09:15.487Z",
+        "start": "2026-10-10T13:08:15.487Z",
+        "seconds": 60,
+        "tempBytes": "17465344",
+        "tempFiles": "2"
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:10:15.487Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "worker",
+        "memory": {
+          "rss": 992980992,
+          "heapTotal": 277209088,
+          "heapUsed": 151943512,
+          "external": 4684931,
+          "arrayBuffers": 500035
+        },
+        "cpuPercent": 9.976696666666667,
+        "eventLoopMs": {
+          "p95": 20.365311,
+          "max": 262.537215
+        },
+        "sql": {
+          "windowStart": 1791637755487,
+          "fingerprints": 112,
+          "top": [
+            {
+              "fingerprint": "856ec643c45f2ae5",
+              "count": 1,
+              "totalMs": 433,
+              "maxMs": 433
+            },
+            {
+              "fingerprint": "74fbea3f2eb125d8",
+              "count": 1,
+              "totalMs": 225,
+              "maxMs": 225
+            },
+            {
+              "fingerprint": "56212366e5f858dc",
+              "count": 204,
+              "totalMs": 216,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "8c7f3575ca39b3f7",
+              "count": 1,
+              "totalMs": 143,
+              "maxMs": 143
+            },
+            {
+              "fingerprint": "facbc7de885b2307",
+              "count": 1,
+              "totalMs": 130,
+              "maxMs": 130
+            },
+            {
+              "fingerprint": "a1e9bf308861cb65",
+              "count": 6,
+              "totalMs": 65,
+              "maxMs": 14
+            },
+            {
+              "fingerprint": "1486aacc60b0ddd5",
+              "count": 12,
+              "totalMs": 41,
+              "maxMs": 12
+            },
+            {
+              "fingerprint": "4ae421c4c8ed84b2",
+              "count": 1,
+              "totalMs": 38,
+              "maxMs": 38
+            },
+            {
+              "fingerprint": "ce3151094cd8dfc3",
+              "count": 2,
+              "totalMs": 34,
+              "maxMs": 27
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 261,
+              "totalMs": 27,
+              "maxMs": 16
+            },
+            {
+              "fingerprint": "fa099668d92ad254",
+              "count": 1,
+              "totalMs": 23,
+              "maxMs": 23
+            },
+            {
+              "fingerprint": "4e8339df6bdc325e",
+              "count": 1,
+              "totalMs": 22,
+              "maxMs": 22
+            },
+            {
+              "fingerprint": "d4fac7f92bd28812",
+              "count": 2,
+              "totalMs": 19,
+              "maxMs": 18
+            },
+            {
+              "fingerprint": "6136a099bc4194c5",
+              "count": 12,
+              "totalMs": 18,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "7e57081066467c6c",
+              "count": 12,
+              "totalMs": 18,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "32c949729c13ccb8",
+              "count": 1,
+              "totalMs": 18,
+              "maxMs": 18
+            },
+            {
+              "fingerprint": "6a4c1df654ad779a",
+              "count": 30,
+              "totalMs": 14,
+              "maxMs": 6
+            },
+            {
+              "fingerprint": "3dd81a459324f0f8",
+              "count": 5,
+              "totalMs": 13,
+              "maxMs": 3
+            },
+            {
+              "fingerprint": "e6bcad8f993ef253",
+              "count": 12,
+              "totalMs": 11,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "3ed284c8a6cb281e",
+              "count": 3,
+              "totalMs": 11,
+              "maxMs": 6
+            }
+          ]
+        }
+      },
+      {
+        "scope": "database-window",
+        "timestamp": "2026-10-10T13:10:15.487Z",
+        "start": "2026-10-10T13:09:15.487Z",
+        "seconds": 60,
+        "tempBytes": "17465344",
+        "tempFiles": "2"
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:11:15.487Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "worker",
+        "memory": {
+          "rss": 1101803520,
+          "heapTotal": 278638592,
+          "heapUsed": 156132744,
+          "external": 5541239,
+          "arrayBuffers": 1356343
+        },
+        "cpuPercent": 13.519173333333335,
+        "eventLoopMs": {
+          "p95": 20.398079,
+          "max": 255.328255
+        },
+        "sql": {
+          "windowStart": 1791637755487,
+          "fingerprints": 128,
+          "top": [
+            {
+              "fingerprint": "other",
+              "count": 157,
+              "totalMs": 533,
+              "maxMs": 414
+            },
+            {
+              "fingerprint": "74fbea3f2eb125d8",
+              "count": 2,
+              "totalMs": 459,
+              "maxMs": 234
+            },
+            {
+              "fingerprint": "a1e9bf308861cb65",
+              "count": 41,
+              "totalMs": 440,
+              "maxMs": 20
+            },
+            {
+              "fingerprint": "856ec643c45f2ae5",
+              "count": 1,
+              "totalMs": 433,
+              "maxMs": 433
+            },
+            {
+              "fingerprint": "8c7f3575ca39b3f7",
+              "count": 2,
+              "totalMs": 297,
+              "maxMs": 154
+            },
+            {
+              "fingerprint": "facbc7de885b2307",
+              "count": 2,
+              "totalMs": 253,
+              "maxMs": 130
+            },
+            {
+              "fingerprint": "ce3151094cd8dfc3",
+              "count": 18,
+              "totalMs": 250,
+              "maxMs": 33
+            },
+            {
+              "fingerprint": "56212366e5f858dc",
+              "count": 204,
+              "totalMs": 216,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 348,
+              "totalMs": 92,
+              "maxMs": 16
+            },
+            {
+              "fingerprint": "405f61879f28f277",
+              "count": 89,
+              "totalMs": 92,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "4ae421c4c8ed84b2",
+              "count": 2,
+              "totalMs": 79,
+              "maxMs": 41
+            },
+            {
+              "fingerprint": "1486aacc60b0ddd5",
+              "count": 24,
+              "totalMs": 71,
+              "maxMs": 12
+            },
+            {
+              "fingerprint": "fa099668d92ad254",
+              "count": 2,
+              "totalMs": 47,
+              "maxMs": 24
+            },
+            {
+              "fingerprint": "4e8339df6bdc325e",
+              "count": 2,
+              "totalMs": 42,
+              "maxMs": 22
+            },
+            {
+              "fingerprint": "32c949729c13ccb8",
+              "count": 2,
+              "totalMs": 40,
+              "maxMs": 22
+            },
+            {
+              "fingerprint": "7e57081066467c6c",
+              "count": 24,
+              "totalMs": 34,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "d4fac7f92bd28812",
+              "count": 4,
+              "totalMs": 34,
+              "maxMs": 18
+            },
+            {
+              "fingerprint": "6136a099bc4194c5",
+              "count": 25,
+              "totalMs": 28,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "3394c7330308265f",
+              "count": 10,
+              "totalMs": 26,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "15a2fc63baafb3df",
+              "count": 5,
+              "totalMs": 26,
+              "maxMs": 10
+            }
+          ]
+        }
+      },
+      {
+        "scope": "database-window",
+        "timestamp": "2026-10-10T13:11:15.487Z",
+        "start": "2026-10-10T13:10:15.487Z",
+        "seconds": 60,
+        "tempBytes": "17465344",
+        "tempFiles": "2"
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:12:15.487Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "worker",
+        "memory": {
+          "rss": 1101422592,
+          "heapTotal": 278007808,
+          "heapUsed": 155825656,
+          "external": 5475067,
+          "arrayBuffers": 1290171
+        },
+        "cpuPercent": 9.859025,
+        "eventLoopMs": {
+          "p95": 20.316159,
+          "max": 271.843327
+        },
+        "sql": {
+          "windowStart": 1791637755487,
+          "fingerprints": 128,
+          "top": [
+            {
+              "fingerprint": "other",
+              "count": 175,
+              "totalMs": 1001,
+              "maxMs": 414
+            },
+            {
+              "fingerprint": "74fbea3f2eb125d8",
+              "count": 3,
+              "totalMs": 692,
+              "maxMs": 234
+            },
+            {
+              "fingerprint": "a1e9bf308861cb65",
+              "count": 57,
+              "totalMs": 501,
+              "maxMs": 20
+            },
+            {
+              "fingerprint": "8c7f3575ca39b3f7",
+              "count": 3,
+              "totalMs": 443,
+              "maxMs": 154
+            },
+            {
+              "fingerprint": "856ec643c45f2ae5",
+              "count": 1,
+              "totalMs": 433,
+              "maxMs": 433
+            },
+            {
+              "fingerprint": "facbc7de885b2307",
+              "count": 3,
+              "totalMs": 373,
+              "maxMs": 130
+            },
+            {
+              "fingerprint": "ce3151094cd8dfc3",
+              "count": 34,
+              "totalMs": 357,
+              "maxMs": 33
+            },
+            {
+              "fingerprint": "56212366e5f858dc",
+              "count": 204,
+              "totalMs": 216,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 431,
+              "totalMs": 142,
+              "maxMs": 16
+            },
+            {
+              "fingerprint": "405f61879f28f277",
+              "count": 169,
+              "totalMs": 123,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "4ae421c4c8ed84b2",
+              "count": 3,
+              "totalMs": 122,
+              "maxMs": 43
+            },
+            {
+              "fingerprint": "1486aacc60b0ddd5",
+              "count": 36,
+              "totalMs": 102,
+              "maxMs": 12
+            },
+            {
+              "fingerprint": "fa099668d92ad254",
+              "count": 3,
+              "totalMs": 71,
+              "maxMs": 24
+            },
+            {
+              "fingerprint": "677f5b7fa6b06f48",
+              "count": 7,
+              "totalMs": 65,
+              "maxMs": 65
+            },
+            {
+              "fingerprint": "32c949729c13ccb8",
+              "count": 3,
+              "totalMs": 59,
+              "maxMs": 22
+            },
+            {
+              "fingerprint": "4e8339df6bdc325e",
+              "count": 3,
+              "totalMs": 58,
+              "maxMs": 22
+            },
+            {
+              "fingerprint": "d4fac7f92bd28812",
+              "count": 6,
+              "totalMs": 49,
+              "maxMs": 18
+            },
+            {
+              "fingerprint": "7e57081066467c6c",
+              "count": 36,
+              "totalMs": 48,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "6136a099bc4194c5",
+              "count": 37,
+              "totalMs": 35,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "e6bcad8f993ef253",
+              "count": 36,
+              "totalMs": 31,
+              "maxMs": 4
+            }
+          ]
+        }
+      },
+      {
+        "scope": "database-window",
+        "timestamp": "2026-10-10T13:12:15.487Z",
+        "start": "2026-10-10T13:11:15.487Z",
+        "seconds": 60,
+        "tempBytes": "17465344",
+        "tempFiles": "2"
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:13:15.488Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "worker",
+        "memory": {
+          "rss": 1125269504,
+          "heapTotal": 276627456,
+          "heapUsed": 149126720,
+          "external": 4683490,
+          "arrayBuffers": 498594
+        },
+        "cpuPercent": 12.364528924517924,
+        "eventLoopMs": {
+          "p95": 20.365311,
+          "max": 258.605055
+        },
+        "sql": {
+          "windowStart": 1791637755487,
+          "fingerprints": 128,
+          "top": [
+            {
+              "fingerprint": "other",
+              "count": 193,
+              "totalMs": 1592,
+              "maxMs": 458
+            },
+            {
+              "fingerprint": "74fbea3f2eb125d8",
+              "count": 4,
+              "totalMs": 899,
+              "maxMs": 234
+            },
+            {
+              "fingerprint": "a1e9bf308861cb65",
+              "count": 93,
+              "totalMs": 873,
+              "maxMs": 20
+            },
+            {
+              "fingerprint": "8c7f3575ca39b3f7",
+              "count": 4,
+              "totalMs": 604,
+              "maxMs": 161
+            },
+            {
+              "fingerprint": "ce3151094cd8dfc3",
+              "count": 50,
+              "totalMs": 577,
+              "maxMs": 33
+            },
+            {
+              "fingerprint": "facbc7de885b2307",
+              "count": 4,
+              "totalMs": 494,
+              "maxMs": 130
+            },
+            {
+              "fingerprint": "856ec643c45f2ae5",
+              "count": 1,
+              "totalMs": 433,
+              "maxMs": 433
+            },
+            {
+              "fingerprint": "56212366e5f858dc",
+              "count": 204,
+              "totalMs": 216,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 514,
+              "totalMs": 203,
+              "maxMs": 21
+            },
+            {
+              "fingerprint": "4ae421c4c8ed84b2",
+              "count": 4,
+              "totalMs": 168,
+              "maxMs": 46
+            },
+            {
+              "fingerprint": "405f61879f28f277",
+              "count": 246,
+              "totalMs": 159,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "1486aacc60b0ddd5",
+              "count": 48,
+              "totalMs": 130,
+              "maxMs": 12
+            },
+            {
+              "fingerprint": "fa099668d92ad254",
+              "count": 4,
+              "totalMs": 99,
+              "maxMs": 28
+            },
+            {
+              "fingerprint": "32c949729c13ccb8",
+              "count": 4,
+              "totalMs": 85,
+              "maxMs": 26
+            },
+            {
+              "fingerprint": "4e8339df6bdc325e",
+              "count": 4,
+              "totalMs": 72,
+              "maxMs": 22
+            },
+            {
+              "fingerprint": "d4fac7f92bd28812",
+              "count": 8,
+              "totalMs": 68,
+              "maxMs": 18
+            },
+            {
+              "fingerprint": "677f5b7fa6b06f48",
+              "count": 9,
+              "totalMs": 65,
+              "maxMs": 65
+            },
+            {
+              "fingerprint": "7e57081066467c6c",
+              "count": 48,
+              "totalMs": 62,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "6136a099bc4194c5",
+              "count": 49,
+              "totalMs": 47,
+              "maxMs": 7
+            },
+            {
+              "fingerprint": "e6bcad8f993ef253",
+              "count": 48,
+              "totalMs": 43,
+              "maxMs": 4
+            }
+          ]
+        }
+      },
+      {
+        "scope": "database-window",
+        "timestamp": "2026-10-10T13:13:15.488Z",
+        "start": "2026-10-10T13:12:15.487Z",
+        "seconds": 60.001,
+        "tempBytes": "17465344",
+        "tempFiles": "2"
+      },
+      {
+        "scope": "runtime-diagnostics",
+        "timestamp": "2026-10-10T13:14:15.489Z",
+        "pid": 1,
+        "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+        "role": "worker",
+        "memory": {
+          "rss": 1128042496,
+          "heapTotal": 277794816,
+          "heapUsed": 154875184,
+          "external": 5539798,
+          "arrayBuffers": 1354902
+        },
+        "cpuPercent": 15.014593090115163,
+        "eventLoopMs": {
+          "p95": 20.381695,
+          "max": 241.303551
+        },
+        "sql": {
+          "windowStart": 1791637755487,
+          "fingerprints": 128,
+          "top": [
+            {
+              "fingerprint": "other",
+              "count": 212,
+              "totalMs": 2156,
+              "maxMs": 458
+            },
+            {
+              "fingerprint": "a1e9bf308861cb65",
+              "count": 134,
+              "totalMs": 1355,
+              "maxMs": 23
+            },
+            {
+              "fingerprint": "74fbea3f2eb125d8",
+              "count": 5,
+              "totalMs": 1152,
+              "maxMs": 253
+            },
+            {
+              "fingerprint": "ce3151094cd8dfc3",
+              "count": 66,
+              "totalMs": 867,
+              "maxMs": 33
+            },
+            {
+              "fingerprint": "8c7f3575ca39b3f7",
+              "count": 5,
+              "totalMs": 785,
+              "maxMs": 181
+            },
+            {
+              "fingerprint": "facbc7de885b2307",
+              "count": 5,
+              "totalMs": 652,
+              "maxMs": 158
+            },
+            {
+              "fingerprint": "856ec643c45f2ae5",
+              "count": 1,
+              "totalMs": 433,
+              "maxMs": 433
+            },
+            {
+              "fingerprint": "79663c1d3b43ceaf",
+              "count": 601,
+              "totalMs": 279,
+              "maxMs": 21
+            },
+            {
+              "fingerprint": "56212366e5f858dc",
+              "count": 204,
+              "totalMs": 216,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "4ae421c4c8ed84b2",
+              "count": 5,
+              "totalMs": 215,
+              "maxMs": 47
+            },
+            {
+              "fingerprint": "405f61879f28f277",
+              "count": 316,
+              "totalMs": 212,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "1486aacc60b0ddd5",
+              "count": 60,
+              "totalMs": 158,
+              "maxMs": 12
+            },
+            {
+              "fingerprint": "fa099668d92ad254",
+              "count": 5,
+              "totalMs": 124,
+              "maxMs": 28
+            },
+            {
+              "fingerprint": "32c949729c13ccb8",
+              "count": 5,
+              "totalMs": 110,
+              "maxMs": 26
+            },
+            {
+              "fingerprint": "d4fac7f92bd28812",
+              "count": 10,
+              "totalMs": 90,
+              "maxMs": 19
+            },
+            {
+              "fingerprint": "4e8339df6bdc325e",
+              "count": 5,
+              "totalMs": 84,
+              "maxMs": 22
+            },
+            {
+              "fingerprint": "7e57081066467c6c",
+              "count": 60,
+              "totalMs": 77,
+              "maxMs": 4
+            },
+            {
+              "fingerprint": "677f5b7fa6b06f48",
+              "count": 12,
+              "totalMs": 65,
+              "maxMs": 65
+            },
+            {
+              "fingerprint": "3394c7330308265f",
+              "count": 40,
+              "totalMs": 58,
+              "maxMs": 8
+            },
+            {
+              "fingerprint": "6136a099bc4194c5",
+              "count": 61,
+              "totalMs": 56,
+              "maxMs": 7
+            }
+          ]
+        }
+      },
+      {
+        "scope": "database-window",
+        "timestamp": "2026-10-10T13:14:15.489Z",
+        "start": "2026-10-10T13:13:15.488Z",
+        "seconds": 60.001,
+        "tempBytes": "17465344",
+        "tempFiles": "2"
+      }
+    ]
+  }
+]

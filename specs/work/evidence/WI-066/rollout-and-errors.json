@@ -1,0 +1,14 @@
+{
+  "fantasy-scout-web": {
+    "deployment_env_key_present": false,
+    "build_config": "{\"deploymentId\":null,\"generateBuildId\":null,\"cacheMaxMemorySize\":52428800,\"serverActionBody\":\"25mb\"}\n"
+  },
+  "fantasy-scout-web-rollback-pre-20261010T071043Z-v0.3.131-74a5f00": {
+    "deployment_env_key_present": false
+  },
+  "recent_5xx": {
+    "code": 0,
+    "output": "{\"counts\": [{\"path\": \"/api/machete/squads/import-sports-ru\", \"status\": 502, \"count\": 1}, {\"path\": \"/api/machete/squads/snapshot\", \"status\": 502, \"count\": 1}, {\"path\": \"[other]\", \"status\": 502, \"count\": 2}, {\"path\": \"/api/health/fpl\", \"status\": 503, \"count\": 1}], \"requests\": [{\"utc\": \"2026-10-10T06:58:46.147392+00:00\", \"path\": \"/api/machete/squads/import-sports-ru\", \"status\": 502, \"seconds\": 3.352289168}, {\"utc\": \"2026-10-10T07:18:08.777360+00:00\", \"path\": \"/api/machete/squads/snapshot\", \"status\": 502, \"seconds\": 2.46662047}, {\"utc\": \"2026-10-10T07:18:08.777487+00:00\", \"path\": \"[other]\", \"status\": 502, \"seconds\": 2.510328836}, {\"utc\": \"2026-10-10T07:33:18.030761+00:00\", \"path\": \"[other]\", \"status\": 502, \"seconds\": 5.096784849}, {\"utc\": \"2026-10-10T07:58:18.065242+00:00\", \"path\": \"/api/health/fpl\", \"status\": 503, \"seconds\": 0.042493756}]}\n",
+    "error": ""
+  }
+}

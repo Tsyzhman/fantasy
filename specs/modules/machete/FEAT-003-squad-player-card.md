@@ -10,12 +10,12 @@ status: active
 
 ## Plain language {#plain-language}
 
-The card uses the contact-sheet concept selected by the user: a large monochrome portrait, the player name over the photograph, forecasts, fixtures, and two direct actions. Colors come from the Cloudline reference in `docs/archive/design/NEW_DESIGN.md`.
+The card uses the contact-sheet concept selected by the user: a large monochrome portrait, the player name over the photograph, forecasts, fixtures, and two direct actions. Colors follow `spec://common/PROP-002-editorial-sport-design#contracts` and `docs/design/DESIGN.md`.
 
 <a name="goal"></a>
 
 ## Goal {#goal}
-Update the visual without changing the data, calculations, field grid, or external replacement script. Parent documents: specs/common/main.md and docs/archive/design/NEW_DESIGN.md. Visual source: docs/design/drafts/squad-player-card-concepts.html, concept 6.
+Update the visual without changing the data, calculations, field grid, or external replacement script. Parent documents: specs/common/main.md and docs/design/DESIGN.md. Visual source: docs/design/drafts/squad-player-card-concepts.html, concept 6.
 
 <a name="scope"></a>
 
@@ -25,7 +25,7 @@ Base and bench cards in SquadPitch. SquadTouchRoster's standalone mobile roster 
 <a name="governing-specs"></a>
 
 ## Governing specifications {#governing-specs}
-Independent UI contract. Restrictions are set by specs/common/main.md and the design system docs/archive/design/NEW_DESIGN.md; FEAT-001/002 controls the strategy, but not the visuals of the card.
+Independent UI contract. Restrictions are set by specs/common/main.md and the design system docs/design/DESIGN.md; FEAT-001/002 controls the strategy, but not the visuals of the card.
 
 <a name="actors"></a>
 
@@ -73,3 +73,5 @@ Changing the presentation does not change FEAT-001/002 or the lineup strategy.
 
 - 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
 - 2026-09-07: Accepted user selected "Contact Sheet" with Cloudline Colors, Direct C/Delete and External Replace.
+
+- 2026-10-10: Adopt Midnight Scout / Pressbox colors while preserving contact-sheet geometry and actions.

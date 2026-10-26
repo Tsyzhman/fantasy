@@ -1,0 +1,41 @@
+{
+  "node": "v24.11.1",
+  "synthetic": true,
+  "results": [
+    {
+      "size": 250,
+      "beforeMs": 5.735900000000015,
+      "afterMs": 0.3644000000000176,
+      "speedup": 15.740669593852191,
+      "exactEquality": true
+    },
+    {
+      "size": 500,
+      "beforeMs": 21.75890000000004,
+      "afterMs": 0.474899999999991,
+      "speedup": 45.81785639082007,
+      "exactEquality": true
+    },
+    {
+      "size": 1000,
+      "beforeMs": 89.10720000000003,
+      "afterMs": 0.9290000000000873,
+      "speedup": 95.91733046285431,
+      "exactEquality": true
+    },
+    {
+      "size": 2000,
+      "beforeMs": 264.54049999999984,
+      "afterMs": 1.97849999999994,
+      "speedup": 133.70760677281166,
+      "exactEquality": true
+    },
+    {
+      "size": 3000,
+      "beforeMs": 580.4798000000001,
+      "afterMs": 3.616399999999885,
+      "speedup": 160.51316226081698,
+      "exactEquality": true
+    }
+  ]
+}

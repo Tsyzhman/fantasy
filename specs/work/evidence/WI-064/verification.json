@@ -1,0 +1,15 @@
+{
+  "version": "0.3.131",
+  "release": "20261010T071043Z-v0.3.131-74a5f00",
+  "commit": "74a5f00f162b1d22a6bc7344ee6630e0c354a595",
+  "tree": "a8fda2496e9783222b771feada0d28ebc4c98330",
+  "pullRequest": "https://github.com/Tsyzhman/fantasy/pull/48",
+  "candidateCheck": { "run": 38033286179, "conclusion": "success", "tests": 1301, "failures": 0 },
+  "deployment": { "run": 38033292827, "conclusion": "success", "pendingOnlineMigrations": 0, "continuousPromotion": true },
+  "localVerification": { "focusedTests": 28, "lint": "passed", "typecheck": "passed", "repeatBuildPlaceholderRolesAndIdentity": "passed" },
+  "runtime": { "publicHealthCommitMatches": true, "webImageCommitMatches": true, "workerImageCommitMatches": true, "manifestCommitMatches": true, "compiledSportsPlaceholderLabel": true, "webHealthy": true, "workerHealthy": true, "restarts": 0, "oomKilled": false },
+  "continuity": { "samples": 82, "failures": 0, "newRevisionConsecutiveSamples": 12, "previousAssetStatus": 200 },
+  "duplicates": { "outbox": 0, "reports": 0, "stageJobs": 0, "queuedOldPlaceholderText": 0 },
+  "resources": { "webMiB": 144.9, "workerGiB": 1.358, "hostAvailableMiB": 6231, "retainedProjectReleases": 2, "retainedProjectImages": 2, "runningCanaries": 0, "sharedHostBuildCacheGB": 40.4, "reclaimableBuildCacheMB": 939.6, "pruneTargetGB": 1, "releaseArchiveRemoved": true },
+  "messagesSentForVerification": 0
+}

@@ -241,29 +241,39 @@ function summary(
       : null,
   };
 }
-function rankStyle(rows: Summary[]) {
+export function rankStyle(rows: Summary[]) {
   const keys = ["own_cohort_gap", "cap_gap", "buy_delta_gap"];
   const eligible = rows.filter((r) => keys.every((k) => r.metrics[k] !== null));
+  const scores = keys.map((key) => {
+    const values = eligible.map(row => row.metrics[key]!).sort((a, b) => a - b);
+    const byValue = new Map<number, number>();
+    for (let start = 0; start < values.length;) {
+      let end = start + 1;
+      while (end < values.length && values[end] === values[start]) end++;
+      const rank = start + (end - start + 1) / 2;
+      byValue.set(values[start], values.length > 1 ? ((values.length - rank) / (values.length - 1)) * 100 : 50);
+      start = end;
+    }
+    return byValue;
+  });
   for (const row of eligible) {
     row.rarity = keys.reduce((sum, k, i) => {
-      const value = row.metrics[k]!;
-      const below = eligible.filter((x) => x.metrics[k]! < value).length;
-      const equal = eligible.filter((x) => x.metrics[k] === value).length;
-      const rank = below + (equal + 1) / 2;
-      const score =
-        eligible.length > 1
-          ? ((eligible.length - rank) / (eligible.length - 1)) * 100
-          : 50;
-      return sum + score * [0.4, 0.3, 0.3][i];
+      return sum + scores[i].get(row.metrics[k]!)! * [0.4, 0.3, 0.3][i];
     }, 0);
   }
   rows.sort(
     (a, b) =>
       (b.rarity ?? -1) - (a.rarity ?? -1) || a.name.localeCompare(b.name, "ru"),
   );
-  for (const row of eligible)
-    row.rank =
-      1 + eligible.filter((x) => x.rarity! > row.rarity! + 1e-9).length;
+  const rarities = eligible.map(row => row.rarity!).sort((a, b) => a - b);
+  for (const row of eligible) {
+    let low = 0, high = rarities.length;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      if (rarities[middle] <= row.rarity! + 1e-9) low = middle + 1; else high = middle;
+    }
+    row.rank = 1 + rarities.length - low;
+  }
   return rows;
 }
 function hypothesisContext(purchases: Fact[]) {

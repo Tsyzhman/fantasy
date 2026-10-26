@@ -1,0 +1,8 @@
+{
+  "preferencesMatchOriginal": true,
+  "restoredPreferenceFields": 2,
+  "restorationGuard": "Exact known audit column selection and empty widths; compare-and-set only owned user",
+  "ownedSessionRemoved": 1,
+  "otherSessionsChanged": 0,
+  "at": "2026-10-10T14:21:33.072411+00:00"
+}

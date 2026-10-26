@@ -3,11 +3,12 @@
 import { Loader2, Menu } from "lucide-react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 import { I18nText } from "@/components/i18n-text";
 import { LanguageToggle } from "@/components/language-toggle";
 import { localizedText, useLanguage } from "@/components/localized-option";
+import { DensityToggle } from "@/components/density-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { betaSessionHasMilestone, discardBetaTestSession, finishBetaTestSession, stopBetaTestSession } from "@/lib/beta-telemetry-client";
 import { cn } from "@/lib/cn";
@@ -22,10 +23,12 @@ type HeaderUser = {
   role: string;
 };
 
+/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
 export function AppHeader({ user }: AppHeaderProps) {
   const language = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isPublicAuthPage = pathname === "/login" || pathname === "/setup";
 
@@ -51,9 +54,11 @@ export function AppHeader({ user }: AppHeaderProps) {
 
   return (
     <header className="app-header sticky top-0 z-20">
-      <div className="relative mx-auto flex min-h-14 min-w-0 max-w-7xl items-center justify-end px-4 sm:px-6 lg:px-8 2xl:max-w-[1760px] 3xl:max-w-[1920px] 3xl:px-10">
+      <div className="relative mx-auto flex min-h-[60px] min-w-0 max-w-[1440px] items-center justify-end px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="mr-auto inline-flex min-h-11 items-center pr-3 text-sm font-bold tracking-tight">Fantasy Scout</Link>
         <button
           type="button"
+          ref={menuButtonRef}
           aria-controls="global-navigation"
           aria-expanded={mobileMenuOpen}
           onClick={() => setMobileMenuOpen((isOpen) => !isOpen)}
@@ -66,10 +71,20 @@ export function AppHeader({ user }: AppHeaderProps) {
           id="global-navigation"
           aria-label={localizedText(language, "Global navigation", "Глобальная навигация")}
           onClick={(event) => {
-            if (event.target instanceof Element && event.target.closest("a")) setMobileMenuOpen(false);
+            if (event.target instanceof Element && event.target.closest("a")) {
+              setMobileMenuOpen(false);
+              event.currentTarget.querySelectorAll("details[open]").forEach((node) => node.removeAttribute("open"));
+            }
           }}
           onKeyDown={(event) => {
-            if (event.key === "Escape") setMobileMenuOpen(false);
+            if (event.key === "Escape") {
+              setMobileMenuOpen(false);
+              event.currentTarget.querySelectorAll("details[open]").forEach((node) => {
+                node.removeAttribute("open");
+                if (window.matchMedia("(min-width: 1280px)").matches) node.querySelector("summary")?.focus();
+              });
+              if (!window.matchMedia("(min-width: 1280px)").matches) menuButtonRef.current?.focus();
+            }
           }}
           className={cn(
             mobileMenuOpen ? "grid" : "hidden",
@@ -99,9 +114,6 @@ function HeaderNavigationItems({ pathname, user, logout }: {
       <HeaderLink href="/machete/squad" active={pathname.startsWith("/machete/squad")}>
         <I18nText en="Squad" ru="Состав" />
       </HeaderLink>
-      <HeaderLink href="/machete/fpl/squad" active={pathname.startsWith("/machete/fpl/squad")}>
-        <I18nText en="FPL" ru="FPL" />
-      </HeaderLink>
       <HeaderLink href="/machete/khl/squad" active={pathname.startsWith("/machete/khl/")}>
         <I18nText en="KHL" ru="КХЛ" />
       </HeaderLink>
@@ -119,34 +131,45 @@ function HeaderNavigationItems({ pathname, user, logout }: {
       <HeaderLink href="/betting" active={pathname.startsWith("/betting")}>
         <I18nText en="Arena" ru="Арена" />
       </HeaderLink>
-      <HeaderLink href="/machete/models" active={pathname.startsWith("/machete/models")}>
-        <I18nText en="Model" ru="Модель" />
-      </HeaderLink>
-      <HeaderLink href="/machete/sync-jobs" active={pathname.startsWith("/machete/sync-jobs")}>
-        <I18nText en="Data jobs" ru="Задачи данных" />
-      </HeaderLink>
-      {user?.role === "ADMIN" ? (
-        <HeaderLink href="/admin/ingestion" active={pathname.startsWith("/admin")}>
-          <I18nText en="Admin" ru="Админ" />
-        </HeaderLink>
-      ) : null}
-      {user ? (
-        <>
-          <HeaderLink href="/profile" active={pathname === "/profile"}>
-            <I18nText en="Profile" ru="Профиль" />
+      <details className="header-tools relative">
+        <summary className="ui-button cursor-pointer list-none"><I18nText en="Tools & settings" ru="Инструменты" /></summary>
+        <div className="header-tools-panel ui-surface-elevated grid gap-2 p-3">
+          <HeaderLink href="/machete/fpl/squad" active={pathname.startsWith("/machete/fpl/squad")}>
+            <I18nText en="FPL" ru="FPL" />
           </HeaderLink>
-          <button
-            type="button"
-            onClick={logout}
-            className="ui-button shrink-0 text-sm text-slate-600"
-            aria-label={localizedText(language, `Sign out ${user.name ?? user.email}`, `Выйти: ${user.name ?? user.email}`)}
-          >
-            <I18nText en="Sign out" ru="Выйти" />
-          </button>
-        </>
-      ) : null}
-      <LanguageToggle />
-      <ThemeToggle />
+          <HeaderLink href="/machete/models" active={pathname.startsWith("/machete/models")}>
+            <I18nText en="Model" ru="Модель" />
+          </HeaderLink>
+          <HeaderLink href="/machete/sync-jobs" active={pathname.startsWith("/machete/sync-jobs")}>
+            <I18nText en="Data jobs" ru="Задачи данных" />
+          </HeaderLink>
+          {user?.role === "ADMIN" ? (
+            <HeaderLink href="/admin/ingestion" active={pathname.startsWith("/admin")}>
+              <I18nText en="Admin" ru="Админ" />
+            </HeaderLink>
+          ) : null}
+          {user ? (
+            <>
+              <HeaderLink href="/profile" active={pathname === "/profile"}>
+                <I18nText en="Profile" ru="Профиль" />
+              </HeaderLink>
+              <button
+                type="button"
+                onClick={logout}
+                className="ui-button shrink-0 text-sm text-slate-600"
+                aria-label={localizedText(language, `Sign out ${user.name ?? user.email}`, `Выйти: ${user.name ?? user.email}`)}
+              >
+                <I18nText en="Sign out" ru="Выйти" />
+              </button>
+            </>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-2">
+            <LanguageToggle />
+            <ThemeToggle />
+            <DensityToggle />
+          </div>
+        </div>
+      </details>
     </>
   );
 }

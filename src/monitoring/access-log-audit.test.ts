@@ -9,6 +9,30 @@ const python = process.platform === "win32" ? "python" : "python3";
 const script = resolve(process.cwd(), "ops/monitoring/analyze_caddy_access_log.py");
 const now = "2026-07-16T08:00:00Z";
 
+/** @spec spec://common/INFRA-006-continuous-deployment#observability */
+test("production health probes cannot dilute a real user error breach", () => {
+  const directory = mkdtempSync(join(tmpdir(), "fantasy-health-denominator-"));
+  try {
+    const log = join(directory, "fantasy-access.log"), output = join(directory, "audit.json");
+    const wrapper = readFileSync(resolve(process.cwd(), "ops/monitoring/run-caddy-access-audits.sh"), "utf8");
+    const exclusions = [...wrapper.matchAll(/--exclude-path (\S+)/g)].map(match => match[1]);
+    const ts = Date.parse("2026-07-16T07:45:00Z") / 1000;
+    const entries = [
+      ...Array.from({ length: 20 }, (_, index) => ({ ts: ts + index, status: index ? 200 : 502, duration: 0.01, request: { uri: "/machete/squad" } })),
+      ...Array.from({ length: 300 }, (_, index) => ({ ts: ts + index, status: 200, duration: 0.01, request: { uri: "/api/health?probe=1" } })),
+      { ts, status: 503, duration: 0.01, request: { uri: "/api/health/fpl" } }
+    ];
+    writeFileSync(log, entries.map(entry => JSON.stringify(entry)).join("\n") + "\n");
+    const result = runAudit(log, output, "20", exclusions);
+    assert.equal(result.status, 3, result.stderr);
+    const report = JSON.parse(readFileSync(output, "utf8"));
+    assert.equal(report.requests, 20);
+    assert.equal(report.serverErrors, 1);
+    assert.equal(report.serverErrorRatePercent, 5);
+    assert.equal(report.excludedRequests, 301);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
 test("access-log audit fails closed when the 5xx rate reaches the one-percent limit", () => {
   const directory = mkdtempSync(join(tmpdir(), "fantasy-access-audit-"));
   try {

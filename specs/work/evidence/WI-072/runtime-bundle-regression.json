@@ -1,0 +1,18 @@
+{
+  "beforeRelease": "0.3.135",
+  "afterRelease": "0.3.137",
+  "productionBefore": "five consecutive web diagnostic intervals have zero fingerprints despite authenticated requests; worker records queries",
+  "isolatedBefore": {
+    "failed": 1,
+    "actualSharedFingerprints": 0,
+    "expected": 1
+  },
+  "isolatedAfter": {
+    "passed": 2,
+    "failed": 0,
+    "sharedFingerprints": 1,
+    "processTimers": 1,
+    "eventLoopMonitors": 1
+  },
+  "bounds": "128 fingerprints, 20 ranked summaries, five-minute reset; no SQL text or bind parameters stored"
+}

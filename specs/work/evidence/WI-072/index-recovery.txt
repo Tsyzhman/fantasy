@@ -1,0 +1,29 @@
+Script executed successfully.
+┌─────────────────────────────────────────────────────────┐
+│  Update available 5.22.0 -> 8.0.0-rc.22                 │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+Actual Linux migration engine validated 30s/120s connection settings
+Verified exact invalid index; removing concurrently
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "fantasy_scout", schema "public" at "postgres:5432"
+
+Migration 20261010102000_khl_retention_indexes marked as rolled back.
+
+┌─────────────────────────────────────────────────────────┐
+│  Update available 5.22.0 -> 8.0.0-rc.22                 │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+Exact failed migration rolled back in journal; canonical retry is ready

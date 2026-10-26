@@ -1,0 +1,21 @@
+{
+  "status": "current",
+  "fingerprint": "777bdda08412ac27c75d28053fc64bd6233176a6b7fd68cfd73cac5ad792be21",
+  "diagnostics": [],
+  "provenance": {
+    "commit": "bf438b5603411d0da2ccdd88b15b050b10156cd9",
+    "source": "working_tree",
+    "observedAt": "2026-10-21T09:50:05.720Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": [
+        "package-lock.json",
+        "package.json",
+        "scripts/franchise-analytics/research.py",
+        "scripts/franchise-analytics/sources.py",
+        "scripts/franchise-analytics/test_sources.py",
+        "specs/modules/franchises/FEAT-005-franchise-analytics.md"
+      ]
+    }
+  }
+}

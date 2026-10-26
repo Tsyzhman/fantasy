@@ -1,0 +1,17 @@
+✔ Editorial Sport semantic tokens define both complete themes (1.0475ms)
+✔ theme and density controls expose independent persisted choices (0.2472ms)
+✔ ordinary surfaces have no decorative gradients or elevation (0.223ms)
+✔ Onest is self-hosted by Next instead of relying on a system font (0.1564ms)
+✔ semantic 950 text cannot collapse onto its soft alert background (0.4974ms)
+✔ fixture neutral fallback has zero specificity so known FDR colours win in either CSS order (0.3319ms)
+✔ system theme follows OS changes, explicit choice persists, cross-tab removal returns to system (54.403ms)
+✔ denied browser storage preserves usable theme and density controls (19.8442ms)
+✔ density persists independently and cross-tab changes synchronize without theme changes (5.6736ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 530.1094

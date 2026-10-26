@@ -29,8 +29,10 @@ function squadSelection(playerId: string, isStarter: boolean, slotIndex: number)
   return { playerId, isStarter, slotIndex, isLocked: false, isCaptain: false, isViceCaptain: false, purchasePrice: 5 };
 }
 
-const squadPlannerSource = readFileSync(new URL("./FantasySquadPlanner.tsx", import.meta.url), "utf8");
-const squadPlannerBackendSource = readFileSync(new URL("../../machete/squad_planner.ts", import.meta.url), "utf8");
+const squadPlannerSource = ["FantasySquadPlanner.tsx", "PlayerPool.tsx", "planner-explanations.tsx", "ColumnResizeHandle.tsx", "planner-squad-commands.ts", "planner-data.ts"]
+  .map(file => readFileSync(new URL(file, import.meta.url), "utf8")).join("\n");
+const squadPlannerBackendSource = ["squad_planner.ts", "squad-team-strength.ts", "squad-projection.ts"]
+  .map(file => readFileSync(new URL(`../../machete/${file}`, import.meta.url), "utf8")).join("\n");
 const squadPageSource = readFileSync(new URL("../../app/machete/squad/page.tsx", import.meta.url), "utf8");
 const fantasySquadPageSource = readFileSync(new URL("../../app/machete/fantasy-squad-page.tsx", import.meta.url), "utf8");
 const squadPoolRouteSource = readFileSync(new URL("../../app/api/machete/squads/route.ts", import.meta.url), "utf8");
@@ -471,7 +473,7 @@ test("pitch cards expose direct captain and removal actions, with replacement ou
 
 test("squad cards show three upcoming opponents without a remaining-fixtures counter", () => {
   const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
-  const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
+  const tileEnd = squadPlannerSource.indexOf("function BookmakerFavoritesTable(", tileStart);
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
   assert.match(tileSource, /Math\.max\(horizon, 3\)/);
   assert.match(tileSource, /fixtures=\{fixtureChips\.slice\(0, 3\)\}/);
@@ -560,7 +562,7 @@ test("squad player pool exposes a real five-round alternative forecast", () => {
 
 test("squad cards distinguish next-round FP from a three-round forecast", () => {
   const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
-  const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
+  const tileEnd = squadPlannerSource.indexOf("function BookmakerFavoritesTable(", tileStart);
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
   assert.match(tileSource, /cardPrimaryNextForecast = nextFantasyPoints\(player\)/);
   assert.match(tileSource, /formatCompactScore\(cardPrimaryNextForecast \* \(isCaptain \? 2 : 1\)\)/);
@@ -580,7 +582,7 @@ test("squad cards distinguish next-round FP from a three-round forecast", () => 
   assert.match(tileSource, /alternativePlayerHorizonForecastTitle\(player, language, 3\)/);
   assert.match(tileSource, /title=\{cardPrimaryNextTitle\}/);
   assert.match(tileSource, /title=\{cardAlternativeNextTitle\}/);
-  assert.match(tileSource, /text-sky-700/);
+  assert.match(squadPlannerSource, /text-sky-700/);
   assert.doesNotMatch(tileSource, /playerHorizonPoints\(player, horizon\)/);
 });
 
@@ -729,7 +731,7 @@ test("player-pool controls use two desktop rows and the search targets only play
   assert.doesNotMatch(squadPlannerSource, /`\$\{player\.name\} \$\{player\.teamName\}/);
   assert.match(squadPlannerSource, /grid-cols-2 gap-2 lg:grid-cols-5/);
   assert.match(squadPlannerSource, /en="Fits" ru="Проходит"/);
-  assert.match(squadPlannerSource, /<details className="relative hidden shrink-0 md:block \[@media\(pointer:coarse\)\]:hidden">[\s\S]*?<I18nText en="Columns" ru="Столбцы"/);
+  assert.match(squadPlannerSource, /<details className="relative shrink-0(?: [^"]*)?"[\s\S]*?<I18nText en="Columns" ru="Столбцы"/);
   assert.match(squadPlannerSource, /compactViewport === false \? <div className="col-span-full min-w-0 max-w-full/);
 });
 

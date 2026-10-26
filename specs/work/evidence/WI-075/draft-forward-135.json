@@ -1,0 +1,43 @@
+{
+  "beforeVersion": "0.3.132",
+  "afterVersion": "0.3.135",
+  "equal": true,
+  "entries": 1,
+  "rounds": [
+    {
+      "offset": 0,
+      "linked": false,
+      "captains": [
+        "1248665"
+      ]
+    },
+    {
+      "offset": 1,
+      "linked": false,
+      "captains": [
+        "812816"
+      ]
+    },
+    {
+      "offset": 2,
+      "linked": true,
+      "captains": [
+        "812816"
+      ]
+    },
+    {
+      "offset": 3,
+      "linked": true,
+      "captains": [
+        "812816"
+      ]
+    },
+    {
+      "offset": 4,
+      "linked": true,
+      "captains": [
+        "812816"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+cat: /proc/0/environ: No such file or directory
+Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+  File "/usr/lib/python3.10/subprocess.py", line 421, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+  File "/usr/lib/python3.10/subprocess.py", line 526, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['sudo', '-n', 'cat', '/proc/0/environ']' returned non-zero exit status 1.

@@ -1,0 +1,66 @@
+{
+  "captured_utc": "2026-10-21T07:43:47.580985+00:00",
+  "health": {
+    "code": 0,
+    "stdout": "{\"status\":\"ok\",\"uptimeSeconds\":84371,\"release\":{\"version\":\"0.3.140\",\"commit\":\"1f1ad3bb1b8fb710d9abcdfd424847e88ddffff8\"}}",
+    "stderr": ""
+  },
+  "memory": {
+    "code": 0,
+    "stdout": "total        used        free      shared  buff/cache   available\nMem:           11876        5763         573         314        5539        5485\nSwap:              0           0           0",
+    "stderr": ""
+  },
+  "stats": {
+    "code": 0,
+    "stdout": "fantasy-scout-worker 1.654GiB / 4GiB 0.49%\nfantasy-scout-web 615.4MiB / 2GiB 0.51%\nfantasy-scout-postgres 1.479GiB / 2GiB 0.29%",
+    "stderr": ""
+  },
+  "processes": {
+    "code": 0,
+    "stdout": "PID                 PPID                ELAPSED             RSS                 COMMAND\n3937893             3937865             84369               1727308             next-server (v",
+    "stderr": ""
+  },
+  "service": {
+    "code": 0,
+    "stdout": "Result=exit-code\nExecMainStartTimestamp=Wed 2026-10-21 09:47:05 MSK\nExecMainExitTimestamp=Wed 2026-10-21 09:47:05 MSK\nExecMainStatus=1\nActiveState=failed\nSubState=failed",
+    "stderr": ""
+  },
+  "timer": {
+    "code": 0,
+    "stdout": "NEXT                        LEFT         LAST                        PASSED    UNIT                     ACTIVATES\nWed 2026-10-21 12:47:00 MSK 2h 3min left Wed 2026-10-21 09:47:05 MSK 56min ago fantasy-franchises.timer fantasy-franchises.service\n\n1 timers listed.",
+    "stderr": ""
+  },
+  "storage": {
+    "code": 0,
+    "stdout": "169M\tstorage/franchises/source/http\n820M\tstorage/franchises\n0\n-rwxr-xr-x 1 node node 5 Oct 11 06:47 storage/franchises/.collection.lock\n-rw-r--r-- 1 node node 5 Oct 11 06:47 storage/franchises/.sync.lock\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0",
+    "stderr": ""
+  },
+  "snapshot": {
+    "code": 0,
+    "stdout": "{\"season\":\"2026/2027\",\"version\":2,\"generated_at\":\"2026-10-10T07:08:20.404\",\"squads\":45234,\"compressed_bytes\":12548402,\"sha256\":\"15e70d1ee84fc642bde721cee20552c814915a3adc48c40bcc5ed259b0e414ab\"}",
+    "stderr": ""
+  },
+  "duplicates": {
+    "code": 0,
+    "stdout": "{\"squads\" : 0, \"rounds\" : 0, \"snapshots\" : 0}",
+    "stderr": ""
+  },
+  "containers": [
+    {
+      "name": "fantasy-scout-worker",
+      "image": "sha256:2e782bf6e5d33a51fe19943c947786185483f80400ed8eb3c427ad118f32846c",
+      "status": "running",
+      "health": "healthy",
+      "restarts": 0,
+      "oom": false
+    },
+    {
+      "name": "fantasy-scout-web",
+      "image": "sha256:2e782bf6e5d33a51fe19943c947786185483f80400ed8eb3c427ad118f32846c",
+      "status": "running",
+      "health": "healthy",
+      "restarts": 0,
+      "oom": false
+    }
+  ]
+}

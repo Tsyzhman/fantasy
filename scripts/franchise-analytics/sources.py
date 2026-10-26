@@ -10,8 +10,81 @@ import os
 import tempfile
 import threading
 import time
+import datetime
 
 _cache_write_lock = threading.Lock()
+
+
+def calendar_rounds(document, popularity, history):
+    """Use explicit live indexes or the same archived round/tour identity, never ID arithmetic."""
+    indexes = {}
+    for page, selector in [(document, 'select[name="filter[roster_stat][index]"] option'),
+                           (popularity, 'select[name="filter[popularity_index]"] option')]:
+        for option in page.select(selector):
+            number = re.search(r'\d+', option.get_text(' ', strip=True))
+            if number is None:
+                raise ValueError('Missing calendar round number')
+            rn, index = int(number[0]), int(option['value'])
+            if rn <= 0 or index <= 0 or (rn in indexes and indexes[rn] != index):
+                raise ValueError('Conflicting live calendar index')
+            indexes[rn] = index
+    rounds = {}
+    for header in document.select('th[data-field^="tour_score_"]'):
+        rn = int(re.search(r'\d+', header.get_text(' ', strip=True))[0])
+        tour = int(header['data-field'].split('_')[-1])
+        index = indexes.get(rn)
+        source = 'live'
+        if index is None:
+            archived = history.get(rn, {})
+            if archived.get('tour') != tour or type(archived.get('index')) is not int or archived['index'] <= 0:
+                raise ValueError(f'No verified calendar index for round {rn}, tour {tour}')
+            index, source = archived['index'], 'archive'
+        value = {'round': rn, 'index': index, 'tour': tour, 'index_source': source}
+        if rn in rounds and rounds[rn] != value:
+            raise ValueError('Conflicting calendar round identity')
+        rounds[rn] = value
+    if not rounds or len({r['index'] for r in rounds.values()}) != len(rounds):
+        raise ValueError('Missing or duplicate calendar indexes')
+    return sorted(rounds.values(), key=lambda r: r['round'])
+
+
+def resume_after(value, now=None):
+    """An operator may resume only the last three hours of an interrupted acquisition."""
+    if not value:
+        return None
+    cutoff = datetime.datetime.fromisoformat(value.replace('Z', '+00:00'))
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    if cutoff.tzinfo is None or cutoff > now or now - cutoff > datetime.timedelta(hours=3):
+        raise ValueError('Franchise resume checkpoint must be within the last three hours and include a timezone')
+    return cutoff
+
+
+def acquired_since(value, cutoff):
+    if not value or cutoff is None:
+        return False
+    try:
+        fetched = datetime.datetime.fromisoformat(value.replace('Z', '+00:00'))
+        return fetched.tzinfo is not None and fetched >= cutoff
+    except (ValueError, TypeError):
+        return False
+
+
+def reusable_squad(value, cutoff=None, offline=False):
+    has_xi = any('prev' not in player.get('class', []) for player in value.get('players', []))
+    return offline or acquired_since(value.get('fetched_at'), cutoff) or (value.get('collected_finished') and has_xi)
+
+
+def require_lineup(document, tour):
+    roster = document.select_one('.team_roster')
+    if roster and 'football' in roster.get('class', []):
+        return roster
+    empty = document.select_one('.tour_data')
+    if (roster and roster.get('class') == ['team_roster'] and empty is not None
+            and empty.get('data-uid') == f'_{tour}'
+            and empty.get('data-url') == 'https://sports.ru/fantasy/football///'
+            and not document.select('li[data-player_id]')):
+        return roster
+    raise ValueError('Unexpected fantasy lineup response')
 
 
 def profile_name(title):
