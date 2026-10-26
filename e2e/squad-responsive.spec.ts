@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page, type TestInfo } from "@playwrigh
 
 const productionSmokeLeagueId = "63";
 
+/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
 test("squad controls stay usable without page-level horizontal clipping", async ({ page }, testInfo) => {
   const failures = captureRuntimeFailures(page);
 
@@ -55,14 +56,32 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     await expect(page.getByRole("textbox", { name: /Search by player name/i })).toBeVisible();
 
     const header = page.getByRole("banner");
-    const menu = header.getByText("Menu", { exact: true });
+    const menu = header.getByRole("button", { name: "Menu", exact: true });
+    const navigation = header.getByRole("navigation", { name: "Global navigation", exact: true });
     await expect(menu).toBeVisible();
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
     await menu.click();
-    await expect(page.getByRole("link", { name: /Players/i }).last()).toBeVisible();
-    await expect(header.getByRole("button", { name: /Sign out/i }).last()).toBeVisible();
+    await expect(menu).toHaveAttribute("aria-expanded", "true");
+    await expect(navigation.getByRole("link", { name: "Players", exact: true })).toBeVisible();
+    const tools = navigation.locator("details").filter({ hasText: "Tools & settings" });
+    const toolsToggle = tools.locator("summary");
+    const signOut = tools.getByRole("button", { name: /^Sign out /i });
+    await expect(signOut).toBeHidden();
+    await toolsToggle.click();
+    await expect(signOut).toBeVisible();
+    await assertInsideViewport(signOut, page);
+    await toolsToggle.press("Escape");
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
+    await expect(menu).toBeFocused();
+    await expect(navigation).toBeHidden();
+    await menu.click();
+    await expect(navigation).toBeVisible();
+    await expect(tools).not.toHaveAttribute("open", "");
+    await expect(signOut).toBeHidden();
     await assertInsideViewport(menu, page);
     await menu.click();
-    await expect(header.getByRole("button", { name: /Sign out/i }).last()).toBeHidden();
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
+    await expect(navigation).toBeHidden();
 
     await expect(page.getByTestId("player-pool-mobile")).toBeVisible();
     await expect(page.getByTestId("player-pool-table")).toBeHidden();

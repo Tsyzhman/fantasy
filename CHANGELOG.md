@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.147 - 2026-10-26
+
+- Restore the scheduled tablet/mobile browser smoke by opening the existing Tools & settings disclosure before checking sign-out, and verify Escape focus and disclosure reset.
+- Align the default branch with the current production lineage so scheduled GitHub checks use the deployed navigation contract.
+
 ## 0.3.146 - 2026-10-23
 
 - Retain one fully verified production database dump, publish new backups atomically and preserve the current release plus one rollback.
