@@ -55,6 +55,14 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     await poolTab.click();
     await expect(page.getByRole("textbox", { name: /Search by player name/i })).toBeVisible();
 
+    // Escape in the navigation also ends the planner's replacement mode.
+    // Verify replacement controls while that mode is still active.
+    await expect(page.getByTestId("player-pool-mobile")).toBeVisible();
+    await expect(page.getByTestId("player-pool-table")).toBeHidden();
+    const replaceButton = page.getByTestId("player-pool-mobile").getByRole("button", { name: /^Replace /i }).first();
+    await expect(replaceButton).toBeVisible({ timeout: 30_000 });
+    await assertMinimumTouchTarget(replaceButton, 44);
+
     const header = page.getByRole("banner");
     const menu = header.getByRole("button", { name: "Menu", exact: true });
     const navigation = header.getByRole("navigation", { name: "Global navigation", exact: true });
@@ -83,11 +91,6 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     await expect(menu).toHaveAttribute("aria-expanded", "false");
     await expect(navigation).toBeHidden();
 
-    await expect(page.getByTestId("player-pool-mobile")).toBeVisible();
-    await expect(page.getByTestId("player-pool-table")).toBeHidden();
-    const replaceButton = page.getByTestId("player-pool-mobile").getByRole("button", { name: /^Replace /i }).first();
-    await expect(replaceButton).toBeVisible({ timeout: 30_000 });
-    await assertMinimumTouchTarget(replaceButton, 44);
   }
 
   if (testInfo.project.name !== "desktop-chromium") {
