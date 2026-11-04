@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.152 - 2026-11-04
+
+- Preserve unfinished personal football rounds whose source title contains only the round number, while retaining strict source/team/competition identity checks.
+
 ## 0.3.151 - 2026-11-04
 
 - Count each football XI once in franchise rankings when it starts in at least one H2H duel, preserving separate duel roles, results and freeze episodes.

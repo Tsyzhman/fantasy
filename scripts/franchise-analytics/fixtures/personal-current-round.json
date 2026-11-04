@@ -1,0 +1,11 @@
+{
+  "provenance": {
+    "url": "https://fantasy-h2h.ru/h2h/user_tournaments_list/1101905285/26?ajax=1",
+    "fetched_at": "2026-11-04T14:59:27Z",
+    "body_sha256": "ae733271ec19cea76a46375e2a89b53d6b83998a4866f5878849619ef277007e",
+    "description": "Minimal structural extract of the in-progress round link; no manager or player data. One authorized modal GET confirmed a real unfinished lineup."
+  },
+  "leagues": { "liga_europa_2026": 73 },
+  "html": "<div class=\"data\"><a href=\"https://fantasy-h2h.ru/analytics/fantasy_score_dynamic/liga_europa_2026/id641000\">history</a><a class=\"async_block_modal score_result in_progress\" data-tour_id=\"0\" href=\"https://fantasy-h2h.ru/analytics/fantasy_team_tour_data/641000/0/349/\" title=\"тур 4\">0</a></div>",
+  "expected": [{ "slug": "liga_europa_2026", "cid": 349, "team_id": "641000", "available_rounds": [4] }]
+}

@@ -142,6 +142,43 @@ class SourceTests(unittest.TestCase):
         self.assertEqual(personal_teams(html, {'rfpl_2026': 63}), [{'slug': 'rfpl_2026', 'cid': 337, 'team_id': '123', 'available_rounds': [1, 2, 9]}])
         self.assertEqual(personal_teams(html, {'rfpl_2026': None}), [])
 
+    def test_fresh_personal_in_progress_short_title_keeps_the_real_round(self):
+        fixture = json.loads((Path(__file__).with_name('fixtures') / 'personal-current-round.json').read_text('utf-8'))
+        self.assertEqual(personal_teams(fixture['html'], fixture['leagues']), fixture['expected'])
+        # URL/data-tour ID zero describes the current endpoint, not football round zero.
+        self.assertEqual(fixture['expected'][0]['available_rounds'], [4])
+        self.assertNotIn('finished', fixture['expected'][0])
+
+    def test_personal_round_title_formats_keep_completed_and_current_history(self):
+        html = '''<div class="data">
+        <a href="https://fantasy-h2h.ru/analytics/fantasy_score_dynamic/rfpl_2026/id123">history</a>
+        <a href="https://fantasy-h2h.ru/analytics/fantasy_team_tour_data/123/7463/337/" title="тур 1, 26 Июл 2026">93</a>
+        <a href="https://fantasy-h2h.ru/analytics/fantasy_team_tour_data/123/0/337/" class="in_progress" title="тур 13">0</a>
+        </div>'''
+        self.assertEqual(personal_teams(html, {'rfpl_2026': 63}), [{'slug': 'rfpl_2026', 'cid': 337, 'team_id': '123', 'available_rounds': [1, 13]}])
+        for bad in ['тур 13 garbage', 'тур 13x', 'тур 13.5', 'prefix тур 13', 'тур 13\nextra', 'тур 13\n', 'тур -13', 'тур', '']:
+            with self.subTest(title=bad), self.assertRaisesRegex(ValueError, 'Invalid personal round link'):
+                personal_teams(html.replace('title="тур 13"', 'title="' + bad + '"'), {'rfpl_2026': 63})
+
+    def test_personal_legacy_comma_title_keeps_multiline_suffix(self):
+        html = '''<div class="data">
+        <a href="https://fantasy-h2h.ru/analytics/fantasy_score_dynamic/rfpl_2026/id123">history</a>
+        <a href="https://fantasy-h2h.ru/analytics/fantasy_team_tour_data/123/7463/337/" title="тур 1,&#10;26 Июл 2026">93</a>
+        </div>'''
+        self.assertEqual(personal_teams(html, {'rfpl_2026': 63}), [{'slug': 'rfpl_2026', 'cid': 337, 'team_id': '123', 'available_rounds': [1]}])
+
+    def test_personal_short_title_preserves_source_and_competition_guards(self):
+        fixture = json.loads((Path(__file__).with_name('fixtures') / 'personal-current-round.json').read_text('utf-8'))
+        html = fixture['html'];original = 'https://fantasy-h2h.ru/analytics/fantasy_team_tour_data/641000/0/349/'
+        for href in ['https://evil.test/analytics/fantasy_team_tour_data/641000/0/349/', 'https://fantasy-h2h.ru:443/analytics/fantasy_team_tour_data/641000/0/349/', 'https://x@fantasy-h2h.ru/analytics/fantasy_team_tour_data/641000/0/349/', '/analytics/fantasy_team_tour_data/641000/0/349/', original.replace('/641000/', '/999/'), original.replace('/0/', '/invalid/')]:
+            with self.subTest(href=href), self.assertRaisesRegex(ValueError, 'Invalid personal round link'):
+                personal_teams(html.replace(original, href), fixture['leagues'])
+        conflict = html.replace('</div>', '<a href="' + original.replace('/349/', '/350/') + '" title="тур 3, date">1</a></div>')
+        with self.assertRaisesRegex(ValueError, 'Conflicting personal competition identity'):
+            personal_teams(conflict, fixture['leagues'])
+        with self.assertRaisesRegex(ValueError, 'Personal team has no history container'):
+            personal_teams(html.replace('class="data"', 'class="other"'), fixture['leagues'])
+
     def test_shared_squad_is_fetched_once_with_explicit_memberships(self):
         team = {'team_id': '123', 'manager': 'm'}
         base = {'slug': 'rfpl_2026', 'cid': 337, 'teams': [team]}

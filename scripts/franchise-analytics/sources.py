@@ -195,7 +195,7 @@ def personal_teams(body, leagues):
         for score in container.select('a[href*="fantasy_team_tour_data/"]'):
             path = urllib.parse.urlsplit(score['href'])
             parsed = re.fullmatch(r'/analytics/fantasy_team_tour_data/(\d+)/(\d+)/(\d+)/?', path.path)
-            title = re.match(r'тур (\d+),', score.get('title', ''))
+            title = re.match(r'тур (\d+)(?:,|\Z)', score.get('title', ''))
             if path.netloc != 'fantasy-h2h.ru' or not parsed or parsed[1] != team or not title:
                 raise ValueError('Invalid personal round link')
             rounds.add(int(title[1]))
