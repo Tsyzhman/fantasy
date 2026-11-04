@@ -4,6 +4,7 @@
 
 - Scope SorareInside schedule validation to current fantasy clubs before reading country, status or prediction metadata; unrelated clubs cannot abort hourly imports.
 - Keep each relevant club's nearest match across all competitions, preserve strict XI checks and reconcile reviewed Europa League club names.
+- Update ExcelJS's transitive glob matcher to the patched 11.0.1 release required by the production dependency audit.
 
 ## 0.3.147 - 2026-10-26
 

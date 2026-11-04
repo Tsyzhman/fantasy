@@ -24,6 +24,7 @@ Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://mod
 - Tailwind CSS for application pages.
 - Node test runner through `tsx --test`; Playwright for e2e.
 - Production packaging through Docker and the scripts in `docs/operations/DEPLOYMENT.md` / `docs/operations/DOCKER_PRODUCTION.md`.
+- ExcelJS archive matcher compatibility: `vendor/minimatch-compat/` delegates to patched minimatch 11.0.1 and retains the legacy glob token metadata required by its archive dependencies; regression ownership `src/lib/excel-glob-compat.test.ts`, `spec://common/INFRA-006-continuous-deployment#runtime`.
 - Hourly full Squad pool refreshes use the bundled `scripts/refresh-fantasy-player-pool-snapshots.ts` child process. The existing scheduler holds its full/incremental exclusion until child exit; a stopped parent terminates the child. Atomic READY publication and the prior ready revision on failure are preserved. Child exit releases native database/allocator memory; incremental queue polling stays in the worker.
 
 <a name="heavy-jobs"></a>
