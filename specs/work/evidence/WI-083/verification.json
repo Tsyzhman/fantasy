@@ -1,0 +1,92 @@
+{
+  "status": "production-verified",
+  "date": "2026-11-04",
+  "releaseVersion": "0.3.148",
+  "sourceCommit": "ef9830df24a8696494f857f0eb8ccf8654573730",
+  "pullRequest": "https://github.com/Tsyzhman/fantasy/pull/52",
+  "deployRun": "https://github.com/Tsyzhman/fantasy/actions/runs/41801855649",
+  "checkRun": "https://github.com/Tsyzhman/fantasy/actions/runs/41801859868",
+  "tests": {
+    "unit": 1344,
+    "productionAuditFindings": 0,
+    "focusedSorare": 38,
+    "database": 32
+  },
+  "dryRun": {
+    "finishedAt": "2026-11-04T08:46:26.398Z",
+    "apply": false,
+    "startedAt": "2026-11-04T08:45:25.838Z",
+    "europa": {
+      "unchanged": 18,
+      "unmappedPlayers": 0,
+      "incomplete": 3,
+      "missingFixture": 0,
+      "ready": 9,
+      "unpublished": 6
+    }
+  },
+  "bootCycle": {
+    "applied": 35,
+    "finishedAt": "2026-11-04T08:57:26.738Z",
+    "startedAt": "2026-11-04T08:55:38.102Z",
+    "unchanged": 118
+  },
+  "repeat": {
+    "applied": 0,
+    "startedAt": "2026-11-04T08:59:22.106Z",
+    "rssMiB": 213,
+    "applyErrors": 0,
+    "europaUnchanged": 27,
+    "mappingConflicts": 0,
+    "unchanged": 153,
+    "apply": true,
+    "finishedAt": "2026-11-04T09:00:35.409Z"
+  },
+  "sourceLimitations": {
+    "unpublished": [
+      "Ararat Armenia",
+      "Hapoel Beer Sheva",
+      "NK Celje",
+      "Torreense",
+      "Omonia Nicosia",
+      "Ferencváros"
+    ],
+    "otherScopes": {
+      "playersUnmapped": 5,
+      "missingMatchOrTeam": 4
+    },
+    "incomplete": [
+      {
+        "team": "Lillestrøm",
+        "players": 3,
+        "goalkeepers": 0
+      },
+      {
+        "team": "Levski Sofia",
+        "players": 3,
+        "goalkeepers": 0
+      },
+      {
+        "team": "Viktoria Plzeň",
+        "players": 4,
+        "goalkeepers": 1
+      }
+    ]
+  },
+  "publication": "publication.json",
+  "continuity": "continuity.json",
+  "resources": "resources.json",
+  "savedSquadsUnchanged": true,
+  "cache": {
+    "duplicatePoolKeys": 0,
+    "duplicateSorareMappings": 0,
+    "temporaryCacheCleanup": "Rejected by automatic permission review: blocked by policy; files retained.",
+    "refreshQueue": 0,
+    "sourceTransferArchives": 0,
+    "generatedLocalTemporaryCacheBytes": 494166364,
+    "readyRevisionsPerScope": 3
+  },
+  "rollbackSnapshot": "Ignored backups/WI-083/pre-apply.txt",
+  "review": "Six unpublished and three incomplete source XIs retain previous flags. No identities or complete XIs were guessed.",
+  "technicalDebt": "none"
+}

@@ -1,0 +1,13 @@
+{
+  "processes": {
+    "cgroupMiB": 1621
+  },
+  "stats": "fantasy-scout-web|476.6MiB / 2GiB\nfantasy-scout-worker|1.567GiB / 4GiB\nfantasy-scout-postgres|1.063GiB / 2GiB\n",
+  "host": "               total        used        free      shared  buff/cache   available\nMem:           11876        5805        1726         327        4344        5430\nSwap:              0           0           0\n",
+  "containers": "fantasy-scout-worker|Up 9 minutes (healthy)|fantasy-scout:20261104T084726Z-v0.3.148-ef9830d\nfantasy-scout-web|Up 9 minutes (healthy)|fantasy-scout:20261104T084726Z-v0.3.148-ef9830d\nfantasy-scout-fpl-relay|Up 9 minutes|fantasy-scout:20261104T084726Z-v0.3.148-ef9830d\nfantasy-scout-postgres|Up 2 months (healthy)|16bc17c64a57\n",
+  "sourceTransferArchives": 0,
+  "retainedReleases": [
+    "20261026T203017Z-v0.3.147-e765ab4",
+    "20261104T084726Z-v0.3.148-ef9830d"
+  ]
+}

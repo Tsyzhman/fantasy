@@ -11,7 +11,6 @@
 | [WI-087](work/WI-087-runtime-release-security.md) | Patch Node runtime and enforce release validation | INFRA-006 | @tsyzhman | 2026-11-04 | — |
 | [WI-088](work/WI-088-franchise-memory-budget.md) | Restore bounded franchise refresh on the shared host | INFRA-006 | @tsyzhman | 2026-11-04 | — |
 | [WI-084](work/WI-084-project-server-audit.md) | Audit current production and coordinate verified remediation | INFRA-006, PROP-002 | @tsyzhman | 2026-11-04 | — |
-| [WI-083](work/WI-083-sorare-club-scope.md) | Scope SorareInside forecasts to current fantasy clubs | INFRA-004, INFRA-006 | @tsyzhman | 2026-11-04 | — |
 | [WI-082](work/WI-082-scheduled-browser-smoke.md) | Restore scheduled GitHub browser checks and release the aligned revision | PROP-002, INFRA-006 | @tsyzhman | 2026-10-26 | — |
 | [WI-078](work/WI-078-ucl-round-three-transfers.md) | Six transfers only in Champions League round three | FEAT-001 | @tsyzhman | 2026-10-20 | — |
 | [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
@@ -35,6 +34,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-083](work/archive/2026/WI-083-sorare-club-scope.md) | Scope SorareInside forecasts to current fantasy clubs | @tsyzhman | 2026-11-04 |
 | [WI-081](work/archive/2026/WI-081-production-artifact-retention.md) | Keep one production backup and clear build caches | @tsyzhman | 2026-10-23 |
 | [WI-080](work/archive/2026/WI-080-production-lineup-recovery.md) | Restore production lineup updates | @tsyzhman | 2026-10-23 |
 | [WI-079](work/archive/2026/WI-079-franchise-refresh-serialization.md) | Serialize heavy refreshes and restore franchise updates | @tsyzhman | 2026-10-21 |
