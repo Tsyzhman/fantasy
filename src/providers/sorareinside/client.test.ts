@@ -90,3 +90,47 @@ test("missing country in full windows and conflicting UUID metadata still abort 
   const conflicting = { ...apiGame(5, "2026-09-14T12:00:00Z"), homeTeam: { ...apiTeam(1), country: { code: "fr" } } };
   await assert.rejects(scheduleClient([], [first, conflicting]).schedule(now), /conflicting/);
 });
+
+const onlyTeam1 = (candidate: Partial<SourceTeam>) => candidate.id === id(1);
+const santosGame = () => ({
+  ...apiGame(80, "2026-11-18T22:30:00Z"),
+  homeTeam: { ...apiTeam(80), name: "Santos FC Sao Paulo", slug: "santos-santos-sao-paulo", country: undefined },
+  awayTeam: { ...apiTeam(81), country: undefined }
+});
+
+test("unrelated sparse Santos forecast outside loaded windows cannot abort scoped import", async () => {
+  const games = await scheduleClient([santosGame()]).schedule(now, onlyTeam1);
+  assert.equal(games.length, 1);
+  assert.equal(nearestTeamGames(games, now, onlyTeam1).get(id(1))?.game.id, id(3));
+  assert.equal(nearestTeamGames(games, now, onlyTeam1).has(id(80)), false);
+});
+
+test("foreign fixture metadata is discarded before status, country and forecast validation", async () => {
+  const foreign = { ...santosGame(), id: "invalid", date: "invalid", statusTyped: "unsupported", homeTeamLineup: { id: "invalid", is_published: true } };
+  const games = await scheduleClient([foreign], [apiGame(3, "2026-09-13T12:00:00Z"), foreign]).schedule(now, onlyTeam1);
+  assert.equal(games.length, 1);
+});
+
+test("irrelevant opponent country and prediction are not prerequisites for a relevant club", async () => {
+  const cup = { ...apiGame(3, "2026-09-12T12:00:00Z"), homeTeamLineup: null,
+    awayTeam: { ...apiTeam(42), country: undefined }, awayTeamLineup: { id: "invalid", is_published: true } };
+  const later = apiGame(4, "2026-09-13T12:00:00Z");
+  const games = await scheduleClient([], [cup, later]).schedule(now, onlyTeam1);
+  const next = nearestTeamGames(games, now, onlyTeam1);
+  assert.equal(next.size, 1);
+  assert.equal(next.get(id(1))?.game.id, id(3));
+  assert.equal(next.get(id(1))?.lineupId, null);
+  assert.equal(next.get(id(1))?.opponent.id, id(42));
+});
+
+test("scoping still rejects malformed relevant fixtures and missing relevant country", async () => {
+  for (const required of [
+    { ...apiGame(3, "2026-09-12T12:00:00Z"), statusTyped: "unsupported" },
+    { ...apiGame(3, "2026-09-12T12:00:00Z"), homeTeam: { ...apiTeam(1), country: undefined } }
+  ]) await assert.rejects(scheduleClient([], [required]).schedule(now, onlyTeam1));
+});
+
+test("an empty relevant calendar preserves missing-match reporting without accepting foreign clubs", async () => {
+  const foreign = { ...santosGame(), homeTeam: apiTeam(80), awayTeam: apiTeam(81) };
+  assert.deepEqual(await scheduleClient([santosGame()], [foreign]).schedule(now, onlyTeam1), []);
+});

@@ -3,6 +3,14 @@
 // 2026-09-11. Exact country + provider name only; never fuzzy substring matches
 // (e.g. RC Celta must not become Real Club Celta de Vigo II).
 export const SORARE_TEAM_ALIASES: Record<string,string> = {
+  // Current Europa League fixtures and canonical club catalog, 2026-11-04.
+  "be|RSC Anderlecht":"Anderlecht", "be|Royal Union Saint-Gilloise":"Union St.Gilloise",
+  "am|Ararat-Armenia FC":"Ararat Armenia", "pl|SSA Jagiellonia Białystok":"Jagiellonia Białystok",
+  "hr|GNK Dinamo Zagreb":"Dinamo Zagreb", "no|Lillestrøm SK":"Lillestrøm", "pl|KKS Lech Poznań":"Lech Poznań",
+  "bg|PFC Levski Sofia":"Levski Sofia", "il|Hapoel Be'er Sheva FC":"Hapoel Beer Sheva", "gr|OFI FC":"OFI Crete",
+  "si|NK Celje":"NK Celje", "gr|Olympiakos CFP":"Olympiacos", "at|SK Puntigamer Sturm Graz":"Sturm Graz",
+  "at|FC Red Bull Salzburg":"Salzburg", "pt|SC União Torreense":"Torreense", "cz|AC Sparta Praha":"Sparta Prague",
+  "cz|FC Viktoria Plzeň":"Viktoria Plzeň", "cy|AC Omonia Nicosia":"Omonia Nicosia", "hu|Ferencvárosi TC":"Ferencváros",
   "be|Club Brugge KV":"Club Brugge", "no|Viking FK":"Viking", "no|FK Bodø / Glimt":"Bodø/Glimt",
   "es|Atlético de Madrid":"Atlético Madrid", "es|Real Racing Club de Santander":"Racing Santander",
   "es|D. Alavés":"Deportivo Alavés", "es|CA Osasuna":"Osasuna", "es|RCD Espanyol de Barcelona":"Espanyol",

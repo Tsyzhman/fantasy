@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.148 - 2026-11-04
+
+- Scope SorareInside schedule validation to current fantasy clubs before reading country, status or prediction metadata; unrelated clubs cannot abort hourly imports.
+- Keep each relevant club's nearest match across all competitions, preserve strict XI checks and reconcile reviewed Europa League club names.
+
 ## 0.3.147 - 2026-10-26
 
 - Restore the scheduled tablet/mobile browser smoke by opening the existing Tools & settings disclosure before checking sign-out, and verify Escape focus and disclosure reset.

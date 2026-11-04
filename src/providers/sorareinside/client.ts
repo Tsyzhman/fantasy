@@ -26,37 +26,58 @@ function date(value: unknown): string {
   if (!Number.isFinite(Date.parse(result))) throw new Error("SorareInside: invalid date");
   return new Date(result).toISOString();
 }
-export type SourceTeam = { id: string; name: string; slug: string; country: string; national: boolean };
+export type SourceTeam = { id: string; name: string; slug: string; country: string | null; national: boolean };
+export type SourceTeamScope = (candidate: Partial<SourceTeam>) => boolean;
 export type SourceGame = { id: string; kickoff: string; status: string; home: SourceTeam; away: SourceTeam; homeLineup: string | null; awayLineup: string | null };
 export type NextTeamGame = { team: SourceTeam; opponent: SourceTeam; game: SourceGame; lineupId: string | null; home: boolean };
 export type SourcePlayer = { id: string; name: string; slug: string; birthDate: string | null; position: string; index: number };
 export type SourceLineup = { id: string; gameId: string; teamId: string; updatedAt: string; formation: string; players: SourcePlayer[] };
 
-function parseTeam(input: unknown, knownTeams?: ReadonlyMap<string, SourceTeam>): SourceTeam {
+// Inspect only applicability here. Required fixture identities are validated
+// below; unrelated payloads must not become prerequisites for our club import.
+function teamCandidate(input: unknown, knownTeams?: ReadonlyMap<string, SourceTeam>): Partial<SourceTeam> {
+  const t = input && typeof input === "object" && !Array.isArray(input) ? input as Record<string, unknown> : {};
+  const rawId = typeof t.id === "string" ? t.id.replace(/^(Club|Player|Game|NationalTeam):/, "").toLowerCase() : "";
+  const id = UUID.test(rawId) ? rawId : undefined;
+  const country = t.country && typeof t.country === "object" && !Array.isArray(t.country)
+    ? (t.country as Record<string, unknown>).code : undefined;
+  return { id, name: typeof t.name === "string" ? t.name : undefined,
+    slug: typeof t.slug === "string" ? t.slug : undefined,
+    country: typeof country === "string" ? country.toLowerCase() : t.country == null && id ? knownTeams?.get(id)?.country : undefined,
+    national: typeof t.id === "string" && t.id.startsWith("NationalTeam:") };
+}
+
+function parseTeam(input: unknown, knownTeams?: ReadonlyMap<string, SourceTeam>, relevant = true): SourceTeam {
   const t = object(input);
   const identity = { id: sourceId(t.id), name: string(t.name), slug: string(t.slug), national: String(t.id).startsWith("NationalTeam:") };
+  if (!relevant) return { ...identity, country: teamCandidate(input, knownTeams).country ?? null };
   if (t.country == null && knownTeams) {
     const known = knownTeams.get(identity.id);
-    if (!known || known.name !== identity.name || known.slug !== identity.slug || known.national !== identity.national) {
+    if (!known?.country || known.name !== identity.name || known.slug !== identity.slug || known.national !== identity.national) {
       throw new Error("SorareInside: scheduled club has no matching complete country metadata");
     }
     return { ...identity, country: known.country };
   }
   return { ...identity, country: string(object(t.country).code).toLowerCase() };
 }
-export function parseGames(input: unknown, knownTeams?: ReadonlyMap<string, SourceTeam>): SourceGame[] {
-  return list(input).flatMap(region => list(object(region).competitions).flatMap(competition => list(object(competition).games).map(value => {
+export function parseGames(input: unknown, knownTeams?: ReadonlyMap<string, SourceTeam>, inScope?: SourceTeamScope): SourceGame[] {
+  return list(input).flatMap(region => list(object(region).competitions).flatMap(competition => list(object(competition).games).flatMap(value => {
     const g = object(value);
+    const homeRelevant = inScope?.(teamCandidate(g.homeTeam, knownTeams)) ?? true;
+    const awayRelevant = inScope?.(teamCandidate(g.awayTeam, knownTeams)) ?? true;
+    if (!homeRelevant && !awayRelevant) return [];
     const status = string(g.statusTyped);
     if (!["scheduled", "playing", "played", "cancelled", "postponed", "suspended", "interrupted"].includes(status)) throw new Error(`SorareInside: unknown match status ${status.slice(0,30)}`);
     const lineupId = (value: unknown) => value == null ? null : object(value).is_published === true ? sourceId(object(value).id) : null;
-    return { id: sourceId(g.id), kickoff: date(g.date), status, home: parseTeam(g.homeTeam, knownTeams), away: parseTeam(g.awayTeam, knownTeams), homeLineup: lineupId(g.homeTeamLineup), awayLineup: lineupId(g.awayTeamLineup) };
+    return [{ id: sourceId(g.id), kickoff: date(g.date), status,
+      home: parseTeam(g.homeTeam, knownTeams, homeRelevant), away: parseTeam(g.awayTeam, knownTeams, awayRelevant),
+      homeLineup: homeRelevant ? lineupId(g.homeTeamLineup) : null, awayLineup: awayRelevant ? lineupId(g.awayTeamLineup) : null }];
   })));
 }
 
 // Choose the fixture BEFORE inspecting its lineup. Missing predictions must not
 // accidentally select next week's fixture or another competition's later game.
-export function nearestTeamGames(games: SourceGame[], now: Date): Map<string, NextTeamGame> {
+export function nearestTeamGames(games: SourceGame[], now: Date, inScope?: SourceTeamScope): Map<string, NextTeamGame> {
   const unique = new Map<string, SourceGame>();
   for (const game of games) {
     const previous = unique.get(game.id);
@@ -68,7 +89,7 @@ export function nearestTeamGames(games: SourceGame[], now: Date): Map<string, Ne
     if (game.status !== "scheduled" || Date.parse(game.kickoff) <= now.getTime()) continue;
     for (const home of [true, false]) {
       const team = home ? game.home : game.away;
-      if (team.national) continue;
+      if (team.national || (inScope && !inScope(team))) continue;
       const existing = result.get(team.id);
       if (existing?.game.kickoff === game.kickoff && existing.game.id !== game.id) throw new Error("SorareInside: ambiguous simultaneous fixtures");
       if (!existing) result.set(team.id, { team, opponent: home ? game.away : game.home, game, home, lineupId: home ? game.homeLineup : game.awayLineup });
@@ -121,24 +142,25 @@ export class SorareInsideClient {
     try { return await this.request(path); }
     catch (error) { if (!(error instanceof Error) || error.message !== "SorareInside HTTP 401") throw error; this.cookies.clear(); await this.request("/auth/login",true); return this.request(path); }
   }
-  async schedule(now: Date): Promise<SourceGame[]> {
+  async schedule(now: Date, inScope?: SourceTeamScope): Promise<SourceGame[]> {
     const weeks = list(await this.get("/gameweeks")).map(value=> { const w=object(value); return { slug: string(w.slug), start: date(w.startDate), end: date(w.endDate) }; });
     const selected = weeks.filter(w=>Date.parse(w.end)>now.getTime() && Date.parse(w.start)<now.getTime()+14*86400000);
     if (!selected.length || selected.length>10 || !selected.some(w=>Date.parse(w.start)<=now.getTime())) throw new Error("SorareInside: incomplete gameweek coverage");
     const games: SourceGame[] = [];
-    for (const week of selected) games.push(...parseGames(await this.get(`/games?gameweekSlug=${encodeURIComponent(week.slug)}&onlyUserPlayersTeams=false&includeGamesStats=false`)));
+    for (const week of selected) games.push(...parseGames(await this.get(`/games?gameweekSlug=${encodeURIComponent(week.slug)}&onlyUserPlayersTeams=false&includeGamesStats=false`), undefined, inScope));
     // The scheduled-lineups projection omits club country. Hydrate only from
     // this cycle's complete windows, by UUID and corroborated club identity.
     const teams = new Map<string, SourceTeam>();
     for (const game of games) for (const team of [game.home, game.away]) {
+      if (!team.country || (inScope && !inScope(team))) continue;
       const known = teams.get(team.id);
       if (known && (known.name !== team.name || known.slug !== team.slug || known.country !== team.country || known.national !== team.national)) {
         throw new Error("SorareInside: conflicting complete club metadata");
       }
       teams.set(team.id, team);
     }
-    games.push(...parseGames(await this.get("/games?scheduledLineups=true&onlyUserPlayersTeams=false&includeGamesStats=false"), teams));
-    if (!games.length || games.length>10000) throw new Error("SorareInside: invalid schedule size");
+    games.push(...parseGames(await this.get("/games?scheduledLineups=true&onlyUserPlayersTeams=false&includeGamesStats=false"), teams, inScope));
+    if ((!inScope && !games.length) || games.length>10000) throw new Error("SorareInside: invalid schedule size");
     return games;
   }
   async lineup(selected: NextTeamGame) { return parseLineup(await this.get(`/lineups/${sourceId(selected.lineupId)}`), selected); }

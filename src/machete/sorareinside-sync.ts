@@ -1,7 +1,7 @@
 /** @spec spec://modules/machete/INFRA-004-sorareinside-starters#root */
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { SorareInsideClient, nearestTeamGames, type SourceLineup } from "../providers/sorareinside/client";
-import { resolveSourcePlayer, resolveSourceTeam, type IdentityTeam } from "./sorareinside-identity";
+import { SorareInsideClient, nearestTeamGames, type SourceLineup, type SourceTeamScope } from "../providers/sorareinside/client";
+import { isSourceTeamInScope, resolveSourcePlayer, resolveSourceTeam, type IdentityTeam } from "./sorareinside-identity";
 import { applyProbableLineupTeamPlan, type ProbableLineupTeamPlan } from "./probable-lineup-sync";
 import { enqueueCurrentXiTeamsSnapshotRefresh } from "./fantasy-player-pool-refresh-queue";
 import { corroboratedSorareRosterRepair, loadSorareRosterEvidence, restoreSorareRosterMembers, sorareRosterIdentity,
@@ -53,12 +53,14 @@ async function syncLocked(db:PrismaClient,client:SorareInsideClient,apply:boolea
     const id=String(t.team.id); const country=t.team.country??LEAGUE_COUNTRY[String(s.leagueId)]??null;
     if(!catalog.get(id)?.country) catalog.set(id,{...t.team,country});
   }
-  const games=await client.schedule(now);
-  const next=nearestTeamGames(games,now);
+  const clubs=[...catalog.values()];
+  const inScope:SourceTeamScope=source=>isSourceTeamInScope(source,clubs,source.id?savedId("TEAM",source.id):undefined);
+  const games=await client.schedule(now,inScope);
+  const next=nearestTeamGames(games,now,inScope);
   const assignments=new Map<string,typeof next extends Map<string,infer T>?T:never>();
   const pendingTeams=new Map<string,Mapping>();
   for(const selected of next.values()) {
-    const match=resolveSourceTeam(selected.team,[...catalog.values()],savedId("TEAM",selected.team.id));
+    const match=resolveSourceTeam(selected.team,clubs,savedId("TEAM",selected.team.id));
     if(!match) continue;
     const id=String(match.id);
     if(assignments.has(id)) throw new Error(`SorareInside: multiple source teams map to ${id}`);
