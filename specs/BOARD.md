@@ -6,6 +6,10 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-085](work/WI-085-telegram-delivery-correctness.md) | Telegram consent, deadlines and fenced recovery | INFRA-005 | @tsyzhman | 2026-11-04 | — |
+| [WI-086](work/WI-086-ui-keyboard-dialogs.md) | Preserve table controls and modal keyboard focus | PROP-002 | @tsyzhman | 2026-11-04 | — |
+| [WI-087](work/WI-087-runtime-release-security.md) | Patch Node runtime and enforce release validation | INFRA-006 | @tsyzhman | 2026-11-04 | — |
+| [WI-088](work/WI-088-franchise-memory-budget.md) | Restore bounded franchise refresh on the shared host | INFRA-006 | @tsyzhman | 2026-11-04 | — |
 | [WI-084](work/WI-084-project-server-audit.md) | Audit current production and coordinate verified remediation | INFRA-006, PROP-002 | @tsyzhman | 2026-11-04 | — |
 | [WI-083](work/WI-083-sorare-club-scope.md) | Scope SorareInside forecasts to current fantasy clubs | INFRA-004, INFRA-006 | @tsyzhman | 2026-11-04 | — |
 | [WI-082](work/WI-082-scheduled-browser-smoke.md) | Restore scheduled GitHub browser checks and release the aligned revision | PROP-002, INFRA-006 | @tsyzhman | 2026-10-26 | — |
