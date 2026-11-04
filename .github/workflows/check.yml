@@ -163,3 +163,4 @@ jobs:
           python3 -B scripts/resolve-ci-image-identities.test.py
           node --test scripts/strip-server-action-key.test.mjs scripts/release-validation.test.mjs
           python3 -B scripts/prepare-deploy-ssh.test.py
+          python3 -B scripts/transfer-ci-artifact.test.py

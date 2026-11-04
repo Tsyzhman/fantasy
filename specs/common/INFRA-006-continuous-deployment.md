@@ -94,6 +94,10 @@ Deployment resolves the requested source to one full commit SHA and runs the reu
 
 All production SSH/SCP workflows require `DEPLOY_KNOWN_HOSTS`, provisioned by matching a host key through an independently trusted channel. An isolated private SSH configuration uses strict host verification and only this known-hosts file. Missing, malformed or mismatching keys abort the connection; live `ssh-keyscan` output is not an identity authority.
 
+The canonical workflow may transfer its own freshly built immutable release artifact by HTTPS from GitHub artifact storage, controlled over the same pinned SSH channel. Bind the artifact to the current run and expected validated source; verify the full artifact digest and individual source/image checksums and identities before publishing the archive files atomically. Download into bounded private temporary storage, restrict ZIP entries to the expected release files, reject traversal/symlinks/mismatches and remove temporary downloads on failure. Obtain a short-lived verified HTTPS download URL immediately before transfer; never persist a GitHub token on the server or print the URL/token in logs. This transport changes neither the mandatory fresh Check and ancestry gates nor the canonical promoter, image verification, locks and continuous rollback behavior.
+
+An explicit current-run prestaged transport mode may wait for the same artifact ZIP delivered by an operator over the trusted SSH channel when the runner/storage route is degraded. The receiving path is derived from the current run and artifact identity, receives complete bytes atomically, and is subject to exactly the same provenance/digest/allowlist checks and bounded waiting/cleanup. Operator delivery supplies bytes only: promotion remains exclusively inside Deploy Production after its fresh Check, ancestry and image checks. Parallel HTTPS range downloads are bounded, verify each range's status, position and length, and still require the complete artifact digest.
+
 `Deploy Production` packages the exact Git tree and invokes the promoter with source archive path/SHA-256, release/commit/tree/version, image archive path/SHA-256 and exact runtime/setup image IDs. Internal `/api/health` checks include the requested commit; public health confirms the upstream actually changed. After compatible migrations, a bounded authenticated canary checks Squad SSR, the materialized player-pool route and its progressive API fallback; its ephemeral session is deleted. The routing helper accepts only the expected old and alternate port, rejecting unknown/ambiguous sites and concurrent configuration changes. Release manifests and `PRODUCTION_HISTORY.tsv` identify the resulting runtime.
 
 <a name="recovery"></a>
@@ -139,6 +143,7 @@ Regression checks reject invalid/different release SHAs and require packaging to
 
 ## Change history {#changelog}
 
+- 2026-11-04: WI-090 — current-run HTTPS artifact delivery with provenance, full archive digests, strict SSH control, bounded allowlisted extraction and atomic transport files; canonical validation/promotion is unchanged.
 - 2026-11-04: WI-087 — fresh exact-SHA reusable validation before packaging and independently trusted pinned SSH host identity across production workflows.
 - 2026-11-04: WI-088 — column-based aggregation and streamed output; measured 3.5 GiB disposable job budget with unchanged 1 GiB host headroom and mandatory complete-refresh verification.
 

@@ -1,0 +1,10 @@
+{
+  "outcome": "Both runs cancelled before promotion; serving release preserved",
+  "expectedCommit": "c16c7f88143f7c72ef9b925509e5692c90697793",
+  "samples": 898,
+  "errors": 0,
+  "revisions": [
+    "ef9830df24a8696494f857f0eb8ccf8654573730"
+  ],
+  "stoppedByRoot": true
+}

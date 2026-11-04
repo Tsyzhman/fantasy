@@ -1,0 +1,1 @@
+All 60 run steps across six workflows pass Bash syntax validation after inert GitHub expression substitution.

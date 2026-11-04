@@ -102,6 +102,8 @@ Sports fantasy weeks: `src/khl/fantasy-calendar.ts` resolves agreeing club obser
 
 `.github/workflows/check.yml`, `scripts/verify-release-revision.mjs` and `scripts/release-validation.test.mjs` own reusable exact-revision release validation. `scripts/prepare-deploy-ssh.py` and its direct tests prepare private SSH configuration from an independently trusted host key under `spec://common/INFRA-006-continuous-deployment#contracts`.
 
+`scripts/transfer-ci-artifact.py` and its direct tests own current-run artifact provenance, bounded HTTPS/range delivery or operator prestaging, full ZIP/archive digests, restricted extraction and atomic transport files. `.github/workflows/deploy-production.yml` remains the exclusive production promotion entry point under `spec://common/INFRA-006-continuous-deployment#contracts`.
+
 `scripts/normalize-production-env.py` owns private inherited-environment normalization and bounded role overrides under `spec://common/INFRA-006-continuous-deployment#runtime`.
 
 `scripts/prune-production-artifacts.sh` owns release/image/relay retention; `scripts/prune-production-backups.py` owns verification and single full-dump retention under `spec://common/INFRA-006-continuous-deployment#recovery`. Installed scheduled copies include both files and run under the production deployment lock. Host-wide unused build-cache deletion is an explicit operator option.

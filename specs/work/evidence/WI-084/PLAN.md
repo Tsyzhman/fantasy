@@ -57,6 +57,8 @@ The external-backup schedule remains unconfigured following the user's question 
 
 ## Sources and references
 
+Execution addition WI-090: two otherwise successful release candidates stalled during runner-to-server SCP at approximately 20–28 and 90 KiB/s. Both were cancelled before promotion; 898 public probes had zero errors and only 0.3.148, and 31,595,520 bytes of partial transport files were removed after writer checks. The same Sol 6.1 Max runtime chat implements current-run HTTPS artifact delivery within Deploy Production, with full provenance/digest checks, bounded private extraction and the unchanged promoter. This is required to complete delivery within the job budget, not permission for manual promotion or server builds.
+
 Internet precedents were checked before solutions. Technical decisions use primary documentation:
 - https://nextjs.org/docs/app/guides/production-checklist
 - https://nextjs.org/docs/app/guides/memory-usage
@@ -66,4 +68,5 @@ Internet precedents were checked before solutions. Technical decisions use prima
 - https://core.telegram.org/bots/api#getupdates
 - https://man.openbsd.org/ssh-keyscan
 - https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
+- https://docs.github.com/en/rest/actions/artifacts#download-an-artifact
 

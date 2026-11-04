@@ -16,6 +16,14 @@ on:
         description: Git ref to package. It must contain the current main branch.
         required: true
         default: main
+      artifact_transport:
+        description: HTTPS download or bounded wait for this run's operator-prestaged verified ZIP.
+        type: choice
+        required: true
+        default: https
+        options:
+          - https
+          - operator-prestage
       configure_fpl_vpn:
         description: Replace the FPL network namespace from the FPL_AMNEZIAWG_CONFIG secret before deploy.
         required: true
@@ -69,6 +77,9 @@ jobs:
 
   package-and-deploy:
     needs: [resolve-source, validate-source]
+    permissions:
+      contents: read
+      actions: read
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment: production
@@ -140,6 +151,8 @@ jobs:
           RELEASE: ${{ steps.release.outputs.release }}
           COMMIT: ${{ steps.release.outputs.commit }}
           VERSION: ${{ steps.release.outputs.version }}
+          TREE: ${{ steps.release.outputs.tree }}
+          SOURCE_SHA256: ${{ steps.release.outputs.checksum }}
         run: |
           set -euo pipefail
           : "${NEXT_SERVER_ACTIONS_ID_SALT:?Stable server-action ID salt is required}"
@@ -166,8 +179,9 @@ jobs:
           docker save "fantasy-scout-ci:${COMMIT}-runtime" "fantasy-scout-ci:${COMMIT}-setup" | gzip -1 > "$images_archive"
           images_sha="$(sha256sum "$images_archive" | awk '{print $1}')"
           manifest="$RUNNER_TEMP/fantasy-scout-images-${RELEASE}.json"
-          printf '{"commit":"%s","runtimeImageId":"%s","setupImageId":"%s","archiveSha256":"%s"}\n' \
-            "$COMMIT" "$runtime_id" "$setup_id" "$images_sha" > "$manifest"
+          printf '{"commit":"%s","tree":"%s","version":"%s","runtimeImageId":"%s","setupImageId":"%s","archiveSha256":"%s","sourceArchiveSha256":"%s","runId":"%s","runAttempt":"%s","repositoryId":"%s"}\n' \
+            "$COMMIT" "$TREE" "$VERSION" "$runtime_id" "$setup_id" "$images_sha" "$SOURCE_SHA256" \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$GITHUB_REPOSITORY_ID" > "$manifest"
           {
             echo "archive=$images_archive"
             echo "sha256=$images_sha"
@@ -181,10 +195,10 @@ jobs:
         run: docker buildx rm --force "$FANTASY_CI_BUILDER"
 
       - name: Retain immutable release archive and image manifest
-        continue-on-error: true
+        id: artifact
         uses: actions/upload-artifact@v6
         with:
-          name: production-release-${{ steps.release.outputs.release }}
+          name: production-release-${{ steps.release.outputs.release }}-run${{ github.run_id }}-attempt${{ github.run_attempt }}
           path: |
             ${{ steps.release.outputs.archive }}
             ${{ steps.release.outputs.checksum_file }}
@@ -305,24 +319,31 @@ jobs:
             printf 'Current production predates commit manifests; first guarded deployment is allowed.\n'
           fi
 
-      - name: Transfer immutable archive
+      # @spec spec://common/INFRA-006-continuous-deployment#contracts
+      - name: Deliver and verify this run's immutable artifact
         if: inputs.dry_run == 'false'
+        timeout-minutes: 52
         env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.artifact.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.artifact.outputs.artifact-digest }}
+          ARTIFACT_TRANSPORT: ${{ inputs.artifact_transport }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           LOCAL_ARCHIVE: ${{ steps.release.outputs.archive }}
+          CHECKSUM_FILE: ${{ steps.release.outputs.checksum_file }}
           IMAGES_ARCHIVE: ${{ steps.images.outputs.archive }}
+          IMAGE_MANIFEST: ${{ steps.images.outputs.manifest }}
           RELEASE: ${{ steps.release.outputs.release }}
-        run: |
-          set -euo pipefail
-          DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          scp -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
-            "$LOCAL_ARCHIVE" \
-            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/fantasy-scout-release-${RELEASE}.tar.gz"
-          scp -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
-            "$IMAGES_ARCHIVE" \
-            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/fantasy-scout-images-${RELEASE}.tar.gz"
+          RELEASE_CHECKSUM: ${{ steps.release.outputs.checksum }}
+          RELEASE_COMMIT: ${{ steps.release.outputs.commit }}
+          RELEASE_TREE: ${{ steps.release.outputs.tree }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          IMAGES_SHA256: ${{ steps.images.outputs.sha256 }}
+          RUNTIME_IMAGE_ID: ${{ steps.images.outputs.runtime_id }}
+          SETUP_IMAGE_ID: ${{ steps.images.outputs.setup_id }}
+        run: python3 -B scripts/transfer-ci-artifact.py
 
       - name: Promote Docker release
         if: inputs.dry_run == 'false'

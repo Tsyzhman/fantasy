@@ -1,0 +1,12 @@
+{
+  "date": "2026-11-04",
+  "fixtureNodeProcessesRemaining": [],
+  "playwrightEdgeProfileProcessesRemaining": [],
+  "browserEvidenceFiles": 12,
+  "browserEvidenceBytes": 304756.0,
+  "testRunnerOutputBytes": 45.0,
+  "newDependencies": 0,
+  "newPersistentCaches": 0,
+  "cleanupDeletions": 0,
+  "notes": "Final logs replace earlier runs; screenshots retained. No application data, shared build cache, dependencies or other agent artifacts removed."
+}
