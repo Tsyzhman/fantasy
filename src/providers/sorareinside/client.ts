@@ -79,9 +79,15 @@ export function parseGames(input: unknown, knownTeams?: ReadonlyMap<string, Sour
 // accidentally select next week's fixture or another competition's later game.
 export function nearestTeamGames(games: SourceGame[], now: Date, inScope?: SourceTeamScope): Map<string, NextTeamGame> {
   const unique = new Map<string, SourceGame>();
+  // Country is an identity prerequisite only for relevant clubs. The sparse
+  // projection may omit an unrelated opponent's country in an identical game.
+  const comparable = (game: SourceGame) => JSON.stringify(inScope ? { ...game,
+    home: { ...game.home, country: inScope(game.home) ? game.home.country : null },
+    away: { ...game.away, country: inScope(game.away) ? game.away.country : null }
+  } : game);
   for (const game of games) {
     const previous = unique.get(game.id);
-    if (previous && JSON.stringify(previous) !== JSON.stringify(game)) throw new Error("SorareInside: conflicting duplicate fixture");
+    if (previous && comparable(previous) !== comparable(game)) throw new Error("SorareInside: conflicting duplicate fixture");
     unique.set(game.id, game);
   }
   const result = new Map<string, NextTeamGame>();

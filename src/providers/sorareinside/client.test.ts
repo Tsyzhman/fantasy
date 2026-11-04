@@ -130,6 +130,14 @@ test("scoping still rejects malformed relevant fixtures and missing relevant cou
   ]) await assert.rejects(scheduleClient([], [required]).schedule(now, onlyTeam1));
 });
 
+test("a sparse foreign opponent cannot turn the same relevant fixture into a conflicting duplicate", async () => {
+  const complete = { ...apiGame(3, "2026-09-12T12:00:00Z"), awayTeam: apiTeam(42) };
+  const sparse = { ...complete, homeTeam: { ...apiTeam(1), country: undefined }, awayTeam: { ...apiTeam(42), country: undefined } };
+  const games = await scheduleClient([sparse], [complete]).schedule(now, onlyTeam1);
+  assert.equal(nearestTeamGames(games, now, onlyTeam1).get(id(1))?.game.id, id(3));
+  assert.throws(() => nearestTeamGames([games[0], { ...games[1], away: { ...games[1].away, id: id(99) } }], now, onlyTeam1), /conflicting/);
+});
+
 test("an empty relevant calendar preserves missing-match reporting without accepting foreign clubs", async () => {
   const foreign = { ...santosGame(), homeTeam: apiTeam(80), awayTeam: apiTeam(81) };
   assert.deepEqual(await scheduleClient([santosGame()], [foreign]).schedule(now, onlyTeam1), []);
