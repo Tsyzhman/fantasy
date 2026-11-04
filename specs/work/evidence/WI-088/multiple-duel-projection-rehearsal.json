@@ -1,0 +1,102 @@
+{
+  "configuration": {
+    "available_before_bytes": 6565089280,
+    "available_after_bytes": 6563569664,
+    "image": "sha256:cf9f730e6747050b6eec4f20ed87fd953f656b804ba2546ea9c1802267d1be1a",
+    "commit": "1c9264f07f6b508a074232811f69b1d9aae87eb4",
+    "memory_bytes": 1073741824,
+    "memory_swap_bytes": 1073741824,
+    "cpus": 1,
+    "network": "none",
+    "source_readonly": true,
+    "root_readonly": true
+  },
+  "diagnostic": {
+    "states": 62669,
+    "projected_unique_xi": 61550,
+    "state_franchises": 74,
+    "registry_groups": 75,
+    "registry_ids_retained": 75,
+    "source_squads": 68368,
+    "unique_source_squads": 68368,
+    "index_sha256": "50608c3ddafcf5c7a617afa74fc38803974179aab7e47e0c86a0cb2f4510976f",
+    "freeze_events": 1702,
+    "freeze_basis": 6778,
+    "same_source_validation": "passed for roles, board, score, opponent score and finished",
+    "order_checks": [
+      "original",
+      "reversed",
+      "seeded shuffle",
+      "repeated identical records"
+    ],
+    "expected_cases": [
+      {
+        "key": [
+          401,
+          "championship_2026",
+          10,
+          "590459"
+        ],
+        "flags": {
+          "active": false,
+          "frozen": true
+        }
+      },
+      {
+        "key": [
+          401,
+          "championship_2026",
+          10,
+          "599673"
+        ],
+        "flags": {
+          "active": false,
+          "frozen": true
+        }
+      },
+      {
+        "key": [
+          441,
+          "ucl_2026",
+          2,
+          "632180"
+        ],
+        "flags": {
+          "active": true,
+          "frozen": true
+        }
+      },
+      {
+        "key": [
+          441,
+          "ucl_2026",
+          2,
+          "630929"
+        ],
+        "flags": {
+          "active": true,
+          "frozen": false
+        }
+      }
+    ],
+    "input_history_deep_equal": true,
+    "source_before_sha256": "68755f48537764d9e161546b1c6efa2761fb51ebbe2f6313d17490cf3daefe0f",
+    "source_after_sha256": "68755f48537764d9e161546b1c6efa2761fb51ebbe2f6313d17490cf3daefe0f",
+    "projection_flags_only": true,
+    "aggregate_run": false,
+    "network_used": false,
+    "source_cache_written": false,
+    "elapsed_seconds": 1.56,
+    "peak_rss_bytes": 190820352,
+    "cgroup_memory_current_bytes": 183418880,
+    "cgroup_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n"
+  },
+  "diagnostic_exit": 0,
+  "remaining_container": "",
+  "candidate": {
+    "file": "scripts/franchise-analytics/analyze.py",
+    "sha256": "924f8c21d9b89b0cf71f4baeade4c81716912fd9bb638cf281fb8614f617e289",
+    "reducer_sha256": "378c993454a5bab794ecd9b2128cd7d4d76cffbeb1bfbb1af0b547375f0f311b",
+    "execution": "exact AST-extracted reducer only; no aggregate/import/module startup"
+  }
+}

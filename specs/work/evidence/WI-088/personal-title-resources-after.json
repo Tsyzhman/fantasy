@@ -1,0 +1,19 @@
+{
+  "checked_utc": "2026-11-04T15:21:59.6605179Z",
+  "addressed_test_processes_remaining": 0,
+  "production_diagnostic_containers_remaining": 0,
+  "parser_input_snapshot_saved_to_disk": false,
+  "new_persistent_fixture_run_directory": false,
+  "existing_task_directory_names": [
+    "wi088-baseline",
+    "wi088-fixture-run1",
+    "wi088-fixture-run2",
+    "wi088-fixture-run3",
+    "wi088-venv"
+  ],
+  "prior_inventory": "multiple-duel-resources-after.json",
+  "prior_local_profile_cleanup_rejection": "not retried",
+  "global_dependency_or_build_cache_changed": false,
+  "production_source_cache_written": false,
+  "production_collector_or_import_started_by_this_chat": false
+}

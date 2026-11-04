@@ -1,0 +1,30 @@
+✔ equal league weights and the inclusive calendar range (13.1781ms)
+✔ calendar dates include different round numbers across leagues without complete xFO (1.1217ms)
+✔ legacy and base-XI scoring stay distinguishable during snapshot replacement (1.3777ms)
+✔ missing model / xFO values do not become a zero or rank (0.6694ms)
+✔ freeze rate uses filtered denominator and excludes current outcomes (0.5226ms)
+✔ reject bad bounds, unrecognized leagues and previous seasons (0.6458ms)
+✔ Moscow dates include the whole final day and normalize legacy naive UTC cutoffs (0.3815ms)
+✔ personal style and xFO comparisons include reserve, frozen and personal-only rounds (0.4711ms)
+✔ virtual group aggregates personal histories and has no freeze denominator (0.499ms)
+✔ unavailable lineups remain in personal history and coverage without invented metrics (0.4121ms)
+✔ franchise purchase explanations keep tournament scope while virtual groups use personal rounds (0.6087ms)
+✔ current forecasts describe only the last selected lineup, historical values retain the full range (0.2959ms)
+✔ franchise rating includes an active frozen XI once while managers retain every personal observation (0.4886ms)
+✔ purchases and xFO examples join eligible XI by all four identity fields, independently of manager name (1.959ms)
+✔ hypothesis targets and control denominators use eligible franchise purchases only (0.7068ms)
+✔ active incomplete XI remains in franchise coverage instead of disappearing from denominators (0.2863ms)
+✔ date, league and completion filters agree across franchise aggregates and joined explanations (0.7825ms)
+✔ twenty concurrent identical requests share one render and failed flights can retry (11.1082ms)
+✔ report cache preserves the complete JSON and invalidates immediately on snapshot replacement (0.9708ms)
+✔ report cache bounds retained strings and expires them while idle (44.9114ms)
+✔ failed renders are retryable and never poison other filters (0.9311ms)
+✔ cached calendar and league selections keep separate populations and empty ranges (5.573ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 373.7867

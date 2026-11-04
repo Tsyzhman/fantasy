@@ -1,0 +1,33 @@
+{
+  "candidate_sources_sha256": "437da5206c2d619ebc145b532aa94f5b7effbc1dab41e8e56739c153f919d618",
+  "candidate_parser_sha256": "b865cec64d5a3909c1963dbac3e0fcee9d4aba43d6f86c1f40b4c090045d0e7f",
+  "records": [
+    {
+      "type": "configuration",
+      "configuration": {
+        "available_before_bytes": 6354792448,
+        "image": "sha256:27ad0032b39975674757e0f536bd0ff320d28f2f34b2b5070fabe7acdaade9dd",
+        "commit": "d31ca192f80467bc7cd611b688c3047d45545c5b",
+        "source_readonly": true,
+        "root_readonly": true,
+        "network": "none",
+        "memory_bytes": 1073741824,
+        "memory_swap_bytes": 1073741824,
+        "cpus": 1,
+        "timeout_seconds": 360
+      }
+    },
+    {
+      "type": "completion",
+      "diagnostic_exit": 1,
+      "remaining_container": "",
+      "available_after_bytes": 6336053248
+    }
+  ],
+  "other_output": [
+    "Traceback (most recent call last):\n",
+    "  File \"<stdin>\", line 19, in <module>\n",
+    "AssertionError: ('Personal page coverage differs from submitted jobs', 820)\n"
+  ],
+  "ssh_exit": 1
+}

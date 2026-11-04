@@ -1,0 +1,38 @@
+{
+  "command": "python -m unittest discover -s scripts/franchise-analytics -p test_*.py -v",
+  "exit_code": 0,
+  "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "elapsed_seconds": 6.922,
+  "checks": "46 tests; full bounded fixture pipeline; zero eligible XI; numpy/object/nullable boolean flags; source identity guard; export cap and hypothesis controls; same-name active/reserve captain proof uses exact XI",
+  "file_sha256": {
+    "analyze.py": "c2a4c130bc6a537aa56d01d4a9fc4c7d0ea073bac89f18cf254c688081a1f4f2",
+    "enrich.py": "29a07cc774685db87b1f90cee0c882f61617829b6c75ef44b37a3ee3f333c0fa",
+    "export_snapshot.py": "3df5593ba2b46c51cd50242c98fec3a3cf0af2c6761de9d745160d49c3a05bce",
+    "research_hypotheses.py": "f33330bec0c9219ae9d2006b691afa7b934c12f96fb34001894cf5cd27db3e9a",
+    "sources.py": "6cae55b19e13545e50948fbee45b5504fd48df65628f922522991fe638d98355",
+    "test_memory.py": "ab472efa3bfb3804cb03ac85681bbfcdbb69f8a7d7a1f0fc673f70919369116f",
+    "test_board_projection.py": "1dc1ba2d042f35fe6030033baafc6b8a472425ff23d9810347d35c528175f010",
+    "test_export.py": "38b1dfa7a542cbc1ec9b173fc1eebf1a7be3f26677c47f8822ccc6cb3bb5451c",
+    "test_cohort.py": "3fb688f5e29617395b4dedea6e6b8d46825dbff6d547f0fa46dc1d655b0a1f85",
+    "fixtures/collector_fixture.py": "cb4ab9eedfd8ca4a2f1fea4dfff88aa4ac037aadfba3edbffea6f8fab2e89c58",
+    "fixtures/multiple-duel-roles.json": "4fac85f6600cfd91a5f8a7cfb7a4d5ce7041d80426be0b78d9a8bed537c0c378"
+  },
+  "application_commit": "043e28efe085bbc876721d945fdbae2025c3ff54",
+  "committed_code_matches_verified_files": true,
+  "git_line_ending_normalization_only": [
+    "fixtures/multiple-duel-roles.json"
+  ],
+  "committed_blob_sha256": {
+    "analyze.py": "c2a4c130bc6a537aa56d01d4a9fc4c7d0ea073bac89f18cf254c688081a1f4f2",
+    "enrich.py": "29a07cc774685db87b1f90cee0c882f61617829b6c75ef44b37a3ee3f333c0fa",
+    "export_snapshot.py": "3df5593ba2b46c51cd50242c98fec3a3cf0af2c6761de9d745160d49c3a05bce",
+    "research_hypotheses.py": "f33330bec0c9219ae9d2006b691afa7b934c12f96fb34001894cf5cd27db3e9a",
+    "sources.py": "6cae55b19e13545e50948fbee45b5504fd48df65628f922522991fe638d98355",
+    "test_memory.py": "ab472efa3bfb3804cb03ac85681bbfcdbb69f8a7d7a1f0fc673f70919369116f",
+    "test_board_projection.py": "1dc1ba2d042f35fe6030033baafc6b8a472425ff23d9810347d35c528175f010",
+    "test_export.py": "38b1dfa7a542cbc1ec9b173fc1eebf1a7be3f26677c47f8822ccc6cb3bb5451c",
+    "test_cohort.py": "3fb688f5e29617395b4dedea6e6b8d46825dbff6d547f0fa46dc1d655b0a1f85",
+    "fixtures/collector_fixture.py": "cb4ab9eedfd8ca4a2f1fea4dfff88aa4ac037aadfba3edbffea6f8fab2e89c58",
+    "fixtures/multiple-duel-roles.json": "9699c18ec3c45e9fafa6374a481dabe1952687546389305047e5b661d07384bf"
+  }
+}

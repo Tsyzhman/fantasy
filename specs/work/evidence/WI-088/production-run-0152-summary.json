@@ -1,0 +1,74 @@
+{
+  "commit": "3e58a9f3d7d45fc9f26b815f9b9c33a80e2d4b65",
+  "outcome": "full source acquisition, calculation and atomic publication succeeded",
+  "exit": {
+    "startedAt": "2026-11-04T15:42:52.841566+00:00",
+    "finishedAt": "2026-11-04T16:19:29.368090+00:00",
+    "exitCode": 0,
+    "elapsedSeconds": 2196.527,
+    "resumeAfter": "2026-11-04T14:55:52.682382Z",
+    "useCache": false
+  },
+  "stages": [
+    {
+      "stage": "acquire",
+      "succeeded": true,
+      "seconds": 1145.057,
+      "peak_rss_bytes": 389734400,
+      "memory.current": "1013149696",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0"
+    },
+    {
+      "stage": "features",
+      "succeeded": true,
+      "seconds": 62.241,
+      "peak_rss_bytes": 925585408,
+      "memory.current": "1206865920",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0"
+    },
+    {
+      "stage": "aggregate",
+      "succeeded": true,
+      "seconds": 171.877,
+      "peak_rss_bytes": 2127572992,
+      "memory.current": "2334097408",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0"
+    },
+    {
+      "stage": "enrich",
+      "succeeded": true,
+      "seconds": 147.188,
+      "peak_rss_bytes": 1736830976,
+      "memory.current": "2273226752",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0"
+    },
+    {
+      "stage": "hypotheses",
+      "succeeded": true,
+      "seconds": 27.408,
+      "peak_rss_bytes": 813195264,
+      "memory.current": "2071592960",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0"
+    },
+    {
+      "stage": "export",
+      "succeeded": true,
+      "seconds": 235.526,
+      "peak_rss_bytes": 2510901248,
+      "memory.current": "2076831744",
+      "memory.events": "low 0\nhigh 0\nmax 1313\noom 0\noom_kill 0"
+    }
+  ],
+  "memorySamples": 425,
+  "sampledPeakBytes": 3573325824,
+  "minAvailableBytes": 4277157888,
+  "abortRequired": false,
+  "kernelPeakAvailable": false,
+  "protectedStateChanged": false,
+  "oomEvents": 0,
+  "oomKillEvents": 0,
+  "maxEvents": 1313,
+  "memoryPressureObserved": true,
+  "containerSpareCapacityProven": false,
+  "memoryPressureNote": "memory.events.max records boundary-triggered reclaim attempts, separately from OOM. Preserve this pressure evidence; optimize export before claiming growth headroom. Runtime limits and abort guards are unchanged."
+}

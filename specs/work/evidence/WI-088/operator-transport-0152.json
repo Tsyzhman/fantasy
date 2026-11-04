@@ -1,0 +1,61 @@
+{
+  "run": "41855866227",
+  "commit": "3e58a9f3d7d45fc9f26b815f9b9c33a80e2d4b65",
+  "version": "0.3.152",
+  "attempts": [
+    {
+      "attempt": 1,
+      "exitCode": 0,
+      "timedOut": false,
+      "startBytes": 0,
+      "seconds": 283.301,
+      "remoteWriterClosed": true,
+      "endBytes": 882822669
+    }
+  ],
+  "publishedAtomically": true,
+  "attempt": 1,
+  "artifact": 13339160564,
+  "bytes": 882822669,
+  "sha256": "2be9abe545e9a2d32f20f22e8a5f547e4589dd663994e5b4a17081415d8d8567",
+  "remotePath": "/tmp/fantasy-scout-ci-artifacts/run-41855866227-attempt-1-artifact-13339160564-sha256-2be9abe545e9a2d32f20f22e8a5f547e4589dd663994e5b4a17081415d8d8567.zip",
+  "localZip": "C:\\Users\\Nik\\.codex\\worktrees\\audit-20261104\\fantasy_export\\.tmp\\next-run-41855866227-1-13339160564.zip",
+  "release": "20261104T152419Z-v0.3.152-3e58a9f",
+  "downloadSeconds": 333.167,
+  "remotePrepared": {
+    "partialIdentity": [
+      64515,
+      12944
+    ],
+    "lockIdentity": [
+      64515,
+      12942
+    ],
+    "bytes": 0,
+    "mode": "0o600",
+    "ownerUid": 1000,
+    "writerClosed": true,
+    "flock": "/usr/bin/flock",
+    "sftpServer": "/usr/lib/openssh/sftp-server"
+  },
+  "remoteVerified": {
+    "partialIdentity": [
+      64515,
+      12944
+    ],
+    "lockIdentity": [
+      64515,
+      12942
+    ],
+    "bytes": 882822669,
+    "mode": "0o600",
+    "ownerUid": 1000,
+    "writerClosed": true,
+    "sha256": "2be9abe545e9a2d32f20f22e8a5f547e4589dd663994e5b4a17081415d8d8567",
+    "publishedAtomically": true,
+    "writerLockRemoved": true
+  },
+  "uploadSeconds": 286.321,
+  "localZipRetained": true,
+  "totalSeconds": 619.489
+}

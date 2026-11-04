@@ -1,0 +1,61 @@
+{
+  "at": "2026-11-04T13:19:56.560992+00:00",
+  "markers": {
+    "name": "20261104T130318Z-v0.3.150-1c9264f",
+    "version": "0.3.150",
+    "commit": "1c9264f07f6b508a074232811f69b1d9aae87eb4",
+    "tree": "7d959f9fc4728eddbfe007aecbfd420590672afa",
+    "runtime-image-id": "sha256:cf9f730e6747050b6eec4f20ed87fd953f656b804ba2546ea9c1802267d1be1a",
+    "ci-runtime-image-id": "sha256:7a7ef7ec8736c589c2488cf737f5911c655a6f92e1afe4ef405f13a453981915"
+  },
+  "runtime": {
+    "node": "v24.22.2",
+    "next": "16.4.2",
+    "react": "18.3.1"
+  },
+  "containers": [
+    {
+      "name": "/fantasy-scout-web",
+      "image": "sha256:cf9f730e6747050b6eec4f20ed87fd953f656b804ba2546ea9c1802267d1be1a",
+      "revision": "1c9264f07f6b508a074232811f69b1d9aae87eb4",
+      "status": "running",
+      "health": "healthy",
+      "oom": false,
+      "restarts": 0,
+      "startedAt": "2026-11-04T13:18:20.279607571Z"
+    },
+    {
+      "name": "/fantasy-scout-worker",
+      "image": "sha256:cf9f730e6747050b6eec4f20ed87fd953f656b804ba2546ea9c1802267d1be1a",
+      "revision": "1c9264f07f6b508a074232811f69b1d9aae87eb4",
+      "status": "running",
+      "health": "healthy",
+      "oom": false,
+      "restarts": 0,
+      "startedAt": "2026-11-04T13:18:25.060553895Z"
+    },
+    {
+      "name": "/fantasy-scout-postgres",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "revision": null,
+      "status": "running",
+      "health": "healthy",
+      "oom": false,
+      "restarts": 0,
+      "startedAt": "2026-08-19T13:45:47.229418796Z"
+    }
+  ],
+  "publicHealth": {
+    "status": "ok",
+    "uptimeSeconds": 96,
+    "release": {
+      "version": "0.3.150",
+      "commit": "1c9264f07f6b508a074232811f69b1d9aae87eb4"
+    }
+  },
+  "workerSourceSha256": {
+    "scripts/franchise-analytics/sources.py": "3a6006952f11ab7cd23ced63dc62d6497818af3d53bb227ccc3372677447d2a2",
+    "scripts/franchise-analytics/freezes.py": "43d140fcc28304219c750ec2f085440dd66f9335c530b55c5f00727d4750b913"
+  },
+  "verification": "Public/source/image identities and committed Python blobs match. Canonical promoter independently binds CI manifest and runtime config identities."
+}

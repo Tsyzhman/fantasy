@@ -1,0 +1,522 @@
+{
+  "configuration": {
+    "available_before_bytes": 6639517696,
+    "image": "sha256:cf9f730e6747050b6eec4f20ed87fd953f656b804ba2546ea9c1802267d1be1a",
+    "commit": "1c9264f07f6b508a074232811f69b1d9aae87eb4",
+    "memory_bytes": 1073741824,
+    "cpus": 1,
+    "network": "none",
+    "source_readonly": true
+  },
+  "diagnostic": {
+    "scope": [
+      401,
+      "championship_2026",
+      10
+    ],
+    "global_summary": {
+      "state_records": 62669,
+      "unique_football_state_keys": 61550,
+      "active_conflicting_keys": 26,
+      "frozen_conflicting_keys": 45,
+      "active_conflict_scopes": {
+        "(441, 'ucl_2026', 2)": 2,
+        "(110, 'ucl_2026', 2)": 4,
+        "(120, 'ucl_2026', 2)": 4,
+        "(13, 'ucl_2026', 2)": 2,
+        "(439, 'ucl_2026', 2)": 2,
+        "(160, 'ucl_2026', 2)": 4,
+        "(367, 'ucl_2026', 2)": 2,
+        "(474, 'ucl_2026', 2)": 4,
+        "(544, 'ucl_2026', 2)": 2
+      },
+      "active_samples": [
+        {
+          "scope": [
+            441,
+            "ucl_2026",
+            2
+          ],
+          "team": "632180",
+          "states": [
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/538054",
+              "active": false,
+              "frozen": true,
+              "board": null
+            },
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/538094",
+              "active": true,
+              "frozen": false,
+              "board": 2
+            }
+          ]
+        },
+        {
+          "scope": [
+            441,
+            "ucl_2026",
+            2
+          ],
+          "team": "630929",
+          "states": [
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/538054",
+              "active": true,
+              "frozen": false,
+              "board": 6
+            },
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/538094",
+              "active": false,
+              "frozen": false,
+              "board": null
+            }
+          ]
+        },
+        {
+          "scope": [
+            110,
+            "ucl_2026",
+            2
+          ],
+          "team": "634697",
+          "states": [
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/538058",
+              "active": false,
+              "frozen": true,
+              "board": null
+            },
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/538098",
+              "active": true,
+              "frozen": false,
+              "board": 4
+            }
+          ]
+        }
+      ]
+    },
+    "freeze_mtime_utc": "2026-11-04T13:36:10.882526+00:00",
+    "freeze_sha256": "68755f48537764d9e161546b1c6efa2761fb51ebbe2f6313d17490cf3daefe0f",
+    "freeze_audit": [],
+    "all_verified_events": 1702,
+    "selected_states": 20,
+    "conflicting_team_keys": 2,
+    "conflicts": [
+      {
+        "team": "590459",
+        "states": [
+          {
+            "team": "590459",
+            "active": false,
+            "frozen": true,
+            "board": null,
+            "score": 78.0,
+            "opponent_score": null,
+            "finished": false,
+            "source": "https://fantasy-h2h.ru/h2h/team_match_data/514485"
+          },
+          {
+            "team": "590459",
+            "active": false,
+            "frozen": false,
+            "board": null,
+            "score": 78.0,
+            "opponent_score": null,
+            "finished": false,
+            "source": "https://fantasy-h2h.ru/h2h/team_match_data/514501"
+          }
+        ]
+      },
+      {
+        "team": "599673",
+        "states": [
+          {
+            "team": "599673",
+            "active": false,
+            "frozen": true,
+            "board": null,
+            "score": 79.0,
+            "opponent_score": null,
+            "finished": false,
+            "source": "https://fantasy-h2h.ru/h2h/team_match_data/514485"
+          },
+          {
+            "team": "599673",
+            "active": false,
+            "frozen": false,
+            "board": null,
+            "score": 79.0,
+            "opponent_score": null,
+            "finished": false,
+            "source": "https://fantasy-h2h.ru/h2h/team_match_data/514501"
+          }
+        ]
+      }
+    ],
+    "events": [
+      {
+        "source": "https://fantasy-h2h.ru/h2h/team_match_data/514485",
+        "valid": true,
+        "finished": true,
+        "board_verified": true,
+        "n": 2,
+        "gain": 10.0
+      }
+    ],
+    "boards": [
+      {
+        "source": "https://fantasy-h2h.ru/h2h/team_match_data/514485",
+        "cache": {
+          "url": "https://fantasy-h2h.ru/h2h/team_match_data/514485?ajax=1",
+          "file": "1da2d25d42a130976fe5a4384590888a305bcb2db9a0a655e2363ade44e3fe43.json.gz",
+          "fetched_at": "2026-11-04T13:34:11Z",
+          "body_sha256": "1ae7ff8b3813be6540a192e06729ade7cf7fbad177a7e0e80ce28c86dcf8b2fb"
+        },
+        "title_date": "16.10.2026",
+        "columns": [
+          {
+            "franchise_links": [],
+            "source_team_overlap": 0,
+            "active_order": [
+              "596480",
+              "593354",
+              "597959",
+              "592402",
+              "590522",
+              "599262"
+            ],
+            "people": [
+              {
+                "team": "596480",
+                "classes": [],
+                "score": 77.0,
+                "active_by_board": true
+              },
+              {
+                "team": "593354",
+                "classes": [],
+                "score": 77.0,
+                "active_by_board": true
+              },
+              {
+                "team": "597959",
+                "classes": [],
+                "score": 82.0,
+                "active_by_board": true
+              },
+              {
+                "team": "592402",
+                "classes": [],
+                "score": 72.0,
+                "active_by_board": true
+              },
+              {
+                "team": "590522",
+                "classes": [],
+                "score": 74.0,
+                "active_by_board": true
+              },
+              {
+                "team": "599262",
+                "classes": [],
+                "score": 79.0,
+                "active_by_board": true
+              },
+              {
+                "team": "594960",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "score": 72.0,
+                "active_by_board": false
+              },
+              {
+                "team": "594294",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "score": 82.0,
+                "active_by_board": false
+              },
+              {
+                "team": "592214",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "score": 81.0,
+                "active_by_board": false
+              },
+              {
+                "team": "590862",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "score": 76.0,
+                "active_by_board": false
+              }
+            ]
+          },
+          {
+            "franchise_links": [],
+            "source_team_overlap": 10,
+            "active_order": [
+              "599651",
+              "592126",
+              "604999",
+              "590971",
+              "590495",
+              "597496"
+            ],
+            "people": [
+              {
+                "team": "599651",
+                "classes": [],
+                "score": 74.0,
+                "active_by_board": true
+              },
+              {
+                "team": "592126",
+                "classes": [],
+                "score": 80.0,
+                "active_by_board": true
+              },
+              {
+                "team": "604999",
+                "classes": [],
+                "score": 84.0,
+                "active_by_board": true
+              },
+              {
+                "team": "590971",
+                "classes": [],
+                "score": 80.0,
+                "active_by_board": true
+              },
+              {
+                "team": "590495",
+                "classes": [],
+                "score": 85.0,
+                "active_by_board": true
+              },
+              {
+                "team": "597496",
+                "classes": [],
+                "score": 82.0,
+                "active_by_board": true
+              },
+              {
+                "team": "592369",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "score": 91.0,
+                "active_by_board": false
+              },
+              {
+                "team": "599673",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "score": 79.0,
+                "active_by_board": false
+              },
+              {
+                "team": "590459",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "score": 78.0,
+                "active_by_board": false
+              },
+              {
+                "team": "596501",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "score": 76.0,
+                "active_by_board": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "source": "https://fantasy-h2h.ru/h2h/team_match_data/514501",
+        "cache": {
+          "missing_url": "https://fantasy-h2h.ru/h2h/team_match_data/514501?ajax=1"
+        }
+      }
+    ],
+    "form_columns": [
+      {
+        "source": "https://fantasy-h2h.ru/h2h/team_match_data/514485",
+        "column": 9,
+        "header_label": "1.10",
+        "header_title": "турнир, тур 10",
+        "cache": {
+          "url": "https://fantasy-h2h.ru/form/view/h2h_tournament_franchise/15921",
+          "file": "294d0f1f218559e3c33617c0886ed56122535e88ce212d28eedbdcf28057ce96.json.gz",
+          "fetched_at": "2026-11-04T12:24:57Z",
+          "body_sha256": "a35626a56fdd4ddd3fcf93c1be621eb94c449cb438345dfde3aed6c153f6f2e0"
+        },
+        "explicit_tours": [
+          "7579"
+        ],
+        "conflicting_team_cells": [
+          {
+            "team": "590459",
+            "cell_classes": [
+              "match_result",
+              "match",
+              "not_gaming",
+              "exchange"
+            ],
+            "game_number": null,
+            "active_by_summary": false,
+            "frozen_by_summary": true
+          },
+          {
+            "team": "599673",
+            "cell_classes": [
+              "match_result",
+              "match",
+              "not_gaming",
+              "exchange"
+            ],
+            "game_number": null,
+            "active_by_summary": false,
+            "frozen_by_summary": true
+          }
+        ],
+        "active_match_cache": {
+          "missing_url": "https://fantasy-h2h.ru/h2h/match_data/8062319?v=717504&ajax=1"
+        }
+      },
+      {
+        "source": "https://fantasy-h2h.ru/h2h/team_match_data/514501",
+        "column": 10,
+        "header_label": "1.11",
+        "header_title": "турнир, тур 11",
+        "cache": {
+          "url": "https://fantasy-h2h.ru/form/view/h2h_tournament_franchise/15921",
+          "file": "294d0f1f218559e3c33617c0886ed56122535e88ce212d28eedbdcf28057ce96.json.gz",
+          "fetched_at": "2026-11-04T12:24:57Z",
+          "body_sha256": "a35626a56fdd4ddd3fcf93c1be621eb94c449cb438345dfde3aed6c153f6f2e0"
+        },
+        "explicit_tours": [
+          "7579"
+        ],
+        "conflicting_team_cells": [
+          {
+            "team": "590459",
+            "cell_classes": [
+              "match_result",
+              "match",
+              "not_gaming"
+            ],
+            "game_number": null,
+            "active_by_summary": false,
+            "frozen_by_summary": false
+          },
+          {
+            "team": "599673",
+            "cell_classes": [
+              "match_result",
+              "match",
+              "not_gaming"
+            ],
+            "game_number": null,
+            "active_by_summary": false,
+            "frozen_by_summary": false
+          }
+        ],
+        "active_match_cache": {
+          "missing_url": "https://fantasy-h2h.ru/h2h/match_data/8063611?v=717504&ajax=1"
+        }
+      }
+    ],
+    "calendar": [
+      {
+        "round": 9,
+        "tour": 7559,
+        "index": 9419,
+        "first_date": "2026-10-09T22:00:00",
+        "sports_match_ids": [
+          "1952995",
+          "1952996",
+          "1952997",
+          "1952998",
+          "1952999",
+          "1953000",
+          "1953001",
+          "1953003",
+          "1953004",
+          "1953005",
+          "1953006"
+        ]
+      },
+      {
+        "round": 10,
+        "tour": 7579,
+        "index": 9421,
+        "first_date": "2026-10-16T22:00:00",
+        "sports_match_ids": [
+          "1952962",
+          "1953019",
+          "1953020",
+          "1953021",
+          "1953022",
+          "1953023",
+          "1953024",
+          "1953025",
+          "1953026",
+          "1953027",
+          "1953028",
+          "1953029",
+          "1953030"
+        ]
+      },
+      {
+        "round": 11,
+        "tour": 7593,
+        "index": 9422,
+        "first_date": "2026-10-23T22:00:00",
+        "sports_match_ids": [
+          "1953031",
+          "1953032",
+          "1953033",
+          "1953034",
+          "1953035",
+          "1953036",
+          "1953037",
+          "1953038",
+          "1953039",
+          "1953040",
+          "1953041",
+          "1953042"
+        ]
+      }
+    ]
+  },
+  "diagnostic_exit": 0,
+  "remaining_container": "",
+  "separate_same_source_check": {
+    "state_records": 62669,
+    "same_source_conflicting_keys": 0,
+    "scope_samples": [],
+    "remaining_container": "",
+    "note": "Independent bounded read-only pass keyed by franchise/slug/round/team/source after the three public GETs; no cache writes."
+  }
+}

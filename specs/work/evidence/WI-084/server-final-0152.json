@@ -1,0 +1,161 @@
+{
+  "at": "2026-11-04T16:23:40.354017+00:00",
+  "currentRelease": "/var/www/fantasy-scout-releases/20261104T152419Z-v0.3.152-3e58a9f",
+  "memory": {
+    "code": 0,
+    "stdout": "total        used        free      shared  buff/cache   available\nMem:     12453625856  5754466304  2511298560   341782528  4187860992  6029660160\nSwap:              0           0           0",
+    "stderr": ""
+  },
+  "disk": {
+    "code": 0,
+    "stdout": "Filesystem        1B-blocks        Used   Available Use% Mounted on\n/dev/vda3      126753218560 42711863296 77587726336  36% /",
+    "stderr": ""
+  },
+  "containers": [
+    {
+      "name": "/fantasy-scout-worker",
+      "image": "sha256:93aa77ddc444bb9c18788474475df830a17ebccd72fe7e0f1c52868c2f1ff5c6",
+      "revision": "3e58a9f3d7d45fc9f26b815f9b9c33a80e2d4b65",
+      "status": "running",
+      "health": "healthy",
+      "startedAt": "2026-11-04T15:41:16.564214416Z",
+      "oom": false,
+      "restarts": 0,
+      "memoryLimit": 4294967296,
+      "safeOverrides": {
+        "FRANCHISE_USE_CACHE": null,
+        "FRANCHISE_RESUME_AFTER": null,
+        "FRANCHISE_DATA_DIR": null
+      }
+    },
+    {
+      "name": "/fantasy-scout-web",
+      "image": "sha256:93aa77ddc444bb9c18788474475df830a17ebccd72fe7e0f1c52868c2f1ff5c6",
+      "revision": "3e58a9f3d7d45fc9f26b815f9b9c33a80e2d4b65",
+      "status": "running",
+      "health": "healthy",
+      "startedAt": "2026-11-04T15:41:11.729370897Z",
+      "oom": false,
+      "restarts": 0,
+      "memoryLimit": 2147483648,
+      "safeOverrides": {
+        "FRANCHISE_USE_CACHE": null,
+        "FRANCHISE_RESUME_AFTER": null,
+        "FRANCHISE_DATA_DIR": null
+      }
+    },
+    {
+      "name": "/fantasy-scout-fpl-relay",
+      "image": "sha256:93aa77ddc444bb9c18788474475df830a17ebccd72fe7e0f1c52868c2f1ff5c6",
+      "revision": "3e58a9f3d7d45fc9f26b815f9b9c33a80e2d4b65",
+      "status": "running",
+      "health": null,
+      "startedAt": "2026-11-04T15:40:59.89813235Z",
+      "oom": false,
+      "restarts": 0,
+      "memoryLimit": 134217728,
+      "safeOverrides": {
+        "FRANCHISE_USE_CACHE": null,
+        "FRANCHISE_RESUME_AFTER": null,
+        "FRANCHISE_DATA_DIR": null
+      }
+    },
+    {
+      "name": "/fantasy-scout-worker-rollback-pre-20261104T152419Z-v0.3.152-3e58a9f",
+      "image": "sha256:27ad0032b39975674757e0f536bd0ff320d28f2f34b2b5070fabe7acdaade9dd",
+      "revision": "d31ca192f80467bc7cd611b688c3047d45545c5b",
+      "status": "exited",
+      "health": "unhealthy",
+      "startedAt": "2026-11-04T14:53:53.624680863Z",
+      "oom": false,
+      "restarts": 0,
+      "memoryLimit": 4294967296,
+      "safeOverrides": {
+        "FRANCHISE_USE_CACHE": null,
+        "FRANCHISE_RESUME_AFTER": null,
+        "FRANCHISE_DATA_DIR": null
+      }
+    },
+    {
+      "name": "/fantasy-scout-web-rollback-pre-20261104T152419Z-v0.3.152-3e58a9f",
+      "image": "sha256:27ad0032b39975674757e0f536bd0ff320d28f2f34b2b5070fabe7acdaade9dd",
+      "revision": "d31ca192f80467bc7cd611b688c3047d45545c5b",
+      "status": "exited",
+      "health": "unhealthy",
+      "startedAt": "2026-11-04T14:53:49.057366412Z",
+      "oom": false,
+      "restarts": 0,
+      "memoryLimit": 2147483648,
+      "safeOverrides": {
+        "FRANCHISE_USE_CACHE": null,
+        "FRANCHISE_RESUME_AFTER": null,
+        "FRANCHISE_DATA_DIR": null
+      }
+    },
+    {
+      "name": "/fantasy-scout-fpl-relay-rollback-pre-20261104T152419Z-v0.3.152-3e58a9f",
+      "image": "sha256:27ad0032b39975674757e0f536bd0ff320d28f2f34b2b5070fabe7acdaade9dd",
+      "revision": "d31ca192f80467bc7cd611b688c3047d45545c5b",
+      "status": "exited",
+      "health": null,
+      "startedAt": "2026-11-04T14:53:37.785994354Z",
+      "oom": false,
+      "restarts": 0,
+      "memoryLimit": 134217728,
+      "safeOverrides": {
+        "FRANCHISE_USE_CACHE": null,
+        "FRANCHISE_RESUME_AFTER": null,
+        "FRANCHISE_DATA_DIR": null
+      }
+    },
+    {
+      "name": "/fantasy-scout-postgres",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "revision": null,
+      "status": "running",
+      "health": "healthy",
+      "startedAt": "2026-08-19T13:45:47.229418796Z",
+      "oom": false,
+      "restarts": 0,
+      "memoryLimit": 2147483648,
+      "safeOverrides": {
+        "FRANCHISE_USE_CACHE": null,
+        "FRANCHISE_RESUME_AFTER": null,
+        "FRANCHISE_DATA_DIR": null
+      }
+    }
+  ],
+  "stats": {
+    "code": 0,
+    "stdout": "fantasy-scout-worker 1.439GiB / 4GiB 33\nfantasy-scout-web 338.7MiB / 2GiB 15\nfantasy-scout-fpl-relay 40.97MiB / 128MiB 11\nfantasy-scout-worker-rollback-pre-20261104T152419Z-v0.3.152-3e58a9f 0B / 0B 0\nfantasy-scout-web-rollback-pre-20261104T152419Z-v0.3.152-3e58a9f 0B / 0B 0\nfantasy-scout-fpl-relay-rollback-pre-20261104T152419Z-v0.3.152-3e58a9f 0B / 0B 0\nfantasy-scout-postgres 1.132GiB / 2GiB 38",
+    "stderr": ""
+  },
+  "dockerDisk": {
+    "code": 0,
+    "stdout": "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          60        42        24.14GB   5.391GB (22%)\nContainers      51        48        192.5MB   65.54kB (0%)\nLocal Volumes   75        40        6.351GB   160.9MB (2%)\nBuild Cache     127       0         3.05GB    227MB",
+    "stderr": ""
+  },
+  "timer": {
+    "code": 0,
+    "stdout": "NextElapseUSecRealtime=Wed 2026-11-04 21:10:00 MSK\nLastTriggerUSec=Wed 2026-11-04 18:10:00 MSK\nActiveState=active",
+    "stderr": ""
+  },
+  "temporaryJobEnvironmentFiles": [],
+  "artifactFiles": [],
+  "sourceMarkers": {
+    ".heavy-job.lock": true,
+    ".sync.lock": false,
+    ".collection.lock": false,
+    "snapshot.json.gz.tmp": false
+  },
+  "releaseDirectories": [
+    "20261104T152419Z-v0.3.152-3e58a9f",
+    "20261104T144014Z-v0.3.151-d31ca19"
+  ],
+  "backupFiles": [
+    {
+      "name": "snapshot-20261023T112441Z-v0.3.145-32fcc3d.dump",
+      "bytes": 379894669
+    }
+  ]
+}

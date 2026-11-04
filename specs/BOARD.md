@@ -6,8 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-088](work/WI-088-franchise-memory-budget.md) | Restore bounded franchise refresh on the shared host | INFRA-006 | @tsyzhman | 2026-11-04 | — |
-| [WI-084](work/WI-084-project-server-audit.md) | Audit current production and coordinate verified remediation | INFRA-006, PROP-002 | @tsyzhman | 2026-11-04 | — |
 | [WI-082](work/WI-082-scheduled-browser-smoke.md) | Restore scheduled GitHub browser checks and release the aligned revision | PROP-002, INFRA-006 | @tsyzhman | 2026-10-26 | — |
 | [WI-078](work/WI-078-ucl-round-three-transfers.md) | Six transfers only in Champions League round three | FEAT-001 | @tsyzhman | 2026-10-20 | — |
 | [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
@@ -31,6 +29,8 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-084](work/archive/2026/WI-084-project-server-audit.md) | Audit current production and coordinate verified remediation | @tsyzhman | 2026-11-04 |
+| [WI-088](work/archive/2026/WI-088-franchise-memory-budget.md) | Restore bounded franchise refresh on the shared host | @tsyzhman | 2026-11-04 |
 | [WI-085](work/archive/2026/WI-085-telegram-delivery-correctness.md) | Telegram consent, deadlines and fenced recovery | @tsyzhman | 2026-11-04 |
 | [WI-086](work/archive/2026/WI-086-ui-keyboard-dialogs.md) | Preserve table controls and modal keyboard focus | @tsyzhman | 2026-11-04 |
 | [WI-087](work/archive/2026/WI-087-runtime-release-security.md) | Patch Node runtime and enforce release validation | @tsyzhman | 2026-11-04 |

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1",
+  "commit": "1c9264f07f6b508a074232811f69b1d9aae87eb4",
+  "indexedAt": "2026-11-04T13:07:47.699Z",
+  "source": "working_tree",
+  "status": "current",
+  "fingerprint": "5df602c7065cb3c52ec3bddc8311bde2d23ed5fc712a703680bbdadf7f4b1036",
+  "diagnostics": [],
+  "provenance": {
+    "commit": "1c9264f07f6b508a074232811f69b1d9aae87eb4",
+    "source": "working_tree",
+    "observedAt": "2026-11-04T13:07:47.699Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": []
+    }
+  }
+}

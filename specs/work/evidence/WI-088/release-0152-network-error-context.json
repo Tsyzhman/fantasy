@@ -1,0 +1,112 @@
+{
+  "window": "15:30:45-15:31:45 UTC",
+  "rows": [
+    {
+      "at": "2026-11-04T15:30:46.379073+00:00",
+      "status": 200,
+      "path": "<other>",
+      "duration": 0.010424653
+    },
+    {
+      "at": "2026-11-04T15:30:46.797128+00:00",
+      "status": 200,
+      "path": "/api/health",
+      "duration": 0.008739829
+    },
+    {
+      "at": "2026-11-04T15:30:46.894248+00:00",
+      "status": 200,
+      "path": "/_next/static/css/4236eec9b73357ea.css",
+      "duration": 0.003795075
+    },
+    {
+      "at": "2026-11-04T15:30:52.004803+00:00",
+      "status": 200,
+      "path": "/api/health",
+      "duration": 0.009010445
+    },
+    {
+      "at": "2026-11-04T15:30:52.092804+00:00",
+      "status": 200,
+      "path": "/_next/static/css/4236eec9b73357ea.css",
+      "duration": 0.003564809
+    },
+    {
+      "at": "2026-11-04T15:30:57.183044+00:00",
+      "status": 200,
+      "path": "/api/health",
+      "duration": 0.01131586
+    },
+    {
+      "at": "2026-11-04T15:30:57.312701+00:00",
+      "status": 200,
+      "path": "/_next/static/css/4236eec9b73357ea.css",
+      "duration": 0.004492817
+    },
+    {
+      "at": "2026-11-04T15:31:02.501638+00:00",
+      "status": 200,
+      "path": "/api/health",
+      "duration": 0.012698747
+    },
+    {
+      "at": "2026-11-04T15:31:02.706603+00:00",
+      "status": 200,
+      "path": "/_next/static/css/4236eec9b73357ea.css",
+      "duration": 0.005175531
+    },
+    {
+      "at": "2026-11-04T15:31:07.839906+00:00",
+      "status": 200,
+      "path": "/api/health",
+      "duration": 0.009947744
+    },
+    {
+      "at": "2026-11-04T15:31:07.932890+00:00",
+      "status": 200,
+      "path": "/_next/static/css/4236eec9b73357ea.css",
+      "duration": 0.005091329
+    },
+    {
+      "at": "2026-11-04T15:31:13.042971+00:00",
+      "status": 200,
+      "path": "/api/health",
+      "duration": 0.008756041
+    },
+    {
+      "at": "2026-11-04T15:31:13.152352+00:00",
+      "status": 200,
+      "path": "/_next/static/css/4236eec9b73357ea.css",
+      "duration": 0.004185161
+    },
+    {
+      "at": "2026-11-04T15:31:35.249839+00:00",
+      "status": 200,
+      "path": "/api/health",
+      "duration": 0.010772839
+    },
+    {
+      "at": "2026-11-04T15:31:35.317318+00:00",
+      "status": 200,
+      "path": "/_next/static/css/4236eec9b73357ea.css",
+      "duration": 0.005336374
+    },
+    {
+      "at": "2026-11-04T15:31:40.420605+00:00",
+      "status": 200,
+      "path": "/api/health",
+      "duration": 0.009451944
+    },
+    {
+      "at": "2026-11-04T15:31:40.523125+00:00",
+      "status": 200,
+      "path": "/_next/static/css/4236eec9b73357ea.css",
+      "duration": 0.004967418
+    }
+  ],
+  "statusCounts": {
+    "200": 17
+  },
+  "journal": "No Caddy unit entries in this interval",
+  "limit": "Client retained only URLError class, not cause; server records cannot establish the network failure cause."
+}

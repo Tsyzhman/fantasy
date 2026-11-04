@@ -1,0 +1,37 @@
+{
+  "checked_utc": "2026-11-04T17:17:22.82533+03:00",
+  "task_only_local_directories": [
+    {
+      "path": ".tmp/wi088-baseline",
+      "files": 29,
+      "bytes": 336232
+    },
+    {
+      "path": ".tmp/wi088-fixture-run1",
+      "files": 1334,
+      "bytes": 1158012946
+    },
+    {
+      "path": ".tmp/wi088-fixture-run2",
+      "files": 1334,
+      "bytes": 1158012943
+    },
+    {
+      "path": ".tmp/wi088-fixture-run3",
+      "files": 662,
+      "bytes": 7555637
+    },
+    {
+      "path": ".tmp/wi088-venv",
+      "files": 9864,
+      "bytes": 303349375
+    }
+  ],
+  "total_bytes": 2627267133,
+  "test_fixture_cleanup": "TemporaryDirectory contexts completed; no persistent new fixture directories",
+  "earlier_cleanup": "Automatic execution policy rejected recursive profile cleanup twice; operation not retried",
+  "production_diagnostic_container_remaining": false,
+  "production_source_cache_written": false,
+  "global_dependency_cache_changed": false,
+  "addressed_test_processes_remaining": 0
+}

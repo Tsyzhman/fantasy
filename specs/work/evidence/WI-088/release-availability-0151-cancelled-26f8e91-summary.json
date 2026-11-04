@@ -1,0 +1,12 @@
+{
+  "outcome": "cancelled-before-artifact-delivery-or-promotion",
+  "candidate": "26f8e913808dcf7950f8b470c43c879f714ffe86",
+  "reason": "Independent review found captain proof joined by display name instead of team identity",
+  "samples": 17,
+  "errors": 0,
+  "revisions": [
+    "1c9264f07f6b508a074232811f69b1d9aae87eb4"
+  ],
+  "from": "2026-11-04T14:16:37.637584+00:00",
+  "to": "2026-11-04T14:18:01.509959+00:00"
+}

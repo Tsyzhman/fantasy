@@ -1,0 +1,13 @@
+{
+  "date": "2026-11-04",
+  "baseline": "043e28e",
+  "changedApplicationFiles": 0,
+  "changedTest": "src/server/franchises/report-cache.test.ts",
+  "targetedTestsPassed": 22,
+  "lintErrors": 0,
+  "retainedTargetedProcesses": [],
+  "newServers": 0,
+  "newDependencies": 0,
+  "cleanupDeletions": 0,
+  "cacheChecks": "Four independent filter entries, bounded bytes, idle TTL expiration, cache.clear() in finally"
+}

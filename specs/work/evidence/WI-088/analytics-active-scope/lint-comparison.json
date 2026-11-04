@@ -1,0 +1,11 @@
+{
+  "before": {
+    "errors": 0,
+    "warnings": 74
+  },
+  "after": {
+    "errors": 0,
+    "warnings": 75
+  },
+  "note": "One added Russian explanatory paragraph follows the existing RU-only module; existing i18n debt remains visible."
+}

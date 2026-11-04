@@ -1,0 +1,1137 @@
+{
+  "configuration": {
+    "available_before_bytes": 6557958144,
+    "image": "sha256:cf9f730e6747050b6eec4f20ed87fd953f656b804ba2546ea9c1802267d1be1a",
+    "commit": "1c9264f07f6b508a074232811f69b1d9aae87eb4",
+    "memory_bytes": 1073741824,
+    "cpus": 1,
+    "network": "bridge for three exact read-only GETs",
+    "source_readonly": true
+  },
+  "diagnostic": {
+    "freeze_sha256": "68755f48537764d9e161546b1c6efa2761fb51ebbe2f6313d17490cf3daefe0f",
+    "summary": {
+      "active": {
+        "keys": 26,
+        "franchises": 9,
+        "league_rounds": 1,
+        "scopes": [
+          {
+            "franchise": 13,
+            "name": "Lucky Losers",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          },
+          {
+            "franchise": 110,
+            "name": "Fanton Tesla",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 4
+          },
+          {
+            "franchise": 120,
+            "name": "Эспирето",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 4
+          },
+          {
+            "franchise": 160,
+            "name": "Red Army",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 4
+          },
+          {
+            "franchise": 367,
+            "name": "Арарат",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          },
+          {
+            "franchise": 439,
+            "name": "Worldstadium",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          },
+          {
+            "franchise": 441,
+            "name": "Стадион33",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          },
+          {
+            "franchise": 474,
+            "name": "Serenissima",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 4
+          },
+          {
+            "franchise": 544,
+            "name": "Пшеничный смузи",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          }
+        ]
+      },
+      "frozen": {
+        "keys": 45,
+        "franchises": 22,
+        "league_rounds": 2,
+        "scopes": [
+          {
+            "franchise": 5,
+            "name": "Мачете",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 13,
+            "name": "Lucky Losers",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 1
+          },
+          {
+            "franchise": 18,
+            "name": "The Avengers",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 2
+          },
+          {
+            "franchise": 25,
+            "name": "GOMEL CITY",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 2
+          },
+          {
+            "franchise": 26,
+            "name": "Автогол",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          },
+          {
+            "franchise": 31,
+            "name": "Better than Stout",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 110,
+            "name": "Fanton Tesla",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 110,
+            "name": "Fanton Tesla",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 4
+          },
+          {
+            "franchise": 120,
+            "name": "Эспирето",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          },
+          {
+            "franchise": 125,
+            "name": "Бом бам мбия",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 2
+          },
+          {
+            "franchise": 160,
+            "name": "Red Army",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 4
+          },
+          {
+            "franchise": 222,
+            "name": "Ривенделл",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 1
+          },
+          {
+            "franchise": 227,
+            "name": "СТС ",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 367,
+            "name": "Арарат",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 367,
+            "name": "Арарат",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 3
+          },
+          {
+            "franchise": 375,
+            "name": "3 hundred $$$ from Хамовники",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 401,
+            "name": "Я·К·У·Д·З·А",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 2
+          },
+          {
+            "franchise": 432,
+            "name": "allenatore",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 439,
+            "name": "Worldstadium",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 439,
+            "name": "Worldstadium",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          },
+          {
+            "franchise": 441,
+            "name": "Стадион33",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 441,
+            "name": "Стадион33",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 1
+          },
+          {
+            "franchise": 474,
+            "name": "Serenissima",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 2
+          },
+          {
+            "franchise": 474,
+            "name": "Serenissima",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 3
+          },
+          {
+            "franchise": 503,
+            "name": "Starbound",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 542,
+            "name": "Чил Микс",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 544,
+            "name": "Пшеничный смузи",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 1
+          }
+        ]
+      },
+      "frozen_only": {
+        "keys": 32,
+        "franchises": 19,
+        "league_rounds": 2,
+        "scopes": [
+          {
+            "franchise": 5,
+            "name": "Мачете",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 18,
+            "name": "The Avengers",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 2
+          },
+          {
+            "franchise": 25,
+            "name": "GOMEL CITY",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 2
+          },
+          {
+            "franchise": 26,
+            "name": "Автогол",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          },
+          {
+            "franchise": 31,
+            "name": "Better than Stout",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 110,
+            "name": "Fanton Tesla",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 110,
+            "name": "Fanton Tesla",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          },
+          {
+            "franchise": 125,
+            "name": "Бом бам мбия",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 2
+          },
+          {
+            "franchise": 160,
+            "name": "Red Army",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          },
+          {
+            "franchise": 222,
+            "name": "Ривенделл",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 1
+          },
+          {
+            "franchise": 227,
+            "name": "СТС ",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 367,
+            "name": "Арарат",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 367,
+            "name": "Арарат",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 2
+          },
+          {
+            "franchise": 375,
+            "name": "3 hundred $$$ from Хамовники",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 401,
+            "name": "Я·К·У·Д·З·А",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 2
+          },
+          {
+            "franchise": 432,
+            "name": "allenatore",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 439,
+            "name": "Worldstadium",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 439,
+            "name": "Worldstadium",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 1
+          },
+          {
+            "franchise": 441,
+            "name": "Стадион33",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 474,
+            "name": "Serenissima",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 2
+          },
+          {
+            "franchise": 474,
+            "name": "Serenissima",
+            "slug": "ucl_2026",
+            "round": 2,
+            "keys": 1
+          },
+          {
+            "franchise": 503,
+            "name": "Starbound",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          },
+          {
+            "franchise": 542,
+            "name": "Чил Микс",
+            "slug": "championship_2026",
+            "round": 10,
+            "keys": 1
+          }
+        ]
+      },
+      "all_conflicting_keys": 58,
+      "examples": [
+        {
+          "franchise": 401,
+          "name": "Я·К·У·Д·З·А",
+          "slug": "championship_2026",
+          "round": 10,
+          "team": "590459",
+          "states": [
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/514485",
+              "active": false,
+              "frozen": true,
+              "board": null,
+              "score": 78.0
+            },
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/514501",
+              "active": false,
+              "frozen": false,
+              "board": null,
+              "score": 78.0
+            }
+          ]
+        },
+        {
+          "franchise": 441,
+          "name": "Стадион33",
+          "slug": "ucl_2026",
+          "round": 2,
+          "team": "632180",
+          "states": [
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/538054",
+              "active": false,
+              "frozen": true,
+              "board": null,
+              "score": 69.0
+            },
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/538094",
+              "active": true,
+              "frozen": false,
+              "board": 2,
+              "score": 69.0
+            }
+          ]
+        },
+        {
+          "franchise": 441,
+          "name": "Стадион33",
+          "slug": "ucl_2026",
+          "round": 2,
+          "team": "630929",
+          "states": [
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/538054",
+              "active": true,
+              "frozen": false,
+              "board": 6,
+              "score": 83.0
+            },
+            {
+              "source": "https://fantasy-h2h.ru/h2h/team_match_data/538094",
+              "active": false,
+              "frozen": false,
+              "board": null,
+              "score": 83.0
+            }
+          ]
+        }
+      ]
+    },
+    "primary_gets": [
+      {
+        "url": "https://fantasy-h2h.ru/h2h/team_match_data/514501?ajax=1",
+        "http_status": 200,
+        "retrieved_utc": "2026-11-04T13:46:18.702860+00:00",
+        "response_bytes": 12463,
+        "body_sha256": "1b8271fd7da9b1d56094fd7a307298f05a5a88a1a481903cdb15526c387594b5",
+        "title_date": "16.10.2026",
+        "columns": [
+          {
+            "index": 0,
+            "participants": [
+              {
+                "team": "599651",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 401,
+                  "active": true,
+                  "frozen": false,
+                  "board": 1
+                }
+              },
+              {
+                "team": "592126",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 401,
+                  "active": true,
+                  "frozen": false,
+                  "board": 2
+                }
+              },
+              {
+                "team": "604999",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 401,
+                  "active": true,
+                  "frozen": false,
+                  "board": 3
+                }
+              },
+              {
+                "team": "590971",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 401,
+                  "active": true,
+                  "frozen": false,
+                  "board": 4
+                }
+              },
+              {
+                "team": "590495",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 401,
+                  "active": true,
+                  "frozen": false,
+                  "board": 5
+                }
+              },
+              {
+                "team": "597496",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 401,
+                  "active": true,
+                  "frozen": false,
+                  "board": 6
+                }
+              },
+              {
+                "team": "592369",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "active_by_html": false,
+                "parsed_state": {
+                  "franchise": 401,
+                  "active": false,
+                  "frozen": false,
+                  "board": null
+                }
+              },
+              {
+                "team": "599673",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "active_by_html": false,
+                "parsed_state": {
+                  "franchise": 401,
+                  "active": false,
+                  "frozen": false,
+                  "board": null
+                }
+              },
+              {
+                "team": "590459",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "active_by_html": false,
+                "parsed_state": {
+                  "franchise": 401,
+                  "active": false,
+                  "frozen": false,
+                  "board": null
+                }
+              },
+              {
+                "team": "596501",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "active_by_html": false,
+                "parsed_state": {
+                  "franchise": 401,
+                  "active": false,
+                  "frozen": false,
+                  "board": null
+                }
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "participants": [
+              {
+                "team": "603107",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 222,
+                  "active": true,
+                  "frozen": false,
+                  "board": 1
+                }
+              },
+              {
+                "team": "590867",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 222,
+                  "active": true,
+                  "frozen": false,
+                  "board": 2
+                }
+              },
+              {
+                "team": "591494",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 222,
+                  "active": true,
+                  "frozen": false,
+                  "board": 3
+                }
+              },
+              {
+                "team": "595026",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 222,
+                  "active": true,
+                  "frozen": false,
+                  "board": 4
+                }
+              },
+              {
+                "team": "595635",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 222,
+                  "active": true,
+                  "frozen": false,
+                  "board": 5
+                }
+              },
+              {
+                "team": "590461",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 222,
+                  "active": true,
+                  "frozen": false,
+                  "board": 6
+                }
+              },
+              {
+                "team": "595855",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "active_by_html": false,
+                "parsed_state": {
+                  "franchise": 222,
+                  "active": false,
+                  "frozen": false,
+                  "board": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "url": "https://fantasy-h2h.ru/h2h/team_match_data/538054?ajax=1",
+        "http_status": 200,
+        "retrieved_utc": "2026-11-04T13:46:18.835722+00:00",
+        "response_bytes": 11388,
+        "body_sha256": "05ac0aa2334dd95f0dbf58791d934e1005470cbb3f1b917d722c83e3b8f057b4",
+        "title_date": "20.10.2026",
+        "columns": [
+          {
+            "index": 0,
+            "participants": [
+              {
+                "team": "635488",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 22,
+                  "active": true,
+                  "frozen": false,
+                  "board": 1
+                }
+              },
+              {
+                "team": "633173",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 22,
+                  "active": true,
+                  "frozen": false,
+                  "board": 2
+                }
+              },
+              {
+                "team": "633160",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 22,
+                  "active": true,
+                  "frozen": false,
+                  "board": 3
+                }
+              },
+              {
+                "team": "632402",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 22,
+                  "active": true,
+                  "frozen": false,
+                  "board": 4
+                }
+              },
+              {
+                "team": "631484",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 22,
+                  "active": true,
+                  "frozen": false,
+                  "board": 5
+                }
+              },
+              {
+                "team": "632904",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 22,
+                  "active": true,
+                  "frozen": false,
+                  "board": 6
+                }
+              },
+              {
+                "team": "637135",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "active_by_html": false,
+                "parsed_state": {
+                  "franchise": 22,
+                  "active": false,
+                  "frozen": false,
+                  "board": null
+                }
+              },
+              {
+                "team": "635708",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "active_by_html": false,
+                "parsed_state": {
+                  "franchise": 22,
+                  "active": false,
+                  "frozen": false,
+                  "board": null
+                }
+              },
+              {
+                "team": "635715",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "active_by_html": false,
+                "parsed_state": {
+                  "franchise": 22,
+                  "active": false,
+                  "frozen": false,
+                  "board": null
+                }
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "participants": [
+              {
+                "team": "630999",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 1
+                }
+              },
+              {
+                "team": "632219",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 2
+                }
+              },
+              {
+                "team": "632694",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 3
+                }
+              },
+              {
+                "team": "631328",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 4
+                }
+              },
+              {
+                "team": "631939",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 5
+                }
+              },
+              {
+                "team": "630929",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 6
+                }
+              },
+              {
+                "team": "632180",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "active_by_html": false,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": false,
+                  "frozen": true,
+                  "board": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "url": "https://fantasy-h2h.ru/h2h/team_match_data/538094?ajax=1",
+        "http_status": 200,
+        "retrieved_utc": "2026-11-04T13:46:18.971118+00:00",
+        "response_bytes": 10339,
+        "body_sha256": "ba39f22330e6a8be177b6be2e7e506d1a2669594cf1bbeeea8c6d2c0191ef7db",
+        "title_date": "20.10.2026",
+        "columns": [
+          {
+            "index": 0,
+            "participants": [
+              {
+                "team": "630999",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 1
+                }
+              },
+              {
+                "team": "632180",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 2
+                }
+              },
+              {
+                "team": "632219",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 3
+                }
+              },
+              {
+                "team": "632694",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 4
+                }
+              },
+              {
+                "team": "631328",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 5
+                }
+              },
+              {
+                "team": "631939",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": true,
+                  "frozen": false,
+                  "board": 6
+                }
+              },
+              {
+                "team": "630929",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "active_by_html": false,
+                "parsed_state": {
+                  "franchise": 441,
+                  "active": false,
+                  "frozen": false,
+                  "board": null
+                }
+              }
+            ]
+          },
+          {
+            "index": 1,
+            "participants": [
+              {
+                "team": "631387",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 570,
+                  "active": true,
+                  "frozen": false,
+                  "board": 1
+                }
+              },
+              {
+                "team": "636324",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 570,
+                  "active": true,
+                  "frozen": false,
+                  "board": 2
+                }
+              },
+              {
+                "team": "636155",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 570,
+                  "active": true,
+                  "frozen": false,
+                  "board": 3
+                }
+              },
+              {
+                "team": "636515",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 570,
+                  "active": true,
+                  "frozen": false,
+                  "board": 4
+                }
+              },
+              {
+                "team": "631044",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 570,
+                  "active": true,
+                  "frozen": false,
+                  "board": 5
+                }
+              },
+              {
+                "team": "636151",
+                "classes": [],
+                "active_by_html": true,
+                "parsed_state": {
+                  "franchise": 570,
+                  "active": true,
+                  "frozen": false,
+                  "board": 6
+                }
+              },
+              {
+                "team": "635600",
+                "classes": [
+                  "reserve",
+                  "reserve_first"
+                ],
+                "active_by_html": false,
+                "parsed_state": {
+                  "franchise": 570,
+                  "active": false,
+                  "frozen": false,
+                  "board": null
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "source_cache_written": false
+  },
+  "diagnostic_exit": 0,
+  "remaining_container": ""
+}

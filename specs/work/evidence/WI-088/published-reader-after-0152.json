@@ -1,0 +1,17 @@
+{
+  "revision": "54e739ad056923d079961feae499dd4c6fd4a0a0371ca9afd22c1f5fea1dbc0d:0",
+  "generated": "2026-11-04T16:13:16.026997+00:00",
+  "acquisition": {
+    "from": "2026-10-09T00:48:43Z",
+    "to": "2026-11-04T16:03:40Z",
+    "cached_requests": 34445,
+    "unique_urls": 34445,
+    "http_bytes": 269210110
+  },
+  "franchises": 75,
+  "rounds": 110,
+  "squads": 42572,
+  "managerSquads": 68973,
+  "buys": 110011,
+  "responseBytes": 12193667
+}

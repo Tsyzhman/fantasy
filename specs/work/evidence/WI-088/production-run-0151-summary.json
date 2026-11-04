@@ -1,0 +1,30 @@
+{
+  "commit": "d31ca192f80467bc7cd611b688c3047d45545c5b",
+  "outcome": "acquire failed: personal round link for user1101905285; no calculation/export/import",
+  "exit": {
+    "startedAt": "2026-11-04T14:55:52.682382+00:00",
+    "finishedAt": "2026-11-04T15:01:45.168988+00:00",
+    "exitCode": 1,
+    "elapsedSeconds": 352.487,
+    "resumeAfter": null,
+    "useCache": false
+  },
+  "stages": [
+    {
+      "stage": "acquire",
+      "succeeded": false,
+      "seconds": 257.4,
+      "peak_rss_bytes": 905687040,
+      "memory.current": "1000632320",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0"
+    }
+  ],
+  "memorySamples": 68,
+  "sampledPeakBytes": 1000464384,
+  "minAvailableBytes": 5279825920,
+  "abortRequired": false,
+  "oomEvents": 0,
+  "oomKillEvents": 0,
+  "maxEvents": 0,
+  "kernelPeakAvailable": false
+}

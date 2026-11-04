@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-04",
+  "release": "0.3.150",
+  "commit": "1c9264f07f6b508a074232811f69b1d9aae87eb4",
+  "url": "https://fantasy.tsyzhman.ru/machete/squad",
+  "viewport": {"width": 390, "height": 844},
+  "league": "England Premier League",
+  "tab": "Pool",
+  "metric": "Price",
+  "descending_first_four": [11, 11, 10, 9.5],
+  "ascending_first_four": [4, 4, 4, 4],
+  "ascending_first_names": ["Д. Баттон", "З. Эбботт", "М. Эльборг", "Т. Адарамола"],
+  "direction_button_after_ascending": "Sort descending",
+  "squad_saved": false,
+  "screenshot": "production-0150-mobile-390.jpg",
+  "cleanup": "Temporary tab closed and viewport override reset."
+}
