@@ -1,0 +1,833 @@
+{
+  "at": "2026-11-04T11:51:53.998961+00:00",
+  "results": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "body": {
+        "status": "ok",
+        "uptimeSeconds": 754,
+        "release": {
+          "version": "0.3.149",
+          "commit": "269980b7bbc8d16c850aad89229423f5a2383346"
+        }
+      }
+    },
+    {
+      "path": "/api/health/data-quality",
+      "status": 503,
+      "body": {
+        "status": "error",
+        "healthy": false,
+        "results": [
+          {
+            "leagueId": "63",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.864,
+            "latestRun": {
+              "id": "cmw1rof7vppvxo3lp6difj8nn",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 92.25,
+              "playerDataCoverage": 92.25,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.957,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-11-04T07:00:00.139Z",
+              "completedAt": "2026-11-04T07:00:04.288Z"
+            }
+          },
+          {
+            "leagueId": "47",
+            "season": "2026/2027",
+            "healthy": true,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.862,
+            "latestRun": {
+              "id": "cmw1roihhppzho3lp9kyc35y7",
+              "status": "COMPLETED",
+              "gatePassed": true,
+              "forecastCoverage": 99.816,
+              "playerDataCoverage": 99.816,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.972,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-11-04T07:00:04.374Z",
+              "completedAt": "2026-11-04T07:00:12.848Z"
+            }
+          },
+          {
+            "leagueId": "87",
+            "season": "2026/2027",
+            "healthy": true,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.86,
+            "latestRun": {
+              "id": "cmw1rop2rpr99o3lppqjf3lk3",
+              "status": "COMPLETED",
+              "gatePassed": true,
+              "forecastCoverage": 99.427,
+              "playerDataCoverage": 99.427,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.98,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-11-04T07:00:12.915Z",
+              "completedAt": "2026-11-04T07:00:17.932Z"
+            }
+          },
+          {
+            "leagueId": "54",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.859,
+            "latestRun": {
+              "id": "cmw1rosyspr9ao3lp87bo6vdj",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 94.569,
+              "playerDataCoverage": 94.569,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 100,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-11-04T07:00:17.956Z",
+              "completedAt": "2026-11-04T07:00:21.041Z"
+            }
+          },
+          {
+            "leagueId": "55",
+            "season": "2026/2027",
+            "healthy": true,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.858,
+            "latestRun": {
+              "id": "cmw1rovdapr9bo3lpfi073q3m",
+              "status": "COMPLETED",
+              "gatePassed": true,
+              "forecastCoverage": 99.012,
+              "playerDataCoverage": 99.012,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.896,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-11-04T07:00:21.071Z",
+              "completedAt": "2026-11-04T07:00:24.646Z"
+            }
+          },
+          {
+            "leagueId": "53",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.858,
+            "latestRun": {
+              "id": "cmw1roy56pr9co3lpzr8kav32",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 97.431,
+              "playerDataCoverage": 97.431,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.846,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-11-04T07:00:24.666Z",
+              "completedAt": "2026-11-04T07:00:26.856Z"
+            }
+          },
+          {
+            "leagueId": "61",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.857,
+            "latestRun": {
+              "id": "cmw1rozurpr9do3lpnwziuxay",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 95.652,
+              "playerDataCoverage": 95.652,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.975,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-11-04T07:00:26.884Z",
+              "completedAt": "2026-11-04T07:00:29.185Z"
+            }
+          },
+          {
+            "leagueId": "57",
+            "season": "2026/2027",
+            "healthy": true,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.856,
+            "latestRun": {
+              "id": "cmw1rp1n7pr9eo3lpa1n732is",
+              "status": "COMPLETED",
+              "gatePassed": true,
+              "forecastCoverage": 99.448,
+              "playerDataCoverage": 99.448,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.909,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-11-04T07:00:29.204Z",
+              "completedAt": "2026-11-04T07:00:32.274Z"
+            }
+          },
+          {
+            "leagueId": "71",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.856,
+            "latestRun": {
+              "id": "cmw1rp410pr9ko3lpsft8a0j0",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 93.784,
+              "playerDataCoverage": 93.601,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.814,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-11-04T07:00:32.292Z",
+              "completedAt": "2026-11-04T07:00:34.340Z"
+            }
+          },
+          {
+            "leagueId": "48",
+            "season": "2026/2027",
+            "healthy": true,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.855,
+            "latestRun": {
+              "id": "cmw1rp5mlpr9lo3lp4hnd8sij",
+              "status": "COMPLETED",
+              "gatePassed": true,
+              "forecastCoverage": 99.692,
+              "playerDataCoverage": 99.692,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.985,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-11-04T07:00:34.365Z",
+              "completedAt": "2026-11-04T07:00:37.861Z"
+            }
+          },
+          {
+            "leagueId": "42",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.853,
+            "latestRun": {
+              "id": "cmw1rp8cqpr9mo3lpd0qlp6cr",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 95.368,
+              "playerDataCoverage": 95.368,
+              "matchDataCoverage": 96.183,
+              "statRowCoverage": 100,
+              "promotionLatencyCoverage": 96.183,
+              "startedAt": "2026-11-04T07:00:37.898Z",
+              "completedAt": "2026-11-04T07:00:43.489Z"
+            }
+          },
+          {
+            "leagueId": "73",
+            "season": "2026/2027",
+            "healthy": false,
+            "maximumRunAgeHours": 26,
+            "ageHours": 4.852,
+            "latestRun": {
+              "id": "cmw1rpcoypr9no3lpff3u40nt",
+              "status": "COMPLETED",
+              "gatePassed": false,
+              "forecastCoverage": 92.242,
+              "playerDataCoverage": 92.242,
+              "matchDataCoverage": 100,
+              "statRowCoverage": 99.832,
+              "promotionLatencyCoverage": 100,
+              "startedAt": "2026-11-04T07:00:43.523Z",
+              "completedAt": "2026-11-04T07:00:47.649Z"
+            }
+          }
+        ],
+        "plannerDefaults": [
+          {
+            "leagueId": "63",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "47",
+            "healthy": true,
+            "reason": null,
+            "scope": {
+              "leagueId": "47",
+              "season": "2026/2027"
+            },
+            "configured": true,
+            "readiness": {
+              "leagueId": "47",
+              "season": "2026/2027",
+              "ready": true,
+              "reasons": [],
+              "activePlayers": 543,
+              "upcomingFixtures": 290,
+              "maximumAgeHours": 26,
+              "audit": {
+                "id": "cmw1roihhppzho3lp9kyc35y7",
+                "status": "COMPLETED",
+                "gatePassed": true,
+                "plannerGatePassed": true,
+                "mode": "FULL_DATA_QUALITY",
+                "coverageThreshold": 98,
+                "forecastCoverage": 99.816,
+                "finishedMatches": 90,
+                "startedAt": "2026-11-04T07:00:04.374Z",
+                "completedAt": "2026-11-04T07:00:12.848Z",
+                "ageHours": 4.862
+              },
+              "ingestion": {
+                "id": "cmw1cojk09ffjo3lp915ijza2",
+                "status": "completed",
+                "startedAt": "2026-11-04T00:00:11.509Z",
+                "finishedAt": "2026-11-04T00:06:11.290Z",
+                "ageHours": 11.762,
+                "upcomingFixturesDiscovered": 290,
+                "upcomingFixturesPersisted": 290,
+                "currentUpcomingFixturesFromDiscovery": 290
+              }
+            }
+          },
+          {
+            "leagueId": "87",
+            "healthy": true,
+            "reason": null,
+            "scope": {
+              "leagueId": "87",
+              "season": "2026/2027"
+            },
+            "configured": true,
+            "readiness": {
+              "leagueId": "87",
+              "season": "2026/2027",
+              "ready": true,
+              "reasons": [],
+              "activePlayers": 525,
+              "upcomingFixtures": 270,
+              "maximumAgeHours": 26,
+              "audit": {
+                "id": "cmw1rop2rpr99o3lppqjf3lk3",
+                "status": "COMPLETED",
+                "gatePassed": true,
+                "plannerGatePassed": true,
+                "mode": "FULL_DATA_QUALITY",
+                "coverageThreshold": 98,
+                "forecastCoverage": 99.427,
+                "finishedMatches": 110,
+                "startedAt": "2026-11-04T07:00:12.915Z",
+                "completedAt": "2026-11-04T07:00:17.932Z",
+                "ageHours": 4.86
+              },
+              "ingestion": {
+                "id": "cmw1cojk09ffjo3lp915ijza2",
+                "status": "completed",
+                "startedAt": "2026-11-04T00:00:11.509Z",
+                "finishedAt": "2026-11-04T00:20:35.598Z",
+                "ageHours": 11.522,
+                "upcomingFixturesDiscovered": 270,
+                "upcomingFixturesPersisted": 270,
+                "currentUpcomingFixturesFromDiscovery": 270
+              }
+            }
+          },
+          {
+            "leagueId": "54",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "55",
+            "healthy": true,
+            "reason": null,
+            "scope": {
+              "leagueId": "55",
+              "season": "2026/2027"
+            },
+            "configured": true,
+            "readiness": {
+              "leagueId": "55",
+              "season": "2026/2027",
+              "ready": true,
+              "reasons": [],
+              "activePlayers": 607,
+              "upcomingFixtures": 280,
+              "maximumAgeHours": 26,
+              "audit": {
+                "id": "cmw1rovdapr9bo3lpfi073q3m",
+                "status": "COMPLETED",
+                "gatePassed": true,
+                "plannerGatePassed": true,
+                "mode": "FULL_DATA_QUALITY",
+                "coverageThreshold": 98,
+                "forecastCoverage": 99.012,
+                "finishedMatches": 100,
+                "startedAt": "2026-11-04T07:00:21.071Z",
+                "completedAt": "2026-11-04T07:00:24.646Z",
+                "ageHours": 4.858
+              },
+              "ingestion": {
+                "id": "cmw1cojk09ffjo3lp915ijza2",
+                "status": "completed",
+                "startedAt": "2026-11-04T00:00:11.509Z",
+                "finishedAt": "2026-11-04T00:38:10.107Z",
+                "ageHours": 11.229,
+                "upcomingFixturesDiscovered": 280,
+                "upcomingFixturesPersisted": 280,
+                "currentUpcomingFixturesFromDiscovery": 280
+              }
+            }
+          },
+          {
+            "leagueId": "53",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "61",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "57",
+            "healthy": true,
+            "reason": null,
+            "scope": {
+              "leagueId": "57",
+              "season": "2026/2027"
+            },
+            "configured": true,
+            "readiness": {
+              "leagueId": "57",
+              "season": "2026/2027",
+              "ready": true,
+              "reasons": [],
+              "activePlayers": 543,
+              "upcomingFixtures": 207,
+              "maximumAgeHours": 26,
+              "audit": {
+                "id": "cmw1rp1n7pr9eo3lpa1n732is",
+                "status": "COMPLETED",
+                "gatePassed": true,
+                "plannerGatePassed": true,
+                "mode": "FULL_DATA_QUALITY",
+                "coverageThreshold": 98,
+                "forecastCoverage": 99.448,
+                "finishedMatches": 99,
+                "startedAt": "2026-11-04T07:00:29.204Z",
+                "completedAt": "2026-11-04T07:00:32.274Z",
+                "ageHours": 4.856
+              },
+              "ingestion": {
+                "id": "cmw1cojk09ffjo3lp915ijza2",
+                "status": "completed",
+                "startedAt": "2026-11-04T00:00:11.509Z",
+                "finishedAt": "2026-11-04T01:42:58.358Z",
+                "ageHours": 10.149,
+                "upcomingFixturesDiscovered": 207,
+                "upcomingFixturesPersisted": 207,
+                "currentUpcomingFixturesFromDiscovery": 207
+              }
+            }
+          },
+          {
+            "leagueId": "71",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "48",
+            "healthy": true,
+            "reason": null,
+            "scope": {
+              "leagueId": "48",
+              "season": "2026/2027"
+            },
+            "configured": true,
+            "readiness": {
+              "leagueId": "48",
+              "season": "2026/2027",
+              "ready": true,
+              "reasons": [],
+              "activePlayers": 650,
+              "upcomingFixtures": 387,
+              "maximumAgeHours": 26,
+              "audit": {
+                "id": "cmw1rp5mlpr9lo3lp4hnd8sij",
+                "status": "COMPLETED",
+                "gatePassed": true,
+                "plannerGatePassed": true,
+                "mode": "FULL_DATA_QUALITY",
+                "coverageThreshold": 98,
+                "forecastCoverage": 99.692,
+                "finishedMatches": 165,
+                "startedAt": "2026-11-04T07:00:34.365Z",
+                "completedAt": "2026-11-04T07:00:37.861Z",
+                "ageHours": 4.855
+              },
+              "ingestion": {
+                "id": "cmw1cojk09ffjo3lp915ijza2",
+                "status": "completed",
+                "startedAt": "2026-11-04T00:00:11.509Z",
+                "finishedAt": "2026-11-04T00:07:46.782Z",
+                "ageHours": 11.736,
+                "upcomingFixturesDiscovered": 387,
+                "upcomingFixturesPersisted": 387,
+                "currentUpcomingFixturesFromDiscovery": 387
+              }
+            }
+          },
+          {
+            "leagueId": "42",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          },
+          {
+            "leagueId": "73",
+            "healthy": false,
+            "reason": "NO_FORECAST_READY_SEASON",
+            "scope": null,
+            "configured": false,
+            "readiness": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/health/fantasy-prices",
+      "status": 503,
+      "body": {
+        "status": "error",
+        "healthy": false,
+        "thresholds": {
+          "maximumAgeHours": 7,
+          "minimumPlayers": 100,
+          "minimumMappedPercent": 98
+        },
+        "source": "DATABASE_CONTESTS",
+        "configDrift": {
+          "configured": [
+            "63:2026/2027:russia",
+            "47:2026/2027:england",
+            "87:2026/2027:spain",
+            "54:2026/2027:germany",
+            "55:2026/2027:italy",
+            "53:2026/2027:france",
+            "61:2026/2027:portugal",
+            "57:2026/2027:netherlands",
+            "71:2026/2027:turkey",
+            "48:2026/2027:championship",
+            "42:2026/2027:champions-league",
+            "73:2026/2027:europa-league"
+          ],
+          "observed": [
+            "73:2026/2027:europa-league",
+            "42:2026/2027:champions-league",
+            "48:2026/2027:championship",
+            "71:2026/2027:turkey",
+            "57:2026/2027:netherlands",
+            "61:2026/2027:portugal",
+            "53:2026/2027:france",
+            "55:2026/2027:italy",
+            "54:2026/2027:germany",
+            "87:2026/2027:spain",
+            "47:2026/2027:england",
+            "63:2026/2027:russia"
+          ],
+          "missingInDatabase": [],
+          "notConfigured": [],
+          "tournamentMismatch": []
+        },
+        "legacyConfiguredScopes": [
+          "63:2026/2027:russia",
+          "87:2026/2027:spain",
+          "57:2026/2027:netherlands",
+          "61:2026/2027:portugal"
+        ],
+        "archives": [
+          {
+            "leagueId": "77",
+            "season": "2026",
+            "state": "ARCHIVE",
+            "freshness": "NOT_APPLICABLE",
+            "lastSuccessfulReceipt": "2026-08-14T12:06:25.012Z",
+            "integrity": {
+              "healthy": true,
+              "priceCount": 1246,
+              "mappedCount": 200,
+              "unmappedCount": 1046,
+              "invalidPriceCount": 0,
+              "mismatchedScopeCount": 0
+            }
+          }
+        ],
+        "results": [
+          {
+            "leagueId": "63",
+            "season": "2026/2027",
+            "tournamentHru": "russia",
+            "healthy": false,
+            "lastSyncedAt": "2026-11-04T11:39:32.730Z",
+            "ageHours": 0.206,
+            "priceCount": 516,
+            "mappedCount": 498,
+            "excludedCount": 1,
+            "eligibleCount": 515,
+            "mappedPercent": 96.699,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": [
+              {
+                "providerEntityId": "cmrpa0d53002cwy5cwewfhor2",
+                "matchedBy": "MANUAL_TRANSFERRED_OUT"
+              }
+            ]
+          },
+          {
+            "leagueId": "47",
+            "season": "2026/2027",
+            "tournamentHru": "england",
+            "healthy": false,
+            "lastSyncedAt": "2026-11-04T11:39:39.283Z",
+            "ageHours": 0.204,
+            "priceCount": 688,
+            "mappedCount": 666,
+            "excludedCount": 0,
+            "eligibleCount": 688,
+            "mappedPercent": 96.802,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "87",
+            "season": "2026/2027",
+            "tournamentHru": "spain",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T11:39:49.712Z",
+            "ageHours": 0.201,
+            "priceCount": 741,
+            "mappedCount": 734,
+            "excludedCount": 0,
+            "eligibleCount": 741,
+            "mappedPercent": 99.055,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "54",
+            "season": "2026/2027",
+            "tournamentHru": "germany",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T11:39:56.124Z",
+            "ageHours": 0.2,
+            "priceCount": 538,
+            "mappedCount": 528,
+            "excludedCount": 0,
+            "eligibleCount": 538,
+            "mappedPercent": 98.141,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "55",
+            "season": "2026/2027",
+            "tournamentHru": "italy",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T11:40:01.644Z",
+            "ageHours": 0.198,
+            "priceCount": 638,
+            "mappedCount": 636,
+            "excludedCount": 0,
+            "eligibleCount": 638,
+            "mappedPercent": 99.687,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "53",
+            "season": "2026/2027",
+            "tournamentHru": "france",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T11:40:14.796Z",
+            "ageHours": 0.194,
+            "priceCount": 533,
+            "mappedCount": 526,
+            "excludedCount": 0,
+            "eligibleCount": 533,
+            "mappedPercent": 98.687,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "61",
+            "season": "2026/2027",
+            "tournamentHru": "portugal",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T11:40:22.516Z",
+            "ageHours": 0.192,
+            "priceCount": 629,
+            "mappedCount": 625,
+            "excludedCount": 0,
+            "eligibleCount": 629,
+            "mappedPercent": 99.364,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "57",
+            "season": "2026/2027",
+            "tournamentHru": "netherlands",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T11:40:31.830Z",
+            "ageHours": 0.19,
+            "priceCount": 613,
+            "mappedCount": 612,
+            "excludedCount": 0,
+            "eligibleCount": 613,
+            "mappedPercent": 99.837,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "71",
+            "season": "2026/2027",
+            "tournamentHru": "turkey",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T11:40:39.159Z",
+            "ageHours": 0.188,
+            "priceCount": 563,
+            "mappedCount": 563,
+            "excludedCount": 0,
+            "eligibleCount": 563,
+            "mappedPercent": 100,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "48",
+            "season": "2026/2027",
+            "tournamentHru": "championship",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T11:40:46.973Z",
+            "ageHours": 0.186,
+            "priceCount": 790,
+            "mappedCount": 785,
+            "excludedCount": 0,
+            "eligibleCount": 790,
+            "mappedPercent": 99.367,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          },
+          {
+            "leagueId": "42",
+            "season": "2026/2027",
+            "tournamentHru": "champions-league",
+            "healthy": false,
+            "lastSyncedAt": "2026-11-04T11:40:56.192Z",
+            "ageHours": 0.183,
+            "priceCount": 1193,
+            "mappedCount": 1157,
+            "excludedCount": 1,
+            "eligibleCount": 1192,
+            "mappedPercent": 97.064,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": [
+              {
+                "providerEntityId": "cmtmodvo60t2f2o90k66o50u3",
+                "matchedBy": "MANUAL_SOURCE_IDENTITY_CONFLICT"
+              }
+            ]
+          },
+          {
+            "leagueId": "73",
+            "season": "2026/2027",
+            "tournamentHru": "europa-league",
+            "healthy": false,
+            "lastSyncedAt": "2026-11-04T11:41:08.485Z",
+            "ageHours": 0.18,
+            "priceCount": 1161,
+            "mappedCount": 1134,
+            "excludedCount": 0,
+            "eligibleCount": 1161,
+            "mappedPercent": 97.674,
+            "scheduleOwner": "fantasy-source-registry",
+            "intervalHours": 6,
+            "exclusions": []
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/health/fpl",
+      "status": 200,
+      "body": {
+        "status": "ok",
+        "provider": "FPL",
+        "leagueId": "47",
+        "season": "2026/2027",
+        "healthy": true,
+        "fresh": true,
+        "complete": true,
+        "minimumMappedPercent": 99,
+        "maxSnapshotAgeMinutes": 735,
+        "contestId": "cmsraor0d0002f8sym7tlpdws",
+        "sourceUrl": "https://fantasy.premierleague.com/api/bootstrap-static/",
+        "scoreStatus": "READY",
+        "lastSyncedAt": "2026-11-04T11:40:03.395Z",
+        "snapshot": {
+          "snapshotKey": "2026-11-04-0001",
+          "fetchedAt": "2026-11-04T11:40:04.223Z",
+          "ageMinutes": 11.845283333333333,
+          "payloadHash": "5400be2fa2fd13a3cd4c08a2c5de2229a6b96aa9910ad11a880d52da5b638d5d"
+        },
+        "counts": {
+          "prices": 670,
+          "mappedPlayers": 668,
+          "mappedPercent": 99.70149253731343,
+          "matchedEntities": 688,
+          "unmatchedEntities": 2,
+          "latestOfficialGameweek": 9,
+          "officialScoreRows": 670,
+          "mappedOfficialScoreRows": 668,
+          "officialScoreMappedPercent": 99.70149253731343
+        }
+      }
+    }
+  ]
+}

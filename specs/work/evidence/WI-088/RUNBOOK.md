@@ -99,3 +99,5 @@ the timer is active with the unchanged three-hour `:10 MSK` cadence, no collecto
 markers remain, successful-run intermediate files were removed, HTTP cache has
 no temporary files and no expired entries, and source/index identities are
 unique. Preserve user sources, rollback containers and the kernel lock file.
+
+Production host note (2026-11-04): this kernel exposes `memory.current` and `memory.events`, but no `memory.peak`. The compatible read-only monitor reports `peak_bytes: null`, a clearly labelled five-second `sampled_peak_bytes`, and preserves current-memory/OOM/host-headroom checks. Do not call the sampled maximum an exact kernel peak. The first monitor was replaced at 11:44 UTC during acquisition after this absence was diagnosed; application containers and the collection were not restarted. Per-stage Linux process peak RSS remains available through `resource.getrusage`.

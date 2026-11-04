@@ -1,0 +1,51 @@
+{
+  "at": "2026-11-04T14:45:53.845056+03:00",
+  "markers": {
+    "name": "20261104T112135Z-v0.3.149-269980b",
+    "version": "0.3.149",
+    "commit": "269980b7bbc8d16c850aad89229423f5a2383346",
+    "tree": "ae561ecc5d06f4c4431223625a94043c9bd91b76",
+    "runtime-image-id": "sha256:1201dadd6ce48d0a36b263605b6621c80b7cc6e856d1cde70815d169cbb6685f",
+    "ci-runtime-image-id": "sha256:5ecfc8151b3037efe77a0b7d1f9871d8bb4fdb9914727f599222284f3a337efe"
+  },
+  "runtime": {
+    "node": "v24.22.2",
+    "next": "16.4.2",
+    "react": "18.3.1"
+  },
+  "containers": [
+    {
+      "name": "/fantasy-scout-web",
+      "image": "sha256:1201dadd6ce48d0a36b263605b6621c80b7cc6e856d1cde70815d169cbb6685f",
+      "revision": "269980b7bbc8d16c850aad89229423f5a2383346",
+      "status": "running",
+      "oom": false,
+      "restarts": 0
+    },
+    {
+      "name": "/fantasy-scout-worker",
+      "image": "sha256:1201dadd6ce48d0a36b263605b6621c80b7cc6e856d1cde70815d169cbb6685f",
+      "revision": "269980b7bbc8d16c850aad89229423f5a2383346",
+      "status": "running",
+      "oom": false,
+      "restarts": 0
+    },
+    {
+      "name": "/fantasy-scout-postgres",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "revision": null,
+      "status": "running",
+      "oom": false,
+      "restarts": 0
+    }
+  ],
+  "publicHealth": {
+    "status": "ok",
+    "uptimeSeconds": 393,
+    "release": {
+      "version": "0.3.149",
+      "commit": "269980b7bbc8d16c850aad89229423f5a2383346"
+    }
+  },
+  "verification": "Public health, source markers and both OCI revision labels match; web and worker use the recorded runtime config ID. CI containerd manifest ID differs from classic Docker config ID: unchanged resolve-ci-image-identities.py binds both cryptographically to the same verified archive during successful canonical promotion."
+}

@@ -30,7 +30,7 @@ Keyboard users can activate native table controls and operate touch-action dialo
 
 ## Result
 
-Implementation and addressed verification are ready for root integration (2026-11-04). BOARD, WAL, archive and release changes remain with the coordinator.
+Completed: implementation, focused verification and coordinated production release are recorded below.
 
 - Before → after: table-level Enter/Space cancellation blocked native controls; cancellation now occurs only after a genuine sortable-header action. Nested controls, resize handles and body cells retain their native behavior. DOM, managed and server sorting plus keyboard resize were verified in Edge.
 - Before → after: touch actions lacked containment/return and CommandPalette handled Escape only in its input; shared `useModalFocus` now owns initial focus, topmost-dialog Tab/Shift+Tab containment, Escape, listener/scroll cleanup and focus return. Removed triggers have a roster fallback; pool and XI/bench replacement move focus to their next step. Name-search selection excludes the hidden Fits checkbox and provides a visible loading fallback.
@@ -39,5 +39,8 @@ Implementation and addressed verification are ready for root integration (2026-1
 - Checks: 82/82 targeted unit/contract tests; 42 passed and 18 intentional skips across five Edge widths (320/390/1024/1440/1920); 5/5 final responsive screenshot checks; targeted ESLint 0 errors, one unchanged `setSelections` dependency warning. The fixture mock includes the installed Next 16.4.2 `bfcacheId` requirement. On 2026-11-04 the coordinator reported successful full typecheck/build and visually checked the mobile-390 light screenshot.
 - Isolated fixture tests use their own Playwright config, no auth setup or database, and are excluded from the default production-smoke projects (verified listing: 49 ordinary tests, zero isolated-suite matches).
 - After 30 palette cycles: no retained dialog keydown/focusin listeners; post-GC heap delta 967,088 bytes. Fixture servers/browser processes exit after checks. Duplicate intermediate logs were removed; final screenshots are captured at CSS-pixel scale.
-- Evidence, reproducible baseline and commands: [WI-086 evidence](evidence/WI-086/README.md). Visual checks use actual repository CSS and its sans fallback; the isolated fixture does not embed Next's Onest font or validate database-backed page delivery.
+- Evidence, reproducible baseline and commands: [WI-086 evidence](../../evidence/WI-086/README.md). Visual checks use actual repository CSS and its sans fallback; the isolated fixture does not embed Next's Onest font or validate database-backed page delivery.
 
+
+
+Root production acceptance, 2026-11-04: canonical Deploy [41819445507](https://github.com/Tsyzhman/fantasy/actions/runs/41819445507) successfully released 0.3.149 / `269980b7bbc8d16c850aad89229423f5a2383346` after fresh complete CI. Public health, release markers and web/worker OCI labels agree; Node 24.22.2 verified. Across promotion, 611 public probes had zero errors and 20 consecutive new-revision probes retained old assets. [Release identity](../../evidence/WI-084/release-identity-0149.json), [availability](../../evidence/WI-084/release-availability-summary.json), [CI result](../../evidence/WI-090/ci-validation-summary.json).

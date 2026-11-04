@@ -1,0 +1,10 @@
+{
+  "measuredAtUtc": "2026-11-04T11:13:39.6062076Z",
+  "observedTransportProcesses": [],
+  "sharedNodePythonCount": 37,
+  "sharedNodePythonRssMiB": 1289.3,
+  "helperCacheFiles": 0,
+  "retainedLintDirectories": 0,
+  "retainedTestDirectories": 0,
+  "cleanup": "Scoped lint/test fixtures removed; no actual ZIP transfer, browser, Docker/npm/build cache or server process started by this worker. Unrelated shared processes preserved."
+}

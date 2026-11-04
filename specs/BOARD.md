@@ -6,11 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-090](work/WI-090-verified-ci-artifact-transport.md) | Deliver verified CI artifacts over bounded HTTPS | INFRA-006 | @tsyzhman | 2026-11-04 | — |
-| [WI-089](work/WI-089-mobile-player-column-sorting.md) | Sort player columns directly on mobile | FEAT-001, PROP-002 | @tsyzhman | 2026-11-04 | — |
-| [WI-085](work/WI-085-telegram-delivery-correctness.md) | Telegram consent, deadlines and fenced recovery | INFRA-005 | @tsyzhman | 2026-11-04 | — |
-| [WI-086](work/WI-086-ui-keyboard-dialogs.md) | Preserve table controls and modal keyboard focus | PROP-002 | @tsyzhman | 2026-11-04 | — |
-| [WI-087](work/WI-087-runtime-release-security.md) | Patch Node runtime and enforce release validation | INFRA-006 | @tsyzhman | 2026-11-04 | — |
 | [WI-088](work/WI-088-franchise-memory-budget.md) | Restore bounded franchise refresh on the shared host | INFRA-006 | @tsyzhman | 2026-11-04 | — |
 | [WI-084](work/WI-084-project-server-audit.md) | Audit current production and coordinate verified remediation | INFRA-006, PROP-002 | @tsyzhman | 2026-11-04 | — |
 | [WI-082](work/WI-082-scheduled-browser-smoke.md) | Restore scheduled GitHub browser checks and release the aligned revision | PROP-002, INFRA-006 | @tsyzhman | 2026-10-26 | — |
@@ -36,6 +31,11 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-085](work/archive/2026/WI-085-telegram-delivery-correctness.md) | Telegram consent, deadlines and fenced recovery | @tsyzhman | 2026-11-04 |
+| [WI-086](work/archive/2026/WI-086-ui-keyboard-dialogs.md) | Preserve table controls and modal keyboard focus | @tsyzhman | 2026-11-04 |
+| [WI-087](work/archive/2026/WI-087-runtime-release-security.md) | Patch Node runtime and enforce release validation | @tsyzhman | 2026-11-04 |
+| [WI-089](work/archive/2026/WI-089-mobile-player-column-sorting.md) | Sort player columns directly on mobile | @tsyzhman | 2026-11-04 |
+| [WI-090](work/archive/2026/WI-090-verified-ci-artifact-transport.md) | Deliver verified CI artifacts over bounded HTTPS | @tsyzhman | 2026-11-04 |
 | [WI-083](work/archive/2026/WI-083-sorare-club-scope.md) | Scope SorareInside forecasts to current fantasy clubs | @tsyzhman | 2026-11-04 |
 | [WI-081](work/archive/2026/WI-081-production-artifact-retention.md) | Keep one production backup and clear build caches | @tsyzhman | 2026-10-23 |
 | [WI-080](work/archive/2026/WI-080-production-lineup-recovery.md) | Restore production lineup updates | @tsyzhman | 2026-10-23 |

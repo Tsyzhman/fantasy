@@ -28,6 +28,8 @@ Initial host: 11,876 MiB RAM, approximately 4,989 MiB available, no swap; disk 4
 | A12 | P3 | Work tracking differs across historical local checkouts | Use origin/current release as audit source; preserve unrelated work; track new fixes once | WI-084 |
 | A13 | P2 | Telegram first-bucket limiter race and failed inbox dedupe candidate | Reproduce and address if confirmed inside bounded Telegram work; never send real messages | WI-085 investigation |
 | A14 | P2 | Ownership and delta publication may be non-atomic | Follow-up fault-injection verification before changing behavior | Backlog |
+| A15 | P2 | Mobile player cards lack column sorting controls | Column/direction controls, whole-pool sorting before pagination, null-last/stable ties and live mobile verification | WI-089 |
+| A16 | P1 | Runner SCP cannot deliver images within the release budget | Current-run artifact provenance/digests, bounded HTTPS or operator prestaging, canonical promotion and actual transfer evidence | WI-090 |
 
 Existing WI-066 fixes verified present: atomic login limit, safe redirects, one-time bootstrap, FPL mapping replay, no-op deadline planning, bounded KHL retention/catalog writes, ownership serialization, faster franchise ranking, mobile analytical columns, keyboard resizers, receipt freshness, Node24/non-root/resource limits, CI image build and project-only cleanup. The in-flight WI-083 fixes minimatch and Sorare scope; it is incorporated rather than reimplemented.
 
