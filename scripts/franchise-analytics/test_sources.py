@@ -1,9 +1,11 @@
-"""@spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts"""
+"""@spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts
+@spec spec://modules/franchises/FEAT-005-franchise-analytics#freezes
+"""
 import unittest
 import tempfile
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-from sources import personal_teams, profile_path, profile_name, board_user_id, fixture_round, registry, squad_sources, memberships, write_cache, require_lineup, resume_after, acquired_since, reusable_squad, calendar_rounds
+from sources import personal_teams, profile_path, profile_name, board_user_id, fixture_round, calendar_fixture_scopes, registry, squad_sources, memberships, write_cache, require_lineup, resume_after, acquired_since, reusable_squad, calendar_rounds
 import datetime
 import json
 
@@ -74,6 +76,46 @@ class SourceTests(unittest.TestCase):
         doc = BeautifulSoup('<div class="roster this_tour"><ul><li><a href="https://sports.ru/football/match/100">match</a></li></ul></div>', 'html.parser')
         with self.assertRaisesRegex(ValueError, 'Conflicting'):
             fixture_round(doc,'a',{('a','100'):('a',1)},{('a','01.10.2026'):{('a',2)}},'A 0 - 0 B, 01.10.2026')
+
+    def test_fresh_la_liga_board_retains_alias_memberships_and_resolves_the_joint_scope(self):
+        from bs4 import BeautifulSoup
+        value = json.loads((Path(__file__).with_name('fixtures') / 'board-fixture-aliases.json').read_text('utf-8'))
+        fixtures = calendar_fixture_scopes(value['leagues'])
+        dates = {(value['slug'], day): {(value['slug'], rn) for rn in rounds} for day, rounds in value['dates'].items()}
+        scope = fixture_round(BeautifulSoup(value['html'], 'html.parser'), value['slug'], fixtures, dates, value['title'])
+        self.assertEqual(scope, (value['slug'], value['expected_round']))
+        self.assertEqual(fixtures[('la_liga_2026', '1957463')], {('la_liga_2026', 9), ('la_liga_2026', 10)})
+
+    def test_fixture_scope_requires_unique_joint_evidence_and_never_rescues_conflicting_matches(self):
+        from bs4 import BeautifulSoup
+        a, b, c = ('a', 1), ('a', 2), ('a', 3)
+        def document(ids):
+            return BeautifulSoup('<div class="roster this_tour"><ul>' + ''.join(f'<li><a href="https://sports.ru/football/match/{mid}">match</a></li>' for mid in ids) + '</ul></div>', 'html.parser')
+        cases = [
+            ('unique without date', ['100'], {('a','100'):{a}}, {}, '', a),
+            ('unknown date does not invent a constraint', ['100'], {('a','100'):{a}}, {}, 'A - B, 01.10.2026', a),
+            ('unknown IDs do not discard known evidence', ['100','999'], {('a','100'):{a}}, {}, '', a),
+            ('all unknown uses unique date', ['999'], {}, {a}, 'A - B, 01.10.2026', a),
+            ('all unknown without evidence stays missing', ['999'], {}, {}, '', None),
+            ('unique fixture disambiguates a date', ['100'], {('a','100'):{b}}, {a,b}, 'A - B, 01.10.2026', b),
+            ('joint intersection of ambiguous evidence', ['100'], {('a','100'):{a,b}}, {b,c}, 'A - B, 01.10.2026', b),
+            ('match IDs constrain one another', ['100','200'], {('a','100'):{a,b},('a','200'):{b,c}}, {}, '', b),
+        ]
+        for name, ids, fixtures, dated, title, expected in cases:
+            with self.subTest(name=name):
+                dates = {('a','01.10.2026'): dated} if dated else {}
+                self.assertEqual(fixture_round(document(ids), 'a', fixtures, dates, title), expected)
+        failures = [
+            ('two incompatible matches despite matching date', ['100','200'], {('a','100'):{a},('a','200'):{b}}, {a}),
+            ('date contradicts unique match', ['100'], {('a','100'):{a}}, {b}),
+            ('several fixture candidates without date', ['100'], {('a','100'):{a,b}}, {}),
+            ('date alone remains ambiguous', ['999'], {}, {a,b}),
+            ('joint candidates remain ambiguous', ['100'], {('a','100'):{a,b}}, {a,b}),
+        ]
+        for name, ids, fixtures, dated in failures:
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'Conflicting board fixture identity'):
+                dates = {('a','01.10.2026'): dated} if dated else {}
+                fixture_round(document(ids), 'a', fixtures, dates, 'A - B, 01.10.2026')
 
     def test_parallel_cache_writes_publish_one_complete_payload(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -1,0 +1,12 @@
+{
+  "captured_utc": "2026-11-04T12:53:10.292086+00:00",
+  "files": {
+    "scripts/franchise-analytics/sources.py": "3a6006952f11ab7cd23ced63dc62d6497818af3d53bb227ccc3372677447d2a2",
+    "scripts/franchise-analytics/freezes.py": "43d140fcc28304219c750ec2f085440dd66f9335c530b55c5f00727d4750b913",
+    "scripts/franchise-analytics/test_sources.py": "bf4bc7ea2d7e36765f8980a669567368910ef1fc5267c0874329879e1c4cb290",
+    "scripts/franchise-analytics/test_freezes.py": "44f2cf2add76d3bfdb235230f465acd35062d61a4e6ea8d041fa8fb09171aba0",
+    "scripts/franchise-analytics/fixtures/board-fixture-aliases.json": "7a466636a99fbdead5f2092e155ee04d4f5dfe90d9156776192d57b3bcfe313f"
+  },
+  "tests": "37 passed; fixture-correction-tests.txt",
+  "rehearsal": "fixture-correction-rehearsal.json; cache_missing after fixed board520404; no true conflict in tested prefix"
+}

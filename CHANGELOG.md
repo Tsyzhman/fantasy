@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.150 - 2026-11-04
+
+- Preserve all calendar memberships of a Sports match and resolve franchise boards only from a unique intersection of fixture and date evidence.
+- Keep freeze verification within its source H2H board when several duels share one football round; retain strict rejection of contradictory states.
+
 ## 0.3.149 - 2026-11-04
 
 - Enforce current Telegram consent, the 08:50 Moscow build cutoff and fenced deadline publication; retain unknown delivery outcomes without automatic resends.

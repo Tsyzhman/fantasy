@@ -84,6 +84,16 @@ recovery. Do not retry by raising the cap or disabling a guard.
 
 ## Success evidence
 
+After the November 4 full acquisition failed at fixture identity, a separately
+validated source-parser correction may retry through the same normal entry with
+`FRANCHISE_RESUME_AFTER=2026-11-04T11:42:00Z`, only while that verified checkpoint
+is within three hours. This is the existing INFRA-006 bounded acquisition resume:
+reuse only responses/squads acquired since that checkpoint and settled valid
+lineups, refresh database exports, and run every calculation/publication stage.
+Never set FRANCHISE_USE_CACHE or import the October artifacts. Root removed the
+five October reproducible intermediates after preserving diagnosis. After the
+three-hour window expires, use a normal fresh acquisition without this override.
+
 Require all stages and importer to exit zero; a newer database `generated_at`,
 different SHA, valid complete payload, preserved histories/personal groups, and
 matching acquisition/generated times through the production report reader/UI.

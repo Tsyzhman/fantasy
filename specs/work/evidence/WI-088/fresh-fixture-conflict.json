@@ -1,0 +1,880 @@
+{
+  "configuration": {
+    "commit": "269980b7bbc8d16c850aad89229423f5a2383346",
+    "image": "sha256:1201dadd6ce48d0a36b263605b6621c80b7cc6e856d1cde70815d169cbb6685f",
+    "memory_bytes": 1073741824,
+    "cpus": 1,
+    "network": "none",
+    "root_readonly": true,
+    "source_readonly": true
+  },
+  "result": {
+    "form_url": "https://fantasy-h2h.ru/form/view/h2h_tournament_franchise/15924",
+    "board_url": "https://fantasy-h2h.ru/h2h/team_match_data/520404",
+    "column": 8,
+    "form_cache": {
+      "url": "https://fantasy-h2h.ru/form/view/h2h_tournament_franchise/15924",
+      "file": "450c67bb1785f816283c895164fef6f763ba44dfb983758b2b9895ccc869d849.json.gz",
+      "fetched_at": "2026-11-04T12:27:28Z",
+      "body_sha256": "ea80a305602ffce1369c71f4b335425afc463614e68b98fa9f69dcec9f2e4dc0"
+    },
+    "fallback_cache": {
+      "url": "https://fantasy-h2h.ru/h2h/match_data/8020124?v=721271&ajax=1",
+      "file": "d9790ecc25198312cf4c6dc34f1324a3c452ea9dd053b224d957410f52dc4006.json.gz",
+      "fetched_at": "2026-11-04T12:27:32Z",
+      "body_sha256": "56cf655e259b503a2044ad496506cb772b921cc85b17b37cc43a23f94a74565c"
+    },
+    "explicit_tours": [],
+    "title_date": "10.10.2026",
+    "current_rejection": "Conflicting board fixture identity",
+    "current_last_write_fixture_scopes": [
+      [
+        "la_liga_2026",
+        10
+      ]
+    ],
+    "all_observed_memberships": [
+      {
+        "sports_match_id": "1957437",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "21 Окт 2026, 21:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "21 Окт 2026, 21:00"
+          }
+        ]
+      },
+      {
+        "sports_match_id": "1957461",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "17 Окт 2026, 19:30"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "17 Окт 2026, 19:30"
+          }
+        ]
+      },
+      {
+        "sports_match_id": "1957462",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "18 Окт 2026, 17:15"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "18 Окт 2026, 17:15"
+          }
+        ]
+      },
+      {
+        "sports_match_id": "1957463",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "16 Окт 2026, 22:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "16 Окт 2026, 22:00"
+          }
+        ]
+      },
+      {
+        "sports_match_id": "1957464",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "17 Окт 2026, 15:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "17 Окт 2026, 15:00"
+          }
+        ]
+      },
+      {
+        "sports_match_id": "1957465",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "19 Окт 2026, 22:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "19 Окт 2026, 22:00"
+          }
+        ]
+      },
+      {
+        "sports_match_id": "1957466",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "18 Окт 2026, 19:30"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "18 Окт 2026, 19:30"
+          }
+        ]
+      },
+      {
+        "sports_match_id": "1957467",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "18 Окт 2026, 15:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "18 Окт 2026, 15:00"
+          }
+        ]
+      },
+      {
+        "sports_match_id": "1957468",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "18 Окт 2026, 22:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "18 Окт 2026, 22:00"
+          }
+        ]
+      },
+      {
+        "sports_match_id": "1957469",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "17 Окт 2026, 22:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "17 Окт 2026, 22:00"
+          }
+        ]
+      },
+      {
+        "sports_match_id": "1957470",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "17 Окт 2026, 17:15"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "17 Окт 2026, 17:15"
+          }
+        ]
+      }
+    ],
+    "duplicate_calendar_fixture_identities": [
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957458",
+        "memberships": [
+          {
+            "round": 8,
+            "index": 9464,
+            "tour": 7560,
+            "date": "10 Окт 2026, 15:00"
+          },
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "10 Окт 2026, 15:00"
+          }
+        ]
+      },
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957463",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "16 Окт 2026, 22:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "16 Окт 2026, 22:00"
+          }
+        ]
+      },
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957464",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "17 Окт 2026, 15:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "17 Окт 2026, 15:00"
+          }
+        ]
+      },
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957470",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "17 Окт 2026, 17:15"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "17 Окт 2026, 17:15"
+          }
+        ]
+      },
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957461",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "17 Окт 2026, 19:30"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "17 Окт 2026, 19:30"
+          }
+        ]
+      },
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957469",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "17 Окт 2026, 22:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "17 Окт 2026, 22:00"
+          }
+        ]
+      },
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957467",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "18 Окт 2026, 15:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "18 Окт 2026, 15:00"
+          }
+        ]
+      },
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957462",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "18 Окт 2026, 17:15"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "18 Окт 2026, 17:15"
+          }
+        ]
+      },
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957466",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "18 Окт 2026, 19:30"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "18 Окт 2026, 19:30"
+          }
+        ]
+      },
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957468",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "18 Окт 2026, 22:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "18 Окт 2026, 22:00"
+          }
+        ]
+      },
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957465",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "19 Окт 2026, 22:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "19 Окт 2026, 22:00"
+          }
+        ]
+      },
+      {
+        "slug": "la_liga_2026",
+        "sports_match_id": "1957437",
+        "memberships": [
+          {
+            "round": 9,
+            "index": 9465,
+            "tour": 7580,
+            "date": "21 Окт 2026, 21:00"
+          },
+          {
+            "round": 10,
+            "index": 9466,
+            "tour": 7594,
+            "date": "21 Окт 2026, 21:00"
+          }
+        ]
+      }
+    ],
+    "date_scopes": [
+      [
+        "la_liga_2026",
+        9
+      ]
+    ],
+    "retained_candidate_intersection": [
+      [
+        "la_liga_2026",
+        9
+      ],
+      [
+        "la_liga_2026",
+        10
+      ]
+    ],
+    "joint_candidates_with_date": [
+      [
+        "la_liga_2026",
+        9
+      ]
+    ],
+    "primary_calendar": [
+      {
+        "round": 8,
+        "index": 9464,
+        "tour": 7560,
+        "cache": {
+          "url": "https://fantasy-h2h.ru/analytics/competition_tour_shedule/9464?ajax=1",
+          "file": "2295c5407ef2fd214166df5b960a67971ea688611e7bbbfa258deab6559fad73.json.gz",
+          "fetched_at": "2026-11-04T11:47:03Z",
+          "body_sha256": "68e75057cef0cc46ca99cd8ef2426973436f70fd1b5946ce9d70bd380d354dbf"
+        },
+        "rows": [
+          {
+            "sports_match_id": "1957456",
+            "h2h_match_id": "770349",
+            "date": "9 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957458",
+            "h2h_match_id": "770351",
+            "date": "10 Окт 2026, 15:00",
+            "finished": false,
+            "canceled": true
+          },
+          {
+            "sports_match_id": "1957451",
+            "h2h_match_id": "770344",
+            "date": "10 Окт 2026, 17:15",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957454",
+            "h2h_match_id": "770347",
+            "date": "10 Окт 2026, 19:30",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957459",
+            "h2h_match_id": "770352",
+            "date": "10 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": null,
+            "h2h_match_id": "770346",
+            "date": "11 Окт 2026, 15:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": null,
+            "h2h_match_id": "770353",
+            "date": "11 Окт 2026, 17:15",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": null,
+            "h2h_match_id": "770345",
+            "date": "11 Окт 2026, 19:30",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": null,
+            "h2h_match_id": "770350",
+            "date": "11 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957455",
+            "h2h_match_id": "770348",
+            "date": "12 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          }
+        ]
+      },
+      {
+        "round": 9,
+        "index": 9465,
+        "tour": 7580,
+        "cache": {
+          "url": "https://fantasy-h2h.ru/analytics/competition_tour_shedule/9465?ajax=1",
+          "file": "58277b6fc45b9eb554f14fe3f74c737c193f8772aedad03c1abe57fe6ba5bd5a.json.gz",
+          "fetched_at": "2026-11-04T11:47:04Z",
+          "body_sha256": "1a716f5ece3e6ba33c579364d1b8a720e24f58e16a230be1f0013e96a8d6df6d"
+        },
+        "rows": [
+          {
+            "sports_match_id": "1957458",
+            "h2h_match_id": "787514",
+            "date": "10 Окт 2026, 15:00",
+            "finished": false,
+            "canceled": true
+          },
+          {
+            "sports_match_id": "1957463",
+            "h2h_match_id": "778243",
+            "date": "16 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957464",
+            "h2h_match_id": "778244",
+            "date": "17 Окт 2026, 15:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957470",
+            "h2h_match_id": "778245",
+            "date": "17 Окт 2026, 17:15",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957461",
+            "h2h_match_id": "778246",
+            "date": "17 Окт 2026, 19:30",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957469",
+            "h2h_match_id": "778247",
+            "date": "17 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957467",
+            "h2h_match_id": "778248",
+            "date": "18 Окт 2026, 15:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957462",
+            "h2h_match_id": "778249",
+            "date": "18 Окт 2026, 17:15",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957466",
+            "h2h_match_id": "778250",
+            "date": "18 Окт 2026, 19:30",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957468",
+            "h2h_match_id": "778251",
+            "date": "18 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957465",
+            "h2h_match_id": "778252",
+            "date": "19 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957437",
+            "h2h_match_id": "778253",
+            "date": "21 Окт 2026, 21:00",
+            "finished": true,
+            "canceled": false
+          }
+        ]
+      },
+      {
+        "round": 10,
+        "index": 9466,
+        "tour": 7594,
+        "cache": {
+          "url": "https://fantasy-h2h.ru/analytics/competition_tour_shedule/9466?ajax=1",
+          "file": "4466702971e0ac1acd2a26df2d1dbed51f20fc78e91851a7cbfce015f8e3367c.json.gz",
+          "fetched_at": "2026-11-04T11:47:04Z",
+          "body_sha256": "e037c400676b22eaf94cd807308948a20c74b28b52f929a099c81a1d86f91a2e"
+        },
+        "rows": [
+          {
+            "sports_match_id": "1957463",
+            "h2h_match_id": "787515",
+            "date": "16 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957464",
+            "h2h_match_id": "787516",
+            "date": "17 Окт 2026, 15:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957470",
+            "h2h_match_id": "787517",
+            "date": "17 Окт 2026, 17:15",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957461",
+            "h2h_match_id": "787518",
+            "date": "17 Окт 2026, 19:30",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957469",
+            "h2h_match_id": "787519",
+            "date": "17 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957467",
+            "h2h_match_id": "787520",
+            "date": "18 Окт 2026, 15:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957462",
+            "h2h_match_id": "787521",
+            "date": "18 Окт 2026, 17:15",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957466",
+            "h2h_match_id": "787522",
+            "date": "18 Окт 2026, 19:30",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957468",
+            "h2h_match_id": "787523",
+            "date": "18 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957465",
+            "h2h_match_id": "787524",
+            "date": "19 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957437",
+            "h2h_match_id": "787525",
+            "date": "21 Окт 2026, 21:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957471",
+            "h2h_match_id": "770364",
+            "date": "23 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957471",
+            "h2h_match_id": "787526",
+            "date": "23 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957477",
+            "h2h_match_id": "770370",
+            "date": "24 Окт 2026, 15:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957477",
+            "h2h_match_id": "787527",
+            "date": "24 Окт 2026, 15:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957476",
+            "h2h_match_id": "787528",
+            "date": "24 Окт 2026, 17:15",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957476",
+            "h2h_match_id": "770369",
+            "date": "24 Окт 2026, 17:15",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957480",
+            "h2h_match_id": "770373",
+            "date": "24 Окт 2026, 19:30",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957480",
+            "h2h_match_id": "787529",
+            "date": "24 Окт 2026, 19:30",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957473",
+            "h2h_match_id": "787530",
+            "date": "24 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957473",
+            "h2h_match_id": "770366",
+            "date": "24 Окт 2026, 22:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957472",
+            "h2h_match_id": "787531",
+            "date": "25 Окт 2026, 16:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957472",
+            "h2h_match_id": "770365",
+            "date": "25 Окт 2026, 16:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957474",
+            "h2h_match_id": "770367",
+            "date": "25 Окт 2026, 18:15",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957474",
+            "h2h_match_id": "787532",
+            "date": "25 Окт 2026, 18:15",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957478",
+            "h2h_match_id": "770371",
+            "date": "25 Окт 2026, 20:30",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957478",
+            "h2h_match_id": "787533",
+            "date": "25 Окт 2026, 20:30",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957475",
+            "h2h_match_id": "770368",
+            "date": "25 Окт 2026, 23:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957475",
+            "h2h_match_id": "787534",
+            "date": "25 Окт 2026, 23:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957479",
+            "h2h_match_id": "770372",
+            "date": "26 Окт 2026, 23:00",
+            "finished": true,
+            "canceled": false
+          },
+          {
+            "sports_match_id": "1957479",
+            "h2h_match_id": "787535",
+            "date": "26 Окт 2026, 23:00",
+            "finished": true,
+            "canceled": false
+          }
+        ]
+      }
+    ]
+  },
+  "diagnostic_exit": 0,
+  "remaining_container": ""
+}

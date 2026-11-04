@@ -1,16 +1,14 @@
 """@spec spec://modules/franchises/FEAT-005-franchise-analytics#freezes"""
 from research import *
 from analyze import num,clean,date_ru
-from sources import fixture_round
+from sources import fixture_round,calendar_fixture_scopes
 import collections
 def main():
  forms=json.loads((ROOT/'franchise-teams.json').read_text('utf-8'));meta=json.loads((ROOT/'leagues.json').read_text('utf-8'));tourmap={r['tour']:(l['slug'],r['round']) for l in meta for r in l['rounds']};states=[];events=[];audit=[];base=[]
- fixtures={};dates=collections.defaultdict(set)
+ fixtures=calendar_fixture_scopes(meta);dates=collections.defaultdict(set)
  for league in meta:
   for rd in league['rounds']:
    scope=(league['slug'],rd['round'])
-   for match in rd['matches']:
-    if match.get('sports_match_id'):fixtures[(league['slug'],str(match['sports_match_id']))]=scope
    if rd['matches']:
     date=(min(date_ru(m['date']) for m in rd['matches'])+datetime.timedelta(hours=3)).strftime('%d.%m.%Y')
     dates[(league['slug'],date)].add(scope)
@@ -59,7 +57,8 @@ def main():
    owncol=next(col for col in s.select('.one_tour_roster td.column') if any(a['href'].rstrip('/').split('/')[-1]==matched[0] for a in col.select('a.uname[href]')))
    other=next(col for col in s.select('.one_tour_roster td.column') if col is not owncol)
    opponents=[num(li.select_one('.score').text) for li in other.select('.roster li') if 'reserve' not in li.get('class',[])]
-   ss=[e for e in states if (e['franchise'],e['slug'],e['round'])==(event['franchise'],event['slug'],event['round'])]
+   # Several H2H duels can share a football round; only this board owns these states.
+   ss=[e for e in states if (e['franchise'],e['slug'],e['round'],e['source'])==(event['franchise'],event['slug'],event['round'],event['source'])]
    byid={e['team']:e for e in ss}
    for li in owncol.select('.roster li'):
     a=li.select_one('a.uname[href]');tid=a['href'].rstrip('/').split('/')[-1] if a else None
