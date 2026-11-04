@@ -1,0 +1,121 @@
+✖ concurrent first attempts share the fresh bucket and admit exactly its limit (246.289ms)
+prisma:error
+Invalid `prisma.telegramInbox.create()` invocation in
+C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\updates-before.tmp.ts:254:32
+
+  251 if (updateId == null || !Number.isFinite(updateId)) return { status: "IGNORED", reply: null };
+  252 const botId = telegramBotId();
+  253 try {
+→ 254   await prisma.telegramInbox.create(
+Unique constraint failed on the fields: (`bot_id`,`update_id`)
+prisma:error
+Invalid `prisma.telegramInbox.create()` invocation in
+C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\updates-before.tmp.ts:254:32
+
+  251 if (updateId == null || !Number.isFinite(updateId)) return { status: "IGNORED", reply: null };
+  252 const botId = telegramBotId();
+  253 try {
+→ 254   await prisma.telegramInbox.create(
+Unique constraint failed on the fields: (`bot_id`,`update_id`)
+prisma:error
+Invalid `prisma.telegramInbox.create()` invocation in
+C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\updates-before.tmp.ts:254:32
+
+  251 if (updateId == null || !Number.isFinite(updateId)) return { status: "IGNORED", reply: null };
+  252 const botId = telegramBotId();
+  253 try {
+→ 254   await prisma.telegramInbox.create(
+Unique constraint failed on the fields: (`bot_id`,`update_id`)
+prisma:error
+Invalid `prisma.telegramInbox.create()` invocation in
+C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\updates-before.tmp.ts:254:32
+
+  251 if (updateId == null || !Number.isFinite(updateId)) return { status: "IGNORED", reply: null };
+  252 const botId = telegramBotId();
+  253 try {
+→ 254   await prisma.telegramInbox.create(
+Unique constraint failed on the fields: (`bot_id`,`update_id`)
+prisma:error
+Invalid `prisma.telegramInbox.create()` invocation in
+C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\updates-before.tmp.ts:254:32
+
+  251 if (updateId == null || !Number.isFinite(updateId)) return { status: "IGNORED", reply: null };
+  252 const botId = telegramBotId();
+  253 try {
+→ 254   await prisma.telegramInbox.create(
+Unique constraint failed on the fields: (`bot_id`,`update_id`)
+prisma:error
+Invalid `prisma.telegramInbox.create()` invocation in
+C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\updates-before.tmp.ts:254:32
+
+  251 if (updateId == null || !Number.isFinite(updateId)) return { status: "IGNORED", reply: null };
+  252 const botId = telegramBotId();
+  253 try {
+→ 254   await prisma.telegramInbox.create(
+Unique constraint failed on the fields: (`bot_id`,`update_id`)
+prisma:error
+Invalid `prisma.telegramInbox.create()` invocation in
+C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\updates-before.tmp.ts:254:32
+
+  251 if (updateId == null || !Number.isFinite(updateId)) return { status: "IGNORED", reply: null };
+  252 const botId = telegramBotId();
+  253 try {
+→ 254   await prisma.telegramInbox.create(
+Unique constraint failed on the fields: (`bot_id`,`update_id`)
+prisma:error
+Invalid `prisma.telegramInbox.create()` invocation in
+C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\updates-before.tmp.ts:254:32
+
+  251 if (updateId == null || !Number.isFinite(updateId)) return { status: "IGNORED", reply: null };
+  252 const botId = telegramBotId();
+  253 try {
+→ 254   await prisma.telegramInbox.create(
+Unique constraint failed on the fields: (`bot_id`,`update_id`)
+✖ one duplicate reclaims a FAILED inbox entry and completed updates remain deduplicated (115.8161ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 954.9345
+
+✖ failing tests:
+
+test at src\server\telegram\rate-limit-before.tmp.db-test.ts:2:1200
+✖ concurrent first attempts share the fresh bucket and admit exactly its limit (246.289ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  3 !== 2
+
+      at TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\rate-limit-before.tmp.db-test.ts:30:12)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\telegram\updates-before.tmp.db-test.ts:2:1315
+✖ one duplicate reclaims a FAILED inbox entry and completed updates remain deduplicated (115.8161ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  0 !== 1
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\updates-before.tmp.db-test.ts:21:14)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\updates-before.tmp.db-test.ts:16:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

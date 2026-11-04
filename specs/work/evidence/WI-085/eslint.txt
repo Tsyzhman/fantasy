@@ -1,0 +1,5 @@
+Targeted ESLint: exit 0, --max-warnings=0.
+Files: deadline-reports/{campaigns,config,build,delivery,publication,scheduler}.ts; deadline-reports/{delivery,publication}.db-test.ts; telegram/{link-service,rate-limit,updates,polling}.ts; telegram/{link-service,rate-limit,updates,polling}.db-test.ts; telegram/polling.test.ts.
+The final updates.ts and polling.db-test.ts changes were rechecked: exit 0.
+git diff --check for src/server/deadline-reports and src/server/telegram: exit 0.
+Normalization/kicked ordering follow-up: updates.ts and polling.db-test.ts rechecked with --max-warnings=0, exit 0; git diff --check, exit 0.

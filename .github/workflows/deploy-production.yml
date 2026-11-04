@@ -1,3 +1,4 @@
+# @spec spec://common/INFRA-006-continuous-deployment#contracts
 name: Deploy Production
 
 on:
@@ -32,16 +33,51 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  resolve-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      commit: ${{ steps.source.outputs.commit }}
+      version_base: ${{ steps.source.outputs.version_base }}
+    steps:
+      - name: Resolve requested source once
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Fetch canonical branch history
+        run: git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+
+      - name: Freeze exact source and canonical version base
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor origin/main HEAD
+          {
+            echo "commit=$(git rev-parse HEAD)"
+            echo "version_base=$(git rev-parse origin/main)"
+          } >> "$GITHUB_OUTPUT"
+
+  validate-source:
+    needs: resolve-source
+    uses: ./.github/workflows/check.yml
+    with:
+      ref: ${{ needs.resolve-source.outputs.commit }}
+      version_base: ${{ needs.resolve-source.outputs.version_base }}
+
   package-and-deploy:
+    needs: [resolve-source, validate-source]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment: production
 
     steps:
-      - name: Checkout exact requested ref
+      - name: Checkout validated immutable revision
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ needs.resolve-source.outputs.commit }}
           fetch-depth: 0
 
       - name: Fetch canonical branch history
@@ -63,29 +99,12 @@ jobs:
         run: npm run prisma:generate
 
       - name: Verify committed release source
-        run: npm run release:verify-source -- --ci
+        env:
+          EXPECTED_COMMIT: ${{ needs.resolve-source.outputs.commit }}
+        run: npm run release:verify-source -- --ci --expected-commit "$EXPECTED_COMMIT"
 
       - name: Verify release version against canonical branch
         run: npm run release:verify-version -- --base origin/main
-
-      - name: Run checks before packaging
-        run: npm run test && npm run lint && npm run typecheck
-
-      - name: Verify browser-free KHL HTTP transport
-        run: python3 scripts/khl-protocol-http.test.py
-
-      - name: Verify franchise database adapter and xFO formula
-        run: |
-          python3 -m pip install beautifulsoup4==4.14.3
-          python3 -m unittest discover -s scripts/franchise-analytics -p 'test_*.py'
-
-      # @spec spec://common/INFRA-006-continuous-deployment#acceptance
-      - name: Verify continuous deployment and rollback
-        run: |
-          python3 scripts/continuous-deployment.test.py
-          python3 scripts/configure-production-amneziawg.test.py
-          python3 scripts/resolve-ci-image-identities.test.py
-          node --test scripts/strip-server-action-key.test.mjs
 
       - name: Package exact Git commit
         id: release
@@ -136,8 +155,13 @@ jobs:
           done
           runtime_id="$(docker image inspect "fantasy-scout-ci:${COMMIT}-runtime" --format '{{.Id}}')"
           setup_id="$(docker image inspect "fantasy-scout-ci:${COMMIT}-setup" --format '{{.Id}}')"
+          for image_id in "$runtime_id" "$setup_id"; do
+            docker run --rm --network none --entrypoint node "$image_id" \
+              -e 'if(process.version!=="v"+process.argv[1])process.exit(1);console.log(JSON.stringify({node:process.version,uid:process.getuid()}))' \
+              "$(cat .nvmrc)"
+          done
           docker run --rm --network none --entrypoint node "$runtime_id" \
-            -e 'if(process.getuid()===0||!process.version.startsWith("v24."))process.exit(1);console.log(JSON.stringify({node:process.version,uid:process.getuid()}))'
+            -e 'if(process.getuid()===0)process.exit(1)'
           images_archive="$RUNNER_TEMP/fantasy-scout-images-${RELEASE}.tar.gz"
           docker save "fantasy-scout-ci:${COMMIT}-runtime" "fantasy-scout-ci:${COMMIT}-setup" | gzip -1 > "$images_archive"
           images_sha="$(sha256sum "$images_archive" | awk '{print $1}')"
@@ -200,22 +224,15 @@ jobs:
             echo "remote_path=/tmp/$(basename "$path")"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Prepare SSH key
+      # @spec spec://common/INFRA-006-continuous-deployment#contracts
+      - name: Prepare pinned SSH identity
         if: inputs.dry_run == 'false'
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-        run: |
-          set -euo pipefail
-          : "${DEPLOY_SSH_KEY:?DEPLOY_SSH_KEY secret is required}"
-          : "${DEPLOY_HOST:?DEPLOY_HOST secret is required}"
-          DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: python3 -B scripts/prepare-deploy-ssh.py
 
       - name: Transfer VPN configuration over SSH
         if: inputs.dry_run == 'false' && inputs.configure_fpl_vpn == 'true'
@@ -229,7 +246,7 @@ jobs:
           set -euo pipefail
           : "${DEPLOY_USER:?DEPLOY_USER secret is required}"
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
+          scp -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
             "$LOCAL_CONFIG" "$DEPLOY_USER@$DEPLOY_HOST:$REMOTE_CONFIG"
 
       - name: Promote verified AmneziaWG network namespace
@@ -243,7 +260,7 @@ jobs:
         run: |
           set -euo pipefail
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
+          ssh -F ~/.ssh/deploy_config -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
             -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
             "AMNEZIAWG_ALLOW_BOOTSTRAP=1 timeout --signal=TERM --kill-after=30s 5m bash -s -- '$REMOTE_CONFIG' '$CONFIG_SHA256'" \
             < scripts/configure-production-amneziawg.sh
@@ -263,7 +280,7 @@ jobs:
         run: |
           set -euo pipefail
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+          ssh -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
             "docker exec fantasy-scout-web node -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
 
       - name: Reject production history rollback
@@ -278,7 +295,7 @@ jobs:
           : "${DEPLOY_USER:?DEPLOY_USER secret is required}"
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
           current_commit="$(
-            ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            ssh -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
               "test -f /var/www/fantasy-scout-current/.release-commit && cat /var/www/fantasy-scout-current/.release-commit || true"
           )"
           if [[ "$current_commit" =~ ^[0-9a-f]{40}$ ]]; then
@@ -300,10 +317,10 @@ jobs:
         run: |
           set -euo pipefail
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
+          scp -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
             "$LOCAL_ARCHIVE" \
             "$DEPLOY_USER@$DEPLOY_HOST:/tmp/fantasy-scout-release-${RELEASE}.tar.gz"
-          scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
+          scp -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
             "$IMAGES_ARCHIVE" \
             "$DEPLOY_USER@$DEPLOY_HOST:/tmp/fantasy-scout-images-${RELEASE}.tar.gz"
 
@@ -325,7 +342,7 @@ jobs:
           set -euo pipefail
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
           remote_archive="/tmp/fantasy-scout-release-${RELEASE}.tar.gz"
-          ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
+          ssh -F ~/.ssh/deploy_config -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
             -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
             "bash -s -- '$remote_archive' '$RELEASE_CHECKSUM' '$RELEASE' '$RELEASE_COMMIT' '$RELEASE_TREE' '$RELEASE_VERSION' '/tmp/fantasy-scout-images-${RELEASE}.tar.gz' '$IMAGES_SHA256' '$RUNTIME_IMAGE_ID' '$SETUP_IMAGE_ID'" \
             < scripts/deploy-production-docker.sh
@@ -340,5 +357,9 @@ jobs:
         run: |
           set -euo pipefail
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+          ssh -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
             "docker exec fantasy-scout-web node -e \"fetch('http://127.0.0.1:3000/api/health').then(async r=>{const p=await r.json();console.log(JSON.stringify(p));process.exit(r.ok&&p.release?.commit===process.argv[1]?0:1)}).catch(()=>process.exit(1))\" '$RELEASE_COMMIT'"
+
+      - name: Remove runner SSH material
+        if: always()
+        run: rm -f -- ~/.ssh/deploy_key ~/.ssh/deploy_known_hosts ~/.ssh/deploy_config

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import {
   TELEGRAM_CODE_GRACE_MS,
   TELEGRAM_CODE_SLOT_MS,
@@ -98,6 +98,20 @@ export interface TelegramSubscriptionInput {
 }
 
 const SOURCE_PREFERENCES = new Set(["SPORTS_PUBLISHED", "SITE_SAVED"]);
+
+/** @spec spec://modules/telegram/INFRA-005-deadline-pipeline#data */
+async function lockTelegramLink(tx: Prisma.TransactionClient, userId: string): Promise<void> {
+  await tx.$queryRaw`SELECT "id" FROM "telegram_links" WHERE "user_id" = ${userId} FOR UPDATE`;
+}
+
+async function cancelPendingOutbox(tx: Prisma.TransactionClient, userId: string, contestIds?: string[]): Promise<void> {
+  await tx.telegramOutbox.updateMany({
+    where: { userId, state: { in: ["PENDING", "FAILED", "STALE"] }, ...(contestIds ? { campaign: { contestId: { notIn: contestIds } } } : {}) },
+    // SENDING may already be in flight. Its worker rechecks consent, or recovery
+    // preserves DELIVERY_UNKNOWN; revocation must not erase that uncertainty.
+    data: { state: "CANCELLED", leaseToken: null, leaseUntil: null }
+  });
+}
 
 function maskTelegramUserId(value: string): string {
   const tail = value.slice(-4);
@@ -323,33 +337,49 @@ export async function confirmTelegramLink(
   });
 }
 
+/** @spec spec://modules/telegram/FEAT-007-deadline-assistant#data */
 export async function setTelegramLinkPaused(
   prisma: PrismaClient,
   input: { userId: string; paused: boolean }
 ): Promise<{ status: "PAUSED" | "ACTIVE" | "BLOCKED" | "NOT_LINKED" }> {
-  const link = await prisma.telegramLink.findUnique({ where: { userId: input.userId } });
-  if (!link || link.state === "REVOKED" || link.state === "PENDING") return { status: "NOT_LINKED" };
-  if (link.state === "BLOCKED") return { status: "BLOCKED" };
-  const state = input.paused ? "PAUSED" : "ACTIVE";
-  await prisma.telegramLink.update({ where: { id: link.id }, data: { state } });
-  return { status: state };
+  return prisma.$transaction(async (tx) => {
+    await lockTelegramLink(tx, input.userId);
+    const link = await tx.telegramLink.findUnique({ where: { userId: input.userId } });
+    if (!link || link.state === "REVOKED" || link.state === "PENDING") return { status: "NOT_LINKED" };
+    if (link.state === "BLOCKED") return { status: "BLOCKED" };
+    const state = input.paused ? "PAUSED" : "ACTIVE";
+    await tx.telegramLink.update({ where: { id: link.id }, data: { state,
+      ...(input.paused && link.state !== "PAUSED" ? { linkVersion: { increment: 1 } } : {}) } });
+    if (input.paused) await cancelPendingOutbox(tx, input.userId);
+    return { status: state };
+  });
 }
 
+/** @spec spec://modules/telegram/FEAT-007-deadline-assistant#data */
 export async function unlinkTelegram(prisma: PrismaClient, userId: string): Promise<void> {
   await prisma.$transaction(async (tx) => {
+    await lockTelegramLink(tx, userId);
     const link = await tx.telegramLink.findUnique({ where: { userId } });
     if (!link) return;
-    await tx.telegramLink.update({ where: { id: link.id }, data: { state: "REVOKED", pendingExpiresAt: null } });
+    await tx.telegramLink.update({ where: { id: link.id }, data: { state: "REVOKED", pendingExpiresAt: null, linkVersion: { increment: 1 } } });
     await tx.telegramSubscription.deleteMany({ where: { linkId: link.id } });
-    await tx.telegramOutbox.updateMany({ where: { userId, state: { in: ["PENDING", "SENDING"] } }, data: { state: "CANCELLED" } });
+    await cancelPendingOutbox(tx, userId);
     await tx.telegramLinkSession.updateMany({ where: { userId, state: { in: ["OPEN", "PENDING"] } }, data: { state: "CANCELLED" } });
   });
 }
 
+/** @spec spec://modules/telegram/INFRA-005-deadline-pipeline#delivery */
 export async function markTelegramBlocked(prisma: PrismaClient, telegramUserId: string): Promise<void> {
-  await prisma.telegramLink.updateMany({
-    where: { telegramUserId, state: { in: ["ACTIVE", "PAUSED"] } },
-    data: { state: "BLOCKED" }
+  await prisma.$transaction(async (tx) => {
+    const links = await tx.$queryRaw<Array<{ userId: string }>>`
+      SELECT "user_id" AS "userId" FROM "telegram_links" WHERE "telegram_user_id" = ${telegramUserId} FOR UPDATE
+    `;
+    if (!links[0]) return;
+    await tx.telegramLink.updateMany({
+      where: { telegramUserId, state: { in: ["ACTIVE", "PAUSED"] } },
+      data: { state: "BLOCKED", linkVersion: { increment: 1 } }
+    });
+    await cancelPendingOutbox(tx, links[0].userId);
   });
 }
 
@@ -364,6 +394,7 @@ export async function expireTelegramLinkArtifacts(prisma: PrismaClient, now = ne
   await prisma.telegramLinkChallenge.deleteMany({ where: { consumedAt: { lt: challengeCutoff } } });
 }
 
+/** @spec spec://modules/telegram/FEAT-007-deadline-assistant#data */
 export async function replaceTelegramSubscriptions(
   prisma: PrismaClient,
   input: { userId: string; subscriptions: TelegramSubscriptionInput[] }
@@ -414,6 +445,11 @@ export async function replaceTelegramSubscriptions(
   }
 
   await prisma.$transaction(async (tx) => {
+    await lockTelegramLink(tx, input.userId);
+    const currentLink = await tx.telegramLink.findUnique({ where: { userId: input.userId } });
+    if (!currentLink || currentLink.id !== link.id || !["ACTIVE", "PAUSED"].includes(currentLink.state)) {
+      throw new TelegramLinkError("TELEGRAM_NOT_LINKED", "Link Telegram before choosing tournaments.", 409);
+    }
     for (const subscription of normalized) {
       await tx.telegramSubscription.upsert({
         where: { userId_contestId: { userId: input.userId, contestId: subscription.contestId } },
@@ -428,6 +464,7 @@ export async function replaceTelegramSubscriptions(
     }
     const keep = normalized.map((subscription) => subscription.contestId);
     await tx.telegramSubscription.deleteMany({ where: { userId: input.userId, contestId: { notIn: keep } } });
+    await cancelPendingOutbox(tx, input.userId, normalized.filter((subscription) => subscription.enabled).map((subscription) => subscription.contestId));
   });
 
   const subscriptions = await prisma.telegramSubscription.findMany({ where: { userId: input.userId }, orderBy: { contestId: "asc" } });

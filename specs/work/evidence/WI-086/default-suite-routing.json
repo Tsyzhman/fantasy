@@ -1,0 +1,6 @@
+{
+  "config": "playwright.config.ts",
+  "exitCode": 0,
+  "isolatedFixtureMatches": 0,
+  "summary": "Total: 49 tests in 8 files"
+}

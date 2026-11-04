@@ -27,6 +27,7 @@ import { createPortal } from "react-dom";
 
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
+import { isVisibleFocusTarget, useModalFocus } from "@/components/use-modal-focus";
 import {
   fantasyAlternativeRoundPointsWithActiveChip,
   fantasyRoundPointsWithActiveChip,
@@ -1321,7 +1322,12 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
       `Choose a replacement for ${player.name}. The change is applied in one step.`,
       `Выберите замену для ${player.name}. Изменение применится одним действием.`
     ));
-    window.requestAnimationFrame(() => playerPoolSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    window.requestAnimationFrame(() => {
+      const section = playerPoolSectionRef.current;
+      section?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const search = section?.querySelector<HTMLInputElement>(`input[aria-label="${localizedText(language, "Search by player name", "Поиск по имени игрока")}"]`) ?? null;
+      (isVisibleFocusTarget(search) ? search : section)?.focus({ preventScroll: true });
+    });
   }
 
   function cancelPoolReplacement() {
@@ -2448,7 +2454,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
             </div>
           </div>
 
-          <div ref={playerPoolSectionRef} className={cn(mobileTab === "pool" ? "block" : "hidden xl:block", "min-w-0 scroll-mt-28")}>
+          <div ref={playerPoolSectionRef} tabIndex={-1} className={cn(mobileTab === "pool" ? "block" : "hidden xl:block", "min-w-0 scroll-mt-28")}>
             {poolReplacementSource ? (
               <div className="mb-3 rounded border border-sky-300 bg-sky-50 p-3" role="status" data-testid="pool-replacement-banner">
                 <div className="flex items-center justify-between gap-3">
@@ -2904,6 +2910,7 @@ function readDraggedPlayerId(event: DragEvent<HTMLElement>) {
   return event.dataTransfer.getData(squadDragDataType) || event.dataTransfer.getData("text/plain") || null;
 }
 
+/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
 function SquadTouchRoster({
   summary,
   selectionsByPlayerId,
@@ -2934,6 +2941,10 @@ function SquadTouchRoster({
   onStartPoolReplacement: (playerId: string) => void;
 }) {
   const [actionPlayerId, setActionPlayerId] = useState<string | null>(null);
+  const rosterRef = useRef<HTMLDivElement>(null);
+  const actionTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const lineupReplacementRef = useRef<HTMLElement>(null);
+  const focusDestinationRef = useRef<"trigger" | "pool" | "lineup">("trigger");
   const allPlayers = [...summary.starterPlayers, ...summary.benchPlayers];
   const playersById = new Map(allPlayers.map((player) => [player.playerId, player]));
   const actionPlayer = actionPlayerId ? playersById.get(actionPlayerId) ?? null : null;
@@ -2959,19 +2970,22 @@ function SquadTouchRoster({
     return (selectionsByPlayerId.get(left.playerId)?.slotIndex ?? 0) - (selectionsByPlayerId.get(right.playerId)?.slotIndex ?? 0);
   });
 
-  useEffect(() => {
-    if (!actionPlayerId) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setActionPlayerId(null);
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [actionPlayerId]);
+  const dialogRef = useModalFocus({
+    open: Boolean(actionPlayer && actionSelection),
+    onClose: () => setActionPlayerId(null),
+    returnFocus: () => {
+      if (focusDestinationRef.current === "pool") return null;
+      if (focusDestinationRef.current === "lineup" && lineupReplacementRef.current) return lineupReplacementRef.current;
+      if (isVisibleFocusTarget(actionTriggerRef.current)) return actionTriggerRef.current;
+      return rosterRef.current?.querySelector<HTMLButtonElement>("button[aria-haspopup='dialog']") ?? rosterRef.current;
+    }
+  });
+
+  function openActions(playerId: string, trigger: HTMLButtonElement) {
+    actionTriggerRef.current = trigger;
+    focusDestinationRef.current = "trigger";
+    setActionPlayerId(playerId);
+  }
 
   const actionSheet = actionPlayer && actionSelection && typeof document !== "undefined"
     ? createPortal(
@@ -2979,6 +2993,8 @@ function SquadTouchRoster({
           if (event.target === event.currentTarget) setActionPlayerId(null);
         }}>
           <div
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="touch-player-actions-title"
@@ -2991,19 +3007,19 @@ function SquadTouchRoster({
                 <h4 id="touch-player-actions-title" className="truncate text-base font-bold text-ink">{actionPlayer.name}</h4>
                 <p className="truncate text-sm text-slate-500">{fantasyPlayerTeamDisplayName(actionPlayer)} · {actionPlayer.positionGroup}</p>
               </div>
-              <button type="button" autoFocus onClick={() => setActionPlayerId(null)} aria-label={localizedText(language, "Close player actions", "Закрыть действия игрока")} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700">
+              <button type="button" onClick={() => setActionPlayerId(null)} aria-label={localizedText(language, "Close player actions", "Закрыть действия игрока")} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="mt-3 grid gap-2">
-              <button type="button" onClick={() => { setActionPlayerId(null); onStartPoolReplacement(actionPlayer.playerId); }} className="inline-flex min-h-14 items-center gap-3 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-left text-sm font-bold text-emerald-800">
+              <button type="button" onClick={() => { focusDestinationRef.current = "pool"; setActionPlayerId(null); onStartPoolReplacement(actionPlayer.playerId); }} className="inline-flex min-h-14 items-center gap-3 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-left text-sm font-bold text-emerald-800">
                 <Search className="h-5 w-5 shrink-0" />
                 <span>
                   <span className="block"><I18nText en="Find a replacement" ru="Найти замену" /></span>
                   <span className="mt-0.5 block text-xs font-normal"><I18nText en="Pick from the pool and replace in one step" ru="Выбрать из пула и заменить одним действием" /></span>
                 </span>
               </button>
-              <button type="button" onClick={() => { setActionPlayerId(null); onStartLineupReplacement(actionPlayer.playerId); }} className="inline-flex min-h-14 items-center gap-3 rounded border border-sky-200 bg-sky-50 px-4 py-3 text-left text-sm font-bold text-sky-800">
+              <button type="button" onClick={() => { focusDestinationRef.current = "lineup"; setActionPlayerId(null); onStartLineupReplacement(actionPlayer.playerId); }} className="inline-flex min-h-14 items-center gap-3 rounded border border-sky-200 bg-sky-50 px-4 py-3 text-left text-sm font-bold text-sky-800">
                 <ArrowLeftRight className="h-5 w-5 shrink-0" />
                 <span>
                   <span className="block"><I18nText en="Swap XI / bench" ru="Поменять основу / запас" /></span>
@@ -3032,9 +3048,9 @@ function SquadTouchRoster({
     : null;
 
   return (
-    <div className="space-y-3" data-testid="squad-touch-roster">
+    <div ref={rosterRef} tabIndex={-1} className="space-y-3" data-testid="squad-touch-roster">
       {replacementMode && replacementSource ? (
-        <section className="rounded border-2 border-sky-400 bg-sky-50 p-3" aria-labelledby="lineup-replacement-title" data-testid="lineup-replacement-panel">
+        <section ref={lineupReplacementRef} tabIndex={-1} className="rounded border-2 border-sky-400 bg-sky-50 p-3" aria-labelledby="lineup-replacement-title" data-testid="lineup-replacement-panel">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p id="lineup-replacement-title" className="text-xs font-semibold uppercase tracking-wide text-sky-700"><I18nText en="Choose the second player" ru="Выберите второго игрока" /></p>
@@ -3063,7 +3079,7 @@ function SquadTouchRoster({
           horizon={horizon}
           language={language}
           tone="starter"
-          onActions={setActionPlayerId}
+          onActions={openActions}
         />
         <TouchSquadGroup
           title={<I18nText en="Bench" ru="Запас" />}
@@ -3072,7 +3088,7 @@ function SquadTouchRoster({
           horizon={horizon}
           language={language}
           tone="bench"
-          onActions={setActionPlayerId}
+          onActions={openActions}
         />
       </div>
       {actionSheet}
@@ -3087,7 +3103,7 @@ function TouchSquadGroup({ title, players, selectionsByPlayerId, horizon, langua
   horizon: number;
   language: UiLanguage;
   tone: "starter" | "bench";
-  onActions: (playerId: string) => void;
+  onActions: (playerId: string, trigger: HTMLButtonElement) => void;
 }) {
   return (
     <section className={cn("overflow-hidden rounded border", tone === "starter" ? "border-emerald-200 bg-emerald-50/50" : "border-slate-200 bg-slate-50")}>
@@ -3114,7 +3130,7 @@ function TouchSquadGroup({ title, players, selectionsByPlayerId, horizon, langua
                   <div><dt className="inline text-slate-500">{horizon}R </dt><dd className="inline font-bold text-sky-700 num-tabular">{formatScore(playerHorizonPoints(player, horizon))}</dd></div>
                 </dl>
               </div>
-              <button type="button" onClick={() => onActions(player.playerId)} aria-haspopup="dialog" aria-label={localizedText(language, `Actions for ${player.name}`, `Действия для ${player.name}`)} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-1.5 rounded border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 shadow-sm">
+              <button type="button" onClick={(event) => onActions(player.playerId, event.currentTarget)} aria-haspopup="dialog" aria-label={localizedText(language, `Actions for ${player.name}`, `Действия для ${player.name}`)} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-1.5 rounded border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 shadow-sm">
                 <MoreHorizontal className="h-4 w-4" />
                 <I18nText en="Actions" ru="Действия" />
               </button>

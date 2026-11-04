@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-04",
+  "fixtureNodeProcessesRemaining": [],
+  "playwrightEdgeProfileProcessesRemaining": [],
+  "removedDuplicateLogs": [
+    {
+      "name": "browser-mobile-first.txt",
+      "bytes": 1440
+    },
+    {
+      "name": "browser-before.txt",
+      "bytes": 671
+    }
+  ],
+  "browserEvidenceFiles": 22,
+  "browserEvidenceBytes": 976095.0,
+  "taskOutputCacheBytes": 45.0,
+  "cleanupScope": "Only named duplicate WI-086 intermediate logs; all application data, dependencies and other agent outputs preserved"
+}

@@ -1,0 +1,2249 @@
+[
+  {
+    "franchise": 433,
+    "slug": "championship_2026",
+    "form_url": "https://fantasy-h2h.ru/form/view/h2h_tournament_franchise/15878",
+    "columns": [
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 1\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514384\">1.1</a>\n</td>",
+        "tour_ids": [
+          "7477"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 2\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514388\">1.2</a>\n</td>",
+        "tour_ids": [
+          "7484"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_tie\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 3\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514400\">1.3</a>\n</td>",
+        "tour_ids": [
+          "7494"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 4\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514413\">1.4</a>\n</td>",
+        "tour_ids": [
+          "7506"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_lose\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 5\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514428\">1.5</a>\n</td>",
+        "tour_ids": [
+          "7517"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 6\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514434\">1.6</a>\n</td>",
+        "tour_ids": [
+          "7520"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 7\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514447\">1.7</a>\n</td>",
+        "tour_ids": [
+          "7527"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 8\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514467\">1.8</a>\n</td>",
+        "tour_ids": [
+          "7542"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_lose\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 9\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514471\">1.9</a>\n</td>",
+        "tour_ids": [
+          "7559"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 10\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514484\">1.10</a>\n</td>",
+        "tour_ids": [
+          "7579"
+        ],
+        "sample": {
+          "origin": "live-read-only",
+          "dates": [
+            "16.10.2026"
+          ],
+          "fixture_links": [
+            "https://sports.ru/football/match/1952962/",
+            "https://sports.ru/football/match/1953020/",
+            "https://sports.ru/football/match/1953021/",
+            "https://sports.ru/football/match/1953022/",
+            "https://sports.ru/football/match/1953023/",
+            "https://sports.ru/football/match/1953024/",
+            "https://sports.ru/football/match/1953025/",
+            "https://sports.ru/football/match/1953026/",
+            "https://sports.ru/football/match/1953027/",
+            "https://sports.ru/football/match/1953028/",
+            "https://sports.ru/football/match/1953029/",
+            "https://sports.ru/football/match/1953030/"
+          ]
+        }
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 11\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514499\">1.11</a>\n</td>",
+        "tour_ids": [
+          "7579"
+        ],
+        "sample": {
+          "origin": "live-read-only",
+          "dates": [
+            "16.10.2026"
+          ],
+          "fixture_links": [
+            "https://sports.ru/football/match/1952962/",
+            "https://sports.ru/football/match/1953020/",
+            "https://sports.ru/football/match/1953021/",
+            "https://sports.ru/football/match/1953022/",
+            "https://sports.ru/football/match/1953023/",
+            "https://sports.ru/football/match/1953024/",
+            "https://sports.ru/football/match/1953025/",
+            "https://sports.ru/football/match/1953026/",
+            "https://sports.ru/football/match/1953027/",
+            "https://sports.ru/football/match/1953028/",
+            "https://sports.ru/football/match/1953029/"
+          ]
+        }
+      },
+      {
+        "header": "<td class=\"small field_result_lose\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 12\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514513\">1.12</a>\n</td>",
+        "tour_ids": [
+          "7593"
+        ],
+        "sample": {
+          "origin": "live-read-only",
+          "dates": [
+            "23.10.2026"
+          ],
+          "fixture_links": [
+            "https://sports.ru/football/match/1953031/",
+            "https://sports.ru/football/match/1953032/",
+            "https://sports.ru/football/match/1953033/",
+            "https://sports.ru/football/match/1953034/",
+            "https://sports.ru/football/match/1953035/",
+            "https://sports.ru/football/match/1953036/",
+            "https://sports.ru/football/match/1953037/",
+            "https://sports.ru/football/match/1953038/",
+            "https://sports.ru/football/match/1953039/",
+            "https://sports.ru/football/match/1953040/",
+            "https://sports.ru/football/match/1953041/",
+            "https://sports.ru/football/match/1953042/"
+          ]
+        }
+      }
+    ],
+    "row_vectors": [
+      [
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "6"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "5"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "6"
+        },
+        {
+          "tour_ids": [
+            "7520"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming",
+            "exchange"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        }
+      ],
+      [
+        {
+          "tour_ids": [
+            "7477"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [
+            "7484"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "5"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [
+            "7520"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming",
+            "exchange"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [
+            "7527"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [
+            "7542"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        }
+      ],
+      [
+        {
+          "tour_ids": [
+            "7477"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        }
+      ]
+    ],
+    "board_metadata": [
+      {
+        "url": "https://fantasy-h2h.ru/h2h/team_match_data/514513?ajax=1",
+        "title": "Р›Р°РІР°РЅРґР° 2 - 2 РЇВ·РљВ·РЈВ·Р”В·Р—В·Рђ, 23.10.2026",
+        "date_text": [],
+        "tour_ids": [],
+        "fixture_links": [],
+        "column_count": 2
+      }
+    ],
+    "missing_row_shapes": [
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [],
+          [],
+          [],
+          [],
+          [
+            "7520"
+          ],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          "3",
+          "6",
+          "5",
+          "4",
+          "6",
+          null,
+          "1",
+          "2",
+          "2",
+          "1",
+          "1",
+          "1"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [
+            "7477"
+          ],
+          [
+            "7484"
+          ],
+          [],
+          [],
+          [],
+          [
+            "7520"
+          ],
+          [
+            "7527"
+          ],
+          [
+            "7542"
+          ],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          null,
+          null,
+          "2",
+          "5",
+          "4",
+          null,
+          null,
+          null,
+          "4",
+          "4",
+          "4",
+          "2"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [
+            "7477"
+          ],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          null,
+          "3",
+          "4",
+          "2",
+          "2",
+          "1",
+          "3",
+          "3",
+          "3",
+          "2",
+          "2",
+          "3"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [
+            "7477"
+          ],
+          [
+            "7484"
+          ],
+          [
+            "7494"
+          ],
+          [
+            "7506"
+          ],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          null,
+          null,
+          null,
+          null,
+          "5",
+          "4",
+          "2",
+          "1",
+          "1",
+          "3",
+          "3",
+          "4"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [],
+          [],
+          [],
+          [
+            "7517"
+          ],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          "1",
+          "2",
+          "3",
+          "6",
+          null,
+          "6",
+          "4",
+          "4",
+          "6",
+          "5",
+          "5",
+          "5"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [
+            "7527"
+          ],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          "4",
+          "5",
+          "1",
+          "1",
+          "3",
+          "3",
+          null,
+          "5",
+          "5",
+          "6",
+          "6",
+          "6"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [
+            "7477"
+          ],
+          [],
+          [
+            "7494"
+          ],
+          [],
+          [],
+          [],
+          [
+            "7527"
+          ],
+          [],
+          [
+            "7559"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7593"
+          ]
+        ],
+        "game_numbers": [
+          null,
+          "1",
+          null,
+          "3",
+          "1",
+          "2",
+          null,
+          "6",
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [],
+          [],
+          [
+            "7506"
+          ],
+          [
+            "7517"
+          ],
+          [],
+          [],
+          [
+            "7542"
+          ],
+          [
+            "7559"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7593"
+          ]
+        ],
+        "game_numbers": [
+          "5",
+          "4",
+          "6",
+          null,
+          null,
+          "5",
+          "5",
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [
+            "7484"
+          ],
+          [
+            "7494"
+          ],
+          [
+            "7506"
+          ],
+          [
+            "7517"
+          ],
+          [
+            "7520"
+          ],
+          [],
+          [
+            "7542"
+          ],
+          [
+            "7559"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7593"
+          ]
+        ],
+        "game_numbers": [
+          "6",
+          null,
+          null,
+          null,
+          null,
+          null,
+          "6",
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [
+            "7477"
+          ],
+          [
+            "7484"
+          ],
+          [
+            "7494"
+          ],
+          [
+            "7506"
+          ],
+          [
+            "7517"
+          ],
+          [
+            "7520"
+          ],
+          [
+            "7527"
+          ],
+          [
+            "7542"
+          ],
+          [
+            "7559"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7593"
+          ]
+        ],
+        "game_numbers": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [
+            "7484"
+          ],
+          [
+            "7494"
+          ],
+          [
+            "7506"
+          ],
+          [
+            "7517"
+          ],
+          [
+            "7520"
+          ],
+          [
+            "7527"
+          ],
+          [
+            "7542"
+          ],
+          [
+            "7559"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7593"
+          ]
+        ],
+        "game_numbers": [
+          "2",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ]
+  },
+  {
+    "franchise": 433,
+    "slug": "ucl_2026",
+    "form_url": "https://fantasy-h2h.ru/form/view/h2h_tournament_franchise/16630",
+    "columns": [
+      {
+        "header": "<td class=\"small field_result_win\" title=\"Р“СЂСѓРїРїРѕРІРѕР№ СЌС‚Р°Рї, С‚СѓСЂ 1\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/537992\">1.1</a>\n</td>",
+        "tour_ids": [
+          "7519"
+        ],
+        "sample": {
+          "origin": "live-read-only",
+          "dates": [
+            "08.09.2026"
+          ],
+          "fixture_links": [
+            "https://m.sports.ru/football/match/aek-athens-vs-lask/",
+            "https://m.sports.ru/football/match/atletico-vs-liverpool/",
+            "https://m.sports.ru/football/match/barcelona-vs-feyenoord/",
+            "https://m.sports.ru/football/match/bayern-vs-bodo-glimt/",
+            "https://m.sports.ru/football/match/lens-vs-slavia-prague/",
+            "https://m.sports.ru/football/match/mu-vs-sabah-fk/",
+            "https://m.sports.ru/football/match/psg-vs-slovan-bratislava/",
+            "https://m.sports.ru/football/match/psv-vs-shakhtar/",
+            "https://m.sports.ru/football/match/stuttgart-vs-viking-fotballklubb/",
+            "https://sports.ru/football/match/1989334",
+            "https://sports.ru/football/match/1989340",
+            "https://sports.ru/football/match/1989341",
+            "https://sports.ru/football/match/1989343",
+            "https://sports.ru/football/match/1989345",
+            "https://sports.ru/football/match/1989346",
+            "https://sports.ru/football/match/1989348",
+            "https://sports.ru/football/match/1989349",
+            "https://sports.ru/football/match/1989351"
+          ]
+        }
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"Р“СЂСѓРїРїРѕРІРѕР№ СЌС‚Р°Рї, С‚СѓСЂ 2\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/538032\">1.2</a>\n</td>",
+        "tour_ids": [
+          "7585"
+        ],
+        "sample": {
+          "origin": "live-read-only",
+          "dates": [
+            "20.10.2026"
+          ],
+          "fixture_links": [
+            "https://m.sports.ru/football/match/aek-athens-vs-manchester-city/",
+            "https://m.sports.ru/football/match/arsenal-vs-bayern/",
+            "https://m.sports.ru/football/match/aston-villa-vs-viking-fotballklubb/",
+            "https://m.sports.ru/football/match/atletico-vs-stuttgart/",
+            "https://m.sports.ru/football/match/barcelona-vs-psg/",
+            "https://m.sports.ru/football/match/borussia-vs-sabah-fk/",
+            "https://m.sports.ru/football/match/brugge-fc-vs-lens/",
+            "https://m.sports.ru/football/match/calcio-como-vs-mu/",
+            "https://m.sports.ru/football/match/inter-vs-shakhtar/",
+            "https://m.sports.ru/football/match/lask-vs-sporting/",
+            "https://m.sports.ru/football/match/rb-leipzig-vs-real/",
+            "https://m.sports.ru/football/match/roma-vs-slovan-bratislava/",
+            "https://sports.ru/football/match/1989370",
+            "https://sports.ru/football/match/1989372",
+            "https://sports.ru/football/match/1989373",
+            "https://sports.ru/football/match/1989375",
+            "https://sports.ru/football/match/1989376",
+            "https://sports.ru/football/match/1989380",
+            "https://sports.ru/football/match/1989381",
+            "https://sports.ru/football/match/1989382",
+            "https://sports.ru/football/match/1989383",
+            "https://sports.ru/football/match/1989385",
+            "https://sports.ru/football/match/1989386",
+            "https://sports.ru/football/match/1989387"
+          ]
+        }
+      },
+      {
+        "header": "<td class=\"small field_result_tie\" title=\"Р“СЂСѓРїРїРѕРІРѕР№ СЌС‚Р°Рї, С‚СѓСЂ 3\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/538072\">1.3</a>\n</td>",
+        "tour_ids": [
+          "7585"
+        ],
+        "sample": {
+          "origin": "live-read-only",
+          "dates": [
+            "20.10.2026"
+          ],
+          "fixture_links": [
+            "https://m.sports.ru/football/match/aek-athens-vs-manchester-city/",
+            "https://m.sports.ru/football/match/arsenal-vs-bayern/",
+            "https://m.sports.ru/football/match/atletico-vs-stuttgart/",
+            "https://m.sports.ru/football/match/barcelona-vs-psg/",
+            "https://m.sports.ru/football/match/bodo-glimt-vs-napoli/",
+            "https://m.sports.ru/football/match/borussia-vs-sabah-fk/",
+            "https://m.sports.ru/football/match/brugge-fc-vs-lens/",
+            "https://m.sports.ru/football/match/inter-vs-shakhtar/",
+            "https://m.sports.ru/football/match/lask-vs-sporting/",
+            "https://m.sports.ru/football/match/rb-leipzig-vs-real/",
+            "https://m.sports.ru/football/match/roma-vs-slovan-bratislava/",
+            "https://sports.ru/football/match/1989370",
+            "https://sports.ru/football/match/1989372",
+            "https://sports.ru/football/match/1989373",
+            "https://sports.ru/football/match/1989374",
+            "https://sports.ru/football/match/1989375",
+            "https://sports.ru/football/match/1989376",
+            "https://sports.ru/football/match/1989381",
+            "https://sports.ru/football/match/1989383",
+            "https://sports.ru/football/match/1989385",
+            "https://sports.ru/football/match/1989386",
+            "https://sports.ru/football/match/1989387"
+          ]
+        }
+      }
+    ],
+    "row_vectors": [
+      [
+        {
+          "tour_ids": [
+            "7519"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        }
+      ],
+      [
+        {
+          "tour_ids": [
+            "7519"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        }
+      ],
+      [
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "5"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "5"
+        }
+      ]
+    ],
+    "board_metadata": [],
+    "missing_row_shapes": []
+  },
+  {
+    "franchise": 433,
+    "slug": "championship_2026",
+    "form_url": "https://fantasy-h2h.ru/form/view/h2h_tournament_franchise/15878",
+    "columns": [
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 1\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514384\">1.1</a>\n</td>",
+        "tour_ids": [
+          "7477"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 2\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514388\">1.2</a>\n</td>",
+        "tour_ids": [
+          "7484"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_tie\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 3\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514400\">1.3</a>\n</td>",
+        "tour_ids": [
+          "7494"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 4\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514413\">1.4</a>\n</td>",
+        "tour_ids": [
+          "7506"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_lose\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 5\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514428\">1.5</a>\n</td>",
+        "tour_ids": [
+          "7517"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 6\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514434\">1.6</a>\n</td>",
+        "tour_ids": [
+          "7520"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 7\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514447\">1.7</a>\n</td>",
+        "tour_ids": [
+          "7527"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 8\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514467\">1.8</a>\n</td>",
+        "tour_ids": [
+          "7542"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_lose\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 9\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514471\">1.9</a>\n</td>",
+        "tour_ids": [
+          "7559"
+        ],
+        "sample": {}
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 10\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514484\">1.10</a>\n</td>",
+        "tour_ids": [
+          "7579"
+        ],
+        "sample": {
+          "origin": "live-read-only",
+          "dates": [
+            "16.10.2026"
+          ],
+          "fixture_links": [
+            "https://sports.ru/football/match/1952962/",
+            "https://sports.ru/football/match/1953020/",
+            "https://sports.ru/football/match/1953021/",
+            "https://sports.ru/football/match/1953022/",
+            "https://sports.ru/football/match/1953023/",
+            "https://sports.ru/football/match/1953024/",
+            "https://sports.ru/football/match/1953025/",
+            "https://sports.ru/football/match/1953026/",
+            "https://sports.ru/football/match/1953027/",
+            "https://sports.ru/football/match/1953028/",
+            "https://sports.ru/football/match/1953029/",
+            "https://sports.ru/football/match/1953030/"
+          ]
+        }
+      },
+      {
+        "header": "<td class=\"small field_result_win\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 11\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514499\">1.11</a>\n</td>",
+        "tour_ids": [
+          "7579"
+        ],
+        "sample": {
+          "origin": "live-read-only",
+          "dates": [
+            "16.10.2026"
+          ],
+          "fixture_links": [
+            "https://sports.ru/football/match/1952962/",
+            "https://sports.ru/football/match/1953020/",
+            "https://sports.ru/football/match/1953021/",
+            "https://sports.ru/football/match/1953022/",
+            "https://sports.ru/football/match/1953023/",
+            "https://sports.ru/football/match/1953024/",
+            "https://sports.ru/football/match/1953025/",
+            "https://sports.ru/football/match/1953026/",
+            "https://sports.ru/football/match/1953027/",
+            "https://sports.ru/football/match/1953028/",
+            "https://sports.ru/football/match/1953029/"
+          ]
+        }
+      },
+      {
+        "header": "<td class=\"small field_result_lose\" title=\"С‚СѓСЂРЅРёСЂ, С‚СѓСЂ 12\">\n<a class=\"async_block_modal\" href=\"https://fantasy-h2h.ru/h2h/team_match_data/514513\">1.12</a>\n</td>",
+        "tour_ids": [
+          "7593"
+        ],
+        "sample": {
+          "origin": "live-read-only",
+          "dates": [
+            "23.10.2026"
+          ],
+          "fixture_links": [
+            "https://sports.ru/football/match/1953031/",
+            "https://sports.ru/football/match/1953032/",
+            "https://sports.ru/football/match/1953033/",
+            "https://sports.ru/football/match/1953034/",
+            "https://sports.ru/football/match/1953035/",
+            "https://sports.ru/football/match/1953036/",
+            "https://sports.ru/football/match/1953037/",
+            "https://sports.ru/football/match/1953038/",
+            "https://sports.ru/football/match/1953039/",
+            "https://sports.ru/football/match/1953040/",
+            "https://sports.ru/football/match/1953041/",
+            "https://sports.ru/football/match/1953042/"
+          ]
+        }
+      }
+    ],
+    "row_vectors": [
+      [
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "6"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "5"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "6"
+        },
+        {
+          "tour_ids": [
+            "7520"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming",
+            "exchange"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        }
+      ],
+      [
+        {
+          "tour_ids": [
+            "7477"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [
+            "7484"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "5"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [
+            "7520"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming",
+            "exchange"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [
+            "7527"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [
+            "7542"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        }
+      ],
+      [
+        {
+          "tour_ids": [
+            "7477"
+          ],
+          "matches": 1,
+          "classes": [
+            "match_result",
+            "match",
+            "not_gaming"
+          ],
+          "board": null
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "4"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "1"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "2"
+        },
+        {
+          "tour_ids": [],
+          "matches": 1,
+          "classes": [
+            "match",
+            "small_view",
+            "score"
+          ],
+          "board": "3"
+        }
+      ]
+    ],
+    "board_metadata": [
+      {
+        "url": "https://fantasy-h2h.ru/h2h/team_match_data/514513?ajax=1",
+        "title": "Р›Р°РІР°РЅРґР° 2 - 2 РЇВ·РљВ·РЈВ·Р”В·Р—В·Рђ, 23.10.2026",
+        "date_text": [],
+        "tour_ids": [],
+        "fixture_links": [],
+        "column_count": 2
+      }
+    ],
+    "missing_row_shapes": [
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [],
+          [],
+          [],
+          [],
+          [
+            "7520"
+          ],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          "3",
+          "6",
+          "5",
+          "4",
+          "6",
+          null,
+          "1",
+          "2",
+          "2",
+          "1",
+          "1",
+          "1"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [
+            "7477"
+          ],
+          [
+            "7484"
+          ],
+          [],
+          [],
+          [],
+          [
+            "7520"
+          ],
+          [
+            "7527"
+          ],
+          [
+            "7542"
+          ],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          null,
+          null,
+          "2",
+          "5",
+          "4",
+          null,
+          null,
+          null,
+          "4",
+          "4",
+          "4",
+          "2"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [
+            "7477"
+          ],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          null,
+          "3",
+          "4",
+          "2",
+          "2",
+          "1",
+          "3",
+          "3",
+          "3",
+          "2",
+          "2",
+          "3"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [
+            "7477"
+          ],
+          [
+            "7484"
+          ],
+          [
+            "7494"
+          ],
+          [
+            "7506"
+          ],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          null,
+          null,
+          null,
+          null,
+          "5",
+          "4",
+          "2",
+          "1",
+          "1",
+          "3",
+          "3",
+          "4"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [],
+          [],
+          [],
+          [
+            "7517"
+          ],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          "1",
+          "2",
+          "3",
+          "6",
+          null,
+          "6",
+          "4",
+          "4",
+          "6",
+          "5",
+          "5",
+          "5"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [
+            "7527"
+          ],
+          [],
+          [],
+          [],
+          [],
+          []
+        ],
+        "game_numbers": [
+          "4",
+          "5",
+          "1",
+          "1",
+          "3",
+          "3",
+          null,
+          "5",
+          "5",
+          "6",
+          "6",
+          "6"
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [
+            "7477"
+          ],
+          [],
+          [
+            "7494"
+          ],
+          [],
+          [],
+          [],
+          [
+            "7527"
+          ],
+          [],
+          [
+            "7559"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7593"
+          ]
+        ],
+        "game_numbers": [
+          null,
+          "1",
+          null,
+          "3",
+          "1",
+          "2",
+          null,
+          "6",
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [],
+          [],
+          [
+            "7506"
+          ],
+          [
+            "7517"
+          ],
+          [],
+          [],
+          [
+            "7542"
+          ],
+          [
+            "7559"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7593"
+          ]
+        ],
+        "game_numbers": [
+          "5",
+          "4",
+          "6",
+          null,
+          null,
+          "5",
+          "5",
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [
+            "7484"
+          ],
+          [
+            "7494"
+          ],
+          [
+            "7506"
+          ],
+          [
+            "7517"
+          ],
+          [
+            "7520"
+          ],
+          [],
+          [
+            "7542"
+          ],
+          [
+            "7559"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7593"
+          ]
+        ],
+        "game_numbers": [
+          "6",
+          null,
+          null,
+          null,
+          null,
+          null,
+          "6",
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [
+            "7477"
+          ],
+          [
+            "7484"
+          ],
+          [
+            "7494"
+          ],
+          [
+            "7506"
+          ],
+          [
+            "7517"
+          ],
+          [
+            "7520"
+          ],
+          [
+            "7527"
+          ],
+          [
+            "7542"
+          ],
+          [
+            "7559"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7593"
+          ]
+        ],
+        "game_numbers": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "match_cells": 12,
+        "row_classes": [],
+        "cell_tours": [
+          [],
+          [
+            "7484"
+          ],
+          [
+            "7494"
+          ],
+          [
+            "7506"
+          ],
+          [
+            "7517"
+          ],
+          [
+            "7520"
+          ],
+          [
+            "7527"
+          ],
+          [
+            "7542"
+          ],
+          [
+            "7559"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7579"
+          ],
+          [
+            "7593"
+          ]
+        ],
+        "game_numbers": [
+          "2",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,38 @@
+✔ only the full resolved SHA identifies validation and packaging (1.1124ms)
+✖ the revision CLI rejects a different checkout before packaging (146.1458ms)
+✔ source verifier rejects missing, ambiguous and non-CI revision overrides (189.9791ms)
+✔ packaging requires a fresh full validation of the same frozen source (0.8562ms)
+✔ the reusable validator keeps every required check mandatory (0.7657ms)
+✔ CI and all three official base stages use the same exact patched Node (0.9521ms)
+✔ every production SSH and SCP call uses the isolated strict host configuration (0.9247ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 421.1064
+
+✖ failing tests:
+
+test at scripts\release-validation.test.mjs:34:1
+✖ the revision CLI rejects a different checkout before packaging (146.1458ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at TestContext.<anonymous> (file:///C:/Users/Nik/.codex/worktrees/audit-20261104/fantasy_export/scripts/release-validation.test.mjs:37:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

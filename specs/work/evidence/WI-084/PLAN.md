@@ -33,6 +33,8 @@ Existing WI-066 fixes verified present: atomic login limit, safe redirects, one-
 
 ## Execution order and acceptance
 
+Implementation chats (all `gpt-6.1-sol`, reasoning `max`): WI-085 `01a1a5ca-b107-70f2-8329-48fa8c9b07df`; WI-086 `01a1a5ca-b6f9-7c63-9543-f26fb5d443a3`; WI-087 `01a1a5ca-bbc0-7203-b0cc-541938841e57`; WI-088 `01a1a5ca-c00f-7bd3-9a5f-d38a111c6f77`.
+
 1. Record evidence and publish this plan before implementation chats.
 2. Four Sol 6.1 Max chats own disjoint changes: Telegram correctness, UI keyboard/dialogs, runtime/release checks, franchise memory. Root alone edits shared BOARD, integrates commits and deploys. No competing production deployments.
 3. Review diffs and meaningful regressions. Full test/lint/typecheck/build runs serially in one checkout; database tests and migration drift run in isolated CI PostgreSQL. Browser checks cover desktop/tablet/mobile without changing real user squads.
@@ -40,7 +42,18 @@ Existing WI-066 fixes verified present: atomic login limit, safe redirects, one-
 5. Verify public/internal/image/manifests agree, one worker, old assets accessible, source health separately, browser smoke, logs/resources. Inspect cleanup dry-run, remove only confirmed project release artifacts; preserve one rollback and verified full backup, persistent volumes, user caches and other applications.
 6. Report every actual change as before/after, successful checks, remaining gaps, and actual cleanup measurements. Do not claim entire data quality healthy from core liveness.
 
-## Sources
+## Follow-up work supported by the audit
+
+- Sports identity coverage: 137 unmatched players and two explicitly excluded records remain. The four failing active leagues have coverage RPL 498/515, EPL 666/688, UCL 1157/1192 and UEL 1134/1161 (source-quality-readonly.json). Review provider ID, club and birthdate together before writing identity mappings; never force a match from name similarity alone. Acceptance: each changed mapping has identity evidence, no duplicate provider identity, and recalculated source health at the unchanged threshold.
+- Forecast availability: 293 missing forecasts across active leagues have no qualifying finished per-match player-stat records in the database. Some have seasonal archive totals, which are not equivalent inputs. Classify true newcomers, absent source history and ingestion gaps, then backfill only available real records. Acceptance: explain remaining missing forecasts explicitly; do not synthesize zero-valued history or shrink the denominator of active players.
+- UCL historical player data: ten July qualification matches have no player statistics. A bounded probe of match 1000022632 confirmed that the provider's current payload has null playerStats despite available team/lineup data. Inspect the other nine individually before deciding whether backfill can restore anything.
+- UI consistency: representative desktop and 390px mobile checks found the analytical pool columns already present and no document overflow. Mixed Russian/English labels and inconsistent absent-value presentation are candidates for a separate, inventoried consistency pass; they do not justify removing functionality or a wholesale redesign. CommandPalette is currently unmounted; its regression checks cover the component, not an active production workflow.
+- Runtime errors: four Caddy 502s in the preceding 24 hours include upstream EOF and invalid chunk length. No OOM/restart correlated in the collected baseline. Correlate future request IDs with bounded application diagnostics before choosing a cause or changing proxy timeouts.
+- Static hygiene: the integration lint pass has zero errors and 236 warnings, predominantly untranslated visible text in Betting/KHL plus specific hook-dependency and image warnings. Inventory and fix these by owning module with RU/EN visual checks and hook-behavior tests where necessary; do not hide them with broad rule suppression. A passing lint exit code is not a claim that these warnings were resolved.
+
+The external-backup schedule remains unconfigured following the user's question about its purpose. Existing verified pre-migration recovery behavior is preserved.
+
+## Sources and references
 
 Internet precedents were checked before solutions. Technical decisions use primary documentation:
 - https://nextjs.org/docs/app/guides/production-checklist

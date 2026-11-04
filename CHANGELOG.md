@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.149 - 2026-11-04
+
+- Enforce current Telegram consent, the 08:50 Moscow build cutoff and fenced deadline publication; retain unknown delivery outcomes without automatic resends.
+- Preserve keyboard activation inside sortable tables, contain and restore dialog focus, and keep forecast round labels aligned with missing values.
+- Update the digest-pinned Node 24 runtime security patch and require full validation of the exact deployment revision with trusted SSH host keys.
+- Reduce franchise calculation working memory while preserving complete source histories and publication checks.
+
 ## 0.3.148 - 2026-11-04
 
 - Scope SorareInside schedule validation to current fantasy clubs before reading country, status or prediction metadata; unrelated clubs cannot abort hourly imports.

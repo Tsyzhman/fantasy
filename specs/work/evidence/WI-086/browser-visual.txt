@@ -1,0 +1,29 @@
+
+Running 5 tests using 1 worker
+
+
+
+(node:20444) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/5] [mobile-320] › e2e\ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+
+(node:19224) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[2/5] [mobile-390] › e2e\ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+
+(node:25092) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[3/5] [tablet-1024] › e2e\ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+
+(node:21916) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[4/5] [desktop-1440] › e2e\ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+
+(node:37336) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[5/5] [desktop-1920] › e2e\ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+  5 passed (19.7s)

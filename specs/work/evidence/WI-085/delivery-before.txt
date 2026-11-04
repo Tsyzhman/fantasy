@@ -1,0 +1,171 @@
+✔ active delivery is sent once and stores the Telegram message id (173.9735ms)
+✖ CANCELLED campaigns never send pending reports (13.0242ms)
+✖ BLOCKED campaigns never send pending reports (10.8286ms)
+✖ deleted current subscription prevents delivery (9.6891ms)
+✖ disabled current subscription prevents delivery (9.5952ms)
+✖ pause cancels pending outbox and resume does not revive it (10.8128ms)
+✔ unlink cancels pending outbox (12.4606ms)
+✖ an abandoned SENDING lease becomes unknown before the deadline and never resends (6.5446ms)
+✖ expiry preserves a live SENDING lease and does not pretend an in-flight request was unsent (7.0811ms)
+✔ a transport timeout is unknown and is never automatically resent (9.0536ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 3
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 686.1758
+
+✖ failing tests:
+
+test at src\server\deadline-reports\delivery.db-test.ts:2:3357
+✖ CANCELLED campaigns never send pending reports (13.0242ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:55:14)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:29:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:51:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\deadline-reports\delivery.db-test.ts:2:3357
+✖ BLOCKED campaigns never send pending reports (10.8286ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:55:14)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:29:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:51:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\deadline-reports\delivery.db-test.ts:2:3965
+✖ deleted current subscription prevents delivery (9.6891ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:68:14)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:29:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:63:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\deadline-reports\delivery.db-test.ts:2:3965
+✖ disabled current subscription prevents delivery (9.5952ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:68:14)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:29:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:63:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\deadline-reports\delivery.db-test.ts:2:4637
+✖ pause cancels pending outbox and resume does not revive it (10.8128ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'PENDING'
+  - 'CANCELLED'
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:77:12)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:29:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:75:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'PENDING',
+    expected: 'CANCELLED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\deadline-reports\delivery.db-test.ts:2:5624
+✖ an abandoned SENDING lease becomes unknown before the deadline and never resends (6.5446ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'SENDING'
+  - 'DELIVERY_UNKNOWN'
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:97:12)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:29:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:93:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'SENDING',
+    expected: 'DELIVERY_UNKNOWN',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\deadline-reports\delivery.db-test.ts:2:6514
+✖ expiry preserves a live SENDING lease and does not pretend an in-flight request was unsent (7.0811ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:108:12)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:29:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\deadline-reports\delivery.db-test.ts:105:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

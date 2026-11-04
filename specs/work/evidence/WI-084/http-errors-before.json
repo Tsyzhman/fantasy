@@ -1,0 +1,38 @@
+[
+  {
+    "at": "2026-11-04T07:08:10.145752+00:00",
+    "status": 502,
+    "path": "/api/machete/sync-status",
+    "duration": 2.090516636,
+    "upstream": null,
+    "error": null,
+    "request_id": "e5f23736-ddca-4883-a310-367ddd69052d"
+  },
+  {
+    "at": "2026-11-04T08:49:41.423055+00:00",
+    "status": 502,
+    "path": "/",
+    "duration": 0.001171993,
+    "upstream": null,
+    "error": null,
+    "request_id": "2da707e3-cb0c-4cd1-b05b-ff5223910ae2"
+  },
+  {
+    "at": "2026-11-03T17:00:23.885261+00:00",
+    "status": 502,
+    "path": "/api/machete/squads/projection-details",
+    "duration": 2.783734913,
+    "upstream": null,
+    "error": null,
+    "request_id": "29614249-7928-4472-b41b-7b7e5f82627d"
+  },
+  {
+    "at": "2026-11-04T03:06:56.062136+00:00",
+    "status": 502,
+    "path": "/",
+    "duration": 0.00147828,
+    "upstream": null,
+    "error": null,
+    "request_id": "0286fcf8-a3d5-4a0a-8ddb-f96a4661f360"
+  }
+]

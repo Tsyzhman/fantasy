@@ -1,0 +1,8 @@
+{
+  "runtime_database_roles": {
+    "fantasy-scout-web": "fantasy_app",
+    "fantasy-scout-worker": "fantasy_app"
+  },
+  "roles_and_migrations": "BEGIN\nSET\n[{\"rolname\":\"fantasy_operator\",\"rolsuper\":true,\"rolcreatedb\":true,\"rolcreaterole\":true,\"rolreplication\":true}, \n {\"rolname\":\"fantasy_migrator\",\"rolsuper\":false,\"rolcreatedb\":true,\"rolcreaterole\":false,\"rolreplication\":false}, \n {\"rolname\":\"fantasy_app\",\"rolsuper\":false,\"rolcreatedb\":false,\"rolcreaterole\":false,\"rolreplication\":false}]\n0\nROLLBACK\n",
+  "error": ""
+}

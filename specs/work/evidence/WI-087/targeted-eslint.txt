@@ -1,0 +1,2 @@
+node node_modules/eslint/bin/eslint.js scripts/verify-release-source.mjs scripts/verify-release-revision.mjs scripts/release-validation.test.mjs
+exitCode=0

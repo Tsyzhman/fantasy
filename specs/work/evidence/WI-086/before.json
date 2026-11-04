@@ -1,0 +1,12 @@
+{
+  "revision": "158556f99c8cc9ba6ba929ddd69d776c61c88c04",
+  "keyboardCounts": "add:0 remove:0 header:0 submit:0",
+  "pointerCounts": "add:1 remove:0 header:0 submit:0",
+  "backwardContained": false,
+  "forwardContained": false,
+  "restoredTouchTrigger": false,
+  "escapeFromPaletteButtonClosed": false,
+  "primaryTooltip": "Primary forecast total over 3 rounds: 12 FP\nRound-by-round values:\nRound 1: 4 FP\nRound 2: 8 FP",
+  "alternativeTooltipRu3": "Суммарный альтернативный прогноз FP на следующие пять туров, рассчитанный по матчам каждого тура.",
+  "runtimeErrors": []
+}

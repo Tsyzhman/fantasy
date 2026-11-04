@@ -1,0 +1,137 @@
+{
+  "fixture": {
+    "source_squads": 192,
+    "observations": 200,
+    "players": 48,
+    "leagues": 2,
+    "rounds": 8
+  },
+  "runtime": {
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "platform": "win32"
+  },
+  "measurements": [
+    {
+      "label": "before",
+      "stage": "features",
+      "seconds": 2.125,
+      "peak_rss_bytes": 133210112,
+      "samples": 37,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "before",
+      "stage": "aggregate",
+      "seconds": 1.828,
+      "peak_rss_bytes": 149659648,
+      "samples": 32,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "before",
+      "stage": "enrich",
+      "seconds": 1.672,
+      "peak_rss_bytes": 138084352,
+      "samples": 28,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "before",
+      "stage": "hypotheses",
+      "seconds": 1.594,
+      "peak_rss_bytes": 133484544,
+      "samples": 28,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "before",
+      "stage": "export",
+      "seconds": 1.921,
+      "peak_rss_bytes": 139358208,
+      "samples": 34,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "after",
+      "stage": "features",
+      "seconds": 1.829,
+      "peak_rss_bytes": 133017600,
+      "samples": 32,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "after",
+      "stage": "aggregate",
+      "seconds": 1.89,
+      "peak_rss_bytes": 139972608,
+      "samples": 33,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "after",
+      "stage": "enrich",
+      "seconds": 1.656,
+      "peak_rss_bytes": 137662464,
+      "samples": 29,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "after",
+      "stage": "hypotheses",
+      "seconds": 1.61,
+      "peak_rss_bytes": 133238784,
+      "samples": 28,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "after",
+      "stage": "export",
+      "seconds": 1.937,
+      "peak_rss_bytes": 138801152,
+      "samples": 34,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    }
+  ],
+  "domain_comparisons": {
+    "source-audit.json": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "20e0494b86fd3d0b68aaaaf3f4769c93bcafe386a26db53cad754bc2f52028a9"
+    },
+    "report-data.json": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "26a7ce525897e8fd0726d95073eea3b0c03f0d07174dfcf15d970690e3d22e28"
+    },
+    "validation.json": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "32c7f9991b234f457d6b5a8cf554d172673adc0dad49382363109ba53e2e10b3"
+    },
+    "decisions.json": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "8f97c49133756cc01d4977e6b007adefea830fbd9169e7cb392adc866a8caab5"
+    },
+    "nonbudget-hypotheses.json": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "78ec953ac08935be4079dd552b8e5f04d8688347e52041d130276936336f2bfb"
+    },
+    "snapshot.json.gz": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "af6d78f6af15fe0564cb7304e96291d3ae5d4c4a80316b6e61cebd94831b15c7"
+    }
+  }
+}

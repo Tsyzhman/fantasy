@@ -1,0 +1,1 @@
+{"test_node_processes": [], "port_55485_listening": false, "postmaster_pid_file_present": false, "temporary_cluster_retained": true, "temporary_cluster_mib": 71.73, "cleanup_rejection": "previous recursive removal rejected: blocked by policy; not retried", "available_host_memory_mib": 11471.62}

@@ -1,3 +1,4 @@
+/** @spec spec://common/PROP-002-editorial-sport-design#checklist */
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
@@ -43,7 +44,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       dependencies: ["auth-setup"],
-      testIgnore: /.*\.setup\.ts/,
+      testIgnore: [/.*\.setup\.ts/, /ui-keyboard\.spec\.ts/],
       use: {
         ...devices["Desktop Chrome"],
         userAgent: taggedUserAgent(userAgent, devices["Desktop Chrome"].userAgent),
@@ -54,7 +55,7 @@ export default defineConfig({
     {
       name: "tablet-chromium",
       dependencies: ["auth-setup"],
-      testIgnore: /.*\.setup\.ts/,
+      testIgnore: [/.*\.setup\.ts/, /ui-keyboard\.spec\.ts/],
       use: {
         ...devices["Desktop Chrome"],
         userAgent: taggedUserAgent(userAgent, devices["Desktop Chrome"].userAgent),
@@ -65,7 +66,7 @@ export default defineConfig({
     {
       name: "mobile-chromium",
       dependencies: ["auth-setup"],
-      testIgnore: /.*\.setup\.ts/,
+      testIgnore: [/.*\.setup\.ts/, /ui-keyboard\.spec\.ts/],
       use: {
         ...devices["Pixel 5"],
         userAgent: taggedUserAgent(userAgent, devices["Pixel 5"].userAgent),

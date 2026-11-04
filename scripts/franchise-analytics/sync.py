@@ -1,5 +1,9 @@
-"""Batch collector, no AI. @spec spec://modules/franchises/FEAT-005-franchise-analytics#data"""
-import os,sys,subprocess,time
+"""Batch collector, no AI.
+
+@spec spec://modules/franchises/FEAT-005-franchise-analytics#data
+@spec spec://common/INFRA-006-continuous-deployment#heavy-jobs
+"""
+import os,sys,subprocess,time,json,pathlib
 from research import ROOT,CACHE,franchises,metadata,players,squads,server
 
 def main():
@@ -40,6 +44,22 @@ def stage(name):
   export_snapshot.main()
  else:raise ValueError('Unknown stage')
 
+def measured_stage(name):
+ """Report exact Linux child peak RSS and cgroup totals without source payloads."""
+ started=time.monotonic();succeeded=False
+ try:
+  stage(name);succeeded=True
+ finally:
+  metrics={'stage':name,'succeeded':succeeded,'seconds':round(time.monotonic()-started,3)}
+  if sys.platform=='linux':
+   import resource
+   metrics['peak_rss_bytes']=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss*1024
+   cgroup=pathlib.Path('/sys/fs/cgroup')
+   for filename in ['memory.current','memory.peak','memory.events']:
+    try:metrics[filename]=cgroup.joinpath(filename).read_text().strip()
+    except OSError:pass
+  print('FRANCHISE_STAGE '+json.dumps(metrics),flush=True)
+
 if __name__=='__main__':
- if len(sys.argv)==3 and sys.argv[1]=='--stage':stage(sys.argv[2])
+ if len(sys.argv)==3 and sys.argv[1]=='--stage':measured_stage(sys.argv[2])
  else:main()

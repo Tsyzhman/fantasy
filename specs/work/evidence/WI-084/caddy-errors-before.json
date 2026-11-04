@@ -1,0 +1,38 @@
+[
+  {
+    "ts": 1793725223.8851364,
+    "msg": "EOF",
+    "error": null,
+    "status": 502,
+    "duration": 2.783734913,
+    "err_id": "0vmxsbrmp",
+    "err_trace": "reverseproxy.statusError (reverseproxy.go:1594)"
+  },
+  {
+    "ts": 1793761616.0620744,
+    "msg": "invalid byte in chunk length",
+    "error": null,
+    "status": 502,
+    "duration": 0.00147828,
+    "err_id": "cdfg3aerd",
+    "err_trace": "reverseproxy.statusError (reverseproxy.go:1594)"
+  },
+  {
+    "ts": 1793776090.1456635,
+    "msg": "EOF",
+    "error": null,
+    "status": 502,
+    "duration": 2.090516636,
+    "err_id": "kh465sz5e",
+    "err_trace": "reverseproxy.statusError (reverseproxy.go:1594)"
+  },
+  {
+    "ts": 1793782181.4229527,
+    "msg": "invalid byte in chunk length",
+    "error": null,
+    "status": 502,
+    "duration": 0.001171993,
+    "err_id": "uu18u7cgu",
+    "err_trace": "reverseproxy.statusError (reverseproxy.go:1594)"
+  }
+]

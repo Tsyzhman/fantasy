@@ -1,0 +1,1 @@
+All 60 run steps across six workflow files pass Bash syntax checks after inert substitution of GitHub expressions.

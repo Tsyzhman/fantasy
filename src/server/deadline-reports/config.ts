@@ -15,6 +15,14 @@ export const DEADLINE_EXPIRY_MARGIN_MS = 5 * 60 * 1000;
 export const DEADLINE_DEFAULT_BATCH = 100;
 export const DEADLINE_MAX_BATCH = 500;
 
+/** @spec spec://modules/telegram/INFRA-005-deadline-pipeline#recovery */
+export function deadlineClock(now?: Date): () => Date {
+  if (!now) return () => new Date();
+  const started = performance.now();
+  const baseline = now.getTime();
+  return () => new Date(baseline + performance.now() - started);
+}
+
 export function deadlineReportsEnabled(environment: NodeJS.ProcessEnv = process.env): boolean {
   return telegramDeadlineEnabled(environment);
 }

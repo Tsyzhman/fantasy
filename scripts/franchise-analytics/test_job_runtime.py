@@ -24,13 +24,32 @@ class JobRuntimeTests(unittest.TestCase):
         self.assertIn('sha256:immutable', command)
         self.assertIn('type=volume,src=sources,dst=/app/storage/franchises', command)
         self.assertIn('/app/storage/franchises/.heavy-job.lock', command)
-        self.assertEqual(command[command.index('--memory') + 1], '5g')
+        self.assertEqual(command[command.index('--memory') + 1], '3584m')
+        self.assertEqual(command[command.index('--memory-swap') + 1], '3584m')
+        self.assertEqual(command[command.index('--cpus') + 1], '2')
+        self.assertEqual(command[command.index('--pids-limit') + 1], '128')
         self.assertIn('--rm', command)
         self.assertNotIn('--publish', command)
         self.assertEqual(command[-3:], ['node', 'scripts/franchises.cjs', '--sync'])
         self.assertEqual(config['environment']['NODE_OPTIONS'], '--max-old-space-size=768')
         self.assertNotIn('FRANCHISE_RESUME_AFTER', config['environment'])
         self.assertNotIn('DATABASE_URL=private', command)
+
+    def test_headroom_remains_mandatory_and_bound_matches_the_container_cap(self):
+        cap = job.JOB_MEMORY_MIB * 1024**2
+        headroom = job.HOST_HEADROOM_MIB * 1024**2
+        self.assertEqual(headroom, 1024**3)
+        with self.assertRaisesRegex(RuntimeError, 'host headroom'):
+            job.require_memory(cap + headroom - 1)
+        job.require_memory(cap + headroom)
+        job.require_memory(5 * 1024**3)
+
+    def test_insufficient_memory_fails_before_inspection_or_container_start(self):
+        with patch.object(job.pathlib.Path, 'read_text', return_value='MemAvailable: 4194304 kB\n'), patch.object(job.subprocess, 'check_output') as inspect, patch.object(job.subprocess, 'run') as run:
+            with self.assertRaisesRegex(RuntimeError, 'available 4096 MiB'):
+                job.run_job()
+        inspect.assert_not_called()
+        run.assert_not_called()
 
     def test_resume_is_explicit_and_unshared_resources_fail(self):
         with patch.dict(os.environ, {'FRANCHISE_RESUME_AFTER': 'checkpoint'}, clear=True):

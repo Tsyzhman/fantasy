@@ -2,6 +2,13 @@
 
 ## Active Checkpoints
 
+### WI-084: Current production audit and supervised release (@tsyzhman)
+- Work: [WI-084](work/WI-084-project-server-audit.md)
+- Updated: 2026-11-04
+- Checkpoint: Plan and Russian audit report published. Isolated codex/project-audit-20261104 includes production ef9830d (0.3.148) and merged main 6de1694/WI-083 completion. Four Sol 6.1 Max chats implemented WI-085–088; independent review returned concrete regressions for correction. Canon amendments integrated. Local unit/lint/types/build passed; final Telegram consent-normalization DB checks precede commit. Root owns integration and release; chat IDs remain in evidence/WI-084/PLAN.md and the coordination history.
+- Next: Commit/push 0.3.149, run canonical Deploy Production with fresh full exact-SHA Check, verify continuous traffic and browser smoke, then run the monitored fresh franchise sync using evidence/WI-088/RUNBOOK.md. Inspect before project-scoped cleanup and record final resources. Archive only verified acceptance.
+- Blocker: No release blocker currently established. Fresh franchise acquisition may expose unresolved contradictory board flags and must preserve the old snapshot on failure. Local synthetic-directory cleanup was rejected by automatic policy and is recorded. No new backup schedule is configured. Original Documents/fantasy_export remains untouched.
+
 ### WI-001: Automatic global ranking strategy (@tsyzhman)
 - Work: [WI-001](work/WI-001-global-strategy.md)
 - Updated: 2026-09-07

@@ -1,0 +1,24 @@
+[
+  {
+    "theme": "light",
+    "palette": {
+      "x": 690,
+      "y": 60,
+      "width": 540,
+      "height": 475.5
+    },
+    "fontFamily": "Onest, Onest, Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "onestLoaded": false
+  },
+  {
+    "theme": "dark",
+    "palette": {
+      "x": 690,
+      "y": 60,
+      "width": 540,
+      "height": 475.5
+    },
+    "fontFamily": "Onest, Onest, Inter, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+    "onestLoaded": false
+  }
+]

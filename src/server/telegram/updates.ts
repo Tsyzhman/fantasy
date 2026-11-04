@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { telegramBotId, telegramBotToken, telegramLinkEnabled, telegramPublicBaseUrl } from "./config";
 import { normalizeTelegramLinkCode } from "./crypto";
 import { consumeTelegramChallenge, markTelegramBlocked, setTelegramLinkPaused, unlinkTelegram } from "./link-service";
@@ -38,6 +38,43 @@ export interface TelegramUpdateDependencies {
 export interface TelegramUpdateResult {
   status: "PROCESSED" | "DUPLICATE" | "IGNORED" | "FAILED";
   reply: string | null;
+}
+
+/**
+ * While PROCESSING, processedAt is the attempt/lease start. Terminal states store
+ * the completion time. The existing millisecond timestamp also fences the owner
+ * without requiring a schema change.
+ * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#data
+ * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#recovery
+ */
+export const TELEGRAM_INBOX_LEASE_MS = 2 * 60_000;
+export const TELEGRAM_INBOX_RETRY_MS = 30_000;
+
+function inboxTransactionClient(tx: Prisma.TransactionClient): PrismaClient {
+  // Handlers already group their DB writes through $transaction. During inbox
+  // processing those callbacks join the outer receipt transaction. Replies are
+  // deferred, so this transaction never spans a Telegram request.
+  const client = new Proxy(tx, { get(target, key, receiver) {
+    if (key === "$transaction") return async (run: (value: PrismaClient) => Promise<unknown>) => run(client);
+    return Reflect.get(target, key, receiver);
+  } }) as unknown as PrismaClient;
+  return client;
+}
+
+const LINK_STATE_COMMANDS = ["/stop", "/resume", "/unlink"];
+
+// ECMAScript WhiteSpace + LineTerminator code points used by String.trim().
+// PostgreSQL's default btrim only removes spaces; pass the complete set so the
+// durable ordering predicate recognizes exactly the commands the handler does.
+const COMMAND_TRIM_CHARACTERS = "\u0009\u000b\u000c\u0020\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\ufeff\u000a\u000d\u2028\u2029";
+
+function telegramConsentSubject(update: TelegramWebhookUpdate): string | null {
+  const message = update.message;
+  if (message?.chat?.type === "private" && message.from?.id && !message.from.is_bot
+    && LINK_STATE_COMMANDS.includes((message.text ?? "").trim())) return String(message.from.id);
+  const membership = update.my_chat_member;
+  if (membership?.new_chat_member?.status === "kicked" && membership.chat?.id != null) return String(membership.chat.id);
+  return null;
 }
 
 function defaultSender(): (chatId: string, text: string) => Promise<void> {
@@ -250,33 +287,75 @@ export async function processTelegramUpdate(
   const updateId = update.update_id;
   if (updateId == null || !Number.isFinite(updateId)) return { status: "IGNORED", reply: null };
   const botId = telegramBotId();
-  try {
-    await prisma.telegramInbox.create({
-      data: { botId, updateId: BigInt(updateId), updateType: update.message ? "message" : update.my_chat_member ? "my_chat_member" : update.callback_query ? "callback_query" : "unknown", payload: update as object }
-    });
-  } catch (error) {
-    if (typeof error === "object" && error && "code" in error && (error as { code?: string }).code === "P2002") {
-      return { status: "DUPLICATE", reply: null };
-    }
-    throw error;
-  }
+  await prisma.telegramInbox.createMany({
+    data: { botId, updateId: BigInt(updateId), updateType: update.message ? "message" : update.my_chat_member ? "my_chat_member" : update.callback_query ? "callback_query" : "unknown", payload: update as object },
+    skipDuplicates: true
+  });
 
+  // The durable receipt can be replayed independently of the Telegram offset.
+  // Compare-and-swap admits one handler, including after a crash before claim.
+  const claimedAt = new Date();
+  const claimed = await prisma.telegramInbox.updateMany({
+    where: { botId, updateId: BigInt(updateId), OR: [
+      { state: { in: ["PENDING", "FAILED"] } },
+      { state: "PROCESSING", OR: [{ processedAt: { lte: new Date(claimedAt.getTime() - TELEGRAM_INBOX_LEASE_MS) } }, { processedAt: null }] }
+    ] },
+    data: { state: "PROCESSING", processedAt: claimedAt, lastError: null }
+  });
+  if (claimed.count === 0) return { status: "DUPLICATE", reply: null };
+  const owner = { botId, updateId: BigInt(updateId), state: "PROCESSING", processedAt: claimedAt };
+  const replies: Array<{ chatId: string; text: string }> = [];
   try {
-    let result: TelegramUpdateResult = { status: "IGNORED", reply: null };
-    if (update.my_chat_member?.new_chat_member?.status === "kicked" && update.my_chat_member.chat?.id != null) {
-      await markTelegramBlocked(prisma, String(update.my_chat_member.chat.id));
-      result = { status: "PROCESSED", reply: "blocked" };
-    } else if (update.message) {
-      result = await handleMessage(prisma, update, deps);
-    }
-    await prisma.telegramInbox.updateMany({ where: { botId, updateId: BigInt(updateId) }, data: { state: "PROCESSED", processedAt: new Date() } });
+    const result = await prisma.$transaction(async tx => {
+      const inbox = await tx.telegramInbox.findUniqueOrThrow({ where: { botId_updateId: { botId, updateId: BigInt(updateId) } } });
+      update = inbox.payload as unknown as TelegramWebhookUpdate;
+      const consentSubject = telegramConsentSubject(update);
+      if (consentSubject) await tx.$queryRaw`
+        SELECT "id" FROM "telegram_links" WHERE "telegram_user_id" = ${consentSubject} FOR UPDATE
+      `;
+      // This no-op CAS holds the receipt row through all command effects and its
+      // completion, so a crashed command cannot commit only half its DB changes.
+      const owns = await tx.telegramInbox.updateMany({ where: owner, data: { lastError: null } });
+      if (owns.count === 0 || Date.now() >= claimedAt.getTime() + TELEGRAM_INBOX_LEASE_MS) return null;
+      const superseded = consentSubject ? await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT "id" FROM "telegram_inbox"
+        WHERE "bot_id" = ${botId} AND "update_id" > ${BigInt(updateId)} AND "state" = 'PROCESSED'
+          AND (
+            ("payload" #>> '{message,chat,type}' = 'private'
+              AND "payload" #>> '{message,from,id}' = ${consentSubject}
+              AND ("payload" #>> '{message,from,is_bot}') IS DISTINCT FROM 'true'
+              AND btrim("payload" #>> '{message,text}', ${COMMAND_TRIM_CHARACTERS}) IN (${Prisma.join(LINK_STATE_COMMANDS)}))
+            OR ("payload" #>> '{my_chat_member,chat,id}' = ${consentSubject}
+              AND "payload" #>> '{my_chat_member,new_chat_member,status}' = 'kicked')
+          )
+        ORDER BY "update_id" DESC LIMIT 1
+      ` : [];
+      const client = inboxTransactionClient(tx);
+      let handled: TelegramUpdateResult = { status: "IGNORED", reply: null };
+      if (superseded.length > 0) {
+        handled = { status: "PROCESSED", reply: null }; // A newer explicit choice wins over an old retry.
+      } else if (update.my_chat_member?.new_chat_member?.status === "kicked" && update.my_chat_member.chat?.id != null) {
+        await markTelegramBlocked(client, String(update.my_chat_member.chat.id));
+        handled = { status: "PROCESSED", reply: "blocked" };
+      } else if (update.message) {
+        handled = await handleMessage(client, update, { ...deps, sendMessage: async (chatId, text) => { replies.push({ chatId, text }); } });
+      }
+      await tx.telegramInbox.updateMany({ where: owner, data: { state: "PROCESSED", processedAt: new Date(), lastError: null } });
+      return handled;
+    });
+    if (!result) return { status: "DUPLICATE", reply: null };
+    // Commit before sending: replies have no provider idempotency key either.
+    // A crash here may lose a reply, but replay never sends it a second time.
+    for (const response of replies) await reply(deps, response.chatId, response.text);
     if (update.message?.from?.id) {
-      await prisma.telegramLink.updateMany({ where: { telegramUserId: String(update.message.from.id) }, data: { lastInboundAt: new Date() } });
+      // Ancillary activity metadata must not turn an already handled/replied
+      // command into FAILED and cause its side effects to run again.
+      await prisma.telegramLink.updateMany({ where: { telegramUserId: String(update.message.from.id) }, data: { lastInboundAt: new Date() } }).catch(() => undefined);
     }
     return result;
   } catch (error) {
     await prisma.telegramInbox
-      .updateMany({ where: { botId, updateId: BigInt(updateId) }, data: { state: "FAILED", processedAt: new Date(), lastError: error instanceof Error ? error.message.slice(0, 500) : "unknown" } })
+      .updateMany({ where: owner, data: { state: "FAILED", processedAt: new Date(), lastError: error instanceof Error ? error.message.slice(0, 500) : "unknown" } })
       .catch(() => undefined);
     return { status: "FAILED", reply: null };
   }

@@ -39,6 +39,10 @@ Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://mod
 
 ## Modules and code ownership
 
+`src/components/use-modal-focus.ts` owns shared modal keyboard focus containment, restoration and body scroll lifetime under `spec://common/PROP-002-editorial-sport-design#contracts`. The isolated `e2e/ui-keyboard.config.ts` browser suite exercises real table/planner components without production accounts or database writes.
+
+`src/server/deadline-reports/publication.ts` owns transaction fencing before report/outbox publication under `spec://modules/telegram/INFRA-005-deadline-pipeline#recovery`; campaign/version/lease checks precede side effects.
+
 Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, theme/density controls and early preferences in `src/app/layout.tsx` follow `spec://common/PROP-002-editorial-sport-design#root`. The module styles in `src/app/franchises/ui.module.css`, `src/app/betting/ui.module.css` and `src/components/khl/KhlSquadPlanner.module.css` share its surface, typography and density tokens. The canonical user-supplied instruction is `docs/design/DESIGN.md`.
 
 | Area | Responsibility | Primary code |
@@ -95,6 +99,8 @@ Sports fantasy weeks: `src/khl/fantasy-calendar.ts` resolves agreeing club obser
 <a name="release-transport"></a>
 
 ## Release transport {#release-transport}
+
+`.github/workflows/check.yml`, `scripts/verify-release-revision.mjs` and `scripts/release-validation.test.mjs` own reusable exact-revision release validation. `scripts/prepare-deploy-ssh.py` and its direct tests prepare private SSH configuration from an independently trusted host key under `spec://common/INFRA-006-continuous-deployment#contracts`.
 
 `scripts/normalize-production-env.py` owns private inherited-environment normalization and bounded role overrides under `spec://common/INFRA-006-continuous-deployment#runtime`.
 

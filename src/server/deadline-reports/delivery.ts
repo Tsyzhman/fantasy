@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { sendTelegramMessage, TelegramApiError } from "@/server/telegram/bot-api";
 import { telegramBotToken } from "@/server/telegram/config";
 import { markTelegramBlocked } from "@/server/telegram/link-service";
-import { DEADLINE_DEFAULT_BATCH, DEADLINE_EXPIRY_MARGIN_MS, DEADLINE_MAX_BATCH, deadlineSendEnabled } from "./config";
+import { DEADLINE_DEFAULT_BATCH, DEADLINE_EXPIRY_MARGIN_MS, DEADLINE_MAX_BATCH, deadlineClock, deadlineSendEnabled } from "./config";
 
 /**
  * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#delivery
@@ -32,6 +32,8 @@ interface ClaimedOutboxRow {
 
 const OUTBOX_MAX_ATTEMPTS = 5;
 const DELIVERY_PER_CHAT_MIN_INTERVAL_MS = 1000;
+const OUTBOX_LEASE_MS = 2 * 60 * 1000;
+const DELIVERABLE_CAMPAIGN_STATES = ["ACTIVE", "BUILT", "DELIVERING"];
 
 function backoffMs(attempts: number): number {
   return Math.min(300_000, 30_000 * 2 ** Math.max(0, attempts - 1));
@@ -47,17 +49,20 @@ export async function runDeadlineDeliveryTick(
     maxBatch?: number;
     fetchImpl?: typeof fetch;
     sendMessage?: (chatId: string, text: string) => Promise<{ messageId: string }>;
+    clock?: () => Date;
   } = {}
 ): Promise<DeliveryTickResult> {
   const result: DeliveryTickResult = { skipped: false, claimed: 0, sent: 0, failed: 0, blocked: 0, expired: 0, unknown: 0, cancelled: 0 };
   if (!deadlineSendEnabled()) return { ...result, skipped: true };
-  const now = options.now ?? new Date();
+  const clock = options.clock ?? deadlineClock(options.now);
+  const now = clock();
+  result.unknown = await recoverAbandonedOutbox(prisma, now);
   const token = telegramBotToken();
   const sender = options.sendMessage ?? (token ? (chatId: string, text: string) => sendTelegramMessage({ token, chatId, text, parseMode: "HTML", fetchImpl: options.fetchImpl }) : null);
   if (!sender) return { ...result, skipped: true };
   const batch = Math.max(1, Math.min(options.maxBatch ?? DEADLINE_DEFAULT_BATCH, DEADLINE_MAX_BATCH));
   const leaseToken = randomUUID();
-  const leaseUntil = new Date(now.getTime() + 2 * 60 * 1000);
+  const leaseUntil = new Date(now.getTime() + OUTBOX_LEASE_MS);
   const claimed = await prisma.$queryRaw<ClaimedOutboxRow[]>`
     UPDATE "telegram_outbox"
     SET "state" = 'SENDING', "lease_token" = ${leaseToken}, "lease_until" = ${leaseUntil}, "updated_at" = ${now}
@@ -77,68 +82,102 @@ export async function runDeadlineDeliveryTick(
 
   for (const row of claimed) {
     touchedCampaigns.add(row.campaignId);
-    const campaign = await prisma.deadlineCampaign.findUnique({ where: { id: row.campaignId }, select: { deadlineAt: true, status: true } });
-    const link = await prisma.telegramLink.findUnique({ where: { userId: row.userId }, select: { chatId: true, state: true, linkVersion: true, telegramUserId: true } });
     const release = async (data: Prisma.TelegramOutboxUpdateManyMutationInput) => {
-      await prisma.telegramOutbox.updateMany({ where: { id: row.id, leaseToken, state: "SENDING" }, data });
+      const updated = await prisma.telegramOutbox.updateMany({ where: { id: row.id, leaseToken, state: "SENDING" }, data });
+      return updated.count === 1;
     };
-    if (!campaign || !link || link.state !== "ACTIVE" || link.linkVersion !== row.linkVersion) {
-      await release({ state: "CANCELLED", leaseToken: null, leaseUntil: null });
-      result.cancelled += 1;
-      continue;
-    }
-    if (campaign.deadlineAt && now.getTime() > campaign.deadlineAt.getTime() - DEADLINE_EXPIRY_MARGIN_MS) {
-      await release({ state: "EXPIRED", leaseToken: null, leaseUntil: null });
-      result.expired += 1;
-      continue;
-    }
-    const last = lastSendByChat.get(link.chatId) ?? 0;
+    const pacingLink = await prisma.telegramLink.findUnique({ where: { userId: row.userId }, select: { chatId: true } });
+    const last = pacingLink ? lastSendByChat.get(pacingLink.chatId) ?? 0 : 0;
     const waitMs = last + DELIVERY_PER_CHAT_MIN_INTERVAL_MS - Date.now();
     if (waitMs > 0) await new Promise((resolve) => setTimeout(resolve, waitMs));
+
+    // Consent and lease are checked after pacing, immediately before the external
+    // effect. A batch may have waited long enough for its campaign or link to change.
+    const [campaign, link] = await Promise.all([
+      prisma.deadlineCampaign.findUnique({ where: { id: row.campaignId }, select: { contestId: true, season: true, inputVersion: true, deadlineAt: true, status: true } }),
+      prisma.telegramLink.findUnique({ where: { userId: row.userId }, select: { id: true, chatId: true, state: true, consentAt: true, linkVersion: true, telegramUserId: true } })
+    ]);
+    const subscription = campaign && link ? await prisma.telegramSubscription.findUnique({
+      where: { userId_contestId: { userId: row.userId, contestId: campaign.contestId } },
+      select: { enabled: true, linkId: true, season: true }
+    }) : null;
+    const sendAt = clock();
+    if (!campaign?.deadlineAt || !DELIVERABLE_CAMPAIGN_STATES.includes(campaign.status)
+      || campaign.inputVersion !== row.reportVersion
+      || !link || link.state !== "ACTIVE" || !link.consentAt || link.linkVersion !== row.linkVersion
+      || !subscription?.enabled || subscription.linkId !== link.id || subscription.season !== campaign.season) {
+      if (await release({ state: "CANCELLED", leaseToken: null, leaseUntil: null })) result.cancelled += 1;
+      continue;
+    }
+    if (sendAt.getTime() > campaign.deadlineAt.getTime() - DEADLINE_EXPIRY_MARGIN_MS) {
+      if (await release({ state: "EXPIRED", leaseToken: null, leaseUntil: null })) result.expired += 1;
+      continue;
+    }
+    const authorizedUntil = new Date(sendAt.getTime() + OUTBOX_LEASE_MS);
+    const authorized = await prisma.telegramOutbox.updateMany({
+      where: {
+        id: row.id, leaseToken, state: "SENDING", leaseUntil: { gt: sendAt },
+        campaign: { inputVersion: row.reportVersion, status: { in: DELIVERABLE_CAMPAIGN_STATES }, deadlineAt: { gte: new Date(sendAt.getTime() + DEADLINE_EXPIRY_MARGIN_MS) } },
+        user: {
+          telegramLink: { id: link.id, state: "ACTIVE", consentAt: { not: null }, linkVersion: row.linkVersion, chatId: link.chatId },
+          telegramSubscriptions: { some: { contestId: campaign.contestId, season: campaign.season, linkId: link.id, enabled: true } }
+        }
+      },
+      data: { leaseUntil: authorizedUntil }
+    });
+    if (authorized.count === 0) {
+      if (await release({ state: "CANCELLED", leaseToken: null, leaseUntil: null })) result.cancelled += 1;
+      continue;
+    }
+    // The authorization query itself can wait on the pool or row locks. Check
+    // time again after it returns, directly before calling the external sender.
+    const externalAt = clock();
+    if (externalAt.getTime() > campaign.deadlineAt.getTime() - DEADLINE_EXPIRY_MARGIN_MS) {
+      if (await release({ state: "EXPIRED", leaseToken: null, leaseUntil: null })) result.expired += 1;
+      continue;
+    }
+    if (externalAt >= authorizedUntil) {
+      if (await release({ state: "CANCELLED", leaseToken: null, leaseUntil: null, lastError: "DELIVERY_AUTHORIZATION_EXPIRED" })) result.cancelled += 1;
+      continue;
+    }
     try {
       const sent = await sender(link.chatId, row.text);
       lastSendByChat.set(link.chatId, Date.now());
-      await release({ state: "SENT", telegramMessageId: sent.messageId || null, sentAt: new Date(), leaseToken: null, leaseUntil: null, lastError: null });
-      result.sent += 1;
+      if (await release({ state: "SENT", telegramMessageId: sent.messageId || null, sentAt: clock(), leaseToken: null, leaseUntil: null, lastError: null })) result.sent += 1;
     } catch (error) {
       lastSendByChat.set(link.chatId, Date.now());
       if (error instanceof TelegramApiError) {
         if (error.blocked) {
-          await release({ state: "BLOCKED", leaseToken: null, leaseUntil: null, lastError: error.message.slice(0, 300) });
+          if (await release({ state: "BLOCKED", leaseToken: null, leaseUntil: null, lastError: error.message.slice(0, 300) })) result.blocked += 1;
           await markTelegramBlocked(prisma, link.telegramUserId);
-          result.blocked += 1;
         } else if (error.status === 429) {
-          await release({
+          if (await release({
             state: "PENDING",
             leaseToken: null,
             leaseUntil: null,
-            nextAttemptAt: new Date(Date.now() + (error.retryAfterSeconds ?? 5) * 1000),
+            nextAttemptAt: new Date(clock().getTime() + (error.retryAfterSeconds ?? 5) * 1000),
             lastError: error.message.slice(0, 300)
-          });
-          result.failed += 1;
+          })) result.failed += 1;
         } else if (error.permanent) {
-          await release({ state: "FAILED", leaseToken: null, leaseUntil: null, lastError: error.message.slice(0, 300) });
-          result.failed += 1;
+          if (await release({ state: "FAILED", leaseToken: null, leaseUntil: null, lastError: error.message.slice(0, 300) })) result.failed += 1;
         } else {
-          await release({
-            state: "PENDING",
+          if (await release({
+            state: row.attempts + 1 < OUTBOX_MAX_ATTEMPTS ? "PENDING" : "FAILED",
             leaseToken: null,
             leaseUntil: null,
             attempts: row.attempts + 1,
-            nextAttemptAt: new Date(Date.now() + backoffMs(row.attempts + 1)),
+            nextAttemptAt: new Date(clock().getTime() + backoffMs(row.attempts + 1)),
             lastError: error.message.slice(0, 300)
-          });
-          result.failed += 1;
+          })) result.failed += 1;
         }
       } else {
-        await release({
+        if (await release({
           state: "DELIVERY_UNKNOWN",
           leaseToken: null,
           leaseUntil: null,
           attempts: row.attempts + 1,
           lastError: error instanceof Error ? error.message.slice(0, 300) : "unknown transport error"
-        });
-        result.unknown += 1;
+        })) result.unknown += 1;
       }
     }
   }
@@ -153,12 +192,31 @@ export async function runDeadlineDeliveryTick(
 }
 
 /**
+ * A crashed sender may already have reached Telegram. Never put it back in the
+ * pending queue, including when its campaign has passed the delivery deadline.
+ * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#recovery
+ */
+export async function recoverAbandonedOutbox(prisma: PrismaClient, now = new Date()): Promise<number> {
+  return prisma.$executeRaw`
+    UPDATE "telegram_outbox"
+    SET "state" = 'DELIVERY_UNKNOWN', "lease_token" = NULL, "lease_until" = NULL,
+      "last_error" = 'DELIVERY_LEASE_EXPIRED', "updated_at" = ${now}
+    WHERE "id" IN (
+      SELECT "id" FROM "telegram_outbox"
+      WHERE "state" = 'SENDING' AND ("lease_until" <= ${now} OR "lease_until" IS NULL)
+      LIMIT ${DEADLINE_MAX_BATCH} FOR UPDATE SKIP LOCKED
+    )
+  `;
+}
+
+/**
  * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#delivery
  */
 export async function expireOverdueOutbox(prisma: PrismaClient, now = new Date()): Promise<number> {
+  await recoverAbandonedOutbox(prisma, now);
   const cutoff = new Date(now.getTime() + DEADLINE_EXPIRY_MARGIN_MS);
   const result = await prisma.telegramOutbox.updateMany({
-    where: { state: { in: ["PENDING", "SENDING"] }, campaign: { deadlineAt: { lt: cutoff } } },
+    where: { state: "PENDING", campaign: { deadlineAt: { lt: cutoff } } },
     data: { state: "EXPIRED", leaseToken: null, leaseUntil: null }
   });
   return result.count;

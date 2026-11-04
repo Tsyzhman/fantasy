@@ -53,21 +53,14 @@ jobs:
             echo "release=$release"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Prepare SSH key
+      # @spec spec://common/INFRA-006-continuous-deployment#contracts
+      - name: Prepare pinned SSH identity
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-        run: |
-          set -euo pipefail
-          : "${DEPLOY_SSH_KEY:?DEPLOY_SSH_KEY secret is required}"
-          : "${DEPLOY_HOST:?DEPLOY_HOST secret is required}"
-          DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: python3 -B scripts/prepare-deploy-ssh.py
 
       - name: Transfer price-sync archive
         env:
@@ -79,7 +72,7 @@ jobs:
         run: |
           set -euo pipefail
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
+          scp -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
             "$LOCAL_ARCHIVE" \
             "$DEPLOY_USER@$DEPLOY_HOST:/tmp/fantasy-scout-price-sync-${RELEASE}.tar.gz"
 
@@ -95,6 +88,10 @@ jobs:
           set -euo pipefail
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
           remote_archive="/tmp/fantasy-scout-price-sync-${RELEASE}.tar.gz"
-          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+          ssh -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
             "bash -s -- '$remote_archive' '$RELEASE_CHECKSUM' '$RELEASE' '$RELEASE_COMMIT'" \
             < scripts/sync-production-fantasy-prices.sh
+
+      - name: Remove runner SSH material
+        if: always()
+        run: rm -f -- ~/.ssh/deploy_key ~/.ssh/deploy_known_hosts ~/.ssh/deploy_config

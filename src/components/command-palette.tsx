@@ -1,4 +1,5 @@
 "use client";
+/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
 
 import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -6,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { I18nText } from "@/components/i18n-text";
 import { localizedText, useLanguage } from "@/components/localized-option";
+import { useModalFocus } from "@/components/use-modal-focus";
 import { cn } from "@/lib/cn";
 
 type CommandPaletteProps = {
@@ -50,6 +52,7 @@ export function CommandPalette({ showAdmin = false }: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const dialogRef = useModalFocus({ open, onClose: close, initialFocusRef: inputRef });
 
   const commands = useMemo(() => (showAdmin ? [...baseCommands, ...adminCommands] : baseCommands), [showAdmin]);
   const filteredCommands = useMemo(() => filterCommands(commands, query, language), [commands, language, query]);
@@ -66,10 +69,6 @@ export function CommandPalette({ showAdmin = false }: CommandPaletteProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
-
-  useEffect(() => {
-    if (open) window.setTimeout(() => inputRef.current?.focus(), 0);
-  }, [open]);
 
   function close() {
     setOpen(false);
@@ -96,7 +95,7 @@ export function CommandPalette({ showAdmin = false }: CommandPaletteProps) {
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-50 px-3 py-16" style={{ background: "var(--scrim)" }} role="dialog" aria-modal="true" aria-label={localizedText(language, "Command palette", "Палитра команд")}>
+        <div ref={dialogRef} tabIndex={-1} className="fixed inset-0 z-[110] overflow-y-auto px-3 py-16" style={{ background: "var(--scrim)" }} role="dialog" aria-modal="true" aria-label={localizedText(language, "Command palette", "Палитра команд")}>
           <div className="ui-surface-elevated mx-auto max-w-xl overflow-hidden">
             <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
               <Search className="h-4 w-4 shrink-0 text-slate-400" />
@@ -108,7 +107,6 @@ export function CommandPalette({ showAdmin = false }: CommandPaletteProps) {
                   setActiveIndex(0);
                 }}
                 onKeyDown={(event) => {
-                  if (event.key === "Escape") close();
                   if (event.key === "ArrowDown") {
                     event.preventDefault();
                     setActiveIndex((current) => Math.min(current + 1, Math.max(filteredCommands.length - 1, 0)));

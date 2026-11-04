@@ -1,8 +1,12 @@
-"""Pre-round features. @spec spec://modules/franchises/FEAT-005-franchise-analytics#time"""
+"""Pre-round features and bounded aggregation.
+
+@spec spec://modules/franchises/FEAT-005-franchise-analytics#time
+@spec spec://modules/franchises/FEAT-005-franchise-analytics#data
+"""
 from research import ROOT,save,read_db,IDS
 from sources import read_squads
 from forecast_sources import pre_round_snapshots
-import json,gzip,collections,datetime as dt,bisect,math,sys,statistics,hashlib
+import json,gzip,collections,datetime as dt,bisect,math,sys,statistics,hashlib,os
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata,spearmanr
@@ -107,9 +111,59 @@ def clean(obj):
  if isinstance(obj,(float,np.floating)):return float(obj) if math.isfinite(obj) else None
  if isinstance(obj,(np.bool_,)):return bool(obj)
  return obj
+
+class ColumnarRows:
+ """Keep column values, not a wide Python dictionary for every selected player.
+
+ Inference still happens once over each complete column, preserving pandas'
+ numeric/null semantics across rounds with different forecast coverage. Convert
+ and release one column at a time; neither rows nor a second full matrix survive.
+ """
+ def __init__(self):self.columns={};self.count=0
+ def append(self,row):
+  for name in row:
+   if name not in self.columns:self.columns[name]=[np.nan]*self.count
+  for name,values in self.columns.items():values.append(row.get(name,np.nan))
+  self.count+=1
+ def to_frame(self):
+  columns={}
+  for name in list(self.columns):columns[name]=pd.Series(self.columns.pop(name))
+  return pd.DataFrame(columns,copy=False)
+
+def save_frame_records(name,frame):
+ """Write the same detailed records without to_dict + clean + dumps copies."""
+ path=ROOT/name;temporary=path.with_name(path.name+'.tmp');columns=list(frame.columns)
+ try:
+  with temporary.open('w',encoding='utf-8') as target:
+   target.write('[')
+   for index,values in enumerate(frame.itertuples(index=False,name=None)):
+    if index:target.write(',')
+    json.dump(clean(dict(zip(columns,values))),target,ensure_ascii=False,separators=(',',':'),allow_nan=False)
+   target.write(']')
+  os.replace(temporary,path)
+ finally:temporary.unlink(missing_ok=True)
+
+# The other features remain in purchases.pkl for hypotheses and in the report.
+# Downstream enrichment/export only need this projection of all selected players.
+DECISION_COLUMNS=['franchise','manager','slug','round','team','h2h_id','name','player_id','pos','is_cap','is_xi','is_buy','source','personal_only','fo','alt','ffo','own','form5','last_history_date','cutoff']
+
+def validated_board_states(records):
+ """Reject ambiguous flags instead of silently choosing the last H2H duel.
+
+ @spec spec://modules/franchises/FEAT-005-franchise-analytics#freezes
+ """
+ states={}
+ for record in records:
+  key=(record['franchise'],record['slug'],record['round'],str(record['team']))
+  previous=states.get(key)
+  if previous is not None and any(previous.get(name)!=record.get(name) for name in ['active','frozen']):
+   raise ValueError(f'Conflicting franchise board active/frozen state: franchise {key[0]}, league {key[1]}, round {key[2]}; retain the previous published snapshot')
+  states[key]=record
+ return states
+
 def aggregate():
  f=pd.read_pickle(ROOT/'source/features.pkl');lookup={(r['slug'],r['round'],r['h2h_id']):r for r in f.to_dict('records')};audit=json.loads((ROOT/'source-audit.json').read_text('utf-8'));franchises=json.loads((ROOT/'franchises.json').read_text('utf-8'))
- freeze=json.loads((ROOT/'freezes.json').read_text('utf-8'));state={(x['franchise'],x['slug'],x['round'],x['team']):x for x in freeze['states']}
+ freeze=json.loads((ROOT/'freezes.json').read_text('utf-8'));state=validated_board_states(freeze['states'])
  fields={};rounds={}
  for (slug,rn),g in f.groupby(['slug','round']):
   weights=g.buy_weight.to_numpy();d={'own_bench':weighted(g.own,g.own),'cap_bench':weighted(g.cap,g.cap),'modal_cap':g.cap.max(),'buy_delta_bench':weighted(g.delta,weights),'buy_weight_total':sum(weights),'pos_own':{},'pos_form':{}}
@@ -118,7 +172,7 @@ def aggregate():
   for pos,pg in g.groupby('pos'):
    d['pos_own'][pos]=weighted(pg.own,pg.own);d['pos_form'][pos]=weighted(pg.form5,pg.buy_weight)
   fields[(slug,rn)]=d
- selected=[];squads=[];keys=set();errors=[];transfer_checks=[]
+ selected=ColumnarRows();squads=ColumnarRows();keys=set();errors=[];transfer_checks=[]
  for d in read_squads(ROOT):
   key=(d['franchise'],d['slug'],d['team'],d['round'])
   if key in keys:raise ValueError(('duplicate squad',key))
@@ -150,9 +204,9 @@ def aggregate():
   st=state.get((d['franchise'],d['slug'],d['round'],str(d['team'])),{})
   r.update({'active':st.get('active'),'frozen':st.get('frozen'),'personal_only':d.get('personal_only',False),'lineup_missing':False})
   squads.append(r)
- s=pd.DataFrame(squads);z=pd.DataFrame(selected)
- # DataFrames own the retained columns; release the per-player dictionaries before serialization.
- del squads,selected,lookup,f
+ del lookup,f
+ s=squads.to_frame();z=selected.to_frame()
+ del squads,selected
  # Direct XI benchmark for the observed franchise comparison cohort.
  cohort=s.drop_duplicates(['slug','round','team']).groupby(['slug','round']).own.mean()
  s['own_cohort']=[cohort.loc[(row.slug,row.round)] for row in s.itertuples()];s['own_cohort_gap']=s.own-s.own_cohort
@@ -195,8 +249,8 @@ def aggregate():
   r['early_examples']=unique[unique.early_success].sort_values('outcome_next3',ascending=False).head(6)[['name','slug','round','form5','form5_gap','outcome_next3','source']].to_dict('records')
   out.append(r)
  detailcols=['franchise','manager','slug','round','name','club','pos','is_xi','is_cap','is_buy','own','own_global','cap','delta','form5','form_n','trend','xgi90','minutes5','fo','alt','ffo','price_pre','cutoff','last_history_date','source']
- z.to_pickle(ROOT/'source/decisions.pkl');buy.to_pickle(ROOT/'source/purchases.pkl');s.to_pickle(ROOT/'source/squad-metrics.pkl')
- save('decisions.json',clean(z[detailcols].to_dict('records')))
+ z[DECISION_COLUMNS].to_pickle(ROOT/'source/decisions.pkl');buy.to_pickle(ROOT/'source/purchases.pkl');s.to_pickle(ROOT/'source/squad-metrics.pkl')
+ save_frame_records('decisions.json',z[detailcols])
  save('report-data.json',clean({'generated':dt.datetime.now(dt.timezone.utc).isoformat(),'franchises':out,'league_names':{'rfpl_2026':'Россия','epl_2026':'Англия','championship_2026':'Чемпионшип','la_liga_2026':'Испания','bundesliga_2026':'Германия','france_2026':'Франция','seria_a_2026':'Италия','portugal_2026':'Португалия','eredivisie_2026':'Нидерланды','turkey_2026':'Турция','ucl_2026':'Лига чемпионов','liga_europa_2026':'Лига Европы'},'audit':audit,'squads':s.to_dict('records'),'errors':errors,'n_squads':len(s),'n_decisions':len(z),'n_buys':len(buy),'n_player_rounds':z.drop_duplicates(['slug','round','h2h_id']).shape[0]}))
  print(overall[['franchise','rank','style_score','own','cap','buy_delta','buy_form_gap']].round(2).to_string(index=False));print('TOTAL',len(s),len(z),len(buy),'errors',len(errors))
 if __name__=='__main__':

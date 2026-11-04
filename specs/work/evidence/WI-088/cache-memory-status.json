@@ -1,0 +1,48 @@
+{
+  "captured_utc": "2026-11-04T09:36:36.878161+00:00",
+  "remaining_profile_processes": [],
+  "temporary_task_paths": [
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\audit-20261104\\fantasy_export\\.tmp\\wi088-baseline",
+      "bytes": 336232,
+      "files": 29,
+      "exists": true
+    },
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\audit-20261104\\fantasy_export\\.tmp\\wi088-venv",
+      "bytes": 303349375,
+      "files": 9864,
+      "exists": true
+    },
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\audit-20261104\\fantasy_export\\.tmp\\wi088-fixture-run1",
+      "bytes": 1158012946,
+      "files": 1334,
+      "exists": true
+    },
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\audit-20261104\\fantasy_export\\.tmp\\wi088-fixture-run2",
+      "bytes": 1158012943,
+      "files": 1334,
+      "exists": true
+    },
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\audit-20261104\\fantasy_export\\.tmp\\wi088-fixture-run3",
+      "bytes": 7555637,
+      "files": 662,
+      "exists": true
+    }
+  ],
+  "recursive_cleanup": {
+    "completed": false,
+    "target": "C:\\Users\\Nik\\.codex\\worktrees\\audit-20261104\\fantasy_export\\.tmp\\wi088-fixture-run1",
+    "rejections": 2,
+    "reason": "blocked by policy",
+    "stopped_after_rejection": true
+  },
+  "global_dependencies_changed": false,
+  "production_mutations": false,
+  "production_cache_or_sources_removed": false,
+  "python_download_cache": "pip --no-cache-dir",
+  "separate_pinned_venv": true
+}
