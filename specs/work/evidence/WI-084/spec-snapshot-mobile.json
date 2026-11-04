@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1",
+  "commit": "9e973d6206ae4a1972dadb69944c75536593560e",
+  "indexedAt": "2026-11-04T10:10:07.224Z",
+  "source": "working_tree",
+  "status": "current",
+  "fingerprint": "0a62d635934af7bf7935a2d2b3450a3d88fe1083156100a00734c8d059e8f7cf",
+  "diagnostics": [],
+  "provenance": {
+    "commit": "9e973d6206ae4a1972dadb69944c75536593560e",
+    "source": "working_tree",
+    "observedAt": "2026-11-04T10:10:07.224Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": [
+        "e2e/fixtures/mobile-player-sorting.tsx",
+        "e2e/fixtures/ui-keyboard.server.ts",
+        "e2e/fixtures/ui-keyboard.tsx",
+        "e2e/ui-keyboard.spec.ts",
+        "specs/modules/machete/FEAT-001-global-ranking-strategy.md",
+        "src/components/machete/player-pool-mobile-sort.test.ts",
+        "src/components/machete/PlayerPool.tsx"
+      ]
+    }
+  }
+}

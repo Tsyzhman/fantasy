@@ -1,0 +1,5 @@
+{
+  "stage": "during browser verification",
+  "node": [],
+  "playwrightBrowserRoots": []
+}

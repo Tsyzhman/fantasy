@@ -311,3 +311,163 @@ async function assertInViewport(locator: Locator, page: Page) {
   expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width + 1);
   expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height + 1);
 }
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+for (const language of ["en", "ru"] as const) {
+  test(`mobile column sort covers full pool, selected metrics and squad actions: ${language}`, async ({ page }, testInfo) => {
+    test.skip(!["mobile-320", "mobile-390"].includes(testInfo.project.name), "Actual touch checks at the requested phone widths");
+    const directory = process.env.UI_MOBILE_SORT_EVIDENCE_DIR ?? "output/playwright/mobile-player-sorting";
+    await mkdir(directory, { recursive: true });
+    await page.goto(`${fixture.url}/?mobileSort=football`);
+    await setLanguage(page, language);
+    expect(await page.evaluate(() => matchMedia("(pointer:coarse)").matches)).toBe(true);
+    const sort = page.getByTestId("player-pool-sort");
+    const picker = sort.getByRole("combobox");
+    const direction = sort.getByRole("button");
+    const mobile = page.getByTestId("player-pool-mobile");
+    const cards = mobile.locator("article");
+    await expect(sort).toBeVisible();
+    await expect(direction).toBeDisabled();
+    await expect(cards).toHaveCount(18);
+    await expect(picker.locator('option[value="fixtures"], option[value="action"]')).toHaveCount(0);
+    await mobile.getByRole("button", { name: language === "en" ? /^Show more/ : /^Показать ещё/ }).tap();
+    await expect(cards).toHaveCount(36);
+
+    await picker.tap();
+    await picker.selectOption("foontasy");
+    await page.keyboard.press("Escape");
+    await expect(sort).toHaveAttribute("data-sort-direction", "desc");
+    await expect(cards).toHaveCount(18);
+    await expect(cards.first()).toHaveAttribute("data-player-id", "sort-47");
+    await showAll();
+    await expect(cards.last()).toHaveAttribute("data-player-id", "sort-0");
+    await direction.tap();
+    await expect(sort).toHaveAttribute("data-sort-direction", "asc");
+    await expect(cards).toHaveCount(18);
+    await expect(cards.first()).toHaveAttribute("data-player-id", "sort-1");
+    await showAll();
+    await expect(cards.last()).toHaveAttribute("data-player-id", "sort-0");
+
+    await page.locator("summary").filter({ hasText: language === "en" ? "Columns" : "Столбцы" }).tap();
+    const analyticalCheckbox = page.locator('label[title*="shots"] input[type="checkbox"]');
+    await analyticalCheckbox.tap();
+    await expect(analyticalCheckbox).toBeChecked();
+    await page.getByRole("button", { name: language === "en" ? "Close" : "Закрыть", exact: true }).tap();
+    await picker.selectOption("stat:shots");
+    await expect(sort).toHaveAttribute("data-sort-key", "stat:shots");
+    await expect(cards.first()).toHaveAttribute("data-player-id", "sort-47");
+    await direction.tap();
+    await expect(cards.first()).toHaveAttribute("data-player-id", "sort-1");
+    await showAll();
+    await expect(cards.last()).toHaveAttribute("data-player-id", "sort-0");
+    const orderedIds = await cards.evaluateAll((elements) => elements.map((element) => element.getAttribute("data-player-id")));
+    expect(orderedIds.indexOf("sort-2")).toBeLessThan(orderedIds.indexOf("sort-3"));
+    expect(orderedIds.indexOf("sort-3")).toBeLessThan(orderedIds.indexOf("sort-5"));
+    await mobile.getByRole("button", { name: language === "en" ? "Add Player01" : "Добавить Player01", exact: true }).tap();
+    await expect(page.getByTestId("sort-selection")).toHaveText("sort-1");
+    await expect(mobile.getByRole("button", { name: language === "en" ? "Remove Player01" : "Убрать Player01", exact: true })).toBeVisible();
+    await expect(sort).toHaveAttribute("data-sort-key", "stat:shots");
+    await expect(sort).toHaveAttribute("data-sort-direction", "asc");
+
+    const filter = page.getByRole("textbox", { name: "Fixture name filter" });
+    await filter.fill("Player4");
+    await expect(cards).toHaveCount(8);
+    await expect(cards.first()).toHaveAttribute("data-player-id", "sort-40");
+    await direction.tap();
+    await expect(cards.first()).toHaveAttribute("data-player-id", "sort-47");
+    await expect(filter).toHaveValue("Player4");
+    await expect(page.getByTestId("sort-selection")).toHaveText("sort-1");
+    await expect(page.getByTestId("sort-columns")).toHaveText("nextFp,foontasy,fixtures,stat:shots");
+    await filter.fill("");
+    await expect(cards).toHaveCount(18);
+    await sort.scrollIntoViewIfNeeded();
+    await assertInViewport(sort, page);
+    const measurements = { sort: await sort.boundingBox(), select: await picker.boundingBox(), direction: await direction.boundingBox(), firstPlayer: await cards.first().getAttribute("data-player-id") };
+    expect(measurements.select!.height).toBeGreaterThanOrEqual(44);
+    expect(measurements.direction!.height).toBeGreaterThanOrEqual(44);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    for (const theme of ["light", "dark"]) {
+      await page.evaluate((value) => { document.documentElement.dataset.theme = value; }, theme);
+      await page.screenshot({ path: resolve(directory, `${testInfo.project.name}-${language}-${theme}-sorting.png`), scale: "css" });
+    }
+    await writeFile(resolve(directory, `${testInfo.project.name}-${language}-sorting.json`), JSON.stringify({ ...measurements, ascendingStableIds: orderedIds }, null, 2) + "\n");
+
+    await page.locator("summary").filter({ hasText: language === "en" ? "Columns" : "Столбцы" }).tap();
+    await analyticalCheckbox.tap();
+    await page.getByRole("button", { name: language === "en" ? "Close" : "Закрыть", exact: true }).tap();
+    await expect(picker).toHaveValue("");
+    await expect(direction).toBeDisabled();
+    await expect(page.getByTestId("sort-selection")).toHaveText("sort-1");
+
+    async function showAll() {
+      while (await cards.count() < 48) await mobile.getByRole("button", { name: language === "en" ? /^Show more/ : /^Показать ещё/ }).tap();
+      await expect(cards).toHaveCount(48);
+    }
+  });
+}
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+test("mobile column sort shares desktop header state in both directions", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-1440", "One fine-pointer desktop/mobile transition");
+  await page.goto(`${fixture.url}/?mobileSort=football`);
+  const desktop = page.getByTestId("player-pool-table");
+  const price = desktop.locator('th[data-sort-key="price"]');
+  await price.click();
+  await expect(price).toHaveAttribute("aria-sort", "descending");
+  await expect(desktop.locator("tbody td[data-sort-value]").first()).toHaveAttribute("data-sort-value", "48");
+  await page.setViewportSize({ width: 390, height: 844 });
+  const sort = page.getByTestId("player-pool-sort");
+  await expect(sort.getByRole("combobox")).toHaveValue("price");
+  await expect(sort).toHaveAttribute("data-sort-direction", "desc");
+  await sort.getByRole("button").click();
+  await expect(page.getByTestId("player-pool-mobile").locator("article").first()).toHaveAttribute("data-player-id", "sort-0");
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect(price).toHaveAttribute("aria-sort", "ascending");
+  await expect(desktop.locator("tbody td[data-sort-value]").first()).toHaveAttribute("data-sort-value", "1");
+});
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+test("mobile column sort follows changed definitions and survives empty filters", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-390", "One props-rerender and empty-filter regression");
+  await page.goto(`${fixture.url}/?mobileSort=football`);
+  await page.locator("summary").filter({ hasText: "Columns" }).tap();
+  await page.locator('label[title*="shots"] input[type="checkbox"]').tap();
+  await page.getByRole("button", { name: "Close", exact: true }).tap();
+  const sort = page.getByTestId("player-pool-sort");
+  const picker = sort.getByRole("combobox");
+  const cards = page.getByTestId("player-pool-mobile").locator("article");
+  const filter = page.getByRole("textbox", { name: "Fixture name filter" });
+  await filter.fill("Player4");
+  await picker.selectOption("stat:shots");
+  await expect(cards.first()).toHaveAttribute("data-player-id", "sort-47");
+  // Definitions disappear, while the player DTOs still carry their historical values.
+  await page.getByRole("button", { name: "Remove historical column definitions" }).tap();
+  await expect(picker).toHaveValue("");
+  await expect(sort).toHaveAttribute("data-sort-key", "");
+  await expect(sort).toHaveAttribute("data-sort-direction", "");
+  await expect(sort.getByRole("button")).toBeDisabled();
+  await expect(cards.first()).toHaveAttribute("data-player-id", "sort-40");
+  await expect(filter).toHaveValue("Player4");
+  await page.locator("summary").filter({ hasText: "Columns" }).tap();
+  await page.getByRole("button", { name: "Hide optional", exact: true }).tap();
+  await page.getByRole("button", { name: "Close", exact: true }).tap();
+  await page.getByRole("button", { name: "Restore historical column definitions" }).tap();
+  await page.locator("summary").filter({ hasText: "Columns" }).tap();
+  await page.getByRole("button", { name: "Select all", exact: true }).tap();
+  await page.getByRole("button", { name: "Close", exact: true }).tap();
+  await expect(picker).toHaveValue("");
+  await expect(sort).toHaveAttribute("data-sort-key", "");
+  await expect(sort.getByRole("button")).toBeDisabled();
+  await expect(cards.first()).toHaveAttribute("data-player-id", "sort-40");
+  await picker.selectOption("foontasy");
+  await filter.fill("no-matches");
+  await expect(cards).toHaveCount(0);
+  await expect(picker).toHaveValue("foontasy");
+  await expect(sort).toHaveAttribute("data-sort-key", "foontasy");
+  await expect(sort).toHaveAttribute("data-sort-direction", "desc");
+  await expect(sort.getByRole("button")).toBeDisabled();
+  await filter.fill("");
+  await expect(cards).toHaveCount(18);
+  await expect(cards.first()).toHaveAttribute("data-player-id", "sort-47");
+  await expect(sort.getByRole("button")).toBeEnabled();
+});

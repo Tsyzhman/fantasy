@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-089](work/WI-089-mobile-player-column-sorting.md) | Sort player columns directly on mobile | FEAT-001, PROP-002 | @tsyzhman | 2026-11-04 | — |
 | [WI-085](work/WI-085-telegram-delivery-correctness.md) | Telegram consent, deadlines and fenced recovery | INFRA-005 | @tsyzhman | 2026-11-04 | — |
 | [WI-086](work/WI-086-ui-keyboard-dialogs.md) | Preserve table controls and modal keyboard focus | PROP-002 | @tsyzhman | 2026-11-04 | — |
 | [WI-087](work/WI-087-runtime-release-security.md) | Patch Node runtime and enforce release validation | INFRA-006 | @tsyzhman | 2026-11-04 | — |

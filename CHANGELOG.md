@@ -4,6 +4,7 @@
 
 - Enforce current Telegram consent, the 08:50 Moscow build cutoff and fenced deadline publication; retain unknown delivery outcomes without automatic resends.
 - Preserve keyboard activation inside sortable tables, contain and restore dialog focus, and keep forecast round labels aligned with missing values.
+- Expose player-column sorting and direction on mobile while preserving squad selection, filters and analytical columns.
 - Update the digest-pinned Node 24 runtime security patch and require full validation of the exact deployment revision with trusted SSH host keys.
 - Reduce franchise calculation working memory while preserving complete source histories and publication checks.
 

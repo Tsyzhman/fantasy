@@ -8,13 +8,13 @@ import postcss from "postcss";
 import tailwindcss from "tailwindcss";
 
 const projectRoot = resolve(__dirname, "../..");
-const componentFiles = ["src/components/sortable-table.tsx", "src/components/command-palette.tsx", "src/components/machete/FantasySquadPlanner.tsx", "src/components/machete/planner-explanations.tsx"];
+const componentFiles = ["src/components/sortable-table.tsx", "src/components/command-palette.tsx", "src/components/machete/FantasySquadPlanner.tsx", "src/components/machete/planner-explanations.tsx", "src/components/machete/PlayerPool.tsx"];
 
 export async function startKeyboardFixture(sourceRevision?: string) {
   const plugins: Plugin[] = sourceRevision ? [{
     name: "review-source-revision",
     setup(buildApi) {
-      buildApi.onLoad({ filter: /(?:sortable-table|command-palette|FantasySquadPlanner|planner-explanations)\.tsx$/ }, (args) => {
+      buildApi.onLoad({ filter: /(?:sortable-table|command-palette|FantasySquadPlanner|planner-explanations|PlayerPool)\.tsx$/ }, (args) => {
         const file = componentFiles.find((candidate) => resolve(projectRoot, candidate).toLowerCase() === args.path.toLowerCase());
         return file ? { contents: execFileSync("git", ["show", `${sourceRevision}:${file}`], { cwd: projectRoot, encoding: "utf8" }), loader: "tsx" } : undefined;
       });

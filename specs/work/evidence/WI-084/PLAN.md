@@ -35,6 +35,8 @@ Existing WI-066 fixes verified present: atomic login limit, safe redirects, one-
 
 Implementation chats (all `gpt-6.1-sol`, reasoning `max`): WI-085 `01a1a5ca-b107-70f2-8329-48fa8c9b07df`; WI-086 `01a1a5ca-b6f9-7c63-9543-f26fb5d443a3`; WI-087 `01a1a5ca-bbc0-7203-b0cc-541938841e57`; WI-088 `01a1a5ca-c00f-7bd3-9a5f-d38a111c6f77`.
 
+User addition during CI: WI-089 exposes mobile player-column sorting and direction in the existing UI chat. Deploy run 41809561461 was cancelled before packaging/promotion; the revised 0.3.149 will rerun exact-SHA validation. Existing PR #53 retains the integrated audit work.
+
 1. Record evidence and publish this plan before implementation chats.
 2. Four Sol 6.1 Max chats own disjoint changes: Telegram correctness, UI keyboard/dialogs, runtime/release checks, franchise memory. Root alone edits shared BOARD, integrates commits and deploys. No competing production deployments.
 3. Review diffs and meaningful regressions. Full test/lint/typecheck/build runs serially in one checkout; database tests and migration drift run in isolated CI PostgreSQL. Browser checks cover desktop/tablet/mobile without changing real user squads.

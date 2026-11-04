@@ -1,0 +1,10 @@
+{
+  "date": "2026-11-04",
+  "productionVersion": "0.3.148",
+  "route": "/machete/khl/squad",
+  "method": "Authenticated IAB, viewport 390x844, existing price header clicked twice; no squad save, preferences save, refresh or transfer invoked",
+  "ascending": {"ariaSort": "ascending", "firstPrices": [500, 500, 500]},
+  "descending": {"ariaSort": "descending", "firstPlayers": ["Ливо", "Спронг", "Окулов"], "firstPrices": [2080, 2031, 1987]},
+  "result": "Existing KHL mobile header sorting works in both directions; football card controls remain WI-089 scope",
+  "cleanup": "Temporary viewport reset and root-created tab closed"
+}

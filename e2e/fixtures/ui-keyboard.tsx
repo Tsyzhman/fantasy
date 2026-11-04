@@ -1,6 +1,7 @@
 /** @spec spec://common/PROP-002-editorial-sport-design#contracts */
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { MobilePlayerSortingFixture } from "./mobile-player-sorting";
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 import { CommandPalette } from "@/components/command-palette";
@@ -81,4 +82,7 @@ function Fixture() {
   </main></AppRouterContext.Provider>;
 }
 
-createRoot(document.getElementById("root")!).render(<StrictMode><Fixture /></StrictMode>);
+const mobileSortFixture = new URLSearchParams(location.search).get("mobileSort");
+createRoot(document.getElementById("root")!).render(<StrictMode>{mobileSortFixture
+  ? <AppRouterContext.Provider value={router}><MobilePlayerSortingFixture /></AppRouterContext.Provider>
+  : <Fixture />}</StrictMode>);

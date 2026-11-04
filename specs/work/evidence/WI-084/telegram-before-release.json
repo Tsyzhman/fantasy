@@ -1,0 +1,4 @@
+{"inbox" : [{"state":"PROCESSED","count":8}], "outbox" : [{"state":"EXPIRED","count":5},
+ {"state":"SENT","count":62}], "campaigns" : [{"status":"DONE","count":44},
+ {"status":"BUILT","count":5},
+ {"status":"ACTIVE","count":11}], "pending_version_mismatch" : 0}

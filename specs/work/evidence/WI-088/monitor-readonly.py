@@ -1,5 +1,7 @@
 """Stream bounded host/cgroup aggregates during the root-authorized real sync.
 
+@spec spec://common/INFRA-006-continuous-deployment#observability
+
 Run on the Linux host, before starting the regular service. This monitor never
 starts or stops a job and never changes production files or configuration.
 """
@@ -28,18 +30,38 @@ def emit(value):
     print(json.dumps({'at': datetime.datetime.now(datetime.timezone.utc).isoformat(), **value}), flush=True)
 
 
+def protected_state(container):
+    if not container:
+        return None
+    return {'id': container['Id'], 'restarts': container['RestartCount'],
+            'status': container['State']['Status'], 'oom': container['State']['OOMKilled'],
+            'started': container['State']['StartedAt']}
+
+
 if __name__ == '__main__':
     worker = inspect('fantasy-scout-worker')
     if not worker:
         raise SystemExit('Worker missing')
-    emit({'ready': True, 'worker_image': worker['Image'], 'worker_restarts': worker['RestartCount'], 'available_bytes': memory_available()})
+    protected = {name: protected_state(inspect(name)) for name in
+                 ('fantasy-scout-web', 'fantasy-scout-worker', 'fantasy-scout-postgres')}
+    if any(not state or state['status'] != 'running' or state['oom'] for state in protected.values()):
+        raise SystemExit('A protected production container is missing, stopped, or OOM-killed')
+    emit({'ready': True, 'worker_image': worker['Image'], 'protected': protected, 'available_bytes': memory_available()})
     deadline = time.monotonic() + 5550
+    startup_deadline = time.monotonic() + 180
     found, low_samples = False, 0
     while time.monotonic() < deadline:
+        observed = {name: protected_state(inspect(name)) for name in protected}
+        if observed != protected:
+            emit({'abort_required': True, 'reason': 'protected production container changed state', 'protected': observed})
+            break
         job = inspect('fantasy-scout-franchises-job')
         if not job or job['State']['Status'] != 'running':
             if found:
                 emit({'finished': True, 'job_present': job is not None, 'available_bytes': memory_available()})
+                break
+            if time.monotonic() >= startup_deadline:
+                emit({'startup_timeout': True, 'job_seen': False, 'available_bytes': memory_available()})
                 break
             time.sleep(5)
             continue
