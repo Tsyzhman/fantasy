@@ -59,7 +59,7 @@ class MemoryRepresentationTests(unittest.TestCase):
         self.assertFalse(result[(1, 'league', 10, '123')]['frozen'])
 
     def test_conflicting_flags_abort_aggregation_before_outputs_and_keep_previous_report(self):
-        first = {'franchise': 1, 'slug': 'league', 'round': 10, 'team': '123', 'active': True, 'frozen': False}
+        first = {'franchise': 1, 'slug': 'league', 'round': 10, 'team': '123', 'active': True, 'frozen': False, 'source': 'same-board'}
         for second in [{**first, 'active': False}, {**first, 'frozen': True}]:
             with self.subTest(second=second), tempfile.TemporaryDirectory() as directory:
                 root = pathlib.Path(directory)
@@ -69,7 +69,7 @@ class MemoryRepresentationTests(unittest.TestCase):
                 previous.write_text('{"previous":"valid"}', encoding='utf-8')
                 features = pd.DataFrame([{'slug': 'league', 'round': 10, 'h2h_id': 'player'}])
                 with patch.object(analyze, 'ROOT', root), patch.object(pd, 'read_pickle', return_value=features), patch.object(analyze, 'read_squads') as sources:
-                    with self.assertRaisesRegex(ValueError, 'Conflicting franchise board active/frozen state'):
+                    with self.assertRaisesRegex(ValueError, 'Conflicting franchise board state within one source'):
                         analyze.aggregate()
                 sources.assert_not_called()
                 self.assertEqual(previous.read_text('utf-8'), '{"previous":"valid"}')

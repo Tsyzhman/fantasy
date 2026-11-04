@@ -97,6 +97,16 @@ def board_user_id(document):
     return match[1] if match else None
 
 
+def franchise_squad_keys(squads, franchises):
+    """One eligible XI per football round; virtual groups keep personal history.
+
+    @spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts
+    """
+    virtual = {f['id'] for f in franchises if f.get('kind') == 'virtual'}
+    return {(r['franchise'], r['slug'], r['round'], str(r['team'])) for r in squads
+            if r['franchise'] in virtual or (not r.get('personal_only', False) and r.get('active') is True)}
+
+
 def calendar_fixture_scopes(leagues):
     """Retain every calendar membership of a Sports ID, including provider aliases.
 

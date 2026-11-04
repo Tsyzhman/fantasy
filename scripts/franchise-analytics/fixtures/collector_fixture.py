@@ -80,7 +80,7 @@ def create(root):
                     name = f'{slug}-{tid}-{rn}.json'
                     save('source/squads/' + name, {'slug': slug, 'round': rn, 'team': tid, 'franchise': fid, 'manager': members[0]['manager'], 'memberships': members, 'players': [] if missing else players, 'lineup_missing': missing, 'url': f'https://fantasy-h2h.ru/fixture/{tid}/{rn}'})
                     names.append(name)
-                    states.append({'franchise': fid, 'slug': slug, 'round': rn, 'team': tid, 'active': team < 6, 'frozen': team == 6})
+                    states.append({'franchise': fid, 'slug': slug, 'round': rn, 'team': tid, 'active': team < 6, 'frozen': team == 6, 'source': f'https://fantasy-h2h.ru/fixture/board/{fid}/{slug}/{rn}'})
     save('squad-index.json', names)
     save('freezes.json', {'states': states, 'events': [], 'summary': [], 'audit': [], 'basis': []})
     with gzip.open(source / 'http/fixture.json.gz', 'wt', encoding='utf-8') as target:

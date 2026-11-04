@@ -1,4 +1,7 @@
-/** @spec spec://modules/franchises/FEAT-005-franchise-analytics#acceptance */
+/**
+ * @spec spec://modules/franchises/FEAT-005-franchise-analytics#acceptance
+ * @spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts
+ */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { aggregate, parseFilters, roundDate, type Fact, type Snapshot } from "./analytics";
@@ -19,6 +22,7 @@ const fact = (
   cap_gap: own,
   buy_delta_gap: own,
   n_buy: 1,
+  active: true,
   finished: true,
   xfo_known: 10,
   xfo_complete: false,
@@ -240,10 +244,10 @@ test("personal style and xFO comparisons include reserve, frozen and personal-on
   assert.equal(manager.metrics.xfo, 75);
   assert.equal(manager.metrics.xfo_actual, 80);
   assert.equal(manager.xfoComplete, 3);
-  assert.equal(r.franchises[0].count, 2);
-  assert.equal(r.franchises[0].metrics.own, 40);
+  assert.equal(r.franchises[0].count, 1);
+  assert.equal(r.franchises[0].metrics.own, 10);
   assert.equal(r.managerSquads, 3);
-  assert.equal(r.squads, 2);
+  assert.equal(r.squads, 1);
 });
 
 test("virtual group aggregates personal histories and has no freeze denominator", () => {
@@ -286,10 +290,11 @@ test("franchise purchase explanations keep tournament scope while virtual groups
   const s = snapshot([]);
   s.franchises.push({id: -1, name: "шизы", kind: "virtual"});
   const board = fact(1, "a", 1, 10, {h2h_id: "board", triple_model_low: 1});
-  const personal = fact(1, "a", 1, 10, {h2h_id: "personal", triple_model_low: 1, personal_only: true});
-  const virtual = fact(-1, "a", 1, 10, {h2h_id: "virtual", triple_model_low: 1, personal_only: true});
-  s.purchases = [board, personal, virtual];
-  s.xfoExamples = [board, personal, virtual];
+  const personal = fact(1, "a", 1, 10, {team: "personal-team", h2h_id: "personal", triple_model_low: 1, personal_only: true, active: false});
+  const virtual = fact(-1, "a", 1, 10, {h2h_id: "virtual", triple_model_low: 1, personal_only: true, active: false});
+  s.squads = [board, personal, virtual];
+  s.purchases = [board, personal, virtual].map(withoutActive);
+  s.xfoExamples = [board, personal, virtual].map(withoutActive);
   const result = aggregate(s, {from: "2026-07-01", to: "2026-07-02", leagues: [], completed: false});
   assert.equal(result.buys, 2);
   assert.deepEqual(result.models.find(f => f.id === 1)!.examples.map(r => r.h2h_id), ["board"]);
@@ -306,4 +311,138 @@ test("current forecasts describe only the last selected lineup, historical value
     .franchises[0];
   assert.equal(result.metrics.current_fo, 10);
   assert.equal(result.metrics.fo_xi_pct, 50);
+});
+
+function withoutActive(row: Fact): Fact {
+  const result = { ...row };
+  delete result.active;
+  return result;
+}
+
+test("franchise rating includes an active frozen XI once while managers retain every personal observation", () => {
+  const s = snapshot([
+    fact(1, "a", 1, 10, { active: true, frozen: true, xfo_complete: true, xfo_known: 11, xfo: 20 }),
+    fact(1, "a", 2, 70, { active: false, frozen: true }),
+    fact(1, "b", 1, 100, { personal_only: true, active: false }),
+    fact(1, "b", 1, 60, { team: "unknown-state", active: undefined }),
+    fact(1, "b", 1, 50, { team: "non-boolean-state", active: "true" }),
+  ]);
+  s.freeze.basis = ["/board-one", "/board-two"].map((source) => ({ franchise: 1, slug: "a", round: 1, n_active: 6, source }));
+  s.freeze.events = [{ franchise: 1, slug: "a", round: 1, n: 1, valid: true, finished: true, board_verified: true, gain: 2, source: "/board-one", frozen: [{ manager: "m1", score: 10 }], substitutes: [] }];
+  const result = aggregate(s, { from: "2026-07-01", to: "2026-07-02", leagues: [], completed: true });
+  const franchise = result.franchises.find((row) => row.franchise === 1)!;
+  const manager = result.managers.find((row) => row.franchise === 1)!;
+  assert.equal(franchise.count, 1);
+  assert.equal(franchise.metrics.own, 10);
+  assert.equal(franchise.metrics.xfo, 20);
+  assert.equal(franchise.buys, 1);
+  assert.equal(franchise.activeRounds, 1);
+  assert.equal(franchise.reserveRounds, 0);
+  assert.equal(manager.count, 5);
+  assert.equal(manager.reserveRounds, 2);
+  assert.equal(manager.personalRounds, 1);
+  assert.equal(result.squads, 1);
+  assert.equal(result.managerSquads, 5);
+  assert.equal(result.byLeague.length, 1);
+  assert.equal(result.timeline.length, 1);
+  assert.deepEqual(result.events.map(({ source }) => source), ["/board-one"]);
+  const freeze = result.freezes.find((row) => row.id === 1)!;
+  assert.equal(freeze.episodes, 1);
+  assert.equal(freeze.rounds, 2);
+  assert.equal(freeze.frequency, 50);
+});
+
+test("purchases and xFO examples join eligible XI by all four identity fields, independently of manager name", () => {
+  const active = fact(1, "a", 1, 10, { team: "selected", frozen: true });
+  const reserve = fact(1, "a", 1, 90, { team: "reserve", active: false });
+  const virtual = fact(-1, "a", 1, 50, { team: "personal", active: false, personal_only: true });
+  const s = snapshot([active, reserve, virtual]);
+  s.franchises.push({ id: -1, name: "шизы", kind: "virtual" });
+  const attached = (id: string, fields: Partial<Fact> = {}) => withoutActive({ ...active, manager: "renamed manager", h2h_id: id, triple_model_low: 1, ...fields });
+  const records = [
+    attached("eligible"),
+    attached("reserve-same-manager", { team: "reserve", manager: active.manager }),
+    attached("wrong-franchise", { franchise: 2 }),
+    attached("wrong-league", { slug: "b" }),
+    attached("wrong-round", { round: 2 }),
+    attached("wrong-team", { team: "unknown" }),
+    attached("virtual", { ...virtual, manager: "virtual alias", h2h_id: "virtual" }),
+    attached("orphan-virtual", { ...virtual, team: "no-XI", h2h_id: "orphan-virtual" }),
+  ];
+  assert.ok(records.every((record) => !("active" in record)));
+  s.purchases = records;
+  s.xfoExamples = records;
+  const result = aggregate(s, { from: "2026-07-01", to: "2026-07-02", leagues: [], completed: true });
+  assert.equal(result.buys, 2);
+  assert.equal(result.franchises.find((row) => row.franchise === -1)!.count, 1);
+  assert.equal(result.managerSquads, 3);
+  assert.deepEqual(result.models.find((row) => row.id === 1)!.examples.map((row) => row.h2h_id), ["eligible"]);
+  assert.deepEqual(result.models.find((row) => row.id === -1)!.examples.map((row) => row.h2h_id), ["virtual"]);
+  assert.deepEqual(result.xfoExamples.map((row) => row.h2h_id), ["eligible", "virtual"]);
+});
+
+test("hypothesis targets and control denominators use eligible franchise purchases only", () => {
+  const records = [
+    fact(1, "a", 1, 10, { team: "target", h2h_id: "target", active: true, frozen: true, pos: "MID", triple_model_low: 1, trend: 3 }),
+    fact(1, "a", 1, 90, { team: "reserve-target", h2h_id: "reserve-target", active: false, pos: "MID", triple_model_low: 1, trend: 4 }),
+    ...[0, 1, 2].map((index) => fact(2, "a", 1, 20, { team: `control-${index}`, h2h_id: `control-${index}`, pos: "MID", triple_model_low: 0, trend: 0 })),
+    fact(2, "a", 1, 90, { team: "reserve-control", h2h_id: "reserve-control", active: false, pos: "MID", triple_model_low: 0, trend: 5 }),
+  ];
+  const s = snapshot(records);
+  s.purchases = records.map(withoutActive);
+  const result = aggregate(s, { from: "2026-07-01", to: "2026-07-01", leagues: ["a"], completed: true });
+  const model = result.models.find((row) => row.id === 1)!;
+  assert.equal(result.buys, 4);
+  assert.equal(model.hypotheses[0].n, 1);
+  assert.equal(model.hypotheses[0].share, 100);
+  assert.equal(model.hypotheses[0].control, 0);
+  assert.deepEqual(model.examples.map((row) => row.h2h_id), ["target"]);
+  assert.equal(result.managers.find((row) => row.franchise === 1)!.count, 2);
+});
+
+test("active incomplete XI remains in franchise coverage instead of disappearing from denominators", () => {
+  const s = snapshot([
+    fact(1, "a", 1, 10, { xfo_complete: true, xfo_known: 11, xfo: 20 }),
+    fact(1, "a", 2, 0, { own: null, lineup_missing: true, xfo_known: 0 }),
+    fact(1, "a", 2, 80, { team: "reserve", active: false, xfo_complete: true, xfo_known: 11, xfo: 90 }),
+  ]);
+  const result = aggregate(s, { from: "2026-07-01", to: "2026-07-02", leagues: [], completed: true });
+  const franchise = result.franchises.find((row) => row.franchise === 1)!;
+  assert.equal(franchise.count, 2);
+  assert.equal(franchise.xfoEligible, 2);
+  assert.equal(franchise.xfoComplete, 1);
+  assert.equal(franchise.xfoCoverage, 50);
+  assert.equal(franchise.missingLineups, 1);
+  assert.equal(franchise.metrics.xfo, 20);
+  assert.equal(result.managers[0].count, 3);
+});
+
+test("date, league and completion filters agree across franchise aggregates and joined explanations", () => {
+  const records = [
+    fact(1, "a", 1, 10),
+    fact(1, "a", 2, 30, { finished: false }),
+    fact(1, "b", 1, 80),
+    fact(1, "a", 1, 90, { team: "reserve", active: false }),
+  ];
+  const s = snapshot(records);
+  s.rounds[1].finished = false;
+  s.purchases = records.map((row) => withoutActive({ ...row, h2h_id: row.team, triple_model_low: 1 }));
+  s.xfoExamples = s.purchases;
+  for (const [from, to, leagues, completed, count, managerCount] of [
+    ["2026-07-01", "2026-07-02", [], false, 3, 4],
+    ["2026-07-01", "2026-07-01", [], false, 2, 3],
+    ["2026-07-01", "2026-07-02", ["a"], false, 2, 3],
+    ["2026-07-01", "2026-07-02", [], true, 2, 3],
+    ["2027-01-01", "2027-01-02", [], false, 0, 0],
+  ] as const) {
+    const result = aggregate(s, { from, to, leagues: [...leagues], completed });
+    assert.equal(result.squads, count);
+    assert.equal(result.managerSquads, managerCount);
+    assert.equal(result.franchises.find((row) => row.franchise === 1)!.count, count);
+    assert.equal(result.byLeague.reduce((sum, row) => sum + row.count, 0), count);
+    assert.equal(result.timeline.reduce((sum, row) => sum + row.count, 0), count);
+    assert.equal(result.buys, count);
+    assert.equal(result.models.find((row) => row.id === 1)!.examples.length, count);
+    assert.equal(result.xfoExamples.length, count);
+  }
 });

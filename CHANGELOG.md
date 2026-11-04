@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.151 - 2026-11-04
+
+- Count each football XI once in franchise rankings when it starts in at least one H2H duel, preserving separate duel roles, results and freeze episodes.
+- Accept legitimate role differences between distinct source boards while retaining rejection of contradictory records within one board.
+
 ## 0.3.150 - 2026-11-04
 
 - Preserve all calendar memberships of a Sports match and resolve franchise boards only from a unique intersection of fixture and date evidence.

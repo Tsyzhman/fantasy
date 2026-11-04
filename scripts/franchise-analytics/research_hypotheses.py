@@ -1,6 +1,11 @@
-"""No-budget hypotheses. @spec spec://modules/franchises/FEAT-005-franchise-analytics#time"""
+"""No-budget franchise hypotheses, retaining all annotated personal purchases.
+
+@spec spec://modules/franchises/FEAT-005-franchise-analytics#time
+@spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts
+"""
 from research import ROOT,save
-from analyze import stream,clean
+from analyze import stream,clean,eligible_frame_keys,filter_squad_frame
+import json
 import pandas as pd,numpy as np
 def main():
  b=pd.read_pickle(ROOT/'source/purchases.pkl')
@@ -27,10 +32,12 @@ def main():
  flags={'rare':('own',lambda v:v<10),'minutes_rise':('minutes_change',lambda v:v>=15),'attack_rise':('attack_change',lambda v:v>=.15),'underreturn':('underreturn',lambda v:v>=1),'form_rise':('trend',lambda v:v>=2),'hard_fixture':('fdr_pre',lambda v:v>=4)}
  for flag,(col,fn) in flags.items():b['flag_'+flag]=np.where(b[col].notna(),fn(b[col]).astype(float),np.nan)
  b.to_pickle(ROOT/'source/purchases.pkl')
- controls=b[b.triple_model_low==0].drop_duplicates(['slug','round','h2h_id'])
+ squads=pd.read_pickle(ROOT/'source/squad-metrics.pkl');franchises=json.loads((ROOT/'franchises.json').read_text('utf-8'))
+ ranked=filter_squad_frame(b,eligible_frame_keys(squads,franchises))
+ controls=ranked[ranked.triple_model_low==0].drop_duplicates(['slug','round','h2h_id'])
  grouped={k:g for k,g in controls.groupby(['slug','round','pos'])}
- out={};rng=np.random.default_rng(20260920)
- for fid,g in b.groupby('franchise'):
+ out={str(fr['id']):{'unique_low':0,'signals':{}} for fr in franchises};rng=np.random.default_rng(20260920)
+ for fid,g in ranked.groupby('franchise'):
   low=g[g.triple_model_low==1].drop_duplicates(['slug','round','h2h_id']);res={}
   for flag in flags:
    pairs=[];cases=[]
