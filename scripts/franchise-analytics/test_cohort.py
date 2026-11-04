@@ -33,7 +33,7 @@ class FranchiseCohortTests(unittest.TestCase):
                 self.assertEqual(analyze.eligible_frame_keys(frame, registry), {(1, 'l', 1, 'a'), (-1, 'l', 1, 'd')})
                 self.assertEqual(list(analyze.filter_squad_frame(frame, set()).columns), list(frame.columns))
 
-    def run_fixture(self, empty=False):
+    def run_fixture(self, empty=False, collide=False):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             create(root)
@@ -46,6 +46,15 @@ class FranchiseCohortTests(unittest.TestCase):
             source = root / 'source/squads/epl_2026-101-2.json'
             squad = json.loads(source.read_text('utf-8'));squad['memberships'][0]['personal_only'] = True
             source.write_text(json.dumps(squad), encoding='utf-8')
+            if collide:
+                for team in ['100', '106']:
+                    path = root / ('source/squads/epl_2026-' + team + '-2.json')
+                    squad = json.loads(path.read_text('utf-8'))
+                    squad['manager'] = squad['memberships'][0]['manager'] = 'Same display name'
+                    path.write_text(json.dumps(squad), encoding='utf-8')
+                index = json.loads((root / 'squad-index.json').read_text('utf-8'))
+                index.remove('epl_2026-106-2.json');index.insert(0, 'epl_2026-106-2.json')
+                (root / 'squad-index.json').write_text(json.dumps(index), encoding='utf-8')
             if empty:
                 for row in freeze['states']:
                     row.update(active=False, frozen=False)
@@ -58,7 +67,15 @@ class FranchiseCohortTests(unittest.TestCase):
             with contextlib.ExitStack() as stack, contextlib.redirect_stdout(io.StringIO()):
                 for module in [research, analyze, enrich, research_hypotheses, export_snapshot]:
                     stack.enter_context(patch.object(module, 'ROOT', root))
-                analyze.features();analyze.aggregate();enrich.main();research_hypotheses.main();export_snapshot.main()
+                analyze.features()
+                if collide:
+                    features = pd.read_pickle(root / 'source/features.pkl')
+                    selected = (features.slug == 'epl_2026') & (features['round'] == 2)
+                    features.loc[selected, ['fo', 'alt', 'ffo']] = 1
+                    for pid, value in [('6', 0), ('7', 20), ('12', 0), ('22', 100)]:
+                        features.loc[selected & (features.h2h_id == pid), ['fo', 'alt', 'ffo']] = value
+                    features.to_pickle(root / 'source/features.pkl')
+                analyze.aggregate();enrich.main();research_hypotheses.main();export_snapshot.main()
             self.assertEqual((root / 'freezes.json').read_bytes(), before)
             result = json.loads(gzip.decompress((root / 'snapshot.json.gz').read_bytes()))
             report = json.loads((root / 'report-data.json').read_text('utf-8'))
@@ -108,6 +125,17 @@ class FranchiseCohortTests(unittest.TestCase):
             self.assertEqual(row['coverage_by_league'], [])
             self.assertEqual(hypotheses[str(row['franchise'])], {'unique_low': 0, 'signals': {}})
         self.assertTrue(len(decisions) > 0)
+
+    def test_captain_proof_uses_exact_active_xi_when_reserve_has_the_same_manager_name(self):
+        _, report, _, _, _, _ = self.run_fixture(collide=True)
+        group = next(row for row in report['franchises'] if row['franchise'] == 1)
+        example = next(row for row in group['captain_examples'] if row['slug'] == 'epl_2026' and row['round'] == 2 and row['captain'] == 'Player 6')
+        proof = next(row for row in group['captain_proofs'] if row['slug'] == 'epl_2026' and row['round'] == 2 and row['captain'] == 'Player 6')
+        self.assertAlmostEqual(proof['own'], 6.2)
+        self.assertEqual(proof['alternative'], 'Player 7')
+        self.assertEqual((proof['alternative_fo'], proof['alternative_alt'], proof['alternative_ffo']), (20, 20, 20))
+        self.assertEqual(example['team'], '100')
+        self.assertEqual(proof['team'], '100')
 
     def test_hypothesis_cases_and_controls_use_eligible_population_but_keep_all_purchases(self):
         configurations = [(1, True, False, 1, 1), (1, True, False, 0, 50), (1, True, False, 0, 50), (1, True, False, 0, 50), (1, False, False, 0, 1), (1, True, True, 0, 1), (1, False, False, 1, 1), (-1, None, True, 0, 50), (-1, None, True, 1, 1)]

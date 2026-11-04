@@ -29,7 +29,7 @@ def main():
   # Concrete captain alternatives were already available in that manager's XI.
   proofs=[]
   for x in fr['captain_examples']:
-   xx=z[(z.franchise==fid)&(z.manager==x['manager'])&(z.slug==x['slug'])&(z['round']==x['round'])&z.is_xi]
+   xx=z[(z.franchise==fid)&(z.slug==x['slug'])&(z['round']==x['round'])&(z.team==x['team'])&z.is_xi]
    cap=xx[xx.is_cap].iloc[0];pool=xx.dropna(subset=['fo','alt','ffo']).copy()
    if pool.empty:continue
    pool['consensus']=pool[['fo','alt','ffo']].mean(axis=1)
