@@ -60,20 +60,18 @@ cache; Windows synthetic process RSS is not a substitute for this measurement.
 
 ## Executable publication boundary and aborts
 
-`analyze.validated_board_states` runs before aggregation outputs. It rejects the
-same franchise/league/round/team with different `active` or `frozen` flags.
-Agreeing flags with different duel scores/opponents/board numbers are accepted;
-all original freeze events/history remain intact. A contradictory source fails
-the Python stage; `sync.py` exits nonzero; the existing Node importer refuses to
-run. This removes the manual race between inspecting states and publication.
-The existing export guard also rejects missing active states, duplicate player
-selections, future history, and invalid source selections.
+`analyze.validated_board_states` validates each actual source board before
+aggregation outputs. Contradictory roles, board numbers, score, opponent or
+finished status within the same source board fail closed. Across distinct H2H
+duels, the user's confirmed rule projects exactly one football-round XI with
+active-any and frozen-any. Original duel histories, freeze events and results
+remain intact. Ordinary franchise ranking admits non-personal active-any XI;
+personal manager histories and virtual groups retain all unique observations.
 
-If fresh acquisition still reports a conflicting state, **stop here**. Record
-only aggregate scopes and source/board identities. Retain the old published
-snapshot. A verified rule for several H2H duels sharing one football round must
-be reviewed against `FEAT-005#freezes`; do not delete duplicates, change their
-flags, infer a new tour arithmetically, or rerun an old snapshot importer.
+A contradictory source fails the Python stage before publication. The existing
+export guard also rejects missing active states, duplicate player selections,
+future history and invalid source selections. Preserve the old snapshot on any
+failure; diagnose its exact source identity without weakening these checks.
 
 Also abort the trial for any worker/web/PostgreSQL OOM or restart, any job OOM,
 or host `MemAvailable < 1 GiB` for two consecutive five-second samples. Root may
@@ -83,6 +81,16 @@ worker and database running. Check child/container exit before any stale-marker
 recovery. Do not retry by raising the cap or disabling a guard.
 
 ## Success evidence
+
+After the November 4 full acquisition failed at fixture identity, a separately
+validated source-parser correction may retry through the same normal entry with
+`FRANCHISE_RESUME_AFTER=2026-11-04T11:42:00Z`, only while that verified checkpoint
+is within three hours. This is the existing INFRA-006 bounded acquisition resume:
+reuse only responses/squads acquired since that checkpoint and settled valid
+lineups, refresh database exports, and run every calculation/publication stage.
+Never set FRANCHISE_USE_CACHE or import the October artifacts. Root removed the
+five October reproducible intermediates after preserving diagnosis. After the
+three-hour window expires, use a normal fresh acquisition without this override.
 
 Require all stages and importer to exit zero; a newer database `generated_at`,
 different SHA, valid complete payload, preserved histories/personal groups, and
@@ -99,5 +107,13 @@ the timer is active with the unchanged three-hour `:10 MSK` cadence, no collecto
 markers remain, successful-run intermediate files were removed, HTTP cache has
 no temporary files and no expired entries, and source/index identities are
 unique. Preserve user sources, rollback containers and the kernel lock file.
+
+Keep `memory.events.max` separate from `oom` and `oom_kill`: boundary-triggered
+reclaim is memory pressure and must be recorded, not silently converted to zero
+or described as spare capacity. The complete 0.3.152 run succeeded with 1,313
+such events and zero OOM. Its publication and host-reserve checks passed, while
+TD-010 retains export/growth-headroom follow-up. No runtime limit or abort guard
+was changed. See `production-run-0152-summary.json` and
+`publication-acceptance-review.md`.
 
 Production host note (2026-11-04): this kernel exposes `memory.current` and `memory.events`, but no `memory.peak`. The compatible read-only monitor reports `peak_bytes: null`, a clearly labelled five-second `sampled_peak_bytes`, and preserves current-memory/OOM/host-headroom checks. Do not call the sampled maximum an exact kernel peak. The first monitor was replaced at 11:44 UTC during acquisition after this absence was diagnosed; application containers and the collection were not restarted. Per-stage Linux process peak RSS remains available through `resource.getrusage`.

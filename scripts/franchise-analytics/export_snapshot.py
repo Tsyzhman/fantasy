@@ -1,13 +1,14 @@
 """Compact facts for bounded request-time aggregation. @spec spec://modules/franchises/FEAT-005-franchise-analytics#data"""
 from analyze import ROOT,stream,clean,date_iso,date_ru,avg
 from xfo import match_xfo,h2h_score,compare_xi
-from sources import read_squads
+from sources import read_squads,franchise_squad_keys
 import json,gzip,collections,datetime as dt,os
 import pandas as pd
 
 def main():
  d=json.loads((ROOT/'report-data.json').read_text('utf-8'))
  if d.get('errors') or any(d['checks'].get(k,0) for k in ['future_history','duplicate_selections','missing_active_state']):raise ValueError('Source validation failed; retain the previous published snapshot')
+ franchises=json.loads((ROOT/'franchises.json').read_text('utf-8'));example_keys=franchise_squad_keys(d['squads'],franchises)
  columns=['franchise','manager','slug','round','team','h2h_id','name','player_id','pos','is_cap','is_xi','is_buy','source','personal_only']
  decisions=pd.read_pickle(ROOT/'source/decisions.pkl')[columns]
  buys=pd.read_pickle(ROOT/'source/purchases.pkl')
@@ -50,7 +51,7 @@ def main():
   score=scores.get((r['slug'],r['round'],str(r['team']),str(r['h2h_id'])))
   actual=h2h_score(score,r['is_cap'],individual=True)
   vals.append(value);filled_vals.append(filled and value is not None)
-  if r['is_xi'] and value is not None and rounds[key]['finished'] and (not r['personal_only'] or r['franchise']<0):
+  if r['is_xi'] and value is not None and rounds[key]['finished'] and (r['franchise'],r['slug'],r['round'],str(r['team'])) in example_keys:
    example={k:r[k] for k in ['franchise','manager','slug','round','team','name','is_cap','is_buy','source','personal_only']}|{'xfo':value,'actual':actual,'filled':filled}
    group=example_groups[(r['franchise'],r['slug'],r['round'])];group[r['h2h_id']]=example
    if len(group)>2:
@@ -69,7 +70,7 @@ def main():
   empty={'finished':rounds[(r['slug'],r['round'])]['finished'],'xfo':None,'xfo_actual':None,'xfo_gap':None,'xfo_known':0,'xfo_filled':0,'xfo_complete':False}
   r.update(xby.get((r['franchise'],r['slug'],r['round'],str(r['team'])),empty))
  for f in d['franchises']:
-  rows=[r for r in d['squads'] if r['franchise']==f['franchise']];complete=[r for r in rows if r.get('xfo_complete')]
+  rows=[r for r in d['squads'] if r['franchise']==f['franchise'] and (r['franchise'],r['slug'],r['round'],str(r['team'])) in example_keys];complete=[r for r in rows if r.get('xfo_complete')]
   balanced=lambda key:avg([avg([r[key] for r in complete if r['slug']==slug]) for slug in {r['slug'] for r in complete}])
   f['xfo_summary']={'complete':len(complete),'finished':sum(r['finished'] for r in rows),'known':sum(r['xfo_known'] for r in rows if r['finished']),'filled':sum(r['xfo_filled'] for r in rows if r['finished']),'slots':11*sum(r['finished'] for r in rows),'xfo':balanced('xfo'),'actual':balanced('xfo_actual'),'gap':balanced('xfo_gap')}
   f['xfo_examples']=[r for r in player_examples if r['franchise']==f['franchise']][:100]
@@ -89,7 +90,7 @@ def main():
    if len(seen_names)==2:break
  freeze=json.loads((ROOT/'freezes.json').read_text('utf-8'))
  snapshot={'version':1,'season':'2026/2027','generated':dt.datetime.now(dt.timezone.utc).isoformat(),'acquisition':d['acquisition'],'franchises':[{'id':f['franchise'],'name':f['name']} for f in d['franchises']],'leagues':d['league_names'],'rounds':list(rounds.values()),'squads':[{k:r.get(k) for k in keep} for r in d['squads']],'freeze':{k:freeze[k] for k in ['events','basis']},'purchases':clean(buys[[c for c in ['franchise','manager','slug','round','team','h2h_id','name','pos','own','delta','form5','form5_gap','trend','minutes5','fdr_pre','fo','alt','ffo','triple_model_low','source','minutes_change','attack_change','underreturn','cold_with_followup','early_success','outcome_next3'] if c in buys]].to_dict('records')),'xfoExamples':player_examples,'checks':d['checks']}
- snapshot['franchises']=[{k:f[k] for k in ['id','name','kind'] if k in f} for f in json.loads((ROOT/'franchises.json').read_text('utf-8'))]
+ snapshot['franchises']=[{k:f[k] for k in ['id','name','kind'] if k in f} for f in franchises]
  snapshot['version']=2
  snapshot['personalHistory']=True
  snapshot['xfoExamples']=compact_examples

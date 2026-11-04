@@ -1,0 +1,95 @@
+{
+  "type": "result",
+  "personal_pages": 820,
+  "unique_users": 820,
+  "source_context": {
+    "franchise_pages": 74,
+    "form_jobs": 734,
+    "unique_form_urls": 734,
+    "profile_jobs": 803,
+    "unique_board_uids": 782,
+    "unique_profile_uids": 803,
+    "expected_submitted_uids": 820,
+    "missing_submitted_uids": [],
+    "extra_personal_uids": [],
+    "expected_uid_set_sha256": "f3ab594791b7cdc8fba9c4f4beb82147f6486bf1ff7b6f74b70ce45e1fca269b"
+  },
+  "candidate_successes": 820,
+  "candidate_errors": [],
+  "old_parser_successes": 242,
+  "formerly_valid_output_changes": [],
+  "team_histories_retained": 7512,
+  "personal_team_rounds_retained": 68866,
+  "unique_source_team_rounds": 68866,
+  "short_title_scopes": [
+    {
+      "slug": "liga_europa_2026",
+      "round": 4,
+      "in_progress": true,
+      "data_tour_id": "0",
+      "links": 578
+    }
+  ],
+  "concrete_profile": {
+    "uid": "1101905285",
+    "teams": 12,
+    "rounds": 111,
+    "liga_europa": [
+      {
+        "slug": "liga_europa_2026",
+        "cid": 349,
+        "team_id": "641000",
+        "available_rounds": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    ]
+  },
+  "private_input_snapshot_sha256": "2e8f4b253b2a9c8d48ba06cb3707f503654c2510fdbc9eb19a9046f25ea9b7bc",
+  "immutable_input_hashes_unchanged": true,
+  "live_cache_changed_by_other_process_count": 0,
+  "live_cache_changed_uids": [],
+  "snapshot_compressed_bytes": 18384705,
+  "serving_sources_sha256": "6cae55b19e13545e50948fbee45b5504fd48df65628f922522991fe638d98355",
+  "serving_parser_sha256": "787332f5927c2d0596f2e9c6fdb9a5dcc423ff2653db18e7ae69f1a29a0424fb",
+  "candidate_parser_sha256": "7ece6d66c3c7d81cb6fa7eb7976c82a507bf4d1fd4141332184a1e37e0bee11c",
+  "peak_rss_bytes": 82288640,
+  "cgroup_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n",
+  "elapsed_seconds": 160.131,
+  "network_used": false,
+  "source_cache_written": false,
+  "collector_or_aggregate_or_import_run": false,
+  "old_parser_error_count": 578,
+  "explicit_regression_uids": {
+    "1101905285": {
+      "old_parser_failed": true,
+      "candidate_passed_in_complete_set": true
+    },
+    "1115037086": {
+      "old_parser_failed": true,
+      "candidate_passed_in_complete_set": true
+    }
+  },
+  "configuration": {
+    "available_before_bytes": 6565138432,
+    "image": "sha256:27ad0032b39975674757e0f536bd0ff320d28f2f34b2b5070fabe7acdaade9dd",
+    "commit": "d31ca192f80467bc7cd611b688c3047d45545c5b",
+    "source_readonly": true,
+    "root_readonly": true,
+    "network": "none",
+    "memory_bytes": 1073741824,
+    "memory_swap_bytes": 1073741824,
+    "cpus": 1,
+    "timeout_seconds": 480
+  },
+  "completion": {
+    "type": "completion",
+    "diagnostic_exit": 0,
+    "remaining_container": "",
+    "available_after_bytes": 6619238400
+  },
+  "application_commit": "3e58a9f3d7d45fc9f26b815f9b9c33a80e2d4b65"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "7786818753abee65707014bd8fe7e5d66b6785dc0b75c9f127a3d48092f3b8b4",
+  "image": "sha256:93aa77ddc444bb9c18788474475df830a17ebccd72fe7e0f1c52868c2f1ff5c6",
+  "state": "running",
+  "startedAt": "2026-11-04T15:42:55.063501698Z",
+  "limits": {
+    "Memory": 3758096384,
+    "MemorySwap": 3758096384,
+    "NanoCpus": 2000000000,
+    "PidsLimit": 128
+  },
+  "safeEnvironment": {
+    "FRANCHISE_USE_CACHE": null,
+    "FRANCHISE_RESUME_AFTER": "2026-11-04T14:55:52.682382Z",
+    "FRANCHISE_DATA_DIR": null,
+    "NODE_OPTIONS": "--max-old-space-size=768",
+    "APP_RELEASE_COMMIT": "3e58a9f3d7d45fc9f26b815f9b9c33a80e2d4b65"
+  },
+  "command": [
+    "timeout",
+    "--signal=TERM",
+    "--kill-after=15",
+    "5500",
+    "flock",
+    "--exclusive",
+    "--no-fork",
+    "/app/storage/franchises/.heavy-job.lock",
+    "node",
+    "scripts/franchises.cjs",
+    "--sync"
+  ]
+}

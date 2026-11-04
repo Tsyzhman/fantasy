@@ -1,0 +1,14 @@
+test_captain_proof_uses_exact_active_xi_when_reserve_has_the_same_manager_name (test_cohort.FranchiseCohortTests.test_captain_proof_uses_exact_active_xi_when_reserve_has_the_same_manager_name) ... FAIL
+
+======================================================================
+FAIL: test_captain_proof_uses_exact_active_xi_when_reserve_has_the_same_manager_name (test_cohort.FranchiseCohortTests.test_captain_proof_uses_exact_active_xi_when_reserve_has_the_same_manager_name)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\scripts\franchise-analytics\test_cohort.py", line 134, in test_captain_proof_uses_exact_active_xi_when_reserve_has_the_same_manager_name
+    self.assertAlmostEqual(proof['own'], 6.2)
+AssertionError: 12.2 != 6.2 within 7 places (5.999999999999999 difference)
+
+----------------------------------------------------------------------
+Ran 1 test in 1.817s
+
+FAILED (failures=1)

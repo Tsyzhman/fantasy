@@ -1,0 +1,1970 @@
+{
+  "captured_utc": "2026-11-04T16:20:35.583200+00:00",
+  "indexed_squads": 68368,
+  "duplicate_index_names": 0,
+  "counts": {
+    "sources_acquired_this_run": 2744,
+    "missing_lineups": 307
+  },
+  "rounds": 110,
+  "duplicate_rounds": 0,
+  "duplicate_calendar_fixtures": 12,
+  "cache": {
+    "files": 34445,
+    "compressed_bytes": 269210110,
+    "older_than_30_days": 0,
+    "temporary_files": 0
+  },
+  "intermediates_remaining": [],
+  "collection_markers": [],
+  "snapshot_sha256": "54e739ad056923d079961feae499dd4c6fd4a0a0371ca9afd22c1f5fea1dbc0d",
+  "validation": {
+    "counts": {
+      "n_squads": 68973,
+      "n_decisions": 1029945,
+      "n_buys": 174038,
+      "n_player_rounds": 34132
+    },
+    "checks": {
+      "unique_squads": 68973,
+      "all_xi_11": true,
+      "missing_lineups": 310,
+      "active_squads_per_franchise": {
+        "48": 660,
+        "243": 378,
+        "478": 378,
+        "22": 660,
+        "586": 252,
+        "72": 378,
+        "516": 330,
+        "28": 660,
+        "384": 324,
+        "2": 660,
+        "148": 276,
+        "42": 438,
+        "282": 660,
+        "12": 395,
+        "510": 660,
+        "236": 660,
+        "477": 660,
+        "517": 660,
+        "567": 198,
+        "-1": 0,
+        "389": 342,
+        "570": 206,
+        "544": 397,
+        "23": 660,
+        "439": 661,
+        "87": 396,
+        "61": 324,
+        "496": 224,
+        "10": 660,
+        "474": 662,
+        "542": 467,
+        "57": 660,
+        "566": 216,
+        "62": 294,
+        "360": 660,
+        "487": 378,
+        "25": 660,
+        "433": 660,
+        "26": 660,
+        "41": 660,
+        "14": 660,
+        "294": 474,
+        "13": 661,
+        "222": 660,
+        "367": 475,
+        "160": 410,
+        "150": 660,
+        "20": 660,
+        "486": 192,
+        "163": 216,
+        "530": 660,
+        "31": 660,
+        "364": 660,
+        "432": 660,
+        "375": 660,
+        "227": 660,
+        "44": 660,
+        "441": 661,
+        "110": 644,
+        "5": 660,
+        "45": 660,
+        "503": 660,
+        "56": 660,
+        "476": 456,
+        "40": 660,
+        "17": 660,
+        "19": 660,
+        "563": 324,
+        "125": 660,
+        "401": 660,
+        "223": 660,
+        "120": 458,
+        "27": 660,
+        "65": 660,
+        "18": 660
+      },
+      "missing_active_state": 0,
+      "future_history": 0,
+      "duplicate_selections": 0,
+      "source_fnl_files": 0,
+      "freeze_verified": 1702
+    },
+    "acquisition": {
+      "from": "2026-10-09T00:48:43Z",
+      "to": "2026-11-04T16:03:40Z",
+      "cached_requests": 34445,
+      "unique_urls": 34445,
+      "http_bytes": 269210110
+    },
+    "source_audit": {
+      "stats_total": 545073,
+      "stats_relevant": 189626,
+      "stats_duplicates": 0,
+      "stats_seasons": {
+        "2025/2026": 123079,
+        "2024": 1581,
+        "2026/2027": 50205,
+        "2024/2025": 8949,
+        "2026": 3672,
+        "2025": 2140
+      },
+      "mapping_conflicts": [],
+      "invalid_forecasts": 0,
+      "ffo_duplicate_mappings": 0,
+      "server_snapshots": [
+        {
+          "league_id": 42,
+          "round_key": "sports-ru:tour:1:2753",
+          "first_kickoff_at": "2026-09-08T16:45:00",
+          "captured_at": "2026-09-08T16:44:00.19",
+          "players_count": 1027
+        },
+        {
+          "league_id": 42,
+          "round_key": "sports-ru:tour:2:2754",
+          "first_kickoff_at": "2026-10-13T16:45:00",
+          "captured_at": "2026-10-13T16:44:00.176",
+          "players_count": 1146
+        },
+        {
+          "league_id": 42,
+          "round_key": "sports-ru:tour:2:2755",
+          "first_kickoff_at": "2026-10-20T16:45:00",
+          "captured_at": "2026-10-20T16:44:00.161",
+          "players_count": 1146
+        },
+        {
+          "league_id": 42,
+          "round_key": "sports-ru:tour:3:2756",
+          "first_kickoff_at": "2026-11-03T17:45:00",
+          "captured_at": "2026-11-03T17:44:00.189",
+          "players_count": 1157
+        },
+        {
+          "league_id": 47,
+          "round_key": "sports-ru:tour:2:2500",
+          "first_kickoff_at": "2026-08-28T19:00:00",
+          "captured_at": "2026-08-28T18:59:18.869",
+          "players_count": 666
+        },
+        {
+          "league_id": 47,
+          "round_key": "sports-ru:tour:3:2501",
+          "first_kickoff_at": "2026-09-04T19:00:00",
+          "captured_at": "2026-09-04T18:59:05.657",
+          "players_count": 657
+        },
+        {
+          "league_id": 47,
+          "round_key": "sports-ru:tour:4:2502",
+          "first_kickoff_at": "2026-09-12T14:00:00",
+          "captured_at": "2026-09-12T13:59:00.169",
+          "players_count": 648
+        },
+        {
+          "league_id": 47,
+          "round_key": "sports-ru:tour:5:2503",
+          "first_kickoff_at": "2026-09-18T19:00:00",
+          "captured_at": "2026-09-18T18:59:09.051",
+          "players_count": 642
+        },
+        {
+          "league_id": 47,
+          "round_key": "sports-ru:tour:6:2504",
+          "first_kickoff_at": "2026-10-10T11:30:00",
+          "captured_at": "2026-10-10T11:29:00.193",
+          "players_count": 665
+        },
+        {
+          "league_id": 47,
+          "round_key": "sports-ru:tour:7:2505",
+          "first_kickoff_at": "2026-10-17T11:30:00",
+          "captured_at": "2026-10-17T11:29:05.853",
+          "players_count": 665
+        },
+        {
+          "league_id": 47,
+          "round_key": "sports-ru:tour:8:2506",
+          "first_kickoff_at": "2026-10-23T19:00:00",
+          "captured_at": "2026-10-23T18:59:09.074",
+          "players_count": 665
+        },
+        {
+          "league_id": 47,
+          "round_key": "sports-ru:tour:9:2507",
+          "first_kickoff_at": "2026-10-31T12:30:00",
+          "captured_at": "2026-10-31T12:29:05.841",
+          "players_count": 666
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:3:2383",
+          "first_kickoff_at": "2026-08-28T19:00:00",
+          "captured_at": "2026-08-28T18:59:18.869",
+          "players_count": 765
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:4:2384",
+          "first_kickoff_at": "2026-09-01T18:45:00",
+          "captured_at": "2026-09-01T18:44:00.151",
+          "players_count": 769
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:5:2385",
+          "first_kickoff_at": "2026-09-05T11:30:00",
+          "captured_at": "2026-09-05T11:29:05.115",
+          "players_count": 766
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:6:2386",
+          "first_kickoff_at": "2026-09-08T18:45:00",
+          "captured_at": "2026-09-08T18:44:10.067",
+          "players_count": 758
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:7:2387",
+          "first_kickoff_at": "2026-09-11T19:00:00",
+          "captured_at": "2026-09-11T18:59:08.861",
+          "players_count": 754
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:8:2388",
+          "first_kickoff_at": "2026-09-18T19:00:00",
+          "captured_at": "2026-09-18T18:59:09.051",
+          "players_count": 755
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:9:2389",
+          "first_kickoff_at": "2026-10-09T19:00:00",
+          "captured_at": "2026-10-09T18:59:00.237",
+          "players_count": 783
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:10:2390",
+          "first_kickoff_at": "2026-10-13T18:45:00",
+          "captured_at": "2026-10-13T18:44:09.153",
+          "players_count": 784
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:10:2391",
+          "first_kickoff_at": "2026-10-16T19:00:00",
+          "captured_at": "2026-10-16T18:59:09.309",
+          "players_count": 784
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:11:2392",
+          "first_kickoff_at": "2026-10-23T19:00:00",
+          "captured_at": "2026-10-23T18:59:09.074",
+          "players_count": 783
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:12:2393",
+          "first_kickoff_at": "2026-10-30T20:00:00",
+          "captured_at": "2026-10-30T19:59:05.255",
+          "players_count": 784
+        },
+        {
+          "league_id": 48,
+          "round_key": "sports-ru:tour:13:2394",
+          "first_kickoff_at": "2026-11-03T19:45:00",
+          "captured_at": "2026-11-03T19:44:12.215",
+          "players_count": 784
+        },
+        {
+          "league_id": 53,
+          "round_key": "sports-ru:tour:2:2652",
+          "first_kickoff_at": "2026-08-28T18:45:00",
+          "captured_at": "2026-08-28T18:44:18.184",
+          "players_count": 494
+        },
+        {
+          "league_id": 53,
+          "round_key": "sports-ru:tour:3:2653",
+          "first_kickoff_at": "2026-09-03T18:45:00",
+          "captured_at": "2026-09-03T18:44:00.143",
+          "players_count": 479
+        },
+        {
+          "league_id": 53,
+          "round_key": "sports-ru:tour:4:2654",
+          "first_kickoff_at": "2026-09-11T18:45:00",
+          "captured_at": "2026-09-11T18:44:05.36",
+          "players_count": 493
+        },
+        {
+          "league_id": 53,
+          "round_key": "sports-ru:tour:5:2655",
+          "first_kickoff_at": "2026-09-18T18:45:00",
+          "captured_at": "2026-09-18T18:44:05.42",
+          "players_count": 495
+        },
+        {
+          "league_id": 53,
+          "round_key": "sports-ru:tour:6:2656",
+          "first_kickoff_at": "2026-10-09T18:45:00",
+          "captured_at": "2026-10-09T18:44:09.454",
+          "players_count": 512
+        },
+        {
+          "league_id": 53,
+          "round_key": "sports-ru:tour:7:2657",
+          "first_kickoff_at": "2026-10-16T18:45:00",
+          "captured_at": "2026-10-16T18:44:04.621",
+          "players_count": 513
+        },
+        {
+          "league_id": 53,
+          "round_key": "sports-ru:tour:8:2658",
+          "first_kickoff_at": "2026-10-23T18:45:00",
+          "captured_at": "2026-10-23T18:44:05.457",
+          "players_count": 525
+        },
+        {
+          "league_id": 53,
+          "round_key": "sports-ru:tour:9:2659",
+          "first_kickoff_at": "2026-10-30T18:00:00",
+          "captured_at": "2026-10-30T17:59:05.54",
+          "players_count": 525
+        },
+        {
+          "league_id": 54,
+          "round_key": "sports-ru:tour:1:2685",
+          "first_kickoff_at": "2026-08-28T18:30:00",
+          "captured_at": "2026-08-28T18:29:00.093",
+          "players_count": 541
+        },
+        {
+          "league_id": 54,
+          "round_key": "sports-ru:tour:2:2686",
+          "first_kickoff_at": "2026-09-04T18:30:00",
+          "captured_at": "2026-09-04T18:29:05.733",
+          "players_count": 523
+        },
+        {
+          "league_id": 54,
+          "round_key": "sports-ru:tour:3:2687",
+          "first_kickoff_at": "2026-09-11T18:30:00",
+          "captured_at": "2026-09-11T18:29:05.953",
+          "players_count": 511
+        },
+        {
+          "league_id": 54,
+          "round_key": "sports-ru:tour:4:2688",
+          "first_kickoff_at": "2026-09-18T18:30:00",
+          "captured_at": "2026-09-18T18:29:05.884",
+          "players_count": 513
+        },
+        {
+          "league_id": 54,
+          "round_key": "sports-ru:tour:5:2689",
+          "first_kickoff_at": "2026-10-09T18:30:00",
+          "captured_at": "2026-10-09T18:29:00.232",
+          "players_count": 521
+        },
+        {
+          "league_id": 54,
+          "round_key": "sports-ru:tour:6:2690",
+          "first_kickoff_at": "2026-10-16T18:30:00",
+          "captured_at": "2026-10-16T18:29:06.467",
+          "players_count": 523
+        },
+        {
+          "league_id": 54,
+          "round_key": "sports-ru:tour:7:2691",
+          "first_kickoff_at": "2026-10-23T18:30:00",
+          "captured_at": "2026-10-23T18:29:06.206",
+          "players_count": 528
+        },
+        {
+          "league_id": 54,
+          "round_key": "sports-ru:tour:8:2692",
+          "first_kickoff_at": "2026-10-30T19:30:00",
+          "captured_at": "2026-10-30T19:29:04.848",
+          "players_count": 528
+        },
+        {
+          "league_id": 55,
+          "round_key": "sports-ru:tour:2:2576",
+          "first_kickoff_at": "2026-08-28T18:45:00",
+          "captured_at": "2026-08-28T18:44:18.184",
+          "players_count": 629
+        },
+        {
+          "league_id": 55,
+          "round_key": "sports-ru:tour:3:2577",
+          "first_kickoff_at": "2026-09-04T18:45:00",
+          "captured_at": "2026-09-04T18:44:04.71",
+          "players_count": 591
+        },
+        {
+          "league_id": 55,
+          "round_key": "sports-ru:tour:4:2578",
+          "first_kickoff_at": "2026-09-11T18:45:00",
+          "captured_at": "2026-09-11T18:44:05.36",
+          "players_count": 597
+        },
+        {
+          "league_id": 55,
+          "round_key": "sports-ru:tour:5:2579",
+          "first_kickoff_at": "2026-09-18T18:45:00",
+          "captured_at": "2026-09-18T18:44:05.42",
+          "players_count": 598
+        },
+        {
+          "league_id": 55,
+          "round_key": "sports-ru:tour:6:2580",
+          "first_kickoff_at": "2026-10-10T13:00:00",
+          "captured_at": "2026-10-10T12:59:00.215",
+          "players_count": 635
+        },
+        {
+          "league_id": 55,
+          "round_key": "sports-ru:tour:7:2581",
+          "first_kickoff_at": "2026-10-16T18:45:00",
+          "captured_at": "2026-10-16T18:44:04.621",
+          "players_count": 636
+        },
+        {
+          "league_id": 55,
+          "round_key": "sports-ru:tour:8:2582",
+          "first_kickoff_at": "2026-10-23T18:45:00",
+          "captured_at": "2026-10-23T18:44:05.457",
+          "players_count": 636
+        },
+        {
+          "league_id": 55,
+          "round_key": "sports-ru:tour:9:2583",
+          "first_kickoff_at": "2026-10-27T17:30:00",
+          "captured_at": "2026-10-27T17:29:00.193",
+          "players_count": 636
+        },
+        {
+          "league_id": 55,
+          "round_key": "sports-ru:tour:10:2584",
+          "first_kickoff_at": "2026-10-31T14:00:00",
+          "captured_at": "2026-10-31T13:59:08.278",
+          "players_count": 636
+        },
+        {
+          "league_id": 57,
+          "round_key": "sports-ru:tour:4:2316",
+          "first_kickoff_at": "2026-08-28T18:00:00",
+          "captured_at": "2026-08-28T17:59:12.427",
+          "players_count": 592
+        },
+        {
+          "league_id": 57,
+          "round_key": "sports-ru:tour:5:2317",
+          "first_kickoff_at": "2026-09-04T18:00:00",
+          "captured_at": "2026-09-04T17:59:05.412",
+          "players_count": 583
+        },
+        {
+          "league_id": 57,
+          "round_key": "sports-ru:tour:6:2318",
+          "first_kickoff_at": "2026-09-11T18:00:00",
+          "captured_at": "2026-09-11T17:59:05.179",
+          "players_count": 593
+        },
+        {
+          "league_id": 57,
+          "round_key": "sports-ru:tour:7:2319",
+          "first_kickoff_at": "2026-09-18T18:00:00",
+          "captured_at": "2026-09-18T17:59:05.936",
+          "players_count": 593
+        },
+        {
+          "league_id": 57,
+          "round_key": "sports-ru:tour:8:2320",
+          "first_kickoff_at": "2026-10-09T18:00:00",
+          "captured_at": "2026-10-09T17:59:08.955",
+          "players_count": 601
+        },
+        {
+          "league_id": 57,
+          "round_key": "sports-ru:tour:9:2321",
+          "first_kickoff_at": "2026-10-16T18:00:00",
+          "captured_at": "2026-10-16T17:59:06.661",
+          "players_count": 611
+        },
+        {
+          "league_id": 57,
+          "round_key": "sports-ru:tour:10:2322",
+          "first_kickoff_at": "2026-10-23T18:00:00",
+          "captured_at": "2026-10-23T17:59:04.502",
+          "players_count": 611
+        },
+        {
+          "league_id": 57,
+          "round_key": "sports-ru:tour:11:2323",
+          "first_kickoff_at": "2026-10-31T15:30:00",
+          "captured_at": "2026-10-31T15:29:07.36",
+          "players_count": 612
+        },
+        {
+          "league_id": 61,
+          "round_key": "sports-ru:tour:4:2350",
+          "first_kickoff_at": "2026-08-28T19:15:00",
+          "captured_at": "2026-08-28T19:14:20.132",
+          "players_count": 586
+        },
+        {
+          "league_id": 61,
+          "round_key": "sports-ru:tour:5:2351",
+          "first_kickoff_at": "2026-09-04T19:15:00",
+          "captured_at": "2026-09-04T19:14:13.673",
+          "players_count": 595
+        },
+        {
+          "league_id": 61,
+          "round_key": "sports-ru:tour:6:2352",
+          "first_kickoff_at": "2026-09-12T14:30:00",
+          "captured_at": "2026-09-12T14:29:09.357",
+          "players_count": 615
+        },
+        {
+          "league_id": 61,
+          "round_key": "sports-ru:tour:7:2353",
+          "first_kickoff_at": "2026-09-19T14:30:00",
+          "captured_at": "2026-09-19T14:29:00.149",
+          "players_count": 611
+        },
+        {
+          "league_id": 61,
+          "round_key": "sports-ru:tour:8:2354",
+          "first_kickoff_at": "2026-10-09T17:45:00",
+          "captured_at": "2026-10-09T17:44:06.816",
+          "players_count": 616
+        },
+        {
+          "league_id": 61,
+          "round_key": "sports-ru:tour:9:2355",
+          "first_kickoff_at": "2026-10-23T19:45:00",
+          "captured_at": "2026-10-23T19:44:21.836",
+          "players_count": 625
+        },
+        {
+          "league_id": 61,
+          "round_key": "sports-ru:tour:10:2356",
+          "first_kickoff_at": "2026-10-30T20:15:00",
+          "captured_at": "2026-10-30T20:14:11.696",
+          "players_count": 625
+        },
+        {
+          "league_id": 63,
+          "round_key": "sports-ru:tour:6:2288",
+          "first_kickoff_at": "2026-08-28T15:00:00",
+          "captured_at": "2026-08-28T14:59:00.136",
+          "players_count": 460
+        },
+        {
+          "league_id": 63,
+          "round_key": "sports-ru:tour:7:2289",
+          "first_kickoff_at": "2026-09-05T11:00:00",
+          "captured_at": "2026-09-05T10:59:00.136",
+          "players_count": 460
+        },
+        {
+          "league_id": 63,
+          "round_key": "sports-ru:tour:8:2290",
+          "first_kickoff_at": "2026-09-11T15:00:00",
+          "captured_at": "2026-09-11T14:59:01.089",
+          "players_count": 475
+        },
+        {
+          "league_id": 63,
+          "round_key": "sports-ru:tour:9:2291",
+          "first_kickoff_at": "2026-09-16T15:30:00",
+          "captured_at": "2026-09-16T15:29:00.176",
+          "players_count": 483
+        },
+        {
+          "league_id": 63,
+          "round_key": "sports-ru:tour:10:2292",
+          "first_kickoff_at": "2026-10-09T16:30:00",
+          "captured_at": "2026-10-09T16:29:00.209",
+          "players_count": 488
+        },
+        {
+          "league_id": 63,
+          "round_key": "sports-ru:tour:11:2293",
+          "first_kickoff_at": "2026-10-17T11:00:00",
+          "captured_at": "2026-10-17T10:59:00.123",
+          "players_count": 493
+        },
+        {
+          "league_id": 63,
+          "round_key": "sports-ru:tour:12:2294",
+          "first_kickoff_at": "2026-10-23T16:30:00",
+          "captured_at": "2026-10-23T16:29:00.62",
+          "players_count": 498
+        },
+        {
+          "league_id": 63,
+          "round_key": "sports-ru:tour:13:2295",
+          "first_kickoff_at": "2026-10-31T12:15:00",
+          "captured_at": "2026-10-31T12:14:00.128",
+          "players_count": 498
+        },
+        {
+          "league_id": 71,
+          "round_key": "sports-ru:tour:3:2429",
+          "first_kickoff_at": "2026-08-28T18:30:00",
+          "captured_at": "2026-08-28T18:29:00.093",
+          "players_count": 548
+        },
+        {
+          "league_id": 71,
+          "round_key": "sports-ru:tour:4:2430",
+          "first_kickoff_at": "2026-09-04T17:00:00",
+          "captured_at": "2026-09-04T16:59:00.211",
+          "players_count": 554
+        },
+        {
+          "league_id": 71,
+          "round_key": "sports-ru:tour:5:2431",
+          "first_kickoff_at": "2026-09-11T17:00:00",
+          "captured_at": "2026-09-11T16:59:05.428",
+          "players_count": 555
+        },
+        {
+          "league_id": 71,
+          "round_key": "sports-ru:tour:6:2432",
+          "first_kickoff_at": "2026-09-18T17:00:00",
+          "captured_at": "2026-09-18T16:59:00.139",
+          "players_count": 557
+        },
+        {
+          "league_id": 71,
+          "round_key": "sports-ru:tour:7:2433",
+          "first_kickoff_at": "2026-10-09T17:00:00",
+          "captured_at": "2026-10-09T16:59:07.301",
+          "players_count": 557
+        },
+        {
+          "league_id": 71,
+          "round_key": "sports-ru:tour:8:2434",
+          "first_kickoff_at": "2026-10-16T17:00:00",
+          "captured_at": "2026-10-16T16:59:00.225",
+          "players_count": 563
+        },
+        {
+          "league_id": 71,
+          "round_key": "sports-ru:tour:9:2435",
+          "first_kickoff_at": "2026-10-23T17:00:00",
+          "captured_at": "2026-10-23T16:59:04.969",
+          "players_count": 563
+        },
+        {
+          "league_id": 71,
+          "round_key": "sports-ru:tour:10:2436",
+          "first_kickoff_at": "2026-10-30T17:00:00",
+          "captured_at": "2026-10-30T16:59:00.225",
+          "players_count": 563
+        },
+        {
+          "league_id": 73,
+          "round_key": "sports-ru:tour:1:2761",
+          "first_kickoff_at": "2026-09-16T16:45:00",
+          "captured_at": "2026-09-16T16:44:00.212",
+          "players_count": 1067
+        },
+        {
+          "league_id": 73,
+          "round_key": "sports-ru:tour:2:2762",
+          "first_kickoff_at": "2026-10-15T16:45:00",
+          "captured_at": "2026-10-15T16:44:00.131",
+          "players_count": 1116
+        },
+        {
+          "league_id": 73,
+          "round_key": "sports-ru:tour:3:2763",
+          "first_kickoff_at": "2026-10-22T16:45:00",
+          "captured_at": "2026-10-22T16:44:00.178",
+          "players_count": 1123
+        },
+        {
+          "league_id": 73,
+          "round_key": "sports-ru:tour:4:2764",
+          "first_kickoff_at": "2026-11-04T15:30:00",
+          "captured_at": "2026-11-04T15:29:00.274",
+          "players_count": 1134
+        },
+        {
+          "league_id": 87,
+          "round_key": "sports-ru:tour:3:2463",
+          "first_kickoff_at": "2026-08-28T17:00:00",
+          "captured_at": "2026-08-28T16:59:09.573",
+          "players_count": 704
+        },
+        {
+          "league_id": 87,
+          "round_key": "sports-ru:tour:4:2465",
+          "first_kickoff_at": "2026-09-04T19:00:00",
+          "captured_at": "2026-09-04T18:59:05.657",
+          "players_count": 703
+        },
+        {
+          "league_id": 87,
+          "round_key": "sports-ru:tour:5:2466",
+          "first_kickoff_at": "2026-09-11T19:00:00",
+          "captured_at": "2026-09-11T18:59:08.861",
+          "players_count": 720
+        },
+        {
+          "league_id": 87,
+          "round_key": "sports-ru:tour:6:2464",
+          "first_kickoff_at": "2026-09-15T17:00:00",
+          "captured_at": "2026-09-15T16:59:00.181",
+          "players_count": 710
+        },
+        {
+          "league_id": 87,
+          "round_key": "sports-ru:tour:7:2467",
+          "first_kickoff_at": "2026-09-18T19:00:00",
+          "captured_at": "2026-09-18T18:59:09.051",
+          "players_count": 710
+        },
+        {
+          "league_id": 87,
+          "round_key": "sports-ru:tour:8:2468",
+          "first_kickoff_at": "2026-10-09T19:00:00",
+          "captured_at": "2026-10-09T18:59:00.237",
+          "players_count": 730
+        },
+        {
+          "league_id": 87,
+          "round_key": "sports-ru:tour:9:2469",
+          "first_kickoff_at": "2026-10-16T19:00:00",
+          "captured_at": "2026-10-16T18:59:09.309",
+          "players_count": 733
+        },
+        {
+          "league_id": 87,
+          "round_key": "sports-ru:tour:10:2470",
+          "first_kickoff_at": "2026-10-23T19:00:00",
+          "captured_at": "2026-10-23T18:59:09.074",
+          "players_count": 734
+        },
+        {
+          "league_id": 87,
+          "round_key": "sports-ru:tour:11:2471",
+          "first_kickoff_at": "2026-10-30T20:00:00",
+          "captured_at": "2026-10-30T19:59:05.255",
+          "players_count": 734
+        }
+      ],
+      "current_snapshots": [
+        {
+          "league_id": 42,
+          "calculated_at": "2026-11-04T15:41:49.65",
+          "revision": "2026-11-04T15:41:49.650Z:teams-c4ea686facef:5a7f76ebe44af0e0",
+          "players_count": 1157
+        },
+        {
+          "league_id": 47,
+          "calculated_at": "2026-11-04T15:02:04.009",
+          "revision": "2026-11-04T15:02:04.009Z:c65646674ba648d5",
+          "players_count": 666
+        },
+        {
+          "league_id": 48,
+          "calculated_at": "2026-11-04T15:02:14.177",
+          "revision": "2026-11-04T15:02:14.177Z:2ff2dc5b82cd9e65",
+          "players_count": 785
+        },
+        {
+          "league_id": 53,
+          "calculated_at": "2026-11-04T15:02:20.407",
+          "revision": "2026-11-04T15:02:20.407Z:f6104599e12ef0a5",
+          "players_count": 526
+        },
+        {
+          "league_id": 54,
+          "calculated_at": "2026-11-04T15:02:26.718",
+          "revision": "2026-11-04T15:02:26.718Z:7165ea89321f3f7e",
+          "players_count": 528
+        },
+        {
+          "league_id": 55,
+          "calculated_at": "2026-11-04T15:42:20.311",
+          "revision": "2026-11-04T15:42:20.311Z:teams-ab43f022f81c:56d44915b2f4b973",
+          "players_count": 636
+        },
+        {
+          "league_id": 57,
+          "calculated_at": "2026-11-04T15:02:41.2",
+          "revision": "2026-11-04T15:02:41.200Z:a984e3019f5e2391",
+          "players_count": 612
+        },
+        {
+          "league_id": 61,
+          "calculated_at": "2026-11-04T15:42:43.75",
+          "revision": "2026-11-04T15:42:43.750Z:teams-c525ed5e2d69:08668d9e4144dff0",
+          "players_count": 625
+        },
+        {
+          "league_id": 63,
+          "calculated_at": "2026-11-04T15:02:52.959",
+          "revision": "2026-11-04T15:02:52.959Z:392499cc76cefe74",
+          "players_count": 498
+        },
+        {
+          "league_id": 71,
+          "calculated_at": "2026-11-04T15:02:59.117",
+          "revision": "2026-11-04T15:02:59.117Z:eb445ce961a1d35c",
+          "players_count": 563
+        },
+        {
+          "league_id": 73,
+          "calculated_at": "2026-11-04T15:41:27.516",
+          "revision": "2026-11-04T15:41:27.516Z:820894df9cb661a0",
+          "players_count": 1134
+        },
+        {
+          "league_id": 87,
+          "calculated_at": "2026-11-04T15:03:17.112",
+          "revision": "2026-11-04T15:03:17.112Z:402c35c7587638d7",
+          "players_count": 734
+        }
+      ],
+      "rounds": [
+        {
+          "slug": "bundesliga_2026",
+          "round": 1,
+          "cutoff": "2026-08-28T18:30:00",
+          "players": 590,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.599999999993,
+          "field_cap_sum": 99.69999999999995
+        },
+        {
+          "slug": "bundesliga_2026",
+          "round": 2,
+          "cutoff": "2026-09-04T18:30:00",
+          "players": 590,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1499.2999999999918,
+          "field_cap_sum": 99.99999999999999
+        },
+        {
+          "slug": "bundesliga_2026",
+          "round": 3,
+          "cutoff": "2026-09-11T18:30:00",
+          "players": 590,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1500.0999999999933,
+          "field_cap_sum": 99.99999999999999
+        },
+        {
+          "slug": "bundesliga_2026",
+          "round": 4,
+          "cutoff": "2026-09-18T18:30:00",
+          "players": 590,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.2999999999909,
+          "field_cap_sum": 100.09999999999997
+        },
+        {
+          "slug": "bundesliga_2026",
+          "round": 5,
+          "cutoff": "2026-10-09T18:30:00",
+          "players": 590,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.6999999999946,
+          "field_cap_sum": 99.99999999999996
+        },
+        {
+          "slug": "bundesliga_2026",
+          "round": 6,
+          "cutoff": "2026-10-16T18:30:00",
+          "players": 590,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.4999999999968,
+          "field_cap_sum": 100.0
+        },
+        {
+          "slug": "bundesliga_2026",
+          "round": 7,
+          "cutoff": "2026-10-23T18:30:00",
+          "players": 599,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.199999999995,
+          "field_cap_sum": 99.89999999999995
+        },
+        {
+          "slug": "bundesliga_2026",
+          "round": 8,
+          "cutoff": "2026-10-30T19:30:00",
+          "players": 599,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1500.9999999999934,
+          "field_cap_sum": 99.79999999999997
+        },
+        {
+          "slug": "epl_2026",
+          "round": 1,
+          "cutoff": "2026-08-21T19:00:00",
+          "players": 773,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1506.7999999999897,
+          "field_cap_sum": 100.39999999999992
+        },
+        {
+          "slug": "epl_2026",
+          "round": 2,
+          "cutoff": "2026-08-28T19:00:00",
+          "players": 773,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1506.7999999999936,
+          "field_cap_sum": 100.49999999999994
+        },
+        {
+          "slug": "epl_2026",
+          "round": 3,
+          "cutoff": "2026-09-04T19:00:00",
+          "players": 773,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1506.899999999993,
+          "field_cap_sum": 100.49999999999993
+        },
+        {
+          "slug": "epl_2026",
+          "round": 4,
+          "cutoff": "2026-09-12T14:00:00",
+          "players": 773,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.9999999999916,
+          "field_cap_sum": 100.49999999999994
+        },
+        {
+          "slug": "epl_2026",
+          "round": 5,
+          "cutoff": "2026-09-18T19:00:00",
+          "players": 773,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.9999999999939,
+          "field_cap_sum": 100.2999999999999
+        },
+        {
+          "slug": "epl_2026",
+          "round": 6,
+          "cutoff": "2026-10-10T11:30:00",
+          "players": 773,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.4999999999905,
+          "field_cap_sum": 100.59999999999994
+        },
+        {
+          "slug": "epl_2026",
+          "round": 7,
+          "cutoff": "2026-10-17T11:30:00",
+          "players": 773,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1505.1999999999928,
+          "field_cap_sum": 100.59999999999994
+        },
+        {
+          "slug": "epl_2026",
+          "round": 8,
+          "cutoff": "2026-10-23T19:00:00",
+          "players": 773,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.5999999999913,
+          "field_cap_sum": 100.89999999999985
+        },
+        {
+          "slug": "epl_2026",
+          "round": 9,
+          "cutoff": "2026-10-31T12:30:00",
+          "players": 773,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1505.3999999999912,
+          "field_cap_sum": 100.7999999999999
+        },
+        {
+          "slug": "eredivisie_2026",
+          "round": 1,
+          "cutoff": "2026-08-07T18:00:00",
+          "players": 653,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1504.900000000008,
+          "field_cap_sum": 100.70000000000006
+        },
+        {
+          "slug": "eredivisie_2026",
+          "round": 2,
+          "cutoff": "2026-08-14T18:00:00",
+          "players": 653,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1501.600000000004,
+          "field_cap_sum": 100.30000000000003
+        },
+        {
+          "slug": "eredivisie_2026",
+          "round": 3,
+          "cutoff": "2026-08-22T14:30:00",
+          "players": 653,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1505.400000000007,
+          "field_cap_sum": 100.60000000000004
+        },
+        {
+          "slug": "eredivisie_2026",
+          "round": 4,
+          "cutoff": "2026-08-28T18:00:00",
+          "players": 653,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.1000000000045,
+          "field_cap_sum": 100.20000000000003
+        },
+        {
+          "slug": "eredivisie_2026",
+          "round": 5,
+          "cutoff": "2026-09-04T18:00:00",
+          "players": 653,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1502.2000000000044,
+          "field_cap_sum": 100.20000000000003
+        },
+        {
+          "slug": "eredivisie_2026",
+          "round": 6,
+          "cutoff": "2026-09-11T18:00:00",
+          "players": 653,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1500.3000000000038,
+          "field_cap_sum": 100.20000000000003
+        },
+        {
+          "slug": "eredivisie_2026",
+          "round": 7,
+          "cutoff": "2026-09-18T18:00:00",
+          "players": 653,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.5000000000068,
+          "field_cap_sum": 100.50000000000007
+        },
+        {
+          "slug": "eredivisie_2026",
+          "round": 8,
+          "cutoff": "2026-10-09T18:00:00",
+          "players": 665,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.4000000000028,
+          "field_cap_sum": 100.60000000000005
+        },
+        {
+          "slug": "eredivisie_2026",
+          "round": 9,
+          "cutoff": "2026-10-16T18:00:00",
+          "players": 665,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.1999999999973,
+          "field_cap_sum": 99.79999999999998
+        },
+        {
+          "slug": "eredivisie_2026",
+          "round": 10,
+          "cutoff": "2026-10-23T18:00:00",
+          "players": 666,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.1000000000022,
+          "field_cap_sum": 100.30000000000001
+        },
+        {
+          "slug": "eredivisie_2026",
+          "round": 11,
+          "cutoff": "2026-10-31T15:30:00",
+          "players": 666,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.600000000003,
+          "field_cap_sum": 100.20000000000002
+        },
+        {
+          "slug": "championship_2026",
+          "round": 1,
+          "cutoff": "2026-08-14T19:00:00",
+          "players": 992,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1503.9000000000058,
+          "field_cap_sum": 100.40000000000002
+        },
+        {
+          "slug": "championship_2026",
+          "round": 2,
+          "cutoff": "2026-08-22T11:30:00",
+          "players": 992,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1502.300000000006,
+          "field_cap_sum": 100.20000000000005
+        },
+        {
+          "slug": "championship_2026",
+          "round": 3,
+          "cutoff": "2026-08-28T19:00:00",
+          "players": 992,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.7000000000016,
+          "field_cap_sum": 100.4
+        },
+        {
+          "slug": "championship_2026",
+          "round": 4,
+          "cutoff": "2026-09-01T18:45:00",
+          "players": 992,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1505.3000000000031,
+          "field_cap_sum": 100.50000000000003
+        },
+        {
+          "slug": "championship_2026",
+          "round": 5,
+          "cutoff": "2026-09-05T11:30:00",
+          "players": 992,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.400000000006,
+          "field_cap_sum": 100.00000000000004
+        },
+        {
+          "slug": "championship_2026",
+          "round": 6,
+          "cutoff": "2026-09-08T18:45:00",
+          "players": 927,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.3000000000054,
+          "field_cap_sum": 100.30000000000005
+        },
+        {
+          "slug": "championship_2026",
+          "round": 7,
+          "cutoff": "2026-09-11T19:00:00",
+          "players": 927,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.1999999999998,
+          "field_cap_sum": 100.50000000000001
+        },
+        {
+          "slug": "championship_2026",
+          "round": 8,
+          "cutoff": "2026-09-18T19:00:00",
+          "players": 927,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.1999999999991,
+          "field_cap_sum": 100.60000000000002
+        },
+        {
+          "slug": "championship_2026",
+          "round": 9,
+          "cutoff": "2026-10-09T19:00:00",
+          "players": 992,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.1000000000006,
+          "field_cap_sum": 100.30000000000001
+        },
+        {
+          "slug": "championship_2026",
+          "round": 10,
+          "cutoff": "2026-10-16T19:00:00",
+          "players": 992,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.7000000000003,
+          "field_cap_sum": 100.70000000000005
+        },
+        {
+          "slug": "championship_2026",
+          "round": 11,
+          "cutoff": "2026-10-23T19:00:00",
+          "players": 993,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.2000000000055,
+          "field_cap_sum": 100.00000000000003
+        },
+        {
+          "slug": "championship_2026",
+          "round": 12,
+          "cutoff": "2026-10-30T20:00:00",
+          "players": 993,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.6000000000008,
+          "field_cap_sum": 100.60000000000002
+        },
+        {
+          "slug": "championship_2026",
+          "round": 13,
+          "cutoff": "2026-11-03T19:45:00",
+          "players": 993,
+          "all_matches_finished": false,
+          "snapshot": true,
+          "field_own_sum": 1498.300000000007,
+          "field_cap_sum": 99.90000000000009
+        },
+        {
+          "slug": "liga_europa_2026",
+          "round": 1,
+          "cutoff": "2026-09-16T16:45:00",
+          "players": 1120,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1510.9000000000028,
+          "field_cap_sum": 101.50000000000001
+        },
+        {
+          "slug": "liga_europa_2026",
+          "round": 2,
+          "cutoff": "2026-10-15T16:45:00",
+          "players": 1120,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1506.8000000000075,
+          "field_cap_sum": 100.90000000000003
+        },
+        {
+          "slug": "liga_europa_2026",
+          "round": 3,
+          "cutoff": "2026-10-22T16:45:00",
+          "players": 1161,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.600000000007,
+          "field_cap_sum": 100.70000000000009
+        },
+        {
+          "slug": "france_2026",
+          "round": 1,
+          "cutoff": "2026-08-21T18:45:00",
+          "players": 584,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1496.3999999999924,
+          "field_cap_sum": 99.79999999999998
+        },
+        {
+          "slug": "france_2026",
+          "round": 2,
+          "cutoff": "2026-08-28T18:45:00",
+          "players": 584,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.8999999999935,
+          "field_cap_sum": 99.79999999999995
+        },
+        {
+          "slug": "france_2026",
+          "round": 3,
+          "cutoff": "2026-09-03T18:45:00",
+          "players": 584,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.4999999999932,
+          "field_cap_sum": 99.79999999999997
+        },
+        {
+          "slug": "france_2026",
+          "round": 4,
+          "cutoff": "2026-09-11T18:45:00",
+          "players": 584,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1500.2999999999943,
+          "field_cap_sum": 99.99999999999997
+        },
+        {
+          "slug": "france_2026",
+          "round": 5,
+          "cutoff": "2026-09-18T18:45:00",
+          "players": 584,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1499.2999999999927,
+          "field_cap_sum": 99.69999999999995
+        },
+        {
+          "slug": "france_2026",
+          "round": 6,
+          "cutoff": "2026-10-09T18:45:00",
+          "players": 584,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1499.2999999999922,
+          "field_cap_sum": 100.00000000000001
+        },
+        {
+          "slug": "france_2026",
+          "round": 7,
+          "cutoff": "2026-10-16T18:45:00",
+          "players": 584,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1499.799999999993,
+          "field_cap_sum": 99.89999999999989
+        },
+        {
+          "slug": "france_2026",
+          "round": 8,
+          "cutoff": "2026-10-23T18:45:00",
+          "players": 603,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.9999999999943,
+          "field_cap_sum": 99.69999999999996
+        },
+        {
+          "slug": "france_2026",
+          "round": 9,
+          "cutoff": "2026-10-30T18:00:00",
+          "players": 603,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.4999999999939,
+          "field_cap_sum": 100.19999999999997
+        },
+        {
+          "slug": "portugal_2026",
+          "round": 1,
+          "cutoff": "2026-08-07T19:15:00",
+          "players": 687,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1504.500000000007,
+          "field_cap_sum": 100.20000000000006
+        },
+        {
+          "slug": "portugal_2026",
+          "round": 2,
+          "cutoff": "2026-08-14T19:15:00",
+          "players": 687,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1502.9000000000071,
+          "field_cap_sum": 100.20000000000003
+        },
+        {
+          "slug": "portugal_2026",
+          "round": 3,
+          "cutoff": "2026-08-22T14:30:00",
+          "players": 687,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1505.0000000000068,
+          "field_cap_sum": 100.70000000000002
+        },
+        {
+          "slug": "portugal_2026",
+          "round": 4,
+          "cutoff": "2026-08-28T19:15:00",
+          "players": 687,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.6000000000065,
+          "field_cap_sum": 100.30000000000004
+        },
+        {
+          "slug": "portugal_2026",
+          "round": 5,
+          "cutoff": "2026-09-04T19:15:00",
+          "players": 687,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.5000000000057,
+          "field_cap_sum": 100.30000000000001
+        },
+        {
+          "slug": "portugal_2026",
+          "round": 6,
+          "cutoff": "2026-09-12T14:30:00",
+          "players": 687,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1502.3000000000018,
+          "field_cap_sum": 100.20000000000002
+        },
+        {
+          "slug": "portugal_2026",
+          "round": 7,
+          "cutoff": "2026-09-19T14:30:00",
+          "players": 687,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1501.6000000000047,
+          "field_cap_sum": 100.20000000000003
+        },
+        {
+          "slug": "portugal_2026",
+          "round": 8,
+          "cutoff": "2026-10-09T17:45:00",
+          "players": 695,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1502.9000000000049,
+          "field_cap_sum": 100.60000000000005
+        },
+        {
+          "slug": "portugal_2026",
+          "round": 9,
+          "cutoff": "2026-10-23T19:45:00",
+          "players": 697,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.6000000000065,
+          "field_cap_sum": 100.20000000000003
+        },
+        {
+          "slug": "portugal_2026",
+          "round": 10,
+          "cutoff": "2026-10-30T20:15:00",
+          "players": 697,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.600000000005,
+          "field_cap_sum": 100.30000000000004
+        },
+        {
+          "slug": "la_liga_2026",
+          "round": 1,
+          "cutoff": "2026-08-15T17:30:00",
+          "players": 791,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1497.299999999991,
+          "field_cap_sum": 99.49999999999994
+        },
+        {
+          "slug": "la_liga_2026",
+          "round": 2,
+          "cutoff": "2026-08-20T19:00:00",
+          "players": 791,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1497.2999999999927,
+          "field_cap_sum": 99.69999999999992
+        },
+        {
+          "slug": "la_liga_2026",
+          "round": 3,
+          "cutoff": "2026-08-28T17:00:00",
+          "players": 791,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.5999999999951,
+          "field_cap_sum": 99.99999999999993
+        },
+        {
+          "slug": "la_liga_2026",
+          "round": 4,
+          "cutoff": "2026-09-04T19:00:00",
+          "players": 791,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1497.9999999999905,
+          "field_cap_sum": 99.79999999999993
+        },
+        {
+          "slug": "la_liga_2026",
+          "round": 5,
+          "cutoff": "2026-09-11T19:00:00",
+          "players": 791,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1497.7999999999913,
+          "field_cap_sum": 100.09999999999997
+        },
+        {
+          "slug": "la_liga_2026",
+          "round": 6,
+          "cutoff": "2026-09-15T17:00:00",
+          "players": 791,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.099999999993,
+          "field_cap_sum": 99.99999999999996
+        },
+        {
+          "slug": "la_liga_2026",
+          "round": 7,
+          "cutoff": "2026-09-18T19:00:00",
+          "players": 791,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.6999999999916,
+          "field_cap_sum": 99.69999999999993
+        },
+        {
+          "slug": "la_liga_2026",
+          "round": 8,
+          "cutoff": "2026-10-09T19:00:00",
+          "players": 799,
+          "all_matches_finished": false,
+          "snapshot": true,
+          "field_own_sum": 1497.5999999999915,
+          "field_cap_sum": 99.79999999999994
+        },
+        {
+          "slug": "la_liga_2026",
+          "round": 9,
+          "cutoff": "2026-10-10T12:00:00",
+          "players": 799,
+          "all_matches_finished": false,
+          "snapshot": false,
+          "field_own_sum": 1498.2999999999934,
+          "field_cap_sum": 99.99999999999999
+        },
+        {
+          "slug": "la_liga_2026",
+          "round": 10,
+          "cutoff": "2026-10-16T19:00:00",
+          "players": 799,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1497.999999999995,
+          "field_cap_sum": 99.89999999999992
+        },
+        {
+          "slug": "la_liga_2026",
+          "round": 11,
+          "cutoff": "2026-10-30T20:00:00",
+          "players": 799,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.4999999999932,
+          "field_cap_sum": 99.89999999999996
+        },
+        {
+          "slug": "ucl_2026",
+          "round": 1,
+          "cutoff": "2026-09-08T16:45:00",
+          "players": 1249,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1506.899999999988,
+          "field_cap_sum": 100.3999999999999
+        },
+        {
+          "slug": "ucl_2026",
+          "round": 2,
+          "cutoff": "2026-10-20T16:45:00",
+          "players": 1292,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1506.6999999999875,
+          "field_cap_sum": 100.49999999999991
+        },
+        {
+          "slug": "ucl_2026",
+          "round": 3,
+          "cutoff": "2026-11-03T17:45:00",
+          "players": 1295,
+          "all_matches_finished": false,
+          "snapshot": true,
+          "field_own_sum": 1501.1999999999869,
+          "field_cap_sum": 100.09999999999992
+        },
+        {
+          "slug": "turkey_2026",
+          "round": 1,
+          "cutoff": "2026-08-14T18:30:00",
+          "players": 636,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1505.2000000000044,
+          "field_cap_sum": 100.30000000000001
+        },
+        {
+          "slug": "turkey_2026",
+          "round": 2,
+          "cutoff": "2026-08-21T18:30:00",
+          "players": 636,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1503.1000000000054,
+          "field_cap_sum": 100.20000000000005
+        },
+        {
+          "slug": "turkey_2026",
+          "round": 3,
+          "cutoff": "2026-08-28T18:30:00",
+          "players": 636,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.5000000000032,
+          "field_cap_sum": 100.30000000000004
+        },
+        {
+          "slug": "turkey_2026",
+          "round": 4,
+          "cutoff": "2026-09-04T17:00:00",
+          "players": 636,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.5000000000048,
+          "field_cap_sum": 100.20000000000003
+        },
+        {
+          "slug": "turkey_2026",
+          "round": 5,
+          "cutoff": "2026-09-11T17:00:00",
+          "players": 636,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.5000000000068,
+          "field_cap_sum": 100.50000000000003
+        },
+        {
+          "slug": "turkey_2026",
+          "round": 6,
+          "cutoff": "2026-09-18T17:00:00",
+          "players": 636,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.0000000000048,
+          "field_cap_sum": 100.30000000000001
+        },
+        {
+          "slug": "turkey_2026",
+          "round": 7,
+          "cutoff": "2026-10-09T17:00:00",
+          "players": 636,
+          "all_matches_finished": false,
+          "snapshot": true,
+          "field_own_sum": 1504.0000000000052,
+          "field_cap_sum": 100.30000000000004
+        },
+        {
+          "slug": "turkey_2026",
+          "round": 8,
+          "cutoff": "2026-10-16T17:00:00",
+          "players": 636,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.9000000000055,
+          "field_cap_sum": 100.20000000000002
+        },
+        {
+          "slug": "turkey_2026",
+          "round": 9,
+          "cutoff": "2026-10-23T17:00:00",
+          "players": 636,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.0000000000064,
+          "field_cap_sum": 100.60000000000005
+        },
+        {
+          "slug": "turkey_2026",
+          "round": 10,
+          "cutoff": "2026-10-30T17:00:00",
+          "players": 636,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1502.8000000000063,
+          "field_cap_sum": 100.2
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 1,
+          "cutoff": "2026-07-24T17:00:00",
+          "players": 527,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1504.3000000000009,
+          "field_cap_sum": 100.59999999999997
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 2,
+          "cutoff": "2026-07-31T17:00:00",
+          "players": 527,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1503.8999999999994,
+          "field_cap_sum": 100.39999999999999
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 3,
+          "cutoff": "2026-08-08T12:30:00",
+          "players": 527,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1503.8999999999987,
+          "field_cap_sum": 100.50000000000003
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 4,
+          "cutoff": "2026-08-14T14:00:00",
+          "players": 527,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1501.599999999996,
+          "field_cap_sum": 100.19999999999993
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 5,
+          "cutoff": "2026-08-22T12:30:00",
+          "players": 527,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1500.6999999999948,
+          "field_cap_sum": 99.69999999999986
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 6,
+          "cutoff": "2026-08-28T15:00:00",
+          "players": 527,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1500.6999999999953,
+          "field_cap_sum": 100.19999999999997
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 7,
+          "cutoff": "2026-09-05T11:00:00",
+          "players": 527,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.3999999999965,
+          "field_cap_sum": 100.99999999999997
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 8,
+          "cutoff": "2026-09-11T15:00:00",
+          "players": 527,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1504.0999999999983,
+          "field_cap_sum": 100.60000000000002
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 9,
+          "cutoff": "2026-09-16T15:30:00",
+          "players": 527,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.399999999999,
+          "field_cap_sum": 100.40000000000002
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 10,
+          "cutoff": "2026-10-09T16:30:00",
+          "players": 531,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1500.8999999999949,
+          "field_cap_sum": 100.09999999999992
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 11,
+          "cutoff": "2026-10-17T11:00:00",
+          "players": 531,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.3999999999971,
+          "field_cap_sum": 100.5
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 12,
+          "cutoff": "2026-10-23T16:30:00",
+          "players": 538,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1500.099999999992,
+          "field_cap_sum": 99.89999999999992
+        },
+        {
+          "slug": "rfpl_2026",
+          "round": 13,
+          "cutoff": "2026-10-31T12:15:00",
+          "players": 538,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1503.6999999999969,
+          "field_cap_sum": 100.09999999999998
+        },
+        {
+          "slug": "seria_a_2026",
+          "round": 1,
+          "cutoff": "2026-08-22T16:30:00",
+          "players": 733,
+          "all_matches_finished": true,
+          "snapshot": false,
+          "field_own_sum": 1498.699999999998,
+          "field_cap_sum": 99.69999999999997
+        },
+        {
+          "slug": "seria_a_2026",
+          "round": 2,
+          "cutoff": "2026-08-28T18:45:00",
+          "players": 733,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1499.499999999993,
+          "field_cap_sum": 100.29999999999998
+        },
+        {
+          "slug": "seria_a_2026",
+          "round": 3,
+          "cutoff": "2026-09-04T18:45:00",
+          "players": 733,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.7999999999922,
+          "field_cap_sum": 99.59999999999992
+        },
+        {
+          "slug": "seria_a_2026",
+          "round": 4,
+          "cutoff": "2026-09-11T18:45:00",
+          "players": 733,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1499.1999999999923,
+          "field_cap_sum": 99.69999999999997
+        },
+        {
+          "slug": "seria_a_2026",
+          "round": 5,
+          "cutoff": "2026-09-18T18:45:00",
+          "players": 733,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.6999999999919,
+          "field_cap_sum": 99.39999999999995
+        },
+        {
+          "slug": "seria_a_2026",
+          "round": 6,
+          "cutoff": "2026-10-10T13:00:00",
+          "players": 745,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1500.099999999996,
+          "field_cap_sum": 100.10000000000001
+        },
+        {
+          "slug": "seria_a_2026",
+          "round": 7,
+          "cutoff": "2026-10-16T18:45:00",
+          "players": 745,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1499.3999999999903,
+          "field_cap_sum": 99.89999999999998
+        },
+        {
+          "slug": "seria_a_2026",
+          "round": 8,
+          "cutoff": "2026-10-23T18:45:00",
+          "players": 745,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.699999999992,
+          "field_cap_sum": 99.69999999999997
+        },
+        {
+          "slug": "seria_a_2026",
+          "round": 9,
+          "cutoff": "2026-10-27T17:30:00",
+          "players": 745,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.6999999999937,
+          "field_cap_sum": 99.69999999999995
+        },
+        {
+          "slug": "seria_a_2026",
+          "round": 10,
+          "cutoff": "2026-10-31T14:00:00",
+          "players": 745,
+          "all_matches_finished": true,
+          "snapshot": true,
+          "field_own_sum": 1498.9999999999925,
+          "field_cap_sum": 99.79999999999993
+        }
+      ],
+      "features": 80425,
+      "mapped_features": 45813
+    }
+  }
+}

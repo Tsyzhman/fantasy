@@ -1,0 +1,153 @@
+✔ equal league weights and the inclusive calendar range (11.3569ms)
+✔ calendar dates include different round numbers across leagues without complete xFO (0.9147ms)
+✔ legacy and base-XI scoring stay distinguishable during snapshot replacement (0.6256ms)
+✔ missing model / xFO values do not become a zero or rank (0.4045ms)
+✔ freeze rate uses filtered denominator and excludes current outcomes (0.4762ms)
+✔ reject bad bounds, unrecognized leagues and previous seasons (0.9382ms)
+✔ Moscow dates include the whole final day and normalize legacy naive UTC cutoffs (0.2928ms)
+✖ personal style and xFO comparisons include reserve, frozen and personal-only rounds (2.4163ms)
+✔ virtual group aggregates personal histories and has no freeze denominator (0.4139ms)
+✔ unavailable lineups remain in personal history and coverage without invented metrics (0.3875ms)
+✔ franchise purchase explanations keep tournament scope while virtual groups use personal rounds (0.5289ms)
+✔ current forecasts describe only the last selected lineup, historical values retain the full range (0.2867ms)
+✖ franchise rating includes an active frozen XI once while managers retain every personal observation (0.714ms)
+✖ purchases and xFO examples join eligible XI by all four identity fields, independently of manager name (0.6721ms)
+✖ hypothesis targets and control denominators use eligible franchise purchases only (0.7339ms)
+✖ active incomplete XI remains in franchise coverage instead of disappearing from denominators (0.3766ms)
+✖ date, league and completion filters agree across franchise aggregates and joined explanations (0.4807ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 11
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 296.5674
+
+✖ failing tests:
+
+test at src\franchises\analytics.test.ts:2:7253
+✖ personal style and xFO comparisons include reserve, frozen and personal-only rounds (2.4163ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  2 !== 1
+
+      at TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\franchises\analytics.test.ts:247:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\franchises\analytics.test.ts:2:11946
+✖ franchise rating includes an active frozen XI once while managers retain every personal observation (0.714ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  4 !== 1
+
+      at TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\franchises\analytics.test.ts:334:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 4,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\franchises\analytics.test.ts:2:13668
+✖ purchases and xFO examples join eligible XI by all four identity fields, independently of manager name (0.6721ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  8 !== 2
+
+      at TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\franchises\analytics.test.ts:372:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 8,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\franchises\analytics.test.ts:2:15405
+✖ hypothesis targets and control denominators use eligible franchise purchases only (0.7339ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  6 !== 4
+
+      at TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\franchises\analytics.test.ts:391:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 6,
+    expected: 4,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\franchises\analytics.test.ts:2:16613
+✖ active incomplete XI remains in franchise coverage instead of disappearing from denominators (0.3766ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  3 !== 2
+
+      at TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\franchises\analytics.test.ts:407:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\franchises\analytics.test.ts:2:17510
+✖ date, league and completion filters agree across franchise aggregates and joined explanations (0.4807ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  4 !== 3
+
+      at TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\franchises\analytics.test.ts:435:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 4,
+    expected: 3,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

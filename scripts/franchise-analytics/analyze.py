@@ -4,7 +4,7 @@
 @spec spec://modules/franchises/FEAT-005-franchise-analytics#data
 """
 from research import ROOT,save,read_db,IDS
-from sources import read_squads
+from sources import read_squads,franchise_squad_keys
 from forecast_sources import pre_round_snapshots
 import json,gzip,collections,datetime as dt,bisect,math,sys,statistics,hashlib,os
 import numpy as np
@@ -148,18 +148,50 @@ def save_frame_records(name,frame):
 DECISION_COLUMNS=['franchise','manager','slug','round','team','h2h_id','name','player_id','pos','is_cap','is_xi','is_buy','source','personal_only','fo','alt','ffo','own','form5','last_history_date','cutoff']
 
 def validated_board_states(records):
- """Reject ambiguous flags instead of silently choosing the last H2H duel.
+ """Validate each source board, then project one XI with active-any/frozen-any.
+
+ Distinct duels keep their original roles/results in the source history. The
+ projection owns flags only: a board number, score or source cannot be selected
+ from one arbitrary duel. Neither input records nor their shared event objects
+ are mutated.
 
  @spec spec://modules/franchises/FEAT-005-franchise-analytics#freezes
  """
- states={}
+ states={};sources={}
  for record in records:
   key=(record['franchise'],record['slug'],record['round'],str(record['team']))
-  previous=states.get(key)
-  if previous is not None and any(previous.get(name)!=record.get(name) for name in ['active','frozen']):
-   raise ValueError(f'Conflicting franchise board active/frozen state: franchise {key[0]}, league {key[1]}, round {key[2]}; retain the previous published snapshot')
-  states[key]=record
+  source=record.get('source')
+  if not isinstance(source,str) or not source:
+   raise ValueError('Missing franchise board source identity; retain the previous published snapshot')
+  if any(type(record.get(name)) is not bool for name in ['active','frozen']):
+   raise ValueError('Invalid franchise board active/frozen flags; retain the previous published snapshot')
+  identity=key+(source,)
+  signature=tuple(record.get(name) for name in ['active','frozen','board','score','opponent_score','finished'])
+  previous=sources.get(identity)
+  if (previous is not None and previous!=signature) or (record['active'] and record['frozen']):
+   raise ValueError(f'Conflicting franchise board state within one source: franchise {key[0]}, league {key[1]}, round {key[2]}, source {source}; retain the previous published snapshot')
+  sources[identity]=signature
+  projection=states.setdefault(key,{'active':False,'frozen':False})
+  projection['active']=projection['active'] or record['active']
+  projection['frozen']=projection['frozen'] or record['frozen']
  return states
+
+def eligible_frame_keys(squads,franchises):
+ """Stream minimal squad records into the shared contract predicate.
+
+ @spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts
+ """
+ columns=['franchise','slug','round','team','active','personal_only']
+ return franchise_squad_keys((dict(zip(columns,(clean(value) for value in row))) for row in squads[columns].itertuples(index=False,name=None)),franchises)
+
+def filter_squad_frame(frame,keys):
+ """Select a population by canonical XI identity without changing stored rows.
+
+ @spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts
+ """
+ columns=['franchise','slug','round','team']
+ mask=[(fid,slug,rn,str(team)) in keys for fid,slug,rn,team in frame[columns].itertuples(index=False,name=None)]
+ return frame.loc[mask]
 
 def aggregate():
  f=pd.read_pickle(ROOT/'source/features.pkl');lookup={(r['slug'],r['round'],r['h2h_id']):r for r in f.to_dict('records')};audit=json.loads((ROOT/'source-audit.json').read_text('utf-8'));franchises=json.loads((ROOT/'franchises.json').read_text('utf-8'))
@@ -217,31 +249,37 @@ def aggregate():
  buy['triple_model_low']=np.where(buy[['fo_pct_peer_gap','alt_pct_peer_gap','ffo_pct_peer_gap']].notna().all(axis=1),(buy[['fo_pct_peer_gap','alt_pct_peer_gap','ffo_pct_peer_gap']]<=-10).all(axis=1).astype(float),np.nan)
  buy['cold_with_followup']=(buy.form5_gap<-1)&buy.outcome_next3.notna()
  buy['early_success']=(buy.outcome_next3-buy.form5>=2)&buy.cold_with_followup
+ eligible=eligible_frame_keys(s,franchises);ranked_s=filter_squad_frame(s,eligible);ranked_buy=filter_squad_frame(buy,eligible)
  # Equal league weights; manager/round observations retain their within-league weight.
  metrics=['own','own_global','own_field','own_gap','own_cohort_gap','cap','cap_own','cap_field','cap_gap','diff_share','high_share','rare_cap','modal_match','buy_delta','buy_delta_field','buy_delta_gap','buy_form','buy_form_field','buy_form_gap','buy_form_pos_gap','buy_trend','buy_peak','buy_cold','buy_xgi_gap','buy_minutes_gap','fo_xi_pct','alt_xi_pct','ffo_xi_pct','fo_buy_pct','alt_buy_pct','ffo_buy_pct','fo_cap_loss','alt_cap_loss','ffo_cap_loss','triple_cap_disagree']
- league=s.groupby(['franchise','slug'])[metrics].mean().reset_index();overall=league.groupby('franchise')[metrics].mean().reset_index()
- for key in ['own_cohort_gap','cap_gap','buy_delta_gap']:overall[key+'_score']=(len(overall)-rankdata(overall[key],method='average'))/(len(overall)-1)*100
+ league=ranked_s.groupby(['franchise','slug'])[metrics].mean().reset_index();overall=league.groupby('franchise')[metrics].mean().reindex([fr['id'] for fr in franchises]).reset_index()
+ score_keys=['own_cohort_gap','cap_gap','buy_delta_gap'];rankable=overall[score_keys].notna().all(axis=1);n_rankable=int(rankable.sum())
+ for key in score_keys:
+  overall[key+'_score']=np.nan
+  if n_rankable:overall.loc[rankable,key+'_score']=(n_rankable-rankdata(overall.loc[rankable,key],method='average'))/(n_rankable-1)*100 if n_rankable>1 else 50
  overall['style_score']=overall.own_cohort_gap_score*.4+overall.cap_gap_score*.3+overall.buy_delta_gap_score*.3
- overall=overall.sort_values('style_score',ascending=False);overall['rank']=range(1,len(overall)+1)
+ overall=overall.sort_values('style_score',ascending=False);style_scores=sorted(overall.loc[rankable,'style_score']);overall['rank']=np.nan
+ overall.loc[rankable,'rank']=[1+len(style_scores)-bisect.bisect_right(style_scores,value+1e-9) for value in overall.loc[rankable,'style_score']]
  def aggstats(fid,g):
   unique=g.drop_duplicates(['slug','round','h2h_id']);low=g[g.triple_model_low==1];lu=low.drop_duplicates(['slug','round','h2h_id'])
   return {'purchases':len(g),'unique_purchases':len(unique),'form_coverage':float(g.form5.notna().mean()*100),'model_coverage':int(g[['fo_pct','alt_pct','ffo_pct']].notna().all(axis=1).sum()),'triple_low':len(low),'triple_low_unique':len(lu),'low_stats':{c:avg(lu[c].tolist()) for c in ['price_pre_peer_gap','form5_peer_gap','minutes5_peer_gap','xgi90_peer_gap','delta_peer_gap','own_peer_gap']},'all_stats':{c:avg(unique[c].tolist()) for c in ['price_pre_peer_gap','form5_peer_gap','minutes5_peer_gap','xgi90_peer_gap']}}
- extras={int(fid):aggstats(fid,g) for fid,g in buy.groupby('franchise')}
+ extras={int(fid):aggstats(fid,g) for fid,g in ranked_buy.groupby('franchise')}
  manager=s.groupby(['franchise','manager'])[metrics].mean().reset_index();manager['n_rounds']=s.groupby(['franchise','manager']).size().values
  manager['n_buys']=s.groupby(['franchise','manager']).n_buy.sum().values
  # Cluster intervals resample managers, preserving their cross-round decisions.
  rng=np.random.default_rng(20260920);cis={}
- for fid,g in s.groupby('franchise'):
+ for fid,g in ranked_s.groupby('franchise'):
   mgr=g.groupby(['manager','slug'])[metrics].mean().groupby('manager').mean();a=mgr[['own_cohort_gap','cap_gap','buy_delta_gap','buy_form_gap']].to_numpy();ix=rng.integers(0,len(a),(1000,len(a)));v=np.nanmean(a[ix],axis=1)
   cis[int(fid)]={k:list(np.nanpercentile(v[:,i],[2.5,97.5])) for i,k in enumerate(['own_cohort_gap','cap_gap','buy_delta_gap','buy_form_gap'])}
- recent=s.sort_values('round').groupby(['franchise','slug','team']).tail(1).groupby(['franchise','slug'])[['current_fo','current_alt','current_ffo']].mean().groupby('franchise').mean().reset_index()
+ recent=ranked_s.sort_values('round').groupby(['franchise','slug','team']).tail(1).groupby(['franchise','slug'])[['current_fo','current_alt','current_ffo']].mean().groupby('franchise').mean().reset_index()
  # Season-level summaries include audit links and concrete disagreements.
  out=[]
  for r in overall.to_dict('records'):
-  fid=r['franchise'];fr=next(x for x in franchises if x['id']==fid);ss=s[s.franchise==fid];bg=buy[buy.franchise==fid]
+  fid=r['franchise'];fr=next(x for x in franchises if x['id']==fid);ss=ranked_s[ranked_s.franchise==fid];bg=ranked_buy[ranked_buy.franchise==fid]
   examples=bg[bg.triple_model_low==1].sort_values('fo_pct_peer_gap').drop_duplicates(['slug','round','h2h_id']).head(12)
   caps=ss[ss.triple_cap_disagree==100].sort_values('fo_cap_loss',ascending=False).head(12)
-  r.update({'name':fr['name'],'roster':fr['roster'],'n_rounds':len(ss),'n_leagues':ss.slug.nunique(),'n_managers':ss.manager.nunique(),'n_buys':int(ss.n_buy.sum()),'n_captain_model':int(ss.triple_cap_disagree.notna().sum()),'n_forecast_fo':int(ss.fo_n.sum()),'n_forecast_alt':int(ss.alt_n.sum()),'n_forecast_ffo':int(ss.ffo_n.sum()),'ci':cis[int(fid)],'purchase_stats':extras.get(int(fid),{}),'current':recent[recent.franchise==fid].to_dict('records')[0],'leagues':league[league.franchise==fid].to_dict('records'),'managers':manager[manager.franchise==fid].to_dict('records'),'examples':examples[['manager','slug','round','name','club','pos','own','delta','form5','form5_gap','price_pre','fo','alt','ffo','fo_pct','alt_pct','ffo_pct','source']].to_dict('records'),'captain_examples':caps[['manager','slug','round','captain','cap','fo_cap','alt_cap','ffo_cap','fo_cap_loss','alt_cap_loss','ffo_cap_loss','source']].to_dict('records')})
+  current=recent[recent.franchise==fid].to_dict('records')
+  r.update({'name':fr['name'],'roster':fr['roster'],'n_rounds':len(ss),'n_leagues':ss.slug.nunique(),'n_managers':ss.manager.nunique(),'n_buys':int(ss.n_buy.sum()),'n_captain_model':int(ss.triple_cap_disagree.notna().sum()),'n_forecast_fo':int(ss.fo_n.sum()),'n_forecast_alt':int(ss.alt_n.sum()),'n_forecast_ffo':int(ss.ffo_n.sum()),'ci':cis.get(int(fid),{key:[None,None] for key in ['own_cohort_gap','cap_gap','buy_delta_gap','buy_form_gap']}),'purchase_stats':extras.get(int(fid)) or aggstats(fid,ranked_buy.iloc[:0]),'current':current[0] if current else {'franchise':fid,'current_fo':None,'current_alt':None,'current_ffo':None},'leagues':league[league.franchise==fid].to_dict('records'),'managers':manager[manager.franchise==fid].to_dict('records'),'examples':examples[['manager','slug','round','name','club','pos','own','delta','form5','form5_gap','price_pre','fo','alt','ffo','fo_pct','alt_pct','ffo_pct','source']].to_dict('records'),'captain_examples':caps[['manager','slug','round','team','captain','cap','fo_cap','alt_cap','ffo_cap','fo_cap_loss','alt_cap_loss','ffo_cap_loss','source']].to_dict('records')})
   r['active_summary']=ss[ss.active==True].groupby('slug')[metrics].mean().mean().to_dict()
   r['n_active']=int((ss.active==True).sum())
   unique=bg.drop_duplicates(['slug','round','h2h_id'])

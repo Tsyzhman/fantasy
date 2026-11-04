@@ -97,22 +97,62 @@ def board_user_id(document):
     return match[1] if match else None
 
 
+def franchise_squad_keys(squads, franchises):
+    """One eligible XI per football round; virtual groups keep personal history.
+
+    @spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts
+    """
+    virtual = {f['id'] for f in franchises if f.get('kind') == 'virtual'}
+    return {(r['franchise'], r['slug'], r['round'], str(r['team'])) for r in squads
+            if r['franchise'] in virtual or (not r.get('personal_only', False) and r.get('active') is True)}
+
+
+def calendar_fixture_scopes(leagues):
+    """Retain every calendar membership of a Sports ID, including provider aliases.
+
+    @spec spec://modules/franchises/FEAT-005-franchise-analytics#freezes
+    """
+    fixtures = {}
+    for league in leagues:
+        for rd in league['rounds']:
+            for match in rd['matches']:
+                if match.get('sports_match_id'):
+                    key = (league['slug'], str(match['sports_match_id']))
+                    fixtures.setdefault(key, set()).add((league['slug'], rd['round']))
+    return fixtures
+
+
 def fixture_round(document, slug, fixtures, dates, title=''):
-    """Resolve a board column from actual Sports fixtures, never its phase-local number."""
-    scopes = set()
+    """Require one scope supported by all known fixtures and available date evidence.
+
+    Unknown IDs provide no constraint. No recognized fixtures allow the existing
+    unique-date fallback; no evidence returns None. Empty or ambiguous retained
+    candidates fail closed. Legacy singleton fixture maps remain accepted.
+
+    @spec spec://modules/franchises/FEAT-005-franchise-analytics#freezes
+    """
+    scopes = None
     for link in document.select('.roster.this_tour li:not(.prev) [href*="/football/match/"]'):
         parsed = urllib.parse.urlsplit(link.get('href', ''))
         match = re.fullmatch(r'/football/match/(\d+)/?', parsed.path)
         if parsed.hostname in {'sports.ru', 'www.sports.ru'} and match:
-            scope = fixtures.get((slug, match[1]))
-            if scope is not None:
-                scopes.add(scope)
+            value = fixtures.get((slug, match[1]))
+            if value is not None:
+                candidates = set(value) if isinstance(value, (set, frozenset)) else {value}
+                scopes = candidates if scopes is None else scopes & candidates
+    # A date cannot rescue mutually incompatible known match identities.
+    if scopes is not None and not scopes:
+        raise ValueError('Conflicting board fixture identity')
     # Empty lineups still have an explicit competition date in the match title.
     date = re.search(r', (\d{2}\.\d{2}\.\d{4})$', title)
     dated = dates.get((slug, date[1]), set()) if date else set()
-    if len(scopes) > 1 or len(dated) > 1 or (scopes and dated and scopes != dated):
+    if dated:
+        scopes = set(dated) if scopes is None else scopes & dated
+    if scopes is None:
+        return None
+    if len(scopes) != 1:
         raise ValueError('Conflicting board fixture identity')
-    return next(iter(scopes or dated), None)
+    return next(iter(scopes))
 
 
 def registry():
@@ -155,7 +195,7 @@ def personal_teams(body, leagues):
         for score in container.select('a[href*="fantasy_team_tour_data/"]'):
             path = urllib.parse.urlsplit(score['href'])
             parsed = re.fullmatch(r'/analytics/fantasy_team_tour_data/(\d+)/(\d+)/(\d+)/?', path.path)
-            title = re.match(r'тур (\d+),', score.get('title', ''))
+            title = re.match(r'тур (\d+)(?:,|\Z)', score.get('title', ''))
             if path.netloc != 'fantasy-h2h.ru' or not parsed or parsed[1] != team or not title:
                 raise ValueError('Invalid personal round link')
             rounds.add(int(title[1]))

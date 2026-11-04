@@ -1,0 +1,28 @@
+{
+  "run": 41848561363,
+  "commit": "d31ca192f80467bc7cd611b688c3047d45545c5b",
+  "conclusion": "success",
+  "mainTests": 1379,
+  "mainFailed": 0,
+  "mainSkipped": 0,
+  "lintErrors": 0,
+  "lintWarnings": 237,
+  "fixtureBrowserPassed": 48,
+  "fixtureBrowserIntentionallySkipped": 32,
+  "pythonFranchiseTests": 46,
+  "transportTests": 23,
+  "validation": [
+    "production dependency audit",
+    "Prisma migration drift",
+    "database integration",
+    "typecheck",
+    "production build",
+    "keyboard and dialog browser regressions",
+    "runtime DB roles",
+    "KHL HTTP transport",
+    "franchise formulas and memory",
+    "continuous release and rollback",
+    "SSH host pinning",
+    "artifact provenance/digest adversarial checks"
+  ]
+}

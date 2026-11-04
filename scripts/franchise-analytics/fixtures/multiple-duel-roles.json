@@ -1,0 +1,120 @@
+{
+  "provenance": {
+    "freeze_sha256": "68755f48537764d9e161546b1c6efa2761fb51ebbe2f6313d17490cf3daefe0f",
+    "primary_board_hashes": [
+      {
+        "url": "https://fantasy-h2h.ru/h2h/team_match_data/514501?ajax=1",
+        "retrieved_utc": "2026-11-04T13:46:18.702860+00:00",
+        "body_sha256": "1b8271fd7da9b1d56094fd7a307298f05a5a88a1a481903cdb15526c387594b5",
+        "title_date": "16.10.2026"
+      },
+      {
+        "url": "https://fantasy-h2h.ru/h2h/team_match_data/538054?ajax=1",
+        "retrieved_utc": "2026-11-04T13:46:18.835722+00:00",
+        "body_sha256": "05ac0aa2334dd95f0dbf58791d934e1005470cbb3f1b917d722c83e3b8f057b4",
+        "title_date": "20.10.2026"
+      },
+      {
+        "url": "https://fantasy-h2h.ru/h2h/team_match_data/538094?ajax=1",
+        "retrieved_utc": "2026-11-04T13:46:18.971118+00:00",
+        "body_sha256": "ba39f22330e6a8be177b6be2e7e506d1a2669594cf1bbeeea8c6d2c0191ef7db",
+        "title_date": "20.10.2026"
+      }
+    ],
+    "sanitized": "Numeric identities, roles and scores only; no managers or raw lineups."
+  },
+  "records": [
+    {
+      "source": "https://fantasy-h2h.ru/h2h/team_match_data/514485",
+      "active": false,
+      "frozen": true,
+      "board": null,
+      "score": 78.0,
+      "franchise": 401,
+      "slug": "championship_2026",
+      "round": 10,
+      "team": "590459"
+    },
+    {
+      "source": "https://fantasy-h2h.ru/h2h/team_match_data/514501",
+      "active": false,
+      "frozen": false,
+      "board": null,
+      "score": 78.0,
+      "franchise": 401,
+      "slug": "championship_2026",
+      "round": 10,
+      "team": "590459"
+    },
+    {
+      "source": "https://fantasy-h2h.ru/h2h/team_match_data/538054",
+      "active": false,
+      "frozen": true,
+      "board": null,
+      "score": 69.0,
+      "franchise": 441,
+      "slug": "ucl_2026",
+      "round": 2,
+      "team": "632180"
+    },
+    {
+      "source": "https://fantasy-h2h.ru/h2h/team_match_data/538094",
+      "active": true,
+      "frozen": false,
+      "board": 2,
+      "score": 69.0,
+      "franchise": 441,
+      "slug": "ucl_2026",
+      "round": 2,
+      "team": "632180"
+    },
+    {
+      "source": "https://fantasy-h2h.ru/h2h/team_match_data/538054",
+      "active": true,
+      "frozen": false,
+      "board": 6,
+      "score": 83.0,
+      "franchise": 441,
+      "slug": "ucl_2026",
+      "round": 2,
+      "team": "630929"
+    },
+    {
+      "source": "https://fantasy-h2h.ru/h2h/team_match_data/538094",
+      "active": false,
+      "frozen": false,
+      "board": null,
+      "score": 83.0,
+      "franchise": 441,
+      "slug": "ucl_2026",
+      "round": 2,
+      "team": "630929"
+    }
+  ],
+  "expected": [
+    {
+      "franchise": 401,
+      "slug": "championship_2026",
+      "round": 10,
+      "team": "590459",
+      "active": false,
+      "frozen": true
+    },
+    {
+      "franchise": 441,
+      "slug": "ucl_2026",
+      "round": 2,
+      "team": "632180",
+      "active": true,
+      "frozen": true
+    },
+    {
+      "franchise": 441,
+      "slug": "ucl_2026",
+      "round": 2,
+      "team": "630929",
+      "active": true,
+      "frozen": false
+    }
+  ]
+}

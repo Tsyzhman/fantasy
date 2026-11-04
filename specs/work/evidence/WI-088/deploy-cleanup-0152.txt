@@ -1,0 +1,17 @@
+package-and-deploy	Promote Docker release	2026-11-04T15:42:03.9418188Z KEEP_ROLLBACK=fantasy-scout-web-rollback-pre-20261104T152419Z-v0.3.152-3e58a9f
+package-and-deploy	Promote Docker release	2026-11-04T15:42:03.9966309Z REMOVE_ROLLBACK=fantasy-scout-web-rollback-pre-20261104T144014Z-v0.3.151-d31ca19|state=exited
+package-and-deploy	Promote Docker release	2026-11-04T15:42:04.6477513Z KEEP_ROLLBACK=fantasy-scout-worker-rollback-pre-20261104T152419Z-v0.3.152-3e58a9f
+package-and-deploy	Promote Docker release	2026-11-04T15:42:04.7077015Z REMOVE_ROLLBACK=fantasy-scout-worker-rollback-pre-20261104T144014Z-v0.3.151-d31ca19|state=exited
+package-and-deploy	Promote Docker release	2026-11-04T15:42:05.3533229Z KEEP_ROLLBACK=fantasy-scout-fpl-relay-rollback-pre-20261104T152419Z-v0.3.152-3e58a9f
+package-and-deploy	Promote Docker release	2026-11-04T15:42:05.4120090Z REMOVE_ROLLBACK=fantasy-scout-fpl-relay-rollback-pre-20261104T144014Z-v0.3.151-d31ca19|state=exited
+package-and-deploy	Promote Docker release	2026-11-04T15:42:05.6126772Z REMOVE_RELAY_VOLUME=fantasy-scout-fpl-relay-candidate-20261104T130318Z-v0.3.150-1c9264f
+package-and-deploy	Promote Docker release	2026-11-04T15:42:05.7307555Z KEEP_RELAY_VOLUME=fantasy-scout-fpl-relay-candidate-20261104T144014Z-v0.3.151-d31ca19
+package-and-deploy	Promote Docker release	2026-11-04T15:42:05.7900942Z KEEP_RELAY_VOLUME=fantasy-scout-fpl-relay-candidate-20261104T152419Z-v0.3.152-3e58a9f
+package-and-deploy	Promote Docker release	2026-11-04T15:42:06.4724499Z REMOVE_RELEASE=20261104T130318Z-v0.3.150-1c9264f|size=57M
+package-and-deploy	Promote Docker release	2026-11-04T15:42:06.6493532Z KEEP_RELEASE=20261104T144014Z-v0.3.151-d31ca19
+package-and-deploy	Promote Docker release	2026-11-04T15:42:06.6518843Z KEEP_RELEASE=20261104T152419Z-v0.3.152-3e58a9f
+package-and-deploy	Promote Docker release	2026-11-04T15:42:09.7342594Z REMOVE_IMAGE=fantasy-scout:20261104T130318Z-v0.3.150-1c9264f
+package-and-deploy	Promote Docker release	2026-11-04T15:42:11.2832175Z KEEP_IMAGE=fantasy-scout:20261104T144014Z-v0.3.151-d31ca19
+package-and-deploy	Promote Docker release	2026-11-04T15:42:11.3927086Z KEEP_IMAGE=fantasy-scout:20261104T152419Z-v0.3.152-3e58a9f
+package-and-deploy	Promote Docker release	2026-11-04T15:42:11.5011049Z REMOVE_IMAGE=fantasy-scout:20261104T152419Z-v0.3.152-3e58a9f-setup
+package-and-deploy	Promote Docker release	2026-11-04T15:42:22.6378065Z {"keep": "/var/backups/fantasy-scout/snapshot-20261023T112441Z-v0.3.145-32fcc3d.dump", "verifiedBytes": 379894669, "remove": [], "removedBytes": 0, "plannedBytes": 0, "applied": true}

@@ -75,17 +75,29 @@ test("cached calendar and league selections keep separate populations and empty 
   ];
   s.squads = s.rounds.map((r, index) => ({
     franchise: 1, manager: "Менеджер", team: String(index), slug: r.slug, round: r.round,
-    finished: r.finished, own: [10, 30, 90][index],
+    active: true, finished: r.finished, own: [10, 30, 90][index],
   }));
+  s.squads.push({ ...s.squads[0], team: "reserve", active: false, own: 99 });
   const cache = new FranchiseReportCache();
   const september = { ...filters, from: "2026-09-01", to: "2026-09-30" };
   const england = { ...september, leagues: ["a"] };
   const empty = { ...september, from: "2027-01-01", to: "2027-01-01" };
   try {
-    for (const f of [filters, september, england, empty, england, september, filters]) {
+    for (const [f, squadCount, ownership, managerCount] of [
+      [filters, 3, 55, 4],
+      [september, 2, 50, 3],
+      [england, 1, 10, 2],
+      [empty, 0, null, 0],
+      [england, 1, 10, 2],
+      [september, 2, 50, 3],
+      [filters, 3, 55, 4],
+    ] as const) {
       const report = JSON.parse(await cache.get(s, f));
       const expected = aggregate(s, f);
       assert.deepEqual(report, expected);
+      assert.equal(report.squads, squadCount);
+      assert.equal(report.franchises[0].metrics.own, ownership);
+      assert.equal(report.managerSquads, managerCount);
     }
     assert.equal(JSON.parse(await cache.get(s, england)).squads, 1);
     assert.equal(JSON.parse(await cache.get(s, england)).franchises[0].metrics.own, 10);

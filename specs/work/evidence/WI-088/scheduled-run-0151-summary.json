@@ -1,0 +1,31 @@
+{
+  "trigger": "unchanged regular timer at15:10UTC",
+  "outcome": "failed acquire; no calculation/import",
+  "errorLines": [
+    "ERROR 1115037086 Invalid personal round link"
+  ],
+  "stages": [
+    {
+      "stage": "acquire",
+      "succeeded": false,
+      "seconds": 174.971,
+      "peak_rss_bytes": 908881920,
+      "memory.current": "962678784",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0"
+    }
+  ],
+  "samples": 38,
+  "sampledPeakBytes": 962551808,
+  "minimumAvailableBytes": 5560815616,
+  "abortRequired": false,
+  "maxEvents": 0,
+  "oom": 0,
+  "oomKilled": 0,
+  "service": {
+    "Result": "exit-code",
+    "ExecMainCode": "1",
+    "ExecMainStatus": "1",
+    "ActiveState": "failed",
+    "SubState": "failed"
+  }
+}

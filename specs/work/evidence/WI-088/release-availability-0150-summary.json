@@ -1,0 +1,13 @@
+{
+  "started": "2026-11-04T13:03:49.243914+00:00",
+  "expectedCommit": "1c9264f07f6b508a074232811f69b1d9aae87eb4",
+  "oldCommit": "269980b7bbc8d16c850aad89229423f5a2383346",
+  "oldAsset": "/_next/static/css/8e0a3def6b75c3dc.css?dpl=269980b7bbc8d16c850aad89229423f5a2383346",
+  "samples": 190,
+  "errors": 0,
+  "consecutiveNewRevision": 20,
+  "revisions": [
+    "1c9264f07f6b508a074232811f69b1d9aae87eb4",
+    "269980b7bbc8d16c850aad89229423f5a2383346"
+  ]
+}

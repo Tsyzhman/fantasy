@@ -1,0 +1,80 @@
+{
+  "outcome": "failed-aggregate-before-publication",
+  "error": "Conflicting franchise board active/frozen state: franchise 401, championship_2026, round 10",
+  "sourceCheckpoint": "2026-11-04T11:42:00Z",
+  "ready": {
+    "at": "2026-11-04T13:23:04.187476+00:00",
+    "ready": true,
+    "worker_image": "sha256:cf9f730e6747050b6eec4f20ed87fd953f656b804ba2546ea9c1802267d1be1a",
+    "protected": {
+      "fantasy-scout-web": {
+        "id": "89e3d96dfa613a77a7eb92a2270f663f0255295bea056933c2926a119030f21f",
+        "restarts": 0,
+        "status": "running",
+        "oom": false,
+        "started": "2026-11-04T13:18:20.279607571Z"
+      },
+      "fantasy-scout-worker": {
+        "id": "f5383355a4a7d22921ea6d481d031ec2d98f772279c5d69e9363c850bdd2d1bf",
+        "restarts": 0,
+        "status": "running",
+        "oom": false,
+        "started": "2026-11-04T13:18:25.060553895Z"
+      },
+      "fantasy-scout-postgres": {
+        "id": "325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f",
+        "restarts": 0,
+        "status": "running",
+        "oom": false,
+        "started": "2026-08-19T13:45:47.229418796Z"
+      }
+    },
+    "available_bytes": 6427815936
+  },
+  "finished": {
+    "at": "2026-11-04T13:37:26.464516+00:00",
+    "finished": true,
+    "job_present": false,
+    "available_bytes": 6620307456
+  },
+  "monitorSamples": 163,
+  "sampledPeakBytes": 1560752128,
+  "peakSource": "five-second samples; kernel memory.peak unavailable",
+  "minAvailableBytes": 5786648576,
+  "abortSamples": 0,
+  "oomKillMax": 0,
+  "memoryMaxEvents": 0,
+  "stages": [
+    {
+      "stage": "acquire",
+      "succeeded": true,
+      "seconds": 764.744,
+      "peak_rss_bytes": 368590848,
+      "memory.current": "1027170304",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0"
+    },
+    {
+      "stage": "features",
+      "succeeded": true,
+      "seconds": 66.6,
+      "peak_rss_bytes": 920637440,
+      "memory.current": "1206222848",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0"
+    },
+    {
+      "stage": "aggregate",
+      "succeeded": false,
+      "seconds": 2.865,
+      "peak_rss_bytes": 558575616,
+      "memory.current": "1288118272",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0"
+    }
+  ],
+  "verifiedBoards": 1702,
+  "boardAuditErrors": 0,
+  "limitations": [
+    "Enrich, hypotheses, export and importer did not run.",
+    "Old validation.json remains; it is not current calculation evidence.",
+    "Full aggregate memory acceptance remains open."
+  ]
+}

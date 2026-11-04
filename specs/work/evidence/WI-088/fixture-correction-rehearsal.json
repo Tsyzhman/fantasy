@@ -1,0 +1,40 @@
+{
+  "configuration": {
+    "available_before_bytes": 6351134720,
+    "image": "sha256:1201dadd6ce48d0a36b263605b6621c80b7cc6e856d1cde70815d169cbb6685f",
+    "commit": "269980b7bbc8d16c850aad89229423f5a2383346",
+    "memory_bytes": 1073741824,
+    "cpus": 1,
+    "network": "none",
+    "source_readonly": true,
+    "candidate_archive_sha256": "c00e76dbb17851eddbc667a2ccadc5c65ee6da862170d8b500e472419c569cfd"
+  },
+  "rehearsal": {
+    "status": "cache_missing",
+    "checked_columns": 3415,
+    "checked_forms": 366,
+    "fallbacks": 31,
+    "cache_reads": 397,
+    "source_scoped_synthetic_verification": true,
+    "cache_fetched_from": "2026-10-24T00:33:11Z",
+    "cache_fetched_to": "2026-11-04T12:27:32Z",
+    "pre_run_cache_reads": 1,
+    "seconds": 41.463,
+    "missing_url": "https://fantasy-h2h.ru/h2h/match_data/8118690?v=721271&ajax=1",
+    "known_fixed": {
+      "board_url": "https://fantasy-h2h.ru/h2h/team_match_data/520404",
+      "scope": [
+        "la_liga_2026",
+        9
+      ]
+    },
+    "franchise": 563,
+    "slug": "la_liga_2026",
+    "form_url": "https://fantasy-h2h.ru/form/view/h2h_tournament_franchise/15924",
+    "column": 10,
+    "board_url": "https://fantasy-h2h.ru/h2h/team_match_data/520438",
+    "fallback_url": "https://fantasy-h2h.ru/h2h/match_data/8118690?v=721271"
+  },
+  "diagnostic_exit": 0,
+  "remaining_container": ""
+}

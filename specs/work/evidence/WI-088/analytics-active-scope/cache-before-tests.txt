@@ -1,0 +1,32 @@
+✔ twenty concurrent identical requests share one render and failed flights can retry (15.5889ms)
+✔ report cache preserves the complete JSON and invalidates immediately on snapshot replacement (0.8414ms)
+✔ report cache bounds retained strings and expires them while idle (43.9355ms)
+✔ failed renders are retryable and never poison other filters (0.7712ms)
+✖ cached calendar and league selections keep separate populations and empty ranges (7.0469ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 4
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 240.5155
+
+✖ failing tests:
+
+test at src\server\franchises\report-cache.test.ts:2:3905
+✖ cached calendar and league selections keep separate populations and empty ranges (7.0469ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  0 !== 1
+
+      at TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\franchises\report-cache.test.ts:90:12)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

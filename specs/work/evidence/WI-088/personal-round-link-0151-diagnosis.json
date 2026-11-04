@@ -1,0 +1,333 @@
+{
+  "configuration": {
+    "available_before_bytes": 4608667648,
+    "image": "sha256:27ad0032b39975674757e0f536bd0ff320d28f2f34b2b5070fabe7acdaade9dd",
+    "commit": "d31ca192f80467bc7cd611b688c3047d45545c5b",
+    "source_readonly": true,
+    "root_readonly": true,
+    "network": "none",
+    "memory_bytes": 1073741824,
+    "cpus": 1
+  },
+  "diagnostic": {
+    "url": "https://fantasy-h2h.ru/h2h/user_tournaments_list/1101905285/26?ajax=1",
+    "fetched_at": "2026-11-04T14:59:27Z",
+    "cache_sha256": "a85ab5afe0c5a1cc28bbd99687bc32d8fb88930683b42d47d0e6328b45738236",
+    "body_sha256": "ae733271ec19cea76a46375e2a89b53d6b83998a4866f5878849619ef277007e",
+    "body_bytes": 212644,
+    "serving_sources_sha256": "6cae55b19e13545e50948fbee45b5504fd48df65628f922522991fe638d98355",
+    "parser_result": {
+      "error": "Invalid personal round link",
+      "error_type": "ValueError"
+    },
+    "team_histories": [
+      {
+        "slug": "liga_europa_2026",
+        "team": "641000",
+        "score_links": 4,
+        "valid_rounds": [
+          1,
+          2,
+          3
+        ],
+        "invalid_count": 1
+      },
+      {
+        "slug": "ucl_2026",
+        "team": "630982",
+        "score_links": 3,
+        "valid_rounds": [
+          1,
+          2,
+          3
+        ],
+        "invalid_count": 0
+      },
+      {
+        "slug": "bundesliga_2026",
+        "team": "616727",
+        "score_links": 8,
+        "valid_rounds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "invalid_count": 0
+      },
+      {
+        "slug": "france_2026",
+        "team": "604156",
+        "score_links": 9,
+        "valid_rounds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "invalid_count": 0
+      },
+      {
+        "slug": "seria_a_2026",
+        "team": "603990",
+        "score_links": 10,
+        "valid_rounds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "invalid_count": 0
+      },
+      {
+        "slug": "epl_2026",
+        "team": "598536",
+        "score_links": 9,
+        "valid_rounds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "invalid_count": 0
+      },
+      {
+        "slug": "la_liga_2026",
+        "team": "590597",
+        "score_links": 11,
+        "valid_rounds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "invalid_count": 0
+      },
+      {
+        "slug": "turkey_2026",
+        "team": "590514",
+        "score_links": 10,
+        "valid_rounds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "invalid_count": 0
+      },
+      {
+        "slug": "championship_2026",
+        "team": "590512",
+        "score_links": 13,
+        "valid_rounds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13
+        ],
+        "invalid_count": 0
+      },
+      {
+        "slug": "eredivisie_2026",
+        "team": "586994",
+        "score_links": 11,
+        "valid_rounds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "invalid_count": 0
+      },
+      {
+        "slug": "portugal_2026",
+        "team": "587011",
+        "score_links": 10,
+        "valid_rounds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "invalid_count": 0
+      },
+      {
+        "slug": "rfpl_2026",
+        "team": "570540",
+        "score_links": 13,
+        "valid_rounds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13
+        ],
+        "invalid_count": 0
+      }
+    ],
+    "invalid_links": [
+      {
+        "slug": "liga_europa_2026",
+        "team": "641000",
+        "href": "https://fantasy-h2h.ru/analytics/fantasy_team_tour_data/641000/0/349/",
+        "title": "тур 4",
+        "text": "0",
+        "anchor_classes": [
+          "async_block_modal",
+          "score_result",
+          "in_progress"
+        ],
+        "failures": [
+          "round_title"
+        ],
+        "parsed_team": "641000",
+        "parsed_tour": "0",
+        "parsed_cid": "349",
+        "anchor": "<a class=\"async_block_modal score_result in_progress\" data-tour_id=\"0\" href=\"https://fantasy-h2h.ru/analytics/fantasy_team_tour_data/641000/0/349/\" title=\"тур 4\">\r\n                                                0\r\n                                            </a>"
+      }
+    ],
+    "existing_forms_mtime_utc": "2026-11-04T13:26:10.647639+00:00",
+    "previous_forms_uid_memberships": [
+      {
+        "franchise": 433,
+        "slug": "rfpl_2026",
+        "form_personal": false,
+        "team": "570540"
+      },
+      {
+        "franchise": 433,
+        "slug": "eredivisie_2026",
+        "form_personal": false,
+        "team": "586994"
+      },
+      {
+        "franchise": 433,
+        "slug": "portugal_2026",
+        "form_personal": false,
+        "team": "587011"
+      },
+      {
+        "franchise": 433,
+        "slug": "championship_2026",
+        "form_personal": false,
+        "team": "590512"
+      },
+      {
+        "franchise": 433,
+        "slug": "turkey_2026",
+        "form_personal": false,
+        "team": "590514"
+      },
+      {
+        "franchise": 433,
+        "slug": "epl_2026",
+        "form_personal": false,
+        "team": "598536"
+      },
+      {
+        "franchise": 433,
+        "slug": "seria_a_2026",
+        "form_personal": false,
+        "team": "603990"
+      },
+      {
+        "franchise": 433,
+        "slug": "la_liga_2026",
+        "form_personal": false,
+        "team": "590597"
+      },
+      {
+        "franchise": 433,
+        "slug": "france_2026",
+        "form_personal": false,
+        "team": "604156"
+      },
+      {
+        "franchise": 433,
+        "slug": "bundesliga_2026",
+        "form_personal": false,
+        "team": "616727"
+      },
+      {
+        "franchise": 433,
+        "slug": "ucl_2026",
+        "form_personal": false,
+        "team": "630982"
+      },
+      {
+        "franchise": 433,
+        "slug": "liga_europa_2026",
+        "form_personal": false,
+        "team": "641000"
+      }
+    ],
+    "cache_unchanged": true,
+    "network_used": false,
+    "peak_rss_bytes": 53346304
+  },
+  "diagnostic_exit": 0,
+  "remaining_container": ""
+}

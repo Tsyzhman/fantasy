@@ -1,0 +1,7 @@
+{
+  "samples": 434,
+  "errors": 0,
+  "from": "2026-11-04T15:42:42.739119+00:00",
+  "to": "2026-11-04T16:19:33.740378+00:00",
+  "scope": "Whole controlled cycle from before acquisition to process exit; inspect exit/stages for import success."
+}

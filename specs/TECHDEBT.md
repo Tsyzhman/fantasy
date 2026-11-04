@@ -4,16 +4,16 @@ Register of current engineering trade-offs and risks.
 
 ## Open
 
-### TD-010: Franchise aggregation exceeds the shared worker memory limit
+### TD-010: Franchise export reaches the bounded job memory boundary
 
-- Area: franchise batch analytics / production worker.
-- Related specs: `spec://modules/franchises/FEAT-005-franchise-analytics#data`, `spec://common/INFRA-006-continuous-deployment#root`.
-- Introduced by: observed on production 0.3.137 during WI-076 verification; not introduced by the design release.
-- Current state: the scheduled 2026-10-10 collection reached FEATURES (53003, 48), then the kernel killed Python PID 956548 at 19:09:09 MSK within the old worker memory cgroup. The collector exited 1 and retained the previous published snapshot. The promoter correctly waited for its lock before switching production.
-- Risk: scheduled franchise refreshes can fail while the last successful snapshot remains served.
-- Trigger: aggregation of the full current dataset alongside the worker's other processes within its 4 GiB limit.
-- Mitigation: profile and bound aggregation peak memory, or isolate the collector with an explicit resource budget; verify full collection and atomic publication under concurrent worker load. Do not silently raise the limit or delete source data.
-- Work: WI-088 deployed columnar/streamed computation and an isolated 3.5 GiB job in 0.3.149. The November 4 full run reached 68,368 source squads, then failed during board fixture identity validation before computation/import. Acquisition sampled cgroup maximum 1,445,416,960 bytes with zero OOM; this does not validate the full aggregate/import budget. Successful fresh publication remains open. Evidence: `specs/work/evidence/WI-088/production-run-summary.json`; original failure in `specs/work/evidence/WI-076/production-verification.json`.
+- Area: franchise batch analytics / export working set and full-season growth.
+- Related specs: `spec://modules/franchises/FEAT-005-franchise-analytics#data`, `spec://common/INFRA-006-continuous-deployment#heavy-jobs`.
+- Introduced by: earlier production aggregation OOM observed during WI-076; narrowed after successful WI-088 recovery on 2026-11-04.
+- Current state: 0.3.152 completed the entire controlled collection/calculation/import in 2,196.527 seconds under the unchanged isolated 3.5 GiB/no-swap cap. Fresh file/database/reader/UI acceptance passed. The old shared-worker failure is repaired. Export still triggered 1,313 memory.events.max boundary/reclaim events, with zero OOM and OOM kills. Exact stage RSS reached 2,510,901,248 bytes; whole-cgroup sampled maximum 3,573,325,824 bytes and minimum host available memory 4,277,157,888 bytes. Kernel cgroup peak is unavailable; samples do not establish spare container capacity.
+- Risk: growing full-season output or less reclaimable cache may increase export time or cause a future memory failure. A successful current-data run is not a growth-capacity guarantee.
+- Trigger: full snapshot construction/serialization under the fixed job budget; wider future history and additional records.
+- Mitigation: profile export allocations and charged file cache, stream further serialization where output equivalence is preserved, and test representative full-season growth plus published size bounds. Require exact output/history checks, complete monitored import, unchanged runtime safety limits and sufficient host reserve. Do not silently raise the cap, drop observations, clear valid source data or suppress the pressure counter.
+- Work: follow-up A23 in WI-084 PLAN.md; recovery completed by WI-088. Evidence: `specs/work/evidence/WI-088/production-run-0152-summary.json`, `fresh-output-0152.json`, `publication-acceptance-review.md`. Counter semantics independently checked against Linux 5.15 cgroup documentation.
 
 ### TD-009: Development tooling retains dependency advisories
 

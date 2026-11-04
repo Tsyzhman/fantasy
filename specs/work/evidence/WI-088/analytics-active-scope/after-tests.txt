@@ -1,0 +1,32 @@
+✔ equal league weights and the inclusive calendar range (10.9176ms)
+✔ calendar dates include different round numbers across leagues without complete xFO (0.9126ms)
+✔ legacy and base-XI scoring stay distinguishable during snapshot replacement (0.4469ms)
+✔ missing model / xFO values do not become a zero or rank (0.4125ms)
+✔ freeze rate uses filtered denominator and excludes current outcomes (0.7662ms)
+✔ reject bad bounds, unrecognized leagues and previous seasons (0.6196ms)
+✔ Moscow dates include the whole final day and normalize legacy naive UTC cutoffs (0.306ms)
+✔ personal style and xFO comparisons include reserve, frozen and personal-only rounds (0.3008ms)
+✔ virtual group aggregates personal histories and has no freeze denominator (0.3981ms)
+✔ unavailable lineups remain in personal history and coverage without invented metrics (0.3659ms)
+✔ franchise purchase explanations keep tournament scope while virtual groups use personal rounds (0.5077ms)
+✔ current forecasts describe only the last selected lineup, historical values retain the full range (0.2581ms)
+✔ franchise rating includes an active frozen XI once while managers retain every personal observation (0.4345ms)
+✔ purchases and xFO examples join eligible XI by all four identity fields, independently of manager name (0.5046ms)
+✔ hypothesis targets and control denominators use eligible franchise purchases only (0.5853ms)
+✔ active incomplete XI remains in franchise coverage instead of disappearing from denominators (0.3503ms)
+✔ date, league and completion filters agree across franchise aggregates and joined explanations (0.9118ms)
+✔ display abbreviations remove whole filler words, preserving canonical names (0.8418ms)
+✔ ambiguous abbreviations fall back to distinguishable full names (0.1325ms)
+✔ bounded layout keeps every label and never mutates chart coordinates (148.3868ms)
+✔ dense labels stay close to their own point without moving data (28.42ms)
+✔ joint layout is deterministic across input order and uses measured widths (25.6763ms)
+✔ crowding never discards the distinguishing second word entirely (1.4151ms)
+✔ sorted ranks are exactly equal to the historical algorithm for ties, nulls, empty and singleton populations (983.7396ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1151.9593

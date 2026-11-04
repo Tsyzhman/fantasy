@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-11-04T16:24:20.217666+00:00",
+  "url": "https://fantasy.tsyzhman.ru/franchises?from=2026-07-01&to=2027-06-30&completed=0",
+  "generatedVisible": "04.11.2026, 19:13:16",
+  "roundsVisible": 110,
+  "franchiseSquadsVisible": 42572,
+  "franchisesVisible": 75,
+  "freezeEventsVisible": 1702,
+  "mobileViewport": 390,
+  "mobileDocumentWidth": 375,
+  "horizontalDocumentOverflow": false,
+  "methodConfirmed": "One XI per football round; active in any H2H duel is sufficient. Other-duel freeze does not exclude it. All personal history retained.",
+  "screenshots": [
+    "production-0152-franchises-desktop.jpg",
+    "production-0152-franchises-mobile-390.jpg"
+  ],
+  "interaction": "Read-only display/method checks; viewport reset and temporary tab closed."
+}

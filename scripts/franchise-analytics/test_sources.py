@@ -1,9 +1,11 @@
-"""@spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts"""
+"""@spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts
+@spec spec://modules/franchises/FEAT-005-franchise-analytics#freezes
+"""
 import unittest
 import tempfile
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-from sources import personal_teams, profile_path, profile_name, board_user_id, fixture_round, registry, squad_sources, memberships, write_cache, require_lineup, resume_after, acquired_since, reusable_squad, calendar_rounds
+from sources import personal_teams, profile_path, profile_name, board_user_id, fixture_round, calendar_fixture_scopes, registry, squad_sources, memberships, write_cache, require_lineup, resume_after, acquired_since, reusable_squad, calendar_rounds
 import datetime
 import json
 
@@ -75,6 +77,46 @@ class SourceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Conflicting'):
             fixture_round(doc,'a',{('a','100'):('a',1)},{('a','01.10.2026'):{('a',2)}},'A 0 - 0 B, 01.10.2026')
 
+    def test_fresh_la_liga_board_retains_alias_memberships_and_resolves_the_joint_scope(self):
+        from bs4 import BeautifulSoup
+        value = json.loads((Path(__file__).with_name('fixtures') / 'board-fixture-aliases.json').read_text('utf-8'))
+        fixtures = calendar_fixture_scopes(value['leagues'])
+        dates = {(value['slug'], day): {(value['slug'], rn) for rn in rounds} for day, rounds in value['dates'].items()}
+        scope = fixture_round(BeautifulSoup(value['html'], 'html.parser'), value['slug'], fixtures, dates, value['title'])
+        self.assertEqual(scope, (value['slug'], value['expected_round']))
+        self.assertEqual(fixtures[('la_liga_2026', '1957463')], {('la_liga_2026', 9), ('la_liga_2026', 10)})
+
+    def test_fixture_scope_requires_unique_joint_evidence_and_never_rescues_conflicting_matches(self):
+        from bs4 import BeautifulSoup
+        a, b, c = ('a', 1), ('a', 2), ('a', 3)
+        def document(ids):
+            return BeautifulSoup('<div class="roster this_tour"><ul>' + ''.join(f'<li><a href="https://sports.ru/football/match/{mid}">match</a></li>' for mid in ids) + '</ul></div>', 'html.parser')
+        cases = [
+            ('unique without date', ['100'], {('a','100'):{a}}, {}, '', a),
+            ('unknown date does not invent a constraint', ['100'], {('a','100'):{a}}, {}, 'A - B, 01.10.2026', a),
+            ('unknown IDs do not discard known evidence', ['100','999'], {('a','100'):{a}}, {}, '', a),
+            ('all unknown uses unique date', ['999'], {}, {a}, 'A - B, 01.10.2026', a),
+            ('all unknown without evidence stays missing', ['999'], {}, {}, '', None),
+            ('unique fixture disambiguates a date', ['100'], {('a','100'):{b}}, {a,b}, 'A - B, 01.10.2026', b),
+            ('joint intersection of ambiguous evidence', ['100'], {('a','100'):{a,b}}, {b,c}, 'A - B, 01.10.2026', b),
+            ('match IDs constrain one another', ['100','200'], {('a','100'):{a,b},('a','200'):{b,c}}, {}, '', b),
+        ]
+        for name, ids, fixtures, dated, title, expected in cases:
+            with self.subTest(name=name):
+                dates = {('a','01.10.2026'): dated} if dated else {}
+                self.assertEqual(fixture_round(document(ids), 'a', fixtures, dates, title), expected)
+        failures = [
+            ('two incompatible matches despite matching date', ['100','200'], {('a','100'):{a},('a','200'):{b}}, {a}),
+            ('date contradicts unique match', ['100'], {('a','100'):{a}}, {b}),
+            ('several fixture candidates without date', ['100'], {('a','100'):{a,b}}, {}),
+            ('date alone remains ambiguous', ['999'], {}, {a,b}),
+            ('joint candidates remain ambiguous', ['100'], {('a','100'):{a,b}}, {a,b}),
+        ]
+        for name, ids, fixtures, dated in failures:
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'Conflicting board fixture identity'):
+                dates = {('a','01.10.2026'): dated} if dated else {}
+                fixture_round(document(ids), 'a', fixtures, dates, 'A - B, 01.10.2026')
+
     def test_parallel_cache_writes_publish_one_complete_payload(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'cache.json.gz'
@@ -99,6 +141,43 @@ class SourceTests(unittest.TestCase):
         </div>'''
         self.assertEqual(personal_teams(html, {'rfpl_2026': 63}), [{'slug': 'rfpl_2026', 'cid': 337, 'team_id': '123', 'available_rounds': [1, 2, 9]}])
         self.assertEqual(personal_teams(html, {'rfpl_2026': None}), [])
+
+    def test_fresh_personal_in_progress_short_title_keeps_the_real_round(self):
+        fixture = json.loads((Path(__file__).with_name('fixtures') / 'personal-current-round.json').read_text('utf-8'))
+        self.assertEqual(personal_teams(fixture['html'], fixture['leagues']), fixture['expected'])
+        # URL/data-tour ID zero describes the current endpoint, not football round zero.
+        self.assertEqual(fixture['expected'][0]['available_rounds'], [4])
+        self.assertNotIn('finished', fixture['expected'][0])
+
+    def test_personal_round_title_formats_keep_completed_and_current_history(self):
+        html = '''<div class="data">
+        <a href="https://fantasy-h2h.ru/analytics/fantasy_score_dynamic/rfpl_2026/id123">history</a>
+        <a href="https://fantasy-h2h.ru/analytics/fantasy_team_tour_data/123/7463/337/" title="тур 1, 26 Июл 2026">93</a>
+        <a href="https://fantasy-h2h.ru/analytics/fantasy_team_tour_data/123/0/337/" class="in_progress" title="тур 13">0</a>
+        </div>'''
+        self.assertEqual(personal_teams(html, {'rfpl_2026': 63}), [{'slug': 'rfpl_2026', 'cid': 337, 'team_id': '123', 'available_rounds': [1, 13]}])
+        for bad in ['тур 13 garbage', 'тур 13x', 'тур 13.5', 'prefix тур 13', 'тур 13\nextra', 'тур 13\n', 'тур -13', 'тур', '']:
+            with self.subTest(title=bad), self.assertRaisesRegex(ValueError, 'Invalid personal round link'):
+                personal_teams(html.replace('title="тур 13"', 'title="' + bad + '"'), {'rfpl_2026': 63})
+
+    def test_personal_legacy_comma_title_keeps_multiline_suffix(self):
+        html = '''<div class="data">
+        <a href="https://fantasy-h2h.ru/analytics/fantasy_score_dynamic/rfpl_2026/id123">history</a>
+        <a href="https://fantasy-h2h.ru/analytics/fantasy_team_tour_data/123/7463/337/" title="тур 1,&#10;26 Июл 2026">93</a>
+        </div>'''
+        self.assertEqual(personal_teams(html, {'rfpl_2026': 63}), [{'slug': 'rfpl_2026', 'cid': 337, 'team_id': '123', 'available_rounds': [1]}])
+
+    def test_personal_short_title_preserves_source_and_competition_guards(self):
+        fixture = json.loads((Path(__file__).with_name('fixtures') / 'personal-current-round.json').read_text('utf-8'))
+        html = fixture['html'];original = 'https://fantasy-h2h.ru/analytics/fantasy_team_tour_data/641000/0/349/'
+        for href in ['https://evil.test/analytics/fantasy_team_tour_data/641000/0/349/', 'https://fantasy-h2h.ru:443/analytics/fantasy_team_tour_data/641000/0/349/', 'https://x@fantasy-h2h.ru/analytics/fantasy_team_tour_data/641000/0/349/', '/analytics/fantasy_team_tour_data/641000/0/349/', original.replace('/641000/', '/999/'), original.replace('/0/', '/invalid/')]:
+            with self.subTest(href=href), self.assertRaisesRegex(ValueError, 'Invalid personal round link'):
+                personal_teams(html.replace(original, href), fixture['leagues'])
+        conflict = html.replace('</div>', '<a href="' + original.replace('/349/', '/350/') + '" title="тур 3, date">1</a></div>')
+        with self.assertRaisesRegex(ValueError, 'Conflicting personal competition identity'):
+            personal_teams(conflict, fixture['leagues'])
+        with self.assertRaisesRegex(ValueError, 'Personal team has no history container'):
+            personal_teams(html.replace('class="data"', 'class="other"'), fixture['leagues'])
 
     def test_shared_squad_is_fetched_once_with_explicit_memberships(self):
         team = {'team_id': '123', 'manager': 'm'}

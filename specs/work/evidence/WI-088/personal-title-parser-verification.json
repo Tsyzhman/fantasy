@@ -1,0 +1,22 @@
+{
+  "command": "python -m unittest discover -s scripts/franchise-analytics -p test_*.py -v",
+  "tests": 50,
+  "exit_code": 0,
+  "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+  "elapsed_seconds": 8.546,
+  "file_sha256": {
+    "sources.py": "aadae950bf2a0e0c230bd8d7dfc0cb9569b6bfcac9e53f76428fd761e5bf987c",
+    "test_sources.py": "fb14d271291ad1f0ad68f2983fc92be7bb0a8d44e295fdd72ff6506c070f2772",
+    "fixtures/personal-current-round.json": "9c33244a71a4a2e0644d10b67ee5bcb983e11d6e3f0696e75357cb6d9ae37565"
+  },
+  "candidate_parser_sha256": "7ece6d66c3c7d81cb6fa7eb7976c82a507bf4d1fd4141332184a1e37e0bee11c",
+  "canon_action": "none",
+  "change": "Only title grammar; legacy comma suffix preserved, exact short title added; no current round/profile removed",
+  "application_commit": "3e58a9f3d7d45fc9f26b815f9b9c33a80e2d4b65",
+  "committed_blob_sha256": {
+    "sources.py": "aadae950bf2a0e0c230bd8d7dfc0cb9569b6bfcac9e53f76428fd761e5bf987c",
+    "test_sources.py": "fb14d271291ad1f0ad68f2983fc92be7bb0a8d44e295fdd72ff6506c070f2772",
+    "fixtures/personal-current-round.json": "9c33244a71a4a2e0644d10b67ee5bcb983e11d6e3f0696e75357cb6d9ae37565"
+  },
+  "git_line_ending_normalization_only": []
+}

@@ -1,0 +1,6 @@
+{
+  "at": "2026-11-04T16:21:43.447339+00:00",
+  "reason": "Historical 15:10 UTC title-parser failure; controlled 0.3.152 refresh and exact published readback now succeeded. Timer unchanged; no service start.",
+  "before": "Result=exit-code\nExecMainStatus=1\nActiveState=failed\nSubState=failed",
+  "after": "Result=success\nExecMainStatus=1\nActiveState=inactive\nSubState=dead"
+}

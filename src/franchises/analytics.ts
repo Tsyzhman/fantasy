@@ -1,4 +1,7 @@
-/** @spec spec://modules/franchises/FEAT-005-franchise-analytics#style */
+/**
+ * @spec spec://modules/franchises/FEAT-005-franchise-analytics#style
+ * @spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts
+ */
 export type Fact = {
   franchise: number;
   slug: string;
@@ -356,6 +359,11 @@ function hypotheses(context: ReturnType<typeof hypothesisContext>, franchise: nu
     };
   });
 }
+function lineupIdentity(row: Fact): string {
+  return JSON.stringify([row.franchise, row.slug, row.round, row.team]);
+}
+
+/** @spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts */
 export function aggregate(snapshot: Snapshot, filters: Filters) {
   const scope = (r: Snapshot["rounds"][number]) => {
     const date = roundDate(r);
@@ -368,16 +376,17 @@ export function aggregate(snapshot: Snapshot, filters: Filters) {
   const keys = new Set(rounds.map((r) => `${r.slug}:${r.round}`));
   const rows = snapshot.squads.filter((r) => keys.has(`${r.slug}:${r.round}`));
   const virtual = new Set(snapshot.franchises.filter((f) => f.kind === "virtual").map((f) => f.id));
-  const franchiseScope = (r: Fact) => !r.personal_only || virtual.has(r.franchise);
+  const franchiseScope = (r: Fact) => virtual.has(r.franchise) || (!r.personal_only && r.active === true);
   const franchiseRows = rows.filter(franchiseScope);
-  const purchases = snapshot.purchases.filter((r) =>
-    keys.has(`${r.slug}:${r.round}`) && franchiseScope(r),
-  );
+  // Purchases/examples have no active flag. Their eligibility belongs to the
+  // selected XI identity, never to a manager display name or a child-row flag.
+  const eligibleLineups = new Set(franchiseRows.map(lineupIdentity));
+  const purchases = snapshot.purchases.filter((r) => eligibleLineups.has(lineupIdentity(r)));
   const controls = hypothesisContext(purchases);
   const rowsByFranchise = group(franchiseRows, (r) => String(r.franchise));
   const purchasesByFranchise = group(purchases, (r) => String(r.franchise));
   const examplesByFranchise = group(
-    snapshot.xfoExamples.filter((r) => keys.has(`${r.slug}:${r.round}`) && franchiseScope(r)),
+    snapshot.xfoExamples.filter((r) => eligibleLineups.has(lineupIdentity(r))),
     (r) => String(r.franchise),
   );
   const franchises = rankStyle(

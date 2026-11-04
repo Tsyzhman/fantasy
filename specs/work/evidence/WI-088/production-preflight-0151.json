@@ -1,0 +1,38 @@
+{
+  "at": "2026-11-04T14:55:22.938361+00:00",
+  "commit": "d31ca192f80467bc7cd611b688c3047d45545c5b",
+  "workerImage": "sha256:27ad0032b39975674757e0f536bd0ff320d28f2f34b2b5070fabe7acdaade9dd",
+  "availableBytes": 6081835008,
+  "workerOverrides": {
+    "FRANCHISE_USE_CACHE": null,
+    "FRANCHISE_RESUME_AFTER": null,
+    "FRANCHISE_DATA_DIR": null
+  },
+  "resumeAfter": null,
+  "resumeAgeSeconds": null,
+  "jobNames": [],
+  "markers": {
+    ".sync.lock": false,
+    ".collection.lock": false,
+    ".heavy-job.lock": true,
+    "snapshot.json.gz.tmp": false
+  },
+  "existingReproducibleIntermediates": [
+    {
+      "name": "source/features.pkl",
+      "bytes": 34578741,
+      "modified": "2026-11-04T13:37:17.411734+00:00"
+    }
+  ],
+  "publishedBefore": [
+    {
+      "season": "2026/2027",
+      "version": 2,
+      "generated_at": "2026-10-21T10:36:02.838",
+      "squads": 54639,
+      "sha256": "a59ecee27820d092cf769c8ebd07fc5a71b2486b234715926210730552e096ab"
+    }
+  ],
+  "calculationMode": "All stages must run normally; no USE_CACHE or old output import",
+  "ready": true
+}
