@@ -29,6 +29,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-083](work/archive/2026/WI-083-sorare-club-scope.md) | Scope SorareInside forecasts to current fantasy clubs | @tsyzhman | 2026-11-04 |
 | [WI-081](work/archive/2026/WI-081-production-artifact-retention.md) | Keep one production backup and clear build caches | @tsyzhman | 2026-10-23 |
 | [WI-080](work/archive/2026/WI-080-production-lineup-recovery.md) | Restore production lineup updates | @tsyzhman | 2026-10-23 |
 | [WI-079](work/archive/2026/WI-079-franchise-refresh-serialization.md) | Serialize heavy refreshes and restore franchise updates | @tsyzhman | 2026-10-21 |

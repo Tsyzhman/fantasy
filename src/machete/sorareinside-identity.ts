@@ -9,6 +9,22 @@ export type IdentityPlayer = { id: bigint; name: string; birthDate: Date | null;
 export type IdentityTeam = { id: bigint; name: string; country: string | null };
 const COUNTRIES: Record<string,string> = { ENG:"gb-eng", SCO:"gb-sct", FRA:"fr", GER:"de", ESP:"es", ITA:"it", POR:"pt", NED:"nl", RUS:"ru", TUR:"tr", BEL:"be", AUT:"at", GRE:"gr", DEN:"dk", SUI:"ch", NOR:"no", CRO:"hr", CZE:"cz", CYP:"cy", ISR:"il", SRB:"rs", UKR:"ua", POL:"pl", SWE:"se" };
 
+/** Applicability only: a positive result never authorizes an identity mapping.
+ * @spec spec://modules/machete/INFRA-004-sorareinside-starters#source
+ */
+export function isSourceTeamInScope(source: Partial<SourceTeam>, teams: IdentityTeam[], savedId?: bigint): boolean {
+  if (source.national) return false;
+  if (savedId !== undefined) return teams.some(team => team.id === savedId);
+  if (!source.name) return false;
+  if (source.country) return resolveSourceTeam({ id: source.id ?? "", slug: source.slug ?? "", national: false,
+    name: source.name, country: source.country }, teams) !== null;
+  // Preserve potentially relevant sparse/malformed identities for strict parsing.
+  // This name-only check cannot hydrate country or persist a provider binding.
+  return teams.some(team => probableLineupTeamScore(source.name!, team.name) >= 0.98)
+    || Object.entries(SORARE_TEAM_ALIASES).some(([key, target]) => key.slice(key.indexOf("|") + 1) === source.name
+      && teams.some(team => team.name === target));
+}
+
 export function resolveSourceTeam(source: SourceTeam, teams: IdentityTeam[], savedId?: bigint): IdentityTeam | null {
   if (savedId !== undefined) return teams.find(t=>t.id===savedId) ?? null;
   const alias=SORARE_TEAM_ALIASES[`${source.country}|${source.name}`];

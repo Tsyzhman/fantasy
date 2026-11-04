@@ -42,7 +42,9 @@ Persistent UUIDs are stored in a common mapping table, the calendar is selected 
 ## Source and match selection {#source}
 Authorized API `https://platform-api.sorareinside.com`, the same one the site uses. `/gameweeks` sets the current windows, `/games` returns the schedule along with nullable links to forecasts, `/lineups/:id` returns the published forecast. All windows with an end in the future and a start within 14 days are loaded, as well as scheduledLineups. First, the minimum future date of the team is selected, then its lineupId; matches without a forecast cannot be discarded until the minimum is selected. Past, canceled, postponed and already started matches are excluded. Unknown format/status closes the entry. Conflicting schedule duplicates block the cycle. Incomplete loading of any window prevents the entire loop from being applied.
 
-The scheduledLineups projection may omit a club's country. Reuse country only from complete gameweek data loaded in the same cycle for the identical source UUID, name, slug and club/national-team type. Full gameweeks still require country; missing or conflicting corroborating metadata aborts the cycle. Never infer country from a club name, discard an unparseable window, or choose a later fixture to obtain a prediction.
+Derive the relevant club scope from active clubs in the current fantasy price scopes before parsing fixture metadata. Use established source UUIDs and the existing exact club/country identity rules, including reviewed aliases. Discard fixtures involving no relevant club before validating their countries, statuses or forecasts. Do not request or parse lineups for unrelated clubs. The scope covers every source competition of each relevant club, including cups, and never depends on the presence of a prediction. A potentially relevant club with incomplete identity remains subject to strict validation rather than being silently excluded.
+
+The scheduledLineups projection may omit a club's country. For a relevant club, reuse country only from complete gameweek data loaded in the same cycle for the identical source UUID, name, slug and club/national-team type. Full gameweeks still require country for relevant clubs; missing or conflicting corroborating metadata aborts the cycle. An unrelated opponent retains its validated fixture identity and name, but its country and forecast are not prerequisites for the relevant club's prediction. Never infer country from a club name, discard an unparseable window, or choose a later fixture to obtain a prediction. An empty scoped calendar preserves all teams and reports missing matches normally.
 
 <a name="mapping"></a>
 
@@ -108,6 +110,8 @@ Existing probable-lineup sync, starting-xi-from-match, fantasy-player-pool-refre
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-11-04: WI-083 — determine current fantasy club scope before schedule validation so unrelated source clubs cannot abort imports; retain nearest-match selection across all competitions and strict relevant-club/XI checks.
 
 - 2026-10-23: WI-080 — accept the sparse scheduled-lineups club projection only with exact same-cycle complete identity metadata; retain all schedule and XI safeguards.
 
