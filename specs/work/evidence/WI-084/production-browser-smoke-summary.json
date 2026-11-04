@@ -1,0 +1,18 @@
+{
+  "run": 41822996750,
+  "conclusion": "success",
+  "commit": "269980b7bbc8d16c850aad89229423f5a2383346",
+  "authenticationPassed": 1,
+  "browserPassed": 28,
+  "browserFailed": 0,
+  "skipped": 20,
+  "skipReasons": {
+    "seededLocalKhlOnlyAcrossThreeViewports": 18,
+    "mutationJourneyRunsOnceOnDesktop": 2
+  },
+  "viewports": [
+    "desktop-chromium",
+    "tablet-chromium",
+    "mobile-chromium"
+  ]
+}

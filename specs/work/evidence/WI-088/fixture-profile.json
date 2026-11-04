@@ -1,0 +1,164 @@
+{
+  "fixture": {
+    "source_squads": 192,
+    "observations": 200,
+    "players": 48,
+    "leagues": 2,
+    "rounds": 8
+  },
+  "runtime": {
+    "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
+    "platform": "win32"
+  },
+  "measurements": [
+    {
+      "label": "before",
+      "stage": "features",
+      "seconds": 2.078,
+      "peak_rss_bytes": 133136384,
+      "samples": 34,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "before",
+      "stage": "aggregate",
+      "seconds": 2.468,
+      "peak_rss_bytes": 151031808,
+      "samples": 38,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "before",
+      "stage": "enrich",
+      "seconds": 1.875,
+      "peak_rss_bytes": 137396224,
+      "samples": 30,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "before",
+      "stage": "hypotheses",
+      "seconds": 1.766,
+      "peak_rss_bytes": 132866048,
+      "samples": 29,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "before",
+      "stage": "export",
+      "seconds": 2.156,
+      "peak_rss_bytes": 139177984,
+      "samples": 35,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "after",
+      "stage": "features",
+      "seconds": 1.985,
+      "peak_rss_bytes": 133283840,
+      "samples": 33,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "after",
+      "stage": "aggregate",
+      "seconds": 2.047,
+      "peak_rss_bytes": 139894784,
+      "samples": 34,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "after",
+      "stage": "enrich",
+      "seconds": 1.796,
+      "peak_rss_bytes": 136908800,
+      "samples": 30,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "after",
+      "stage": "hypotheses",
+      "seconds": 1.735,
+      "peak_rss_bytes": 133382144,
+      "samples": 29,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "after",
+      "stage": "export",
+      "seconds": 2.078,
+      "peak_rss_bytes": 139132928,
+      "samples": 35,
+      "synthetic_squads": 0,
+      "feature_rows": 0
+    },
+    {
+      "label": "before-scale",
+      "stage": "aggregate",
+      "seconds": 14.718,
+      "peak_rss_bytes": 1219149824,
+      "samples": 239,
+      "synthetic_squads": 12000,
+      "feature_rows": 70340
+    },
+    {
+      "label": "after-scale",
+      "stage": "aggregate",
+      "seconds": 18.672,
+      "peak_rss_bytes": 557649920,
+      "samples": 303,
+      "synthetic_squads": 12000,
+      "feature_rows": 70340
+    },
+    {
+      "label": "after-live-scale-scale",
+      "stage": "aggregate",
+      "seconds": 84.813,
+      "peak_rss_bytes": 1444593664,
+      "samples": 1365,
+      "synthetic_squads": 61000,
+      "feature_rows": 70340
+    }
+  ],
+  "domain_comparisons": {
+    "source-audit.json": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "20e0494b86fd3d0b68aaaaf3f4769c93bcafe386a26db53cad754bc2f52028a9"
+    },
+    "report-data.json": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "26a7ce525897e8fd0726d95073eea3b0c03f0d07174dfcf15d970690e3d22e28"
+    },
+    "validation.json": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "32c7f9991b234f457d6b5a8cf554d172673adc0dad49382363109ba53e2e10b3"
+    },
+    "decisions.json": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "8f97c49133756cc01d4977e6b007adefea830fbd9169e7cb392adc866a8caab5"
+    },
+    "nonbudget-hypotheses.json": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "78ec953ac08935be4079dd552b8e5f04d8688347e52041d130276936336f2bfb"
+    },
+    "snapshot.json.gz": {
+      "identical": true,
+      "comparison": "canonical JSON bytes; only generated omitted",
+      "sha256_without_generated": "af6d78f6af15fe0564cb7304e96291d3ae5d4c4a80316b6e61cebd94831b15c7"
+    }
+  }
+}

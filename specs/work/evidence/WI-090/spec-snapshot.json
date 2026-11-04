@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1",
+  "commit": "c16c7f88143f7c72ef9b925509e5692c90697793",
+  "indexedAt": "2026-11-04T11:10:08.006Z",
+  "source": "working_tree",
+  "status": "current",
+  "fingerprint": "d8ae98691569231ea5a683ca949e3c6809de7ce5a1ce1d6fd1cadd2030716c18",
+  "diagnostics": [],
+  "provenance": {
+    "commit": "c16c7f88143f7c72ef9b925509e5692c90697793",
+    "source": "working_tree",
+    "observedAt": "2026-11-04T11:10:08.006Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": [
+        ".github/workflows/check.yml",
+        ".github/workflows/deploy-production.yml",
+        "scripts/transfer-ci-artifact.py",
+        "scripts/transfer-ci-artifact.test.py",
+        "specs/common/INFRA-006-continuous-deployment.md",
+        "specs/common/structure.md"
+      ]
+    }
+  }
+}

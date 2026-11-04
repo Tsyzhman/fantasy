@@ -1,0 +1,85 @@
+
+Running 60 tests using 1 worker
+
+
+
+(node:7604) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/60] [mobile-320] › e2e\ui-keyboard.spec.ts:30:5 › body controls retain native keyboard activation
+[2/60] [mobile-320] › e2e\ui-keyboard.spec.ts:55:5 › header sorting ignores nested controls and preserves keyboard resizing
+[3/60] [mobile-320] › e2e\ui-keyboard.spec.ts:84:5 › managed and server header sorting still use Enter and Space
+[4/60] [mobile-320] › e2e\ui-keyboard.spec.ts:102:5 › palette wraps dynamic results, closes Escape from a button and restores its trigger
+[5/60] [mobile-320] › e2e\ui-keyboard.spec.ts:136:5 › touch dialog wraps both directions, returns focus and survives a removed trigger
+[6/60] [mobile-320] › e2e\ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: en
+[7/60] [mobile-320] › e2e\ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: ru
+[8/60] [mobile-320] › e2e\ui-keyboard.spec.ts:182:5 › lineup replacement focuses the next step
+[9/60] [mobile-320] › e2e\ui-keyboard.spec.ts:191:5 › replacement during pool loading uses a visible focus fallback
+[10/60] [mobile-320] › e2e\ui-keyboard.spec.ts:210:5 › repeated palette cycles release document listeners and bound heap growth
+[11/60] [mobile-320] › e2e\ui-keyboard.spec.ts:245:5 › Ctrl+K keeps the focused palette visually above the touch dialog
+[12/60] [mobile-320] › e2e\ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+
+(node:12716) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[13/60] [mobile-390] › e2e\ui-keyboard.spec.ts:30:5 › body controls retain native keyboard activation
+[14/60] [mobile-390] › e2e\ui-keyboard.spec.ts:55:5 › header sorting ignores nested controls and preserves keyboard resizing
+[15/60] [mobile-390] › e2e\ui-keyboard.spec.ts:84:5 › managed and server header sorting still use Enter and Space
+[16/60] [mobile-390] › e2e\ui-keyboard.spec.ts:102:5 › palette wraps dynamic results, closes Escape from a button and restores its trigger
+[17/60] [mobile-390] › e2e\ui-keyboard.spec.ts:136:5 › touch dialog wraps both directions, returns focus and survives a removed trigger
+[18/60] [mobile-390] › e2e\ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: en
+[19/60] [mobile-390] › e2e\ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: ru
+[20/60] [mobile-390] › e2e\ui-keyboard.spec.ts:182:5 › lineup replacement focuses the next step
+[21/60] [mobile-390] › e2e\ui-keyboard.spec.ts:191:5 › replacement during pool loading uses a visible focus fallback
+[22/60] [mobile-390] › e2e\ui-keyboard.spec.ts:210:5 › repeated palette cycles release document listeners and bound heap growth
+[23/60] [mobile-390] › e2e\ui-keyboard.spec.ts:245:5 › Ctrl+K keeps the focused palette visually above the touch dialog
+[24/60] [mobile-390] › e2e\ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+
+(node:34500) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[25/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:30:5 › body controls retain native keyboard activation
+[26/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:55:5 › header sorting ignores nested controls and preserves keyboard resizing
+[27/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:84:5 › managed and server header sorting still use Enter and Space
+[28/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:102:5 › palette wraps dynamic results, closes Escape from a button and restores its trigger
+[29/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:136:5 › touch dialog wraps both directions, returns focus and survives a removed trigger
+[30/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: en
+[31/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: ru
+[32/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:182:5 › lineup replacement focuses the next step
+[33/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:191:5 › replacement during pool loading uses a visible focus fallback
+[34/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:210:5 › repeated palette cycles release document listeners and bound heap growth
+[35/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:245:5 › Ctrl+K keeps the focused palette visually above the touch dialog
+[36/60] [tablet-1024] › e2e\ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+
+(node:28304) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[37/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:30:5 › body controls retain native keyboard activation
+[38/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:55:5 › header sorting ignores nested controls and preserves keyboard resizing
+[39/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:84:5 › managed and server header sorting still use Enter and Space
+[40/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:102:5 › palette wraps dynamic results, closes Escape from a button and restores its trigger
+[41/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:136:5 › touch dialog wraps both directions, returns focus and survives a removed trigger
+[42/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: en
+[43/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: ru
+[44/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:182:5 › lineup replacement focuses the next step
+[45/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:191:5 › replacement during pool loading uses a visible focus fallback
+[46/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:210:5 › repeated palette cycles release document listeners and bound heap growth
+[47/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:245:5 › Ctrl+K keeps the focused palette visually above the touch dialog
+[48/60] [desktop-1440] › e2e\ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+
+
+(node:25488) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[49/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:30:5 › body controls retain native keyboard activation
+[50/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:55:5 › header sorting ignores nested controls and preserves keyboard resizing
+[51/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:84:5 › managed and server header sorting still use Enter and Space
+[52/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:102:5 › palette wraps dynamic results, closes Escape from a button and restores its trigger
+[53/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:136:5 › touch dialog wraps both directions, returns focus and survives a removed trigger
+[54/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: en
+[55/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: ru
+[56/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:182:5 › lineup replacement focuses the next step
+[57/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:191:5 › replacement during pool loading uses a visible focus fallback
+[58/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:210:5 › repeated palette cycles release document listeners and bound heap growth
+[59/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:245:5 › Ctrl+K keeps the focused palette visually above the touch dialog
+[60/60] [desktop-1920] › e2e\ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+  18 skipped
+  42 passed (55.5s)

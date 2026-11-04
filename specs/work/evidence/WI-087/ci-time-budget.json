@@ -1,0 +1,10 @@
+{
+  "previousCheckElapsedSeconds": [306, 310, 315],
+  "previousCheckRunIds": [41805677666, 41804781166, 41801859868],
+  "source": "Read-only gh run list --workflow check.yml --limit 3; completed successful runs, createdAt to updatedAt",
+  "previousJobTimeoutMinutes": 20,
+  "newJobTimeoutMinutes": 30,
+  "chromiumInstallTimeoutMinutes": 8,
+  "isolatedUiTestTimeoutMinutes": 10,
+  "reason": "Allow bounded Chromium/OS dependency installation and the five-viewport isolated UI suite alongside existing full validation, scientific dependencies and SSH tests. Runs remain bounded and no production browser is used."
+}

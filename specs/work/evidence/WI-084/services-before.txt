@@ -1,0 +1,36 @@
+Nov 03 18:10:00 nik1.tsyzhman.fvds.ru bash[301301]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 70, in <module>
+Nov 03 18:10:00 nik1.tsyzhman.fvds.ru bash[301301]:     raise SystemExit(run_job())
+Nov 03 18:10:00 nik1.tsyzhman.fvds.ru bash[301301]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 48, in run_job
+Nov 03 18:10:00 nik1.tsyzhman.fvds.ru bash[301301]:     raise RuntimeError('Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom')
+Nov 03 18:10:00 nik1.tsyzhman.fvds.ru bash[301301]: RuntimeError: Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom
+Nov 03 21:10:00 nik1.tsyzhman.fvds.ru bash[855952]: Traceback (most recent call last):
+Nov 03 21:10:00 nik1.tsyzhman.fvds.ru bash[855952]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 70, in <module>
+Nov 03 21:10:00 nik1.tsyzhman.fvds.ru bash[855952]:     raise SystemExit(run_job())
+Nov 03 21:10:00 nik1.tsyzhman.fvds.ru bash[855952]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 48, in run_job
+Nov 03 21:10:00 nik1.tsyzhman.fvds.ru bash[855952]:     raise RuntimeError('Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom')
+Nov 03 21:10:00 nik1.tsyzhman.fvds.ru bash[855952]: RuntimeError: Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom
+Nov 04 00:10:00 nik1.tsyzhman.fvds.ru bash[1409398]: Traceback (most recent call last):
+Nov 04 00:10:00 nik1.tsyzhman.fvds.ru bash[1409398]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 70, in <module>
+Nov 04 00:10:00 nik1.tsyzhman.fvds.ru bash[1409398]:     raise SystemExit(run_job())
+Nov 04 00:10:00 nik1.tsyzhman.fvds.ru bash[1409398]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 48, in run_job
+Nov 04 00:10:00 nik1.tsyzhman.fvds.ru bash[1409398]:     raise RuntimeError('Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom')
+Nov 04 00:10:00 nik1.tsyzhman.fvds.ru bash[1409398]: RuntimeError: Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom
+Nov 04 03:10:00 nik1.tsyzhman.fvds.ru bash[1963961]: Traceback (most recent call last):
+Nov 04 03:10:00 nik1.tsyzhman.fvds.ru bash[1963961]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 70, in <module>
+Nov 04 03:10:00 nik1.tsyzhman.fvds.ru bash[1963961]:     raise SystemExit(run_job())
+Nov 04 03:10:00 nik1.tsyzhman.fvds.ru bash[1963961]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 48, in run_job
+Nov 04 03:10:00 nik1.tsyzhman.fvds.ru bash[1963961]:     raise RuntimeError('Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom')
+Nov 04 03:10:00 nik1.tsyzhman.fvds.ru bash[1963961]: RuntimeError: Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom
+Nov 04 06:10:00 nik1.tsyzhman.fvds.ru bash[2517496]: Traceback (most recent call last):
+Nov 04 06:10:00 nik1.tsyzhman.fvds.ru bash[2517496]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 70, in <module>
+Nov 04 06:10:00 nik1.tsyzhman.fvds.ru bash[2517496]:     raise SystemExit(run_job())
+Nov 04 06:10:00 nik1.tsyzhman.fvds.ru bash[2517496]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 48, in run_job
+Nov 04 06:10:00 nik1.tsyzhman.fvds.ru bash[2517496]:     raise RuntimeError('Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom')
+Nov 04 06:10:00 nik1.tsyzhman.fvds.ru bash[2517496]: RuntimeError: Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom
+Nov 04 09:10:00 nik1.tsyzhman.fvds.ru bash[3071641]: Traceback (most recent call last):
+Nov 04 09:10:00 nik1.tsyzhman.fvds.ru bash[3071641]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 70, in <module>
+Nov 04 09:10:00 nik1.tsyzhman.fvds.ru bash[3071641]:     raise SystemExit(run_job())
+Nov 04 09:10:00 nik1.tsyzhman.fvds.ru bash[3071641]:   File "/var/www/fantasy-scout-releases/20261026T203017Z-v0.3.147-e765ab4/ops/franchises-job.py", line 48, in run_job
+Nov 04 09:10:00 nik1.tsyzhman.fvds.ru bash[3071641]:     raise RuntimeError('Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom')
+Nov 04 09:10:00 nik1.tsyzhman.fvds.ru bash[3071641]: RuntimeError: Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom
+-- No entries --

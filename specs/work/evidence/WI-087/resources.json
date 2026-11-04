@@ -1,0 +1,16 @@
+{
+  "measuredAtUtc": "2026-11-04T09:31:10.4878975Z",
+  "sharedNodePythonProcesses": 33,
+  "sharedNodePythonRssMiB": 1802.0,
+  "intermediateSharedNodePythonProcesses": 37,
+  "intermediateSharedNodePythonRssMiB": 2793.8,
+  "hostFreeMemoryMiB": 11192.4,
+  "observedReleaseCheckProcesses": [],
+  "helperPythonCacheFiles": 0,
+  "retainedDownloadedToolDirectories": 0,
+  "retainedGitFixtureDirectories": 0,
+  "retainedSshFixtureDirectories": 0,
+  "evidenceFilesBeforeResourceReport": 15,
+  "evidenceBytesBeforeResourceReport": 24059.0,
+  "cleanup": "Disposable tool and loopback/Git fixtures removed by scoped cleanup; no npm install/build/Docker/browser cache created by this worker; unrelated shared processes preserved."
+}

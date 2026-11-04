@@ -1,0 +1,32 @@
+{
+  "at": "2026-11-04T11:41:41.660841+00:00",
+  "expected": "269980b7bbc8d16c850aad89229423f5a2383346",
+  "release": "/var/www/fantasy-scout-releases/20261104T112135Z-v0.3.149-269980b",
+  "worker_commit": "269980b7bbc8d16c850aad89229423f5a2383346",
+  "worker_image": "sha256:1201dadd6ce48d0a36b263605b6621c80b7cc6e856d1cde70815d169cbb6685f",
+  "web_image": "sha256:1201dadd6ce48d0a36b263605b6621c80b7cc6e856d1cde70815d169cbb6685f",
+  "available_bytes": 5832871936,
+  "worker_count": 1,
+  "job_names": [],
+  "overrides": {
+    "FRANCHISE_USE_CACHE": null,
+    "FRANCHISE_RESUME_AFTER": null,
+    "FRANCHISE_DATA_DIR": null
+  },
+  "locks": {
+    ".sync.lock": false,
+    ".collection.lock": false,
+    ".heavy-job.lock": true
+  },
+  "snapshots": [
+    {
+      "season": "2026/2027",
+      "version": 2,
+      "generated_at": "2026-10-21T10:36:02.838",
+      "squads": 54639,
+      "bytes": 15791411,
+      "sha256": "a59ecee27820d092cf769c8ebd07fc5a71b2486b234715926210730552e096ab"
+    }
+  ],
+  "ready": true
+}

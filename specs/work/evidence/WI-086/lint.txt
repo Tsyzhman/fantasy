@@ -1,0 +1,5 @@
+
+C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\components\machete\FantasySquadPlanner.tsx
+  1236:6  warning  React Hook useEffect has a missing dependency: 'setSelections'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 1 problem (0 errors, 1 warning)

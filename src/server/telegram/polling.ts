@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { createLogger } from "@/lib/logger";
 import { telegramBotId, telegramBotToken, telegramLinkEnabled } from "./config";
-import { processTelegramUpdate, type TelegramWebhookUpdate } from "./updates";
+import { processTelegramUpdate, TELEGRAM_INBOX_LEASE_MS, TELEGRAM_INBOX_RETRY_MS, type TelegramWebhookUpdate } from "./updates";
 import { fetchTelegramViaRelay, telegramRelaySocketPath } from "./vpn-transport";
 
 /**
@@ -37,6 +37,7 @@ export interface TelegramPollOptions {
   callGetUpdates?: (offset: number) => Promise<{ ok: boolean; result?: TelegramWebhookUpdate[]; description?: string; status: number }>;
   processUpdate?: (prisma: PrismaClient, update: TelegramWebhookUpdate) => Promise<{ status: string }>;
   maxBatches?: number;
+  now?: Date;
 }
 
 async function defaultGetUpdates(offset: number): Promise<{ ok: boolean; result?: TelegramWebhookUpdate[]; description?: string; status: number }> {
@@ -83,10 +84,28 @@ export async function pollTelegramUpdates(
   if (!telegramLinkEnabled()) return { updates: 0, processed: 0, lastUpdateId: null };
   const callGetUpdates = options.callGetUpdates ?? defaultGetUpdates;
   const processUpdate = options.processUpdate ?? processTelegramUpdate;
-  let offset = await telegramPollOffset(prisma);
   let processed = 0;
   let updates = 0;
   let lastUpdateId: string | null = null;
+  const now = options.now ?? new Date();
+  // Offset acknowledges receipt by this application, not successful processing.
+  // Replay the durable copy before asking Telegram for later updates. A crash
+  // before claim or an abandoned processing lease must not strand /stop forever.
+  const recoverable = await prisma.telegramInbox.findMany({
+    where: { botId: telegramBotId(), OR: [
+      { state: "PENDING" },
+      { state: "FAILED", OR: [{ processedAt: { lte: new Date(now.getTime() - TELEGRAM_INBOX_RETRY_MS) } }, { processedAt: null }] },
+      { state: "PROCESSING", OR: [{ processedAt: { lte: new Date(now.getTime() - TELEGRAM_INBOX_LEASE_MS) } }, { processedAt: null }] }
+    ] },
+    orderBy: { updateId: "asc" }, take: POLL_BATCH_LIMIT, select: { payload: true, updateId: true }
+  });
+  for (const entry of recoverable) {
+    updates++;
+    const result = await processUpdate(prisma, entry.payload as unknown as TelegramWebhookUpdate);
+    if (result.status === "PROCESSED") processed++;
+    lastUpdateId = entry.updateId.toString();
+  }
+  let offset = await telegramPollOffset(prisma);
   const maxBatches = options.maxBatches ?? 4;
   for (let batch = 0; batch < maxBatches; batch += 1) {
     const response = await callGetUpdates(offset);

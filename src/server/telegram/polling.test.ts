@@ -11,7 +11,8 @@ import type { TelegramWebhookUpdate } from "./updates";
 function fakePrisma(maxUpdateId: bigint | null): PrismaClient {
   return {
     telegramInbox: {
-      aggregate: async () => ({ _max: { updateId: maxUpdateId } })
+      aggregate: async () => ({ _max: { updateId: maxUpdateId } }),
+      findMany: async () => []
     }
   } as unknown as PrismaClient;
 }

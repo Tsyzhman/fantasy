@@ -140,6 +140,25 @@ test("telegram rate limits are atomic and report retry windows", { skip }, async
   assert.ok(third.retryAfterSeconds >= 1);
 });
 
+/** @spec spec://modules/telegram/INFRA-005-deadline-pipeline#data */
+for (const mode of ["removed", "disabled"]) {
+  test(`${mode} tournament subscription atomically cancels pending reports`, { skip }, async () => {
+    const user = await createUser(`unsubscribe-${mode}`);
+    const { contest, squad } = await createContest(user.id);
+    const telegramUserId = uniqueTelegramId();
+    const link = await prisma.telegramLink.create({ data: { userId: user.id, telegramUserId, chatId: telegramUserId, state: "ACTIVE", consentAt: new Date() } });
+    await prisma.telegramSubscription.create({ data: { userId: user.id, linkId: link.id, contestId: contest.id, leagueId: contest.leagueId, season: contest.season, squadId: squad.id } });
+    const campaign = await prisma.deadlineCampaign.create({ data: { contestId: contest.id, season: contest.season, providerRoundId: `unsubscribe-${randomUUID()}` } });
+    try {
+      const outbox = await prisma.telegramOutbox.create({ data: { userId: user.id, campaignId: campaign.id, nextAttemptAt: new Date(), text: "mock report" } });
+      await replaceTelegramSubscriptions(prisma, { userId: user.id, subscriptions: mode === "removed" ? [] : [{ contestId: contest.id, squadId: squad.id, enabled: false }] });
+      assert.equal((await prisma.telegramOutbox.findUniqueOrThrow({ where: { id: outbox.id } })).state, "CANCELLED");
+      await replaceTelegramSubscriptions(prisma, { userId: user.id, subscriptions: [{ contestId: contest.id, squadId: squad.id, enabled: true }] });
+      assert.equal((await prisma.telegramOutbox.findUniqueOrThrow({ where: { id: outbox.id } })).state, "CANCELLED");
+    } finally { await prisma.deadlineCampaign.delete({ where: { id: campaign.id } }); }
+  });
+}
+
 test("webhook accepts a code once and stores the update durably", { skip }, async () => {
   await withEnv(
     { TELEGRAM_LINK_ENABLED: "true", TELEGRAM_LINK_SECRET: "test-link-secret", TELEGRAM_BOT_TOKEN: "123456:TEST-TOKEN" },

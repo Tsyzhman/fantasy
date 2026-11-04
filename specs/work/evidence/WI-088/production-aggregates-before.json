@@ -1,0 +1,776 @@
+{
+  "at": "2026-11-04T09:05:50.021496+00:00",
+  "meminfo": {
+    "MemTotal": 12453625856,
+    "MemAvailable": 5689548800,
+    "SwapTotal": 0
+  },
+  "containers": [
+    {
+      "name": "fantasy-scout-worker",
+      "image": "sha256:5834c1070b1c82294d55884b25bdf5e8b54baa1fc64d5148ada49471b4334d8f",
+      "pid": 3585372,
+      "oom": false,
+      "restarts": 0,
+      "limit": 4294967296
+    },
+    {
+      "name": "fantasy-scout-postgres",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "pid": 3238,
+      "oom": false,
+      "restarts": 0,
+      "limit": 2147483648
+    }
+  ],
+  "job_names": [],
+  "sources": {
+    "files": {
+      "current-players.jsonl.gz": {
+        "bytes": 3072078,
+        "gzip_isize_mod_4gib": 33574833
+      },
+      "current.jsonl.gz": {
+        "bytes": 59631,
+        "gzip_isize_mod_4gib": 421607
+      },
+      "decisions.pkl": {
+        "bytes": 403467443
+      },
+      "features.pkl": {
+        "bytes": 30200031
+      },
+      "foontasy.jsonl.gz": {
+        "bytes": 33908233,
+        "gzip_isize_mod_4gib": 494213292
+      },
+      "matches.jsonl.gz": {
+        "bytes": 370148,
+        "gzip_isize_mod_4gib": 4496337
+      },
+      "official-points.jsonl.gz": {
+        "bytes": 46,
+        "gzip_isize_mod_4gib": 0
+      },
+      "planning.jsonl.gz": {
+        "bytes": 18775756,
+        "gzip_isize_mod_4gib": 205697122
+      },
+      "players-bundesliga_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-bundesliga_2026-1.json": {
+        "bytes": 653970
+      },
+      "players-bundesliga_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-bundesliga_2026-2.json": {
+        "bytes": 655168
+      },
+      "players-bundesliga_2026-3.complete": {
+        "bytes": 8
+      },
+      "players-bundesliga_2026-3.json": {
+        "bytes": 654840
+      },
+      "players-bundesliga_2026-4.complete": {
+        "bytes": 8
+      },
+      "players-bundesliga_2026-4.json": {
+        "bytes": 654486
+      },
+      "players-bundesliga_2026-5.complete": {
+        "bytes": 8
+      },
+      "players-bundesliga_2026-5.json": {
+        "bytes": 727257
+      },
+      "players-bundesliga_2026-6.complete": {
+        "bytes": 8
+      },
+      "players-bundesliga_2026-6.json": {
+        "bytes": 726938
+      },
+      "players-bundesliga_2026-7.json": {
+        "bytes": 664172
+      },
+      "players-championship_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-championship_2026-1.json": {
+        "bytes": 1151605
+      },
+      "players-championship_2026-10.complete": {
+        "bytes": 8
+      },
+      "players-championship_2026-10.json": {
+        "bytes": 1069749
+      },
+      "players-championship_2026-11.json": {
+        "bytes": 1068924
+      },
+      "players-championship_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-championship_2026-2.json": {
+        "bytes": 1151150
+      },
+      "players-championship_2026-3.complete": {
+        "bytes": 8
+      },
+      "players-championship_2026-3.json": {
+        "bytes": 1150803
+      },
+      "players-championship_2026-4.complete": {
+        "bytes": 8
+      },
+      "players-championship_2026-4.json": {
+        "bytes": 1151100
+      },
+      "players-championship_2026-5.complete": {
+        "bytes": 8
+      },
+      "players-championship_2026-5.json": {
+        "bytes": 1150514
+      },
+      "players-championship_2026-6.complete": {
+        "bytes": 8
+      },
+      "players-championship_2026-6.json": {
+        "bytes": 1112030
+      },
+      "players-championship_2026-7.complete": {
+        "bytes": 8
+      },
+      "players-championship_2026-7.json": {
+        "bytes": 1111269
+      },
+      "players-championship_2026-8.complete": {
+        "bytes": 8
+      },
+      "players-championship_2026-8.json": {
+        "bytes": 1111112
+      },
+      "players-championship_2026-9.complete": {
+        "bytes": 8
+      },
+      "players-championship_2026-9.json": {
+        "bytes": 1150734
+      },
+      "players-epl_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-epl_2026-1.json": {
+        "bytes": 954193
+      },
+      "players-epl_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-epl_2026-2.json": {
+        "bytes": 955072
+      },
+      "players-epl_2026-3.complete": {
+        "bytes": 8
+      },
+      "players-epl_2026-3.json": {
+        "bytes": 954557
+      },
+      "players-epl_2026-4.complete": {
+        "bytes": 8
+      },
+      "players-epl_2026-4.json": {
+        "bytes": 954306
+      },
+      "players-epl_2026-5.complete": {
+        "bytes": 8
+      },
+      "players-epl_2026-5.json": {
+        "bytes": 954036
+      },
+      "players-epl_2026-6.complete": {
+        "bytes": 8
+      },
+      "players-epl_2026-6.json": {
+        "bytes": 936888
+      },
+      "players-epl_2026-7.complete": {
+        "bytes": 8
+      },
+      "players-epl_2026-7.json": {
+        "bytes": 936798
+      },
+      "players-epl_2026-8.json": {
+        "bytes": 842390
+      },
+      "players-eredivisie_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-eredivisie_2026-1.json": {
+        "bytes": 816071
+      },
+      "players-eredivisie_2026-10.json": {
+        "bytes": 752852
+      },
+      "players-eredivisie_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-eredivisie_2026-2.json": {
+        "bytes": 815837
+      },
+      "players-eredivisie_2026-3.complete": {
+        "bytes": 8
+      },
+      "players-eredivisie_2026-3.json": {
+        "bytes": 815817
+      },
+      "players-eredivisie_2026-4.complete": {
+        "bytes": 8
+      },
+      "players-eredivisie_2026-4.json": {
+        "bytes": 816865
+      },
+      "players-eredivisie_2026-5.complete": {
+        "bytes": 8
+      },
+      "players-eredivisie_2026-5.json": {
+        "bytes": 816499
+      },
+      "players-eredivisie_2026-6.complete": {
+        "bytes": 8
+      },
+      "players-eredivisie_2026-6.json": {
+        "bytes": 816142
+      },
+      "players-eredivisie_2026-7.complete": {
+        "bytes": 8
+      },
+      "players-eredivisie_2026-7.json": {
+        "bytes": 816022
+      },
+      "players-eredivisie_2026-8.complete": {
+        "bytes": 8
+      },
+      "players-eredivisie_2026-8.json": {
+        "bytes": 853708
+      },
+      "players-eredivisie_2026-9.complete": {
+        "bytes": 8
+      },
+      "players-eredivisie_2026-9.json": {
+        "bytes": 853985
+      },
+      "players-france_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-france_2026-1.json": {
+        "bytes": 720815
+      },
+      "players-france_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-france_2026-2.json": {
+        "bytes": 721772
+      },
+      "players-france_2026-3.complete": {
+        "bytes": 8
+      },
+      "players-france_2026-3.json": {
+        "bytes": 721513
+      },
+      "players-france_2026-4.complete": {
+        "bytes": 8
+      },
+      "players-france_2026-4.json": {
+        "bytes": 721266
+      },
+      "players-france_2026-5.complete": {
+        "bytes": 8
+      },
+      "players-france_2026-5.json": {
+        "bytes": 720939
+      },
+      "players-france_2026-6.complete": {
+        "bytes": 8
+      },
+      "players-france_2026-6.json": {
+        "bytes": 708033
+      },
+      "players-france_2026-7.complete": {
+        "bytes": 8
+      },
+      "players-france_2026-7.json": {
+        "bytes": 707817
+      },
+      "players-france_2026-8.json": {
+        "bytes": 658059
+      },
+      "players-la_liga_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-la_liga_2026-1.json": {
+        "bytes": 979877
+      },
+      "players-la_liga_2026-10.json": {
+        "bytes": 861545
+      },
+      "players-la_liga_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-la_liga_2026-2.json": {
+        "bytes": 978939
+      },
+      "players-la_liga_2026-3.complete": {
+        "bytes": 8
+      },
+      "players-la_liga_2026-3.json": {
+        "bytes": 978956
+      },
+      "players-la_liga_2026-4.complete": {
+        "bytes": 8
+      },
+      "players-la_liga_2026-4.json": {
+        "bytes": 980208
+      },
+      "players-la_liga_2026-5.complete": {
+        "bytes": 8
+      },
+      "players-la_liga_2026-5.json": {
+        "bytes": 979811
+      },
+      "players-la_liga_2026-6.complete": {
+        "bytes": 8
+      },
+      "players-la_liga_2026-6.json": {
+        "bytes": 979773
+      },
+      "players-la_liga_2026-7.complete": {
+        "bytes": 8
+      },
+      "players-la_liga_2026-7.json": {
+        "bytes": 979392
+      },
+      "players-la_liga_2026-8.json": {
+        "bytes": 860836
+      },
+      "players-la_liga_2026-9.complete": {
+        "bytes": 8
+      },
+      "players-la_liga_2026-9.json": {
+        "bytes": 860787
+      },
+      "players-liga_europa_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-liga_europa_2026-1.json": {
+        "bytes": 770182
+      },
+      "players-liga_europa_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-liga_europa_2026-2.json": {
+        "bytes": 940820
+      },
+      "players-liga_europa_2026-3.complete": {
+        "bytes": 8
+      },
+      "players-liga_europa_2026-3.json": {
+        "bytes": 1148842
+      },
+      "players-portugal_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-portugal_2026-1.json": {
+        "bytes": 853882
+      },
+      "players-portugal_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-portugal_2026-2.json": {
+        "bytes": 853626
+      },
+      "players-portugal_2026-3.complete": {
+        "bytes": 8
+      },
+      "players-portugal_2026-3.json": {
+        "bytes": 853325
+      },
+      "players-portugal_2026-4.complete": {
+        "bytes": 8
+      },
+      "players-portugal_2026-4.json": {
+        "bytes": 854491
+      },
+      "players-portugal_2026-5.complete": {
+        "bytes": 8
+      },
+      "players-portugal_2026-5.json": {
+        "bytes": 854063
+      },
+      "players-portugal_2026-6.complete": {
+        "bytes": 8
+      },
+      "players-portugal_2026-6.json": {
+        "bytes": 854022
+      },
+      "players-portugal_2026-7.complete": {
+        "bytes": 8
+      },
+      "players-portugal_2026-7.json": {
+        "bytes": 853935
+      },
+      "players-portugal_2026-8.complete": {
+        "bytes": 8
+      },
+      "players-portugal_2026-8.json": {
+        "bytes": 887681
+      },
+      "players-portugal_2026-9.json": {
+        "bytes": 800518
+      },
+      "players-rfpl_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-rfpl_2026-1.json": {
+        "bytes": 657752
+      },
+      "players-rfpl_2026-10.complete": {
+        "bytes": 8
+      },
+      "players-rfpl_2026-10.json": {
+        "bytes": 593740
+      },
+      "players-rfpl_2026-11.complete": {
+        "bytes": 8
+      },
+      "players-rfpl_2026-11.json": {
+        "bytes": 593523
+      },
+      "players-rfpl_2026-12.json": {
+        "bytes": 610793
+      },
+      "players-rfpl_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-rfpl_2026-2.json": {
+        "bytes": 657566
+      },
+      "players-rfpl_2026-3.complete": {
+        "bytes": 8
+      },
+      "players-rfpl_2026-3.json": {
+        "bytes": 657366
+      },
+      "players-rfpl_2026-4.complete": {
+        "bytes": 8
+      },
+      "players-rfpl_2026-4.json": {
+        "bytes": 657191
+      },
+      "players-rfpl_2026-5.complete": {
+        "bytes": 8
+      },
+      "players-rfpl_2026-5.json": {
+        "bytes": 657110
+      },
+      "players-rfpl_2026-6.complete": {
+        "bytes": 8
+      },
+      "players-rfpl_2026-6.json": {
+        "bytes": 657999
+      },
+      "players-rfpl_2026-7.complete": {
+        "bytes": 8
+      },
+      "players-rfpl_2026-7.json": {
+        "bytes": 657918
+      },
+      "players-rfpl_2026-8.complete": {
+        "bytes": 8
+      },
+      "players-rfpl_2026-8.json": {
+        "bytes": 657946
+      },
+      "players-rfpl_2026-9.complete": {
+        "bytes": 8
+      },
+      "players-rfpl_2026-9.json": {
+        "bytes": 657758
+      },
+      "players-seria_a_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-seria_a_2026-1.json": {
+        "bytes": 897056
+      },
+      "players-seria_a_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-seria_a_2026-2.json": {
+        "bytes": 897994
+      },
+      "players-seria_a_2026-3.complete": {
+        "bytes": 8
+      },
+      "players-seria_a_2026-3.json": {
+        "bytes": 897604
+      },
+      "players-seria_a_2026-4.complete": {
+        "bytes": 8
+      },
+      "players-seria_a_2026-4.json": {
+        "bytes": 897316
+      },
+      "players-seria_a_2026-5.complete": {
+        "bytes": 8
+      },
+      "players-seria_a_2026-5.json": {
+        "bytes": 897009
+      },
+      "players-seria_a_2026-6.complete": {
+        "bytes": 8
+      },
+      "players-seria_a_2026-6.json": {
+        "bytes": 891046
+      },
+      "players-seria_a_2026-7.complete": {
+        "bytes": 8
+      },
+      "players-seria_a_2026-7.json": {
+        "bytes": 890714
+      },
+      "players-seria_a_2026-8.json": {
+        "bytes": 804223
+      },
+      "players-turkey_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-turkey_2026-1.json": {
+        "bytes": 788234
+      },
+      "players-turkey_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-turkey_2026-2.json": {
+        "bytes": 787830
+      },
+      "players-turkey_2026-3.complete": {
+        "bytes": 8
+      },
+      "players-turkey_2026-3.json": {
+        "bytes": 788824
+      },
+      "players-turkey_2026-4.complete": {
+        "bytes": 8
+      },
+      "players-turkey_2026-4.json": {
+        "bytes": 788540
+      },
+      "players-turkey_2026-5.complete": {
+        "bytes": 8
+      },
+      "players-turkey_2026-5.json": {
+        "bytes": 788446
+      },
+      "players-turkey_2026-6.complete": {
+        "bytes": 8
+      },
+      "players-turkey_2026-6.json": {
+        "bytes": 788288
+      },
+      "players-turkey_2026-7.json": {
+        "bytes": 698434
+      },
+      "players-turkey_2026-8.complete": {
+        "bytes": 8
+      },
+      "players-turkey_2026-8.json": {
+        "bytes": 777843
+      },
+      "players-turkey_2026-9.json": {
+        "bytes": 698410
+      },
+      "players-ucl_2026-1.complete": {
+        "bytes": 8
+      },
+      "players-ucl_2026-1.json": {
+        "bytes": 843496
+      },
+      "players-ucl_2026-2.complete": {
+        "bytes": 8
+      },
+      "players-ucl_2026-2.json": {
+        "bytes": 1049890
+      },
+      "players.jsonl.gz": {
+        "bytes": 1282473,
+        "gzip_isize_mod_4gib": 7212339
+      },
+      "points.jsonl.gz": {
+        "bytes": 8702432,
+        "gzip_isize_mod_4gib": 91391416
+      },
+      "price-mapping.jsonl.gz": {
+        "bytes": 873212,
+        "gzip_isize_mod_4gib": 5966463
+      },
+      "purchases.pkl": {
+        "bytes": 95372852
+      },
+      "round-metadata.jsonl.gz": {
+        "bytes": 890,
+        "gzip_isize_mod_4gib": 6118
+      },
+      "rules.jsonl.gz": {
+        "bytes": 1068,
+        "gzip_isize_mod_4gib": 2385
+      },
+      "squad-metrics.pkl": {
+        "bytes": 35489362
+      },
+      "stats.jsonl.gz": {
+        "bytes": 19540918,
+        "gzip_isize_mod_4gib": 391434512
+      },
+      "team-stats.jsonl.gz": {
+        "bytes": 48971,
+        "gzip_isize_mod_4gib": 307056
+      }
+    },
+    "counts": {
+      "squads": {
+        "files": 60207,
+        "bytes": 189014468
+      },
+      "http": {
+        "files": 34415,
+        "bytes": 266220874
+      }
+    },
+    "squad_index": {
+      "total": 60207,
+      "unique": 60207
+    },
+    "audit": {
+      "stats_total": 522293,
+      "stats_relevant": 181375,
+      "stats_duplicates": 0,
+      "stats_seasons": {
+        "2026/2027": 42072,
+        "2026": 3577,
+        "2025/2026": 123057,
+        "2024/2025": 8948,
+        "2025": 2140,
+        "2024": 1581
+      },
+      "features": 70340,
+      "mapped_features": 39561
+    },
+    "validation": {
+      "unique_squads": 60738,
+      "all_xi_11": true,
+      "missing_lineups": 271,
+      "active_squads_per_franchise": {
+        "243": 330,
+        "48": 576,
+        "478": 330,
+        "586": 216,
+        "516": 288,
+        "22": 576,
+        "384": 282,
+        "570": 176,
+        "567": 180,
+        "2": 576,
+        "28": 576,
+        "72": 330,
+        "282": 576,
+        "148": 246,
+        "12": 347,
+        "236": 576,
+        "389": 300,
+        "42": 384,
+        "510": 576,
+        "517": 582,
+        "477": 576,
+        "163": 192,
+        "496": 194,
+        "61": 282,
+        "87": 348,
+        "544": 348,
+        "-1": 0,
+        "474": 576,
+        "487": 330,
+        "62": 258,
+        "439": 576,
+        "23": 576,
+        "57": 576,
+        "542": 401,
+        "10": 582,
+        "14": 576,
+        "41": 576,
+        "375": 576,
+        "26": 576,
+        "360": 582,
+        "294": 408,
+        "222": 576,
+        "433": 576,
+        "566": 192,
+        "150": 576,
+        "25": 576,
+        "13": 576,
+        "110": 558,
+        "160": 360,
+        "20": 576,
+        "530": 576,
+        "367": 408,
+        "31": 576,
+        "486": 168,
+        "432": 576,
+        "563": 282,
+        "441": 576,
+        "364": 576,
+        "227": 576,
+        "44": 576,
+        "45": 576,
+        "503": 576,
+        "5": 576,
+        "476": 402,
+        "56": 576,
+        "17": 576,
+        "125": 576,
+        "120": 402,
+        "19": 576,
+        "401": 576,
+        "40": 576,
+        "223": 576,
+        "27": 576,
+        "65": 576,
+        "18": 576
+      },
+      "missing_active_state": 411,
+      "future_history": 0,
+      "duplicate_selections": 0,
+      "source_fnl_files": 0,
+      "freeze_verified": 1495
+    },
+    "report": {
+      "generated": "2026-10-24T00:40:27.781657+00:00",
+      "n_squads": 60738,
+      "n_decisions": 907005,
+      "n_buys": 151824,
+      "acquisition": {
+        "from": "2026-09-21T16:08:57Z",
+        "to": "2026-10-24T00:37:42Z",
+        "cached_requests": 34415,
+        "unique_urls": 34415,
+        "http_bytes": 266223990
+      }
+    },
+    "snapshot_bytes": 15791411,
+    "locks": {
+      ".sync.lock": false,
+      ".collection.lock": false,
+      ".heavy-job.lock": true
+    }
+  }
+}

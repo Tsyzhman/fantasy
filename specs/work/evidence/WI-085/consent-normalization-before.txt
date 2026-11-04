@@ -1,0 +1,188 @@
+✖ a FAILED resume cannot override a whitespace-normalized stop "/stop " (151.1222ms)
+✖ a FAILED resume cannot override a whitespace-normalized stop "\n/stop\n" (21.3862ms)
+✖ a FAILED resume cannot override a whitespace-normalized stop "\t  /stop﻿\r\n" (20.3455ms)
+✖ a FAILED resume is superseded by a newer kicked event for its chat (17.5009ms)
+✖ a PROCESSING resume cannot override a whitespace-normalized stop "/stop " (20.2603ms)
+✖ a PROCESSING resume cannot override a whitespace-normalized stop "\n/stop\n" (19.1573ms)
+✖ a PROCESSING resume cannot override a whitespace-normalized stop "\t  /stop﻿\r\n" (17.9916ms)
+✖ a PROCESSING resume is superseded by a newer kicked event for its chat (14.789ms)
+✔ an unrecognized command boundary does not supersede a failed stop "/resume later" (15.0978ms)
+✔ an unrecognized command boundary does not supersede a failed stop "/resume​" (15.8303ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 2
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 667.5859
+
+✖ failing tests:
+
+test at src\server\telegram\polling.db-test.ts:2:8927
+✖ a FAILED resume cannot override a whitespace-normalized stop "/stop " (151.1222ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  'ACTIVE' !== 'PAUSED'
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:134:16)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:24:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:124:7)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ACTIVE',
+    expected: 'PAUSED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\telegram\polling.db-test.ts:2:8927
+✖ a FAILED resume cannot override a whitespace-normalized stop "\n/stop\n" (21.3862ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  'ACTIVE' !== 'PAUSED'
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:134:16)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:24:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:124:7)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ACTIVE',
+    expected: 'PAUSED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\telegram\polling.db-test.ts:2:8927
+✖ a FAILED resume cannot override a whitespace-normalized stop "\t  /stop﻿\r\n" (20.3455ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  'ACTIVE' !== 'PAUSED'
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:134:16)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:24:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:124:7)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ACTIVE',
+    expected: 'PAUSED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\telegram\polling.db-test.ts:2:10205
+✖ a FAILED resume is superseded by a newer kicked event for its chat (17.5009ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:153:14)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:24:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:141:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\telegram\polling.db-test.ts:2:8927
+✖ a PROCESSING resume cannot override a whitespace-normalized stop "/stop " (20.2603ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  'ACTIVE' !== 'PAUSED'
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:134:16)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:24:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:124:7)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ACTIVE',
+    expected: 'PAUSED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\telegram\polling.db-test.ts:2:8927
+✖ a PROCESSING resume cannot override a whitespace-normalized stop "\n/stop\n" (19.1573ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  'ACTIVE' !== 'PAUSED'
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:134:16)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:24:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:124:7)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ACTIVE',
+    expected: 'PAUSED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\telegram\polling.db-test.ts:2:8927
+✖ a PROCESSING resume cannot override a whitespace-normalized stop "\t  /stop﻿\r\n" (17.9916ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  'ACTIVE' !== 'PAUSED'
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:134:16)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:24:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:124:7)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ACTIVE',
+    expected: 'PAUSED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\server\telegram\polling.db-test.ts:2:10205
+✖ a PROCESSING resume is superseded by a newer kicked event for its chat (14.789ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:153:14)
+      at async withEnvUnlocked (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:33:12)
+      at async withEnv (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\test-utils\env.ts:13:12)
+      at async fixture (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:24:5)
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\audit-20261104\fantasy_export\src\server\telegram\polling.db-test.ts:141:5)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

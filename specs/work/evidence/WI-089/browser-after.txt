@@ -1,0 +1,29 @@
+
+Running 12 tests using 1 worker
+
+
+
+(node:36132) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1/12] [mobile-320] › e2e\ui-keyboard.spec.ts:317:7 › mobile column sort covers full pool, selected metrics and squad actions: en
+[2/12] [mobile-320] › e2e\ui-keyboard.spec.ts:317:7 › mobile column sort covers full pool, selected metrics and squad actions: ru
+[3/12] [mobile-320] › e2e\ui-keyboard.spec.ts:410:5 › mobile column sort shares desktop header state in both directions
+[4/12] [mobile-320] › e2e\ui-keyboard.spec.ts:430:5 › mobile column sort follows changed definitions and survives empty filters
+
+(node:13984) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[5/12] [mobile-390] › e2e\ui-keyboard.spec.ts:317:7 › mobile column sort covers full pool, selected metrics and squad actions: en
+[6/12] [mobile-390] › e2e\ui-keyboard.spec.ts:317:7 › mobile column sort covers full pool, selected metrics and squad actions: ru
+[7/12] [mobile-390] › e2e\ui-keyboard.spec.ts:410:5 › mobile column sort shares desktop header state in both directions
+[8/12] [mobile-390] › e2e\ui-keyboard.spec.ts:430:5 › mobile column sort follows changed definitions and survives empty filters
+
+(node:6544) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[9/12] [desktop-1440] › e2e\ui-keyboard.spec.ts:317:7 › mobile column sort covers full pool, selected metrics and squad actions: en
+[10/12] [desktop-1440] › e2e\ui-keyboard.spec.ts:317:7 › mobile column sort covers full pool, selected metrics and squad actions: ru
+[11/12] [desktop-1440] › e2e\ui-keyboard.spec.ts:410:5 › mobile column sort shares desktop header state in both directions
+[12/12] [desktop-1440] › e2e\ui-keyboard.spec.ts:430:5 › mobile column sort follows changed definitions and survives empty filters
+  6 skipped
+  6 passed (25.4s)

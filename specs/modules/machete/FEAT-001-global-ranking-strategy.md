@@ -68,6 +68,8 @@ Context: N, rank, team and leader points, T/R, ER for no more than 6 completed r
 
 The desktop pool remains virtualized and touch pool remains paginated at 18 players. Column selection and its existing persisted preferences are also available on touch screens; expanded mobile analytics use the selected metrics, including FFO and rotation risk, with touch/keyboard explanations. Confidence percentages have a visible data-quality label. Resize separators are focusable and support arrows, Shift acceleration, Home/End bounds and Enter reset, with current/min/max ARIA values; pointer resize and double-click reset remain. Pool rendering, forecast explanations, projection arithmetic and team-strength inputs have separate responsibility modules while preserving planner public exports and recommendations.
 
+Touch users can choose a supported player column/metric and reverse ascending/descending order through visible controls before the mobile player list. The active column and direction remain explicit. Supported fixed columns and selected sortable analytical columns use the same sort state and arithmetic as desktop; fixtures/actions are not presented as numeric sort options. Sorting applies to the complete filtered pool before pagination, retains null-last and stable ties, returns pagination to its first group, and preserves the squad, active filters and selected column preferences.
+
 Production full Squad pool refreshes run in a terminating child process so native database working memory is released after each cycle. The scheduler keeps full and incremental work serialized until that child exits; parent shutdown terminates its child. Refresh hours, bootstrap-only-missing behavior, atomic READY publication, retained revisions, complete player data and request-time loading remain unchanged. Development without the production bundle keeps the same in-process implementation.
 
 Pure functions in `src/machete/global-strategy.ts` and `src/machete/global-strategy-config.ts`. Loading the context into server/global-strategy-context.ts. `GET /api/machete/squads/global-strategy`. Integration into `src/machete/squad_logic.ts`, worker and `FantasySquadPlanner.tsx`.
@@ -189,6 +191,8 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 <a name="changelog"></a>
 
 ## 12. Changelog {#changelog}
+
+- 2026-11-04: WI-089 — expose player-column sorting and direction on touch screens with the same arithmetic/state as desktop and pagination after sorting.
 
 - 2026-10-20: WI-078 — allow six transfers only in Champions League provider tour 2755; subsequent tours retain three without banking.
 - 2026-10-16: WI-077 — allow six transfers only in Championship provider tour 2391, including cached readers, UI and save validation; retain three in all other Sports.ru tours.

@@ -1,0 +1,13 @@
+{"level":"warn","scope":"telegram:polling","message":"Telegram returned a webhook conflict; delete the webhook before polling.","timestamp":"2026-11-04T09:39:44.689Z","description":"Conflict: can't use getUpdates method while webhook is active"}
+✔ poll offset starts at one for an empty inbox and continues after the maximum (0.7808ms)
+✔ polling processes a batch once and advances the offset (1.3687ms)
+✔ polling resumes after the stored inbox maximum and does not replay old updates (0.3659ms)
+✔ a webhook conflict stops polling instead of retrying blindly (1.7495ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 225.4181

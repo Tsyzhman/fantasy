@@ -1,4 +1,5 @@
-FROM node:24.21.0-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS deps
+# @spec spec://common/INFRA-006-continuous-deployment#runtime
+FROM node:24.22.2-bookworm-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c AS deps
 
 WORKDIR /app
 
@@ -48,7 +49,7 @@ WORKDIR /app
 RUN npm prune --omit=dev
 
 # HTTP/TLS client only: no browser binaries or browser automation runtime.
-FROM node:24.21.0-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS khl-http
+FROM node:24.22.2-bookworm-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c AS khl-http
 RUN apt-get update && apt-get install -y --no-install-recommends python3-venv ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 COPY scripts/khl-http-requirements.txt /tmp/khl-http-requirements.txt
@@ -58,7 +59,7 @@ COPY scripts/franchise-analytics/requirements.txt /tmp/franchise-requirements.tx
 RUN python3 -m venv /opt/franchises \
   && /opt/franchises/bin/pip install --no-cache-dir --only-binary=:all: -r /tmp/franchise-requirements.txt
 
-FROM node:24.21.0-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS runtime
+FROM node:24.22.2-bookworm-slim@sha256:c86ecead9e55a5210ac1727de38a4ca840bf03dcaf34dc9749addbf383b1920c AS runtime
 
 WORKDIR /app
 

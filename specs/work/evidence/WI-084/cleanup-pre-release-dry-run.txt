@@ -1,0 +1,20 @@
+MODE=dry-run
+RELEASE_ROOT=/var/www/fantasy-scout-releases
+CURRENT_RELEASE=/var/www/fantasy-scout-releases/20261104T084726Z-v0.3.148-ef9830d
+KEEP_ROLLBACK=fantasy-scout-web-rollback-pre-20261104T084726Z-v0.3.148-ef9830d
+KEEP_ROLLBACK=fantasy-scout-worker-rollback-pre-20261104T084726Z-v0.3.148-ef9830d
+KEEP_ROLLBACK=fantasy-scout-fpl-relay-rollback-pre-20261104T084726Z-v0.3.148-ef9830d
+KEEP_RELAY_VOLUME=fantasy-scout-fpl-relay-candidate-20261026T203017Z-v0.3.147-e765ab4
+KEEP_RELAY_VOLUME=fantasy-scout-fpl-relay-candidate-20261104T084726Z-v0.3.148-ef9830d
+KEEP_RELEASE=20261026T203017Z-v0.3.147-e765ab4
+KEEP_RELEASE=20261104T084726Z-v0.3.148-ef9830d
+KEEP_IMAGE=fantasy-scout:20261026T203017Z-v0.3.147-e765ab4
+KEEP_IMAGE=fantasy-scout:20261104T084726Z-v0.3.148-ef9830d
+{"keep": "/var/backups/fantasy-scout/snapshot-20261023T112441Z-v0.3.145-32fcc3d.dump", "verifiedBytes": 379894669, "remove": [], "removedBytes": 0, "plannedBytes": 0, "applied": false}
+BUILD_CACHE=CI_OWNED; HOST_DEFAULT_BUILDER=UNCHANGED
+RELEASE_COUNT=2
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          60        42        24.09GB   5.391GB (22%)
+Containers      51        48        192.6MB   106.5kB (0%)
+Local Volumes   75        40        7.264GB   160.9MB (2%)
+Build Cache     127       0         3.05GB    227MB

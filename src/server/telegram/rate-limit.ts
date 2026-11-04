@@ -34,13 +34,20 @@ export async function consumeTelegramRateLimit(prisma: PrismaClient, input: Tele
   const subjectHash = telegramRateLimitSubject(input.subject);
   const now = new Date();
   return prisma.$transaction(async (tx) => {
+    // A SELECT cannot lock a bucket that does not exist yet. Materialize it with
+    // the unique constraint first; concurrent first attempts then share its lock.
+    await tx.$executeRaw`
+      INSERT INTO "telegram_rate_limits" ("id", "action", "subject_hash", "failed_count", "window_started_at", "created_at", "updated_at")
+      VALUES (${`${input.action}:${subjectHash}`}, ${input.action}, ${subjectHash}, 0, ${now}, ${now}, ${now})
+      ON CONFLICT ("action", "subject_hash") DO NOTHING
+    `;
     const rows = await tx.$queryRaw<TelegramRateLimitRow[]>`
       SELECT "failed_count" AS "failedCount", "window_started_at" AS "windowStartedAt", "locked_until" AS "lockedUntil"
       FROM "telegram_rate_limits"
       WHERE "action" = ${input.action} AND "subject_hash" = ${subjectHash}
       FOR UPDATE
     `;
-    let row = rows[0] ?? null;
+    const row = rows[0] ?? null;
     if (row?.lockedUntil && row.lockedUntil > now) {
       return { allowed: false, retryAfterSeconds: Math.max(1, Math.ceil((row.lockedUntil.getTime() - now.getTime()) / 1000)) };
     }

@@ -1,6 +1,17 @@
+# @spec spec://common/INFRA-006-continuous-deployment#contracts
 name: Check
 
 on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Full commit SHA resolved once by the deployment caller.
+        type: string
+        required: true
+      version_base:
+        description: Full canonical main SHA resolved with the release source.
+        type: string
+        required: true
   pull_request:
   push:
     branches:
@@ -9,7 +20,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16-alpine
@@ -30,6 +41,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          ref: ${{ inputs.ref || github.sha }}
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -38,10 +50,15 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - name: Verify exact validation revision
+        env:
+          EXPECTED_COMMIT: ${{ inputs.ref || github.sha }}
+        run: node scripts/verify-release-revision.mjs "$EXPECTED_COMMIT"
+
       - name: Verify release version bump
         shell: bash
         env:
-          VERSION_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          VERSION_BASE: ${{ inputs.version_base || github.event.pull_request.base.sha || github.event.before }}
         run: |
           if [[ -z "$VERSION_BASE" || "$VERSION_BASE" =~ ^0+$ ]]; then
             npm run release:verify-version
@@ -108,14 +125,42 @@ jobs:
       - name: Run checks
         run: npm run check
 
+      # @spec spec://common/PROP-002-editorial-sport-design#checklist
+      - name: Install Chromium for isolated UI regressions
+        timeout-minutes: 8
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify isolated keyboard and dialog workflows
+        timeout-minutes: 10
+        run: |
+          unset PLAYWRIGHT_CHANNEL UI_KEYBOARD_SOURCE_REVISION
+          npx playwright test --config e2e/ui-keyboard.config.ts --forbid-only
+
       - name: Verify restricted runtime database permissions
         run: python3 scripts/runtime-database-roles.test.py
         env:
           TEST_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
 
+      - name: Verify browser-free KHL HTTP transport
+        run: python3 -B scripts/khl-protocol-http.test.py
+
+      - name: Verify franchise database adapter, formulas and bounded memory
+        run: |
+          python3 -m pip install --no-cache-dir -r scripts/franchise-analytics/requirements.txt
+          python3 -B -m unittest discover -s scripts/franchise-analytics -p 'test_*.py'
+
+      - name: Install isolated SSH host verification test server
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends openssh-server
+          sudo install -d -m 0755 /run/sshd
+
       # @spec spec://common/INFRA-006-continuous-deployment#acceptance
       - name: Verify continuous deployment and rollback
         run: |
-          python3 scripts/continuous-deployment.test.py
-          python3 scripts/resolve-ci-image-identities.test.py
-          node --test scripts/strip-server-action-key.test.mjs
+          python3 -B scripts/continuous-deployment.test.py
+          python3 -B scripts/configure-production-amneziawg.test.py
+          python3 -B scripts/resolve-ci-image-identities.test.py
+          node --test scripts/strip-server-action-key.test.mjs scripts/release-validation.test.mjs
+          python3 -B scripts/prepare-deploy-ssh.test.py
+          python3 -B scripts/transfer-ci-artifact.test.py

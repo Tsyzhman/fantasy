@@ -1,0 +1,32 @@
+{
+  "outcome": "failed-before-calculation-and-publication",
+  "error": "Conflicting board fixture identity",
+  "collectedSourceSquads": 68368,
+  "monitorSamples": 506,
+  "sampledPeakBytes": 1445416960.0,
+  "peakSource": "five-second samples; kernel memory.peak unavailable",
+  "minAvailableBytes": 5465972736.0,
+  "abortSamples": 0,
+  "oomKillMax": 0.0,
+  "finished": {
+    "at": "2026-11-04T15:27:36.025116+03:00",
+    "finished": true,
+    "job_present": false,
+    "available_bytes": 5907886080
+  },
+  "stages": [
+    {
+      "stage": "acquire",
+      "succeeded": false,
+      "seconds": 2683.384,
+      "peak_rss_bytes": 333357056,
+      "memory.current": "1024331776",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0"
+    }
+  ],
+  "limitations": [
+    "First monitor replaced at 11:44 UTC because kernel lacks memory.peak.",
+    "Features, aggregate, enrich, hypotheses, export and importer did not run.",
+    "Source audit may include old validation.json; it is not fresh calculation evidence."
+  ]
+}

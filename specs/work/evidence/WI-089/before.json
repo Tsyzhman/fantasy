@@ -1,0 +1,21 @@
+{
+  "revision": "9e973d6206ae4a1972dadb69944c75536593560e",
+  "cases": [
+    {
+      "width": 320,
+      "coarsePointer": true,
+      "sortControlCount": 0,
+      "cardCount": 18,
+      "desktopTableCount": 0,
+      "runtimeErrors": []
+    },
+    {
+      "width": 390,
+      "coarsePointer": true,
+      "sortControlCount": 0,
+      "cardCount": 18,
+      "desktopTableCount": 0,
+      "runtimeErrors": []
+    }
+  ]
+}

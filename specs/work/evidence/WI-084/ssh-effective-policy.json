@@ -1,0 +1,1 @@
+{"deploy": {"permitrootlogin": "yes", "pubkeyauthentication": "yes", "passwordauthentication": "yes", "authenticationmethods": "any", "password_status": "L"}, "root": {"permitrootlogin": "yes", "pubkeyauthentication": "yes", "passwordauthentication": "yes", "authenticationmethods": "any", "password_status": "P"}}

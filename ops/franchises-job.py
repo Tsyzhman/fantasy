@@ -11,6 +11,20 @@ import tempfile
 
 JOB_NAME = 'fantasy-scout-franchises-job'
 SOURCE_ROOT = '/app/storage/franchises'
+# Columnar aggregation and projected intermediate decisions reduce the measured
+# 61k-observation Python peak to 1.35 GiB (Windows synthetic fixture). Keep room for the waiting Node parent,
+# native allocations, import and cgroup file cache, plus a separate host reserve.
+JOB_MEMORY_MIB = 3584
+HOST_HEADROOM_MIB = 1024
+
+
+def require_memory(available):
+    required = (JOB_MEMORY_MIB + HOST_HEADROOM_MIB) * 1024**2
+    if available < required:
+        raise RuntimeError(
+            f'Franchise job requires {JOB_MEMORY_MIB + HOST_HEADROOM_MIB} MiB available host memory '
+            f'for its {JOB_MEMORY_MIB} MiB cap and {HOST_HEADROOM_MIB} MiB host headroom; '
+            f'available {available // 1024**2} MiB')
 
 
 def configuration(worker, postgres):
@@ -32,7 +46,7 @@ def configuration(worker, postgres):
 
 def job_command(config, env_file, command=None, mounts=()):
     args = ['docker', 'run', '--rm', '--init', '--name', JOB_NAME,
-            '--memory', '5g', '--memory-swap', '5g', '--cpus', '2', '--pids-limit', '128',
+            '--memory', f'{JOB_MEMORY_MIB}m', '--memory-swap', f'{JOB_MEMORY_MIB}m', '--cpus', '2', '--pids-limit', '128',
             '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges:true', '--no-healthcheck',
             '--network', config['network'], '--env-file', str(env_file),
             '--mount', f"type=volume,src={config['volume']},dst={SOURCE_ROOT}"]
@@ -44,8 +58,7 @@ def job_command(config, env_file, command=None, mounts=()):
 
 def run_job(command=None, mounts=(), input_bytes=None):
     available = next(int(line.split()[1]) * 1024 for line in pathlib.Path('/proc/meminfo').read_text().splitlines() if line.startswith('MemAvailable:'))
-    if available < 6 * 1024**3:
-        raise RuntimeError('Franchise job requires 6 GiB available host memory for its 5 GiB cap and host headroom')
+    require_memory(available)
     def inspect(name):
         return json.loads(subprocess.check_output(['docker', 'container', 'inspect', name]))[0]
     config = configuration(inspect('fantasy-scout-worker'), inspect('fantasy-scout-postgres'))

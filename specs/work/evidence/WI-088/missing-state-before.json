@@ -1,0 +1,374 @@
+{
+  "missing_classification": {
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((433, False),))": 11,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((223, False),))": 11,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((401, False),))": 10,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((27, False),))": 9,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((18, False),))": 10,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((441, False),))": 9,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((31, False),))": 8,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((19, False),))": 10,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((5, False),))": 11,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((17, False),))": 10,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((110, False),))": 8,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((56, False),))": 10,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((25, False),))": 11,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((65, False),))": 11,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((432, False),))": 11,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((364, False),))": 7,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((375, False),))": 9,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((227, False),))": 11,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((40, False),))": 10,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((45, False),))": 9,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((150, False),))": 10,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((530, False),))": 10,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((13, False),))": 8,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((26, False),))": 9,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((503, False),))": 10,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((510, False),))": 8,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((477, False),))": 7,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((439, False),))": 8,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((542, False),))": 7,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((222, False),))": 7,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((125, False),))": 9,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((44, False),))": 7,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((14, False),))": 10,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((367, False),))": 8,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((236, False),))": 7,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((294, False),))": 8,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((20, False),))": 7,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((474, False),))": 8,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((23, False),))": 9,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((41, False),))": 10,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((57, False),))": 7,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((2, False),))": 9,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((22, False),))": 8,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((28, False),))": 7,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((282, False),))": 9,
+    "(True, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10), 'str', ((48, False),))": 8
+  },
+  "missing_examples": [
+    {
+      "franchise": 433,
+      "slug": "championship_2026",
+      "round": 11,
+      "board_team": true,
+      "previous_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "source_body_round": 11,
+      "source_body_team_type": "str",
+      "member_flags": [
+        [
+          433,
+          false
+        ]
+      ]
+    },
+    {
+      "franchise": 433,
+      "slug": "championship_2026",
+      "round": 11,
+      "board_team": true,
+      "previous_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "source_body_round": 11,
+      "source_body_team_type": "str",
+      "member_flags": [
+        [
+          433,
+          false
+        ]
+      ]
+    },
+    {
+      "franchise": 433,
+      "slug": "championship_2026",
+      "round": 11,
+      "board_team": true,
+      "previous_rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "source_body_round": 11,
+      "source_body_team_type": "str",
+      "member_flags": [
+        [
+          433,
+          false
+        ]
+      ]
+    }
+  ],
+  "duplicate_comparison": {
+    "different_state": 1074,
+    "same_state": 455
+  },
+  "flag_comparison": {
+    "same_active_frozen": 1363,
+    "different_active_frozen": 166
+  },
+  "conflicting_scopes": {
+    "('championship_2026', 10)": 342,
+    "('ucl_2026', 2)": 413
+  },
+  "modified_utc": {
+    "franchise-teams.json": "2026-10-27T03:13:16.949955+00:00",
+    "leagues.json": "2026-10-24T00:13:27.410387+00:00",
+    "freezes.json": "2026-10-24T00:37:43.213219+00:00",
+    "source-audit.json": "2026-10-24T00:38:27.470038+00:00",
+    "report-data.json": "2026-10-24T00:42:37.718662+00:00",
+    "validation.json": "2026-10-24T00:42:37.982667+00:00",
+    "snapshot.json.gz": "2026-10-21T10:40:00.584253+00:00"
+  },
+  "missing": 411,
+  "groups": {
+    "('championship_2026', 11, False)": 411
+  },
+  "freeze_audit": [],
+  "freeze_state_count": 55295,
+  "duplicate_state": 1529,
+  "duplicate_groups": {
+    "('championship_2026', 10)": 435,
+    "('ucl_2026', 2)": 671,
+    "('rfpl_2026', 1)": 1,
+    "('rfpl_2026', 2)": 1,
+    "('rfpl_2026', 3)": 1,
+    "('rfpl_2026', 4)": 1,
+    "('rfpl_2026', 5)": 1,
+    "('rfpl_2026', 6)": 1,
+    "('rfpl_2026', 7)": 1,
+    "('rfpl_2026', 8)": 1,
+    "('rfpl_2026', 9)": 1,
+    "('rfpl_2026', 10)": 1,
+    "('rfpl_2026', 11)": 1,
+    "('rfpl_2026', 12)": 1
+  },
+  "duplicate_sources": [
+    {
+      "scope": [
+        433,
+        "championship_2026",
+        10
+      ],
+      "sources": [
+        "https://fantasy-h2h.ru/h2h/team_match_data/514513",
+        "https://fantasy-h2h.ru/h2h/team_match_data/514484",
+        "https://fantasy-h2h.ru/h2h/team_match_data/514499"
+      ]
+    },
+    {
+      "scope": [
+        433,
+        "championship_2026",
+        10
+      ],
+      "sources": [
+        "https://fantasy-h2h.ru/h2h/team_match_data/514513",
+        "https://fantasy-h2h.ru/h2h/team_match_data/514484",
+        "https://fantasy-h2h.ru/h2h/team_match_data/514499"
+      ]
+    },
+    {
+      "scope": [
+        433,
+        "championship_2026",
+        10
+      ],
+      "sources": [
+        "https://fantasy-h2h.ru/h2h/team_match_data/514513",
+        "https://fantasy-h2h.ru/h2h/team_match_data/514484",
+        "https://fantasy-h2h.ru/h2h/team_match_data/514499"
+      ]
+    }
+  ],
+  "championship_rounds": [
+    {
+      "round": 1,
+      "tour": 7477,
+      "index": 9411
+    },
+    {
+      "round": 2,
+      "tour": 7484,
+      "index": 9412
+    },
+    {
+      "round": 3,
+      "tour": 7494,
+      "index": 9413
+    },
+    {
+      "round": 4,
+      "tour": 7506,
+      "index": 9414
+    },
+    {
+      "round": 5,
+      "tour": 7517,
+      "index": 9415
+    },
+    {
+      "round": 6,
+      "tour": 7520,
+      "index": 9416
+    },
+    {
+      "round": 7,
+      "tour": 7527,
+      "index": 9417
+    },
+    {
+      "round": 8,
+      "tour": 7542,
+      "index": 9418
+    },
+    {
+      "round": 9,
+      "tour": 7559,
+      "index": 9419
+    },
+    {
+      "round": 10,
+      "tour": 7579,
+      "index": 9421
+    },
+    {
+      "round": 11,
+      "tour": 7593,
+      "index": 9422
+    }
+  ],
+  "state_round_counts": {
+    "('rfpl_2026', 1)": 722,
+    "('rfpl_2026', 2)": 722,
+    "('rfpl_2026', 3)": 722,
+    "('rfpl_2026', 4)": 722,
+    "('rfpl_2026', 5)": 722,
+    "('rfpl_2026', 6)": 722,
+    "('rfpl_2026', 7)": 722,
+    "('rfpl_2026', 8)": 722,
+    "('rfpl_2026', 9)": 722,
+    "('rfpl_2026', 10)": 722,
+    "('rfpl_2026', 11)": 722,
+    "('rfpl_2026', 12)": 722,
+    "('championship_2026', 1)": 435,
+    "('championship_2026', 2)": 435,
+    "('championship_2026', 3)": 435,
+    "('championship_2026', 4)": 435,
+    "('championship_2026', 5)": 435,
+    "('championship_2026', 6)": 435,
+    "('championship_2026', 7)": 435,
+    "('championship_2026', 8)": 435,
+    "('championship_2026', 9)": 435,
+    "('championship_2026', 10)": 1281,
+    "('portugal_2026', 1)": 412,
+    "('portugal_2026', 2)": 412,
+    "('portugal_2026', 3)": 412,
+    "('portugal_2026', 4)": 412,
+    "('portugal_2026', 5)": 412,
+    "('portugal_2026', 6)": 412,
+    "('portugal_2026', 7)": 412,
+    "('portugal_2026', 8)": 412,
+    "('portugal_2026', 9)": 412,
+    "('eredivisie_2026', 1)": 435,
+    "('eredivisie_2026', 2)": 435,
+    "('eredivisie_2026', 3)": 435,
+    "('eredivisie_2026', 4)": 435,
+    "('eredivisie_2026', 5)": 435,
+    "('eredivisie_2026', 6)": 435,
+    "('eredivisie_2026', 7)": 435,
+    "('eredivisie_2026', 8)": 435,
+    "('eredivisie_2026', 9)": 435,
+    "('eredivisie_2026', 10)": 435,
+    "('turkey_2026', 1)": 416,
+    "('turkey_2026', 2)": 416,
+    "('turkey_2026', 3)": 416,
+    "('turkey_2026', 4)": 416,
+    "('turkey_2026', 5)": 416,
+    "('turkey_2026', 6)": 416,
+    "('turkey_2026', 7)": 416,
+    "('turkey_2026', 8)": 416,
+    "('turkey_2026', 9)": 416,
+    "('epl_2026', 1)": 734,
+    "('epl_2026', 2)": 734,
+    "('epl_2026', 3)": 734,
+    "('epl_2026', 4)": 734,
+    "('epl_2026', 5)": 734,
+    "('epl_2026', 6)": 734,
+    "('epl_2026', 7)": 734,
+    "('epl_2026', 8)": 734,
+    "('la_liga_2026', 1)": 640,
+    "('la_liga_2026', 2)": 640,
+    "('la_liga_2026', 3)": 640,
+    "('la_liga_2026', 4)": 640,
+    "('la_liga_2026', 5)": 640,
+    "('la_liga_2026', 6)": 640,
+    "('la_liga_2026', 7)": 640,
+    "('la_liga_2026', 8)": 640,
+    "('la_liga_2026', 9)": 640,
+    "('la_liga_2026', 10)": 640,
+    "('seria_a_2026', 1)": 651,
+    "('seria_a_2026', 2)": 651,
+    "('seria_a_2026', 3)": 651,
+    "('seria_a_2026', 4)": 651,
+    "('seria_a_2026', 5)": 651,
+    "('seria_a_2026', 6)": 651,
+    "('seria_a_2026', 7)": 651,
+    "('seria_a_2026', 8)": 651,
+    "('france_2026', 1)": 545,
+    "('france_2026', 2)": 545,
+    "('france_2026', 3)": 545,
+    "('france_2026', 4)": 545,
+    "('france_2026', 5)": 545,
+    "('france_2026', 6)": 545,
+    "('france_2026', 7)": 545,
+    "('france_2026', 8)": 545,
+    "('bundesliga_2026', 1)": 605,
+    "('bundesliga_2026', 2)": 605,
+    "('bundesliga_2026', 3)": 605,
+    "('bundesliga_2026', 4)": 605,
+    "('bundesliga_2026', 5)": 605,
+    "('bundesliga_2026', 6)": 605,
+    "('bundesliga_2026', 7)": 605,
+    "('liga_europa_2026', 1)": 507,
+    "('liga_europa_2026', 2)": 507,
+    "('liga_europa_2026', 3)": 507,
+    "('ucl_2026', 1)": 671,
+    "('ucl_2026', 2)": 1342,
+    "('championship_2026', 11)": 24
+  },
+  "round_coverage": [
+    [
+      "championship_2026",
+      11
+    ]
+  ]
+}

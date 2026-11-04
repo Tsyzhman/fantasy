@@ -1,0 +1,323 @@
+{
+  "commit": "269980b7bbc8d16c850aad89229423f5a2383346",
+  "priceDescending": [
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "5.6"
+        },
+        {
+          "label": "5R",
+          "value": "28"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "11"
+        },
+        {
+          "label": "Alt",
+          "value": "5.2"
+        }
+      ],
+      "name": "Э. Холанд"
+    },
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "6.5"
+        },
+        {
+          "label": "5R",
+          "value": "32"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "11"
+        },
+        {
+          "label": "Alt",
+          "value": "6.8"
+        }
+      ],
+      "name": "Б. Фернандеш"
+    },
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "5.9"
+        },
+        {
+          "label": "5R",
+          "value": "30.3"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "10"
+        },
+        {
+          "label": "Alt",
+          "value": "6.3"
+        }
+      ],
+      "name": "К. Палмер"
+    },
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "5"
+        },
+        {
+          "label": "5R",
+          "value": "23.8"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "9.5"
+        },
+        {
+          "label": "Alt",
+          "value": "0"
+        }
+      ],
+      "name": "Б. Сака"
+    },
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "4.1"
+        },
+        {
+          "label": "5R",
+          "value": "20.3"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "9.5"
+        },
+        {
+          "label": "Alt",
+          "value": "0"
+        }
+      ],
+      "name": "А. Семеньо"
+    },
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "6.6"
+        },
+        {
+          "label": "5R",
+          "value": "32.3"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "9"
+        },
+        {
+          "label": "Alt",
+          "value": "6.7"
+        }
+      ],
+      "name": "Б. Мбемо"
+    }
+  ],
+  "priceAscending": [
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "0"
+        },
+        {
+          "label": "5R",
+          "value": "0"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "4"
+        },
+        {
+          "label": "Alt",
+          "value": "0"
+        }
+      ],
+      "name": "Д. Баттон"
+    },
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "0.1"
+        },
+        {
+          "label": "5R",
+          "value": "0.5"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "4"
+        },
+        {
+          "label": "Alt",
+          "value": "0"
+        }
+      ],
+      "name": "З. Эбботт"
+    },
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "0.2"
+        },
+        {
+          "label": "5R",
+          "value": "1.1"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "4"
+        },
+        {
+          "label": "Alt",
+          "value": "0"
+        }
+      ],
+      "name": "М. Эльборг"
+    },
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "0"
+        },
+        {
+          "label": "5R",
+          "value": "0"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "4"
+        },
+        {
+          "label": "Alt",
+          "value": "0"
+        }
+      ],
+      "name": "Т. Адарамола"
+    },
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "1.6"
+        },
+        {
+          "label": "5R",
+          "value": "8.7"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "4"
+        },
+        {
+          "label": "Alt",
+          "value": "3.5"
+        }
+      ],
+      "name": "С. Мфуни"
+    },
+    {
+      "metrics": [
+        {
+          "label": "NextСлед.",
+          "value": "0.2"
+        },
+        {
+          "label": "5R",
+          "value": "1"
+        },
+        {
+          "label": "PriceЦена",
+          "value": "4"
+        },
+        {
+          "label": "Alt",
+          "value": "0"
+        }
+      ],
+      "name": "Д. Латибодьер"
+    }
+  ],
+  "forecastDescending": [
+    {
+      "name": "Б. Мбемо",
+      "value": "6.6"
+    },
+    {
+      "name": "М. Тавернье",
+      "value": "6.6"
+    },
+    {
+      "name": "Б. Фернандеш",
+      "value": "6.5"
+    },
+    {
+      "name": "Х. Энсисо",
+      "value": "6.5"
+    },
+    {
+      "name": "М. Роджерс",
+      "value": "6.4"
+    },
+    {
+      "name": "Э. Фе",
+      "value": "6.2"
+    }
+  ],
+  "forecastAscending": [
+    {
+      "name": "Д. Баттон",
+      "value": "0"
+    },
+    {
+      "name": "Р. Борджес",
+      "value": "0"
+    },
+    {
+      "name": "Т. Адарамола",
+      "value": "0"
+    },
+    {
+      "name": "Б. Джонсон",
+      "value": "0"
+    },
+    {
+      "name": "Х. Картрайт",
+      "value": "0"
+    },
+    {
+      "name": "Д. Аджайи",
+      "value": "0"
+    }
+  ],
+  "layout320": {
+    "documentWidth": 305,
+    "sorting": [
+      {
+        "height": 63.75,
+        "width": 250.6999969482422,
+        "x": 27.05000114440918
+      }
+    ],
+    "width": 320
+  },
+  "squadChanges": false
+}

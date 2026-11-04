@@ -2,20 +2,34 @@
 
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { assertReleaseRevision } from "./verify-release-revision.mjs";
 
-const argumentsSet = new Set(process.argv.slice(2));
-const supportedArguments = new Set(["--allow-unpushed", "--ci"]);
-const unknownArguments = [...argumentsSet].filter((argument) => !supportedArguments.has(argument));
+// @spec spec://common/INFRA-006-continuous-deployment#contracts
 
-if (unknownArguments.length > 0) {
-  fail(`Unknown argument(s): ${unknownArguments.join(", ")}`);
+const argumentsList = process.argv.slice(2);
+let allowUnpushed = false;
+let ciMode = false;
+let expectedCommit;
+for (let index = 0; index < argumentsList.length; index += 1) {
+  const argument = argumentsList[index];
+  if (argument === "--allow-unpushed") allowUnpushed = true;
+  else if (argument === "--ci") ciMode = true;
+  else if (argument === "--expected-commit") {
+    if (expectedCommit !== undefined) fail("--expected-commit may be provided only once.");
+    expectedCommit = argumentsList[++index];
+    if (!/^[0-9a-f]{40}$/.test(expectedCommit ?? "")) fail("--expected-commit requires a full lowercase commit SHA.");
+  } else fail(`Unknown argument: ${argument}`);
 }
+if (expectedCommit !== undefined && !ciMode) fail("--expected-commit requires --ci.");
 
-const allowUnpushed = argumentsSet.has("--allow-unpushed");
-const ciMode = argumentsSet.has("--ci");
 const requiredTrackedFiles = [
   "CHANGELOG.md",
   ".github/workflows/deploy-production.yml",
+  ".github/workflows/check.yml",
+  "scripts/verify-release-revision.mjs",
+  "scripts/release-validation.test.mjs",
+  "scripts/prepare-deploy-ssh.py",
+  "scripts/prepare-deploy-ssh.test.py",
   "Dockerfile",
   "package-lock.json",
   "package.json",
@@ -62,9 +76,12 @@ const branch = git(["branch", "--show-current"]) || "detached";
 const packageVersion = JSON.parse(readFileSync("package.json", "utf8")).version;
 
 if (ciMode) {
-  const githubSha = process.env.GITHUB_SHA?.trim();
-  if (githubSha && githubSha !== commit) {
-    fail(`GitHub checkout SHA ${githubSha} does not match HEAD ${commit}.`);
+  // Manual dispatch may package a different ref from the workflow's own SHA.
+  // The caller freezes it once, validates it fully and supplies that same SHA here.
+  try {
+    assertReleaseRevision(expectedCommit ?? process.env.GITHUB_SHA?.trim(), commit);
+  } catch (error) {
+    fail(error.message);
   }
 } else if (!allowUnpushed) {
   const remoteRefs = git([

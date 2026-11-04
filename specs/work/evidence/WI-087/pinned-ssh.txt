@@ -1,0 +1,11 @@
+test_cli_reports_a_missing_secret_without_echoing_other_secrets (__main__.PinnedSshTests.test_cli_reports_a_missing_secret_without_echoing_other_secrets) ... ok
+test_ipv6_hosts_keep_the_existing_ssh_endpoint_capability (__main__.PinnedSshTests.test_ipv6_hosts_keep_the_existing_ssh_endpoint_capability) ... ok
+test_missing_or_invalid_trust_fails_before_installing_ssh_material (__main__.PinnedSshTests.test_missing_or_invalid_trust_fails_before_installing_ssh_material) ... ok
+test_nondefault_port_and_hashed_trusted_keys_are_supported (__main__.PinnedSshTests.test_nondefault_port_and_hashed_trusted_keys_are_supported) ... ok
+test_real_openssh_rejects_a_changed_host_key_without_learning_it (__main__.PinnedSshTests.test_real_openssh_rejects_a_changed_host_key_without_learning_it) ... ok
+test_valid_key_replaces_files_without_duplicates_and_keeps_strict_options (__main__.PinnedSshTests.test_valid_key_replaces_files_without_duplicates_and_keeps_strict_options) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 1.534s
+
+OK

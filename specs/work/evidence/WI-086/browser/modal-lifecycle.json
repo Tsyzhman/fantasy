@@ -1,0 +1,14 @@
+{
+  "cycles": 30,
+  "before": {
+    "keydown": 0,
+    "focusin": 0,
+    "heapBytes": 7229776
+  },
+  "after": {
+    "keydown": 0,
+    "focusin": 0,
+    "heapBytes": 8196864
+  },
+  "retainedHeapDeltaBytes": 967088
+}

@@ -1,0 +1,33 @@
+✔ telegram linking lifecycle, conflicts and unsubscribe (173.6545ms)
+✔ expired pending candidates and challenges are purged (13.2721ms)
+✔ telegram rate limits are atomic and report retry windows (8.2483ms)
+✔ removed tournament subscription atomically cancels pending reports (29.1402ms)
+✔ disabled tournament subscription atomically cancels pending reports (16.3157ms)
+✔ webhook accepts a code once and stores the update durably (26.0583ms)
+✔ polling replays a failed /stop from durable inbox even after the Telegram offset advances (115.4682ms)
+✔ polling recovers before claim without competing with a live handler (12.728ms)
+✔ polling recovers abandoned claim without competing with a live handler (12.3134ms)
+✔ polling recovers live claim without competing with a live handler (5.3706ms)
+✔ an unknown service-reply send is not repeated by inbox recovery (12.8426ms)
+✔ a failed inbox completion rolls back /stop before polling retries it (20.408ms)
+✔ an older failed command cannot override a newer /stop (16.2216ms)
+✔ an older failed command cannot override a newer /resume (15.0322ms)
+✔ a FAILED resume cannot override a whitespace-normalized stop "/stop " (15.5268ms)
+✔ a FAILED resume cannot override a whitespace-normalized stop "\n/stop\n" (15.0364ms)
+✔ a FAILED resume cannot override a whitespace-normalized stop "\t  /stop﻿\r\n" (15.2716ms)
+✔ a FAILED resume is superseded by a newer kicked event for its chat (16.4322ms)
+✔ a PROCESSING resume cannot override a whitespace-normalized stop "/stop " (15.2048ms)
+✔ a PROCESSING resume cannot override a whitespace-normalized stop "\n/stop\n" (15.3331ms)
+✔ a PROCESSING resume cannot override a whitespace-normalized stop "\t  /stop﻿\r\n" (15.9523ms)
+✔ a PROCESSING resume is superseded by a newer kicked event for its chat (14.2943ms)
+✔ an unrecognized command boundary does not supersede a failed stop "/resume later" (14.3166ms)
+✔ an unrecognized command boundary does not supersede a failed stop "/resume​" (14.95ms)
+✔ one duplicate reclaims a FAILED inbox entry and completed updates remain deduplicated (106.1075ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1649.2697

@@ -1,0 +1,2 @@
+CHECKS {'unique_squads': 200, 'all_xi_11': True, 'missing_lineups': 2, 'active_squads_per_franchise': {'-1': 0, '3': 48, '1': 48, '2': 48}, 'missing_active_state': 0, 'future_history': 0, 'duplicate_selections': 0, 'source_fnl_files': 0, 'freeze_verified': 0}
+ACQUISITION {'from': '2026-10-22T00:00:00Z', 'to': '2026-10-22T00:00:00Z', 'cached_requests': 1, 'unique_urls': 1, 'http_bytes': 131}

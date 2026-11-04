@@ -1,4 +1,5 @@
 "use client";
+/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
 
 import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type TableHTMLAttributes } from "react";
 
@@ -59,16 +60,18 @@ export function SortableTable({ className, serverSortParam, defaultSort, sortRef
 
   function sortFromEvent(target: EventTarget | null) {
     const table = tableRef.current;
-    if (!table || !(target instanceof Element)) return;
-    if (target.closest("[data-column-resize-handle]")) return;
+    if (!table || !(target instanceof Element)) return false;
 
     const header = target.closest("th");
-    if (!header || !table.contains(header) || header.closest("table") !== table) return;
-    if (header.dataset.sortable !== "true") return;
+    if (!header || !table.tHead?.contains(header) || header.closest("table") !== table) return false;
+    if (header.dataset.sortable !== "true") return false;
+
+    const control = target.closest("a, button, input, select, textarea, summary, [contenteditable]:not([contenteditable='false']), [role='button'], [role='link'], [role='checkbox'], [role='switch'], [role='combobox'], [tabindex], [data-column-resize-handle]");
+    if (control && control !== header) return false;
 
     if (serverSortParam && header.dataset.sortKey) {
       navigateToServerSort(table, header, serverSortParam);
-      return;
+      return true;
     }
 
     if (managedClientSort) {
@@ -79,7 +82,7 @@ export function SortableTable({ className, serverSortParam, defaultSort, sortRef
         : defaultDirectionForColumn(table, header.cellIndex, header);
       markActiveHeader(table, header, direction);
       notifyClientSort(table, onClientSortChange, { key, direction });
-      return;
+      return true;
     }
 
     sortTableBody(table, header);
@@ -90,16 +93,16 @@ export function SortableTable({ className, serverSortParam, defaultSort, sortRef
         direction
       });
     }
+    return true;
   }
 
   function handleClick(event: MouseEvent<HTMLTableElement>) {
-    sortFromEvent(event.target);
+    if (!event.defaultPrevented) sortFromEvent(event.target);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTableElement>) {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    sortFromEvent(event.target);
-    event.preventDefault();
+    if (event.defaultPrevented || (event.key !== "Enter" && event.key !== " ")) return;
+    if (sortFromEvent(event.target)) event.preventDefault();
   }
 
   return (

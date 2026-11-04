@@ -8,10 +8,11 @@ import {
 import { defaultFantasyHistorySettings, fantasyHistorySettingsKey } from "@/machete/squad-history-settings";
 import { fantasyProviderRoundKey } from "@/machete/squad_planner";
 import { classifyDeadlinePlayers, type DeadlinePlayerSignalInput } from "./classifier";
-import { DEADLINE_DELIVERY_HOUR, moscowDateKey, moscowDateTimeToUtc } from "./config";
+import { DEADLINE_DELIVERY_HOUR, deadlineClock, moscowDateKey, moscowDateTimeToUtc } from "./config";
 import { renderDeadlineReport, type DeadlineFixtureLine, type DeadlinePopularitySection } from "./renderer";
 import { deadlineTag } from "./tags";
 import { deadlineXiSignal, type DeadlineXiFixture } from "./xi";
+import { lockDeadlinePublication, type ClaimedStageJob } from "./publication";
 
 /**
  * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#pipeline
@@ -47,12 +48,14 @@ function numericPlayerId(value: string): bigint | null {
  */
 export async function buildCampaignReports(
   prisma: PrismaClient,
-  input: { campaignId: string; now?: Date; maxSubscriptions?: number }
+  input: { campaignId: string; now?: Date; maxSubscriptions?: number; stageJob?: ClaimedStageJob; clock?: () => Date }
 ): Promise<BuildReportsResult> {
-  const now = input.now ?? new Date();
+  const clock = input.clock ?? deadlineClock(input.now);
+  const now = clock();
   const result: BuildReportsResult = { built: 0, skipped: 0, degraded: 0, outboxParts: 0 };
   const campaign = await prisma.deadlineCampaign.findUnique({ where: { id: input.campaignId } });
-  if (!campaign) return result;
+  if (!campaign || !["PLANNED", "ACTIVE", "BUILT", "DELIVERING"].includes(campaign.status)
+    || (input.stageJob && campaign.inputVersion !== input.stageJob.inputVersion)) return result;
   const contest = await prisma.fantasyContest.findUnique({
     where: { id: campaign.contestId },
     select: { id: true, name: true, leagueId: true, season: true, provider: true }
@@ -146,7 +149,7 @@ export async function buildCampaignReports(
   }
 
   const subscriptions = await prisma.telegramSubscription.findMany({
-    where: { contestId: contest.id, enabled: true, link: { state: "ACTIVE" } },
+    where: { contestId: contest.id, season: campaign.season, enabled: true, link: { state: "ACTIVE", consentAt: { not: null } } },
     include: { link: true },
     take: input.maxSubscriptions ?? 500
   });
@@ -176,7 +179,9 @@ export async function buildCampaignReports(
         popularitySections,
         subscription,
         deliveryOpen,
-        now
+        now,
+        stageJob: input.stageJob,
+        clock
       });
       if (built) {
         result.built += 1;
@@ -201,7 +206,7 @@ function datePartsFromKey(dateKey: string): { year: number; month: number; day: 
 async function buildOneReport(
   prisma: PrismaClient,
   input: {
-    campaign: { id: string; contestId: string; season: string; providerRoundId: string; reportDate: string | null; deadlineAt: Date | null };
+    campaign: { id: string; contestId: string; season: string; providerRoundId: string; reportDate: string | null; deadlineAt: Date | null; inputVersion: number };
     contest: { id: string; name: string; leagueId: bigint; season: string; provider: string };
     roundKey: string | null;
     roundLabel: string | null;
@@ -214,13 +219,17 @@ async function buildOneReport(
     popularitySections: DeadlinePopularitySection[];
     subscription: {
       id: string;
+      linkId: string;
       userId: string;
       squadId: string | null;
       sourcePreference: string;
+      updatedAt: Date;
       link: { linkVersion: number };
     };
     deliveryOpen: Date;
     now: Date;
+    stageJob?: ClaimedStageJob;
+    clock: () => Date;
   }
 ): Promise<{ parts: number; degraded: boolean } | null> {
   const degradedNotes: string[] = [];
@@ -360,13 +369,30 @@ async function buildOneReport(
   });
   const renderHash = createHash("sha256").update(rendered.parts.join("\n--part--\n")).digest("hex");
 
-  await prisma.$transaction(async (tx) => {
+  const published = await prisma.$transaction(async (tx) => {
+    if (!await lockDeadlinePublication(tx, {
+      campaignId: input.campaign.id, inputVersion: input.campaign.inputVersion, job: input.stageJob,
+      linkId: input.subscription.linkId, userId: input.subscription.userId
+    }, input.clock)) return false;
+    // Serializes publication with pause/unlink/subscription replacement. No HTTP
+    // or report computation occurs while these short-lived locks are held.
+    const subscription = await tx.telegramSubscription.findFirst({ where: {
+      id: input.subscription.id, userId: input.subscription.userId, enabled: true,
+      updatedAt: input.subscription.updatedAt,
+      link: { id: input.subscription.linkId, state: "ACTIVE", consentAt: { not: null }, linkVersion: input.subscription.link.linkVersion }
+    }, select: { id: true } });
+    if (!subscription) return false;
+    const started = await tx.telegramOutbox.findFirst({ where: {
+      userId: input.subscription.userId, campaignId: input.campaign.id, reportKind: "DEADLINE_REPORT",
+      state: { in: ["SENT", "SENDING", "DELIVERY_UNKNOWN"] }
+    }, select: { id: true } });
+    if (started) return false;
     const report = await tx.deadlineUserReport.upsert({
-      where: { userId_campaignId_reportVersion: { userId: input.subscription.userId, campaignId: input.campaign.id, reportVersion: 1 } },
+      where: { userId_campaignId_reportVersion: { userId: input.subscription.userId, campaignId: input.campaign.id, reportVersion: input.campaign.inputVersion } },
       create: {
         userId: input.subscription.userId,
         campaignId: input.campaign.id,
-        reportVersion: 1,
+        reportVersion: input.campaign.inputVersion,
         status: degraded.length > 0 ? "DEGRADED" : "READY",
         renderHash,
         partsCount: rendered.partsCount,
@@ -374,14 +400,17 @@ async function buildOneReport(
         inputRefs: {
           contestId: input.contest.id,
           providerRoundId: input.campaign.providerRoundId,
-          season: input.contest.season
+          season: input.contest.season,
+          inputVersion: input.campaign.inputVersion
         } as unknown as Prisma.InputJsonValue
       },
       update: {
         status: degraded.length > 0 ? "DEGRADED" : "READY",
         renderHash,
         partsCount: rendered.partsCount,
-        findings: classified.findings as unknown as Prisma.InputJsonValue
+        findings: classified.findings as unknown as Prisma.InputJsonValue,
+        inputRefs: { contestId: input.contest.id, providerRoundId: input.campaign.providerRoundId,
+          season: input.contest.season, inputVersion: input.campaign.inputVersion }
       }
     });
     for (let index = 0; index < rendered.parts.length; index += 1) {
@@ -392,8 +421,9 @@ async function buildOneReport(
       });
       if (existing) {
         await tx.telegramOutbox.updateMany({
-          where: { id: existing.id, state: { in: ["PENDING", "FAILED"] } },
-          data: { text, reportVersion: report.reportVersion, partsCount: rendered.partsCount, linkVersion: input.subscription.link.linkVersion, nextAttemptAt: input.deliveryOpen }
+          where: { id: existing.id, state: { in: ["PENDING", "FAILED", "STALE"] } },
+          data: { text, reportVersion: report.reportVersion, partsCount: rendered.partsCount, linkVersion: input.subscription.link.linkVersion, nextAttemptAt: input.deliveryOpen,
+            ...(existing.state === "STALE" ? { state: "PENDING", attempts: 0, lastError: null } : {}) }
         });
       } else {
         await tx.telegramOutbox.create({
@@ -412,7 +442,12 @@ async function buildOneReport(
         });
       }
     }
+    await tx.telegramOutbox.updateMany({ where: {
+      userId: input.subscription.userId, campaignId: input.campaign.id, reportKind: "DEADLINE_REPORT",
+      partNumber: { gt: rendered.partsCount }, state: { in: ["PENDING", "FAILED", "STALE"] }
+    }, data: { state: "CANCELLED", leaseToken: null, leaseUntil: null } });
+    return true;
   });
 
-  return { parts: rendered.partsCount, degraded: degraded.length > 0 };
+  return published ? { parts: rendered.partsCount, degraded: degraded.length > 0 } : null;
 }

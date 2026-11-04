@@ -1,0 +1,15 @@
+✔ only the full resolved SHA identifies validation and packaging (1.0111ms)
+✔ the revision CLI rejects a different checkout before packaging (332.0258ms)
+✔ source verifier rejects missing, ambiguous and non-CI revision overrides (175.6217ms)
+✔ packaging requires a fresh full validation of the same frozen source (0.6122ms)
+✔ the reusable validator keeps every required check mandatory (0.575ms)
+✔ CI and all three official base stages use the same exact patched Node (1.1159ms)
+✔ every production SSH and SCP call uses the isolated strict host configuration (0.8296ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 581.4811

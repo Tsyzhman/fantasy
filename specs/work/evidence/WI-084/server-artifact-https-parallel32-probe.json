@@ -1,0 +1,9 @@
+{
+  "connections": 32,
+  "requestedBytes": 33554432,
+  "completed": false,
+  "outerDeadlineSeconds": 55,
+  "result": "Did not complete within the bounded diagnostic deadline; no throughput claim",
+  "remainingRemoteProbeProcesses": 0,
+  "persistentWrites": false
+}

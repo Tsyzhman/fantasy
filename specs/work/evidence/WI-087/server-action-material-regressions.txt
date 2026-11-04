@@ -1,0 +1,12 @@
+✔ removes both encryption keys and private cache while retaining action IDs (40.5023ms)
+✔ rejects an unexpected key without including it in diagnostics (11.233ms)
+✔ rejects a secret in an unexpected build file, including a stream boundary (17.6818ms)
+✔ rejects a changed edge runtime contract (12.1679ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 201.633

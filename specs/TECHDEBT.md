@@ -13,18 +13,18 @@ Register of current engineering trade-offs and risks.
 - Risk: scheduled franchise refreshes can fail while the last successful snapshot remains served.
 - Trigger: aggregation of the full current dataset alongside the worker's other processes within its 4 GiB limit.
 - Mitigation: profile and bound aggregation peak memory, or isolate the collector with an explicit resource budget; verify full collection and atomic publication under concurrent worker load. Do not silently raise the limit or delete source data.
-- Work: —; evidence in `specs/work/evidence/WI-076/production-verification.json`.
+- Work: WI-088 deployed columnar/streamed computation and an isolated 3.5 GiB job in 0.3.149. The November 4 full run reached 68,368 source squads, then failed during board fixture identity validation before computation/import. Acquisition sampled cgroup maximum 1,445,416,960 bytes with zero OOM; this does not validate the full aggregate/import budget. Successful fresh publication remains open. Evidence: `specs/work/evidence/WI-088/production-run-summary.json`; original failure in `specs/work/evidence/WI-076/production-verification.json`.
 
 ### TD-009: Development tooling retains dependency advisories
 
 - Area: build and lint dependencies.
 - Related specs: `spec://common/structure#root`.
 - Introduced by: existing locked tooling; discovered in `WI-052`.
-- Current state: after patching the two production audit blockers, the full npm audit still reports nine development-only findings (seven high, two moderate) through braces and postcss-selector-parser in Tailwind/Next lint tooling. The production audit reports zero findings.
-- Risk: malicious glob or selector input can exhaust a development/build process; the current production audit does not include these development packages.
+- Current state: WI-084 rechecked the 0.3.149 lockfile on 2026-11-04. Production audit reports zero findings; full `npm audit --include=dev` reports 18 affected package entries (one high, 17 moderate), propagated from three advisories in development tooling: zod <4.6.6, postcss-selector-parser <6.1.5 and minimatch <11.0.1. These are affected dependency entries, not 18 distinct advisories. The earlier nine-finding count is obsolete.
+- Risk: oversized schema collections, glob or selector input can exhaust a development/build process; the production audit does not include these development packages.
 - Trigger: build, lint or watcher processing specially crafted patterns/selectors, or making the complete development audit a required CI gate.
-- Mitigation: review a compatible patched upstream release or bounded compatibility replacement, then verify the full audit, CSS output and existing interface. The audit's proposed Tailwind major upgrade/Next lint downgrade is not applied as a routine CI repair.
-- Work: —; evidence in `specs/work/evidence/WI-052/verification.json`.
+- Mitigation: review patched upstream dependency ranges (zod 4.6.6, postcss-selector-parser 6.1.5/7.1.6 and minimatch 11.0.1), then verify full audit, lint behavior, types, CSS output and the existing interface. Do not apply npm's proposed downgrade to ESLint 4 or force a minimatch major override across incompatible callers.
+- Work: WI-084 follow-up plan; evidence in `specs/work/evidence/WI-084/npm-audit-full-final.json`; original evidence in `specs/work/evidence/WI-052/verification.json`.
 
 ### TD-001: Доставка дедлайна идёт тиком в worker-процессе
 - Area: `deadline-reports`

@@ -1,0 +1,47 @@
+✔ unchanged delivered campaigns perform zero writes across repeated delivery ticks (19.5157ms)
+✔ blank is reported only when the calendar is complete (1.605ms)
+✔ out-of-XI requires coverage of every fixture in a double round (0.1994ms)
+✔ true ALT zero differs from a rounded zero (0.1838ms)
+✔ missing ALT, mapping or a stale forecast produce an explicit unknown cause (0.2437ms)
+✔ an absent forecast is unavailable, while a stale forecast cannot establish out-of-XI (0.6245ms)
+✔ one player keeps several distinct reasons and the bench split follows the squad (0.1971ms)
+✔ report contains the tag, source, risks, plain schedule and popularity (1.0108ms)
+✔ the Russia example groups identical causes without repeating player degradation (0.5235ms)
+✔ out-of-XI groups by visible reasons and hides only missing ALT (0.4155ms)
+✔ grouped findings preserve lineup roles and partial coverage without duplicate summaries (0.3007ms)
+✔ general degradation stays visible once and never implies a completed risk check (0.1938ms)
+✔ published buys and sells are included up to 10 with source; missing publication omits the block (0.2956ms)
+✔ transfer popularity sections render the official top without points and without ownership deltas (0.4917ms)
+✔ report escapes HTML from dynamic values (0.2808ms)
+✔ missing kickoff no longer needs a fabricated time column (0.1276ms)
+✔ long reports split deterministically with the same tag and part numbers (5.4195ms)
+✔ deadline tags recognise Russian and English contest names (0.9546ms)
+✔ unknown contests require an explicit alias instead of a guessed tag (0.1485ms)
+✔ missing or foreign-source evidence is unavailable rather than stale (0.7733ms)
+✔ the same kickoff for another club does not prove fixture coverage (0.1679ms)
+✔ one lineup does not cover two matches or an ambiguous fixture (0.1441ms)
+✔ a newly checked past fixture remains inapplicable (0.1315ms)
+✔ successful unchanged checks refresh freshness; genuinely old or undated evidence remains stale (0.2117ms)
+✔ code generation uses 12 Crockford characters in three groups (0.9206ms)
+✔ manual code normalization accepts separators and Crockford confusions (0.2223ms)
+✔ secret generation returns 128-bit base64url (0.2667ms)
+✔ challenge derivation is stable per session and slot (0.6511ms)
+✔ digests depend on kind and key (0.2732ms)
+✔ slot advances every 15 seconds (0.1423ms)
+{"level":"warn","scope":"telegram:polling","message":"Telegram returned a webhook conflict; delete the webhook before polling.","timestamp":"2026-11-04T09:26:43.094Z","description":"Conflict: can't use getUpdates method while webhook is active"}
+✔ poll offset starts at one for an empty inbox and continues after the maximum (0.8371ms)
+✔ polling processes a batch once and advances the offset (1.4026ms)
+✔ polling resumes after the stored inbox maximum and does not replay old updates (0.3989ms)
+✔ a webhook conflict stops polling instead of retrying blindly (1.82ms)
+✔ relay path validation accepts only allowlisted bot methods (0.9262ms)
+✔ telegram socket path prefers its own variable and falls back to the shared VPN relay (0.1523ms)
+﹣ sendTelegramMessage posts JSON through the relay socket without touching api.telegram.org (0.087ms) # Unix sockets are not available on Windows.
+✔ relay transport refuses non-allowlisted bot methods before connecting (0.4788ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 1645.8803

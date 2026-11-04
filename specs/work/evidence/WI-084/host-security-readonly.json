@@ -1,0 +1,227 @@
+{
+  "at": "2026-11-04T12:09:09.182380+00:00",
+  "os": {
+    "PRETTY_NAME": "Ubuntu 22.04.5 LTS",
+    "VERSION_ID": "22.04",
+    "ID": "ubuntu"
+  },
+  "kernel": "5.15.0-187-generic",
+  "dockerVersion": "29.5.2",
+  "caddyVersion": "v2.11.3 h1:/vFbdjcs2DtzcWTIxHybf5R5TspYFFThlZffChyBFHg=",
+  "sshGlobalDefaults": {
+    "permitrootlogin": "yes",
+    "pubkeyauthentication": "yes",
+    "passwordauthentication": "yes",
+    "kbdinteractiveauthentication": "no"
+  },
+  "rebootRequired": true,
+  "securityTimers": {
+    "apt-daily.timer": "enabled",
+    "apt-daily-upgrade.timer": "enabled",
+    "unattended-upgrades.service": "enabled"
+  },
+  "cachedUpgrades": {
+    "count": 16,
+    "packages": [
+      "caddy",
+      "containerd.io",
+      "docker-buildx-plugin",
+      "docker-ce-cli",
+      "docker-ce-rootless-extras",
+      "docker-ce",
+      "docker-compose-plugin",
+      "iproute2",
+      "libaudit-common",
+      "libaudit1",
+      "libgssapi-krb5-2",
+      "libk5crypto3",
+      "libkrb5-3",
+      "libkrb5support0",
+      "nano",
+      "qemu-guest-agent"
+    ],
+    "securityOriginCount": 0,
+    "liveRefreshPerformed": false
+  },
+  "aptMetadataNewestUtc": "2026-11-04T07:15:19+00:00",
+  "ufwState": "Status: active",
+  "tcpListeners": [
+    {
+      "port": 3000,
+      "binding": "loopback"
+    },
+    {
+      "port": 3007,
+      "binding": "loopback"
+    },
+    {
+      "port": 3011,
+      "binding": "loopback"
+    },
+    {
+      "port": 3010,
+      "binding": "loopback"
+    },
+    {
+      "port": 3009,
+      "binding": "loopback"
+    },
+    {
+      "port": 3008,
+      "binding": "loopback"
+    },
+    {
+      "port": 3015,
+      "binding": "loopback"
+    },
+    {
+      "port": 3014,
+      "binding": "loopback"
+    },
+    {
+      "port": 3013,
+      "binding": "loopback"
+    },
+    {
+      "port": 3012,
+      "binding": "loopback"
+    },
+    {
+      "port": 3019,
+      "binding": "loopback"
+    },
+    {
+      "port": 3018,
+      "binding": "loopback"
+    },
+    {
+      "port": 3017,
+      "binding": "loopback"
+    },
+    {
+      "port": 3016,
+      "binding": "loopback"
+    },
+    {
+      "port": 3023,
+      "binding": "loopback"
+    },
+    {
+      "port": 3022,
+      "binding": "loopback"
+    },
+    {
+      "port": 3021,
+      "binding": "loopback"
+    },
+    {
+      "port": 3020,
+      "binding": "loopback"
+    },
+    {
+      "port": 3027,
+      "binding": "loopback"
+    },
+    {
+      "port": 3026,
+      "binding": "loopback"
+    },
+    {
+      "port": 3025,
+      "binding": "loopback"
+    },
+    {
+      "port": 3024,
+      "binding": "loopback"
+    },
+    {
+      "port": 3031,
+      "binding": "loopback"
+    },
+    {
+      "port": 3028,
+      "binding": "loopback"
+    },
+    {
+      "port": 3035,
+      "binding": "loopback"
+    },
+    {
+      "port": 3033,
+      "binding": "loopback"
+    },
+    {
+      "port": 3038,
+      "binding": "loopback"
+    },
+    {
+      "port": 3041,
+      "binding": "loopback"
+    },
+    {
+      "port": 3040,
+      "binding": "loopback"
+    },
+    {
+      "port": 3056,
+      "binding": "loopback"
+    },
+    {
+      "port": 8765,
+      "binding": "loopback"
+    },
+    {
+      "port": 2019,
+      "binding": "loopback"
+    },
+    {
+      "port": 53,
+      "binding": "specific"
+    },
+    {
+      "port": 22,
+      "binding": "all"
+    },
+    {
+      "port": 5433,
+      "binding": "loopback"
+    },
+    {
+      "port": 22,
+      "binding": "all"
+    },
+    {
+      "port": 80,
+      "binding": "all"
+    },
+    {
+      "port": 443,
+      "binding": "all"
+    }
+  ],
+  "projectPortBindings": {
+    "/fantasy-scout-web": {
+      "3000/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "3000"
+        }
+      ]
+    },
+    "/fantasy-scout-worker": {},
+    "/fantasy-scout-postgres": {
+      "5432/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "5433"
+        }
+      ]
+    }
+  },
+  "tls": {
+    "protocol": "TLSv1.3",
+    "notBefore": "Sep 30 10:27:18 2026 GMT",
+    "notAfter": "Dec 29 10:27:17 2026 GMT",
+    "verifiedHostname": true
+  }
+}

@@ -1,0 +1,62 @@
+Listing tests:
+  [mobile-320] › ui-keyboard.spec.ts:30:5 › body controls retain native keyboard activation
+  [mobile-320] › ui-keyboard.spec.ts:55:5 › header sorting ignores nested controls and preserves keyboard resizing
+  [mobile-320] › ui-keyboard.spec.ts:84:5 › managed and server header sorting still use Enter and Space
+  [mobile-320] › ui-keyboard.spec.ts:102:5 › palette wraps dynamic results, closes Escape from a button and restores its trigger
+  [mobile-320] › ui-keyboard.spec.ts:136:5 › touch dialog wraps both directions, returns focus and survives a removed trigger
+  [mobile-320] › ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: en
+  [mobile-320] › ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: ru
+  [mobile-320] › ui-keyboard.spec.ts:182:5 › lineup replacement focuses the next step
+  [mobile-320] › ui-keyboard.spec.ts:191:5 › replacement during pool loading uses a visible focus fallback
+  [mobile-320] › ui-keyboard.spec.ts:210:5 › repeated palette cycles release document listeners and bound heap growth
+  [mobile-320] › ui-keyboard.spec.ts:245:5 › Ctrl+K keeps the focused palette visually above the touch dialog
+  [mobile-320] › ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+  [mobile-390] › ui-keyboard.spec.ts:30:5 › body controls retain native keyboard activation
+  [mobile-390] › ui-keyboard.spec.ts:55:5 › header sorting ignores nested controls and preserves keyboard resizing
+  [mobile-390] › ui-keyboard.spec.ts:84:5 › managed and server header sorting still use Enter and Space
+  [mobile-390] › ui-keyboard.spec.ts:102:5 › palette wraps dynamic results, closes Escape from a button and restores its trigger
+  [mobile-390] › ui-keyboard.spec.ts:136:5 › touch dialog wraps both directions, returns focus and survives a removed trigger
+  [mobile-390] › ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: en
+  [mobile-390] › ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: ru
+  [mobile-390] › ui-keyboard.spec.ts:182:5 › lineup replacement focuses the next step
+  [mobile-390] › ui-keyboard.spec.ts:191:5 › replacement during pool loading uses a visible focus fallback
+  [mobile-390] › ui-keyboard.spec.ts:210:5 › repeated palette cycles release document listeners and bound heap growth
+  [mobile-390] › ui-keyboard.spec.ts:245:5 › Ctrl+K keeps the focused palette visually above the touch dialog
+  [mobile-390] › ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+  [tablet-1024] › ui-keyboard.spec.ts:30:5 › body controls retain native keyboard activation
+  [tablet-1024] › ui-keyboard.spec.ts:55:5 › header sorting ignores nested controls and preserves keyboard resizing
+  [tablet-1024] › ui-keyboard.spec.ts:84:5 › managed and server header sorting still use Enter and Space
+  [tablet-1024] › ui-keyboard.spec.ts:102:5 › palette wraps dynamic results, closes Escape from a button and restores its trigger
+  [tablet-1024] › ui-keyboard.spec.ts:136:5 › touch dialog wraps both directions, returns focus and survives a removed trigger
+  [tablet-1024] › ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: en
+  [tablet-1024] › ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: ru
+  [tablet-1024] › ui-keyboard.spec.ts:182:5 › lineup replacement focuses the next step
+  [tablet-1024] › ui-keyboard.spec.ts:191:5 › replacement during pool loading uses a visible focus fallback
+  [tablet-1024] › ui-keyboard.spec.ts:210:5 › repeated palette cycles release document listeners and bound heap growth
+  [tablet-1024] › ui-keyboard.spec.ts:245:5 › Ctrl+K keeps the focused palette visually above the touch dialog
+  [tablet-1024] › ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+  [desktop-1440] › ui-keyboard.spec.ts:30:5 › body controls retain native keyboard activation
+  [desktop-1440] › ui-keyboard.spec.ts:55:5 › header sorting ignores nested controls and preserves keyboard resizing
+  [desktop-1440] › ui-keyboard.spec.ts:84:5 › managed and server header sorting still use Enter and Space
+  [desktop-1440] › ui-keyboard.spec.ts:102:5 › palette wraps dynamic results, closes Escape from a button and restores its trigger
+  [desktop-1440] › ui-keyboard.spec.ts:136:5 › touch dialog wraps both directions, returns focus and survives a removed trigger
+  [desktop-1440] › ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: en
+  [desktop-1440] › ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: ru
+  [desktop-1440] › ui-keyboard.spec.ts:182:5 › lineup replacement focuses the next step
+  [desktop-1440] › ui-keyboard.spec.ts:191:5 › replacement during pool loading uses a visible focus fallback
+  [desktop-1440] › ui-keyboard.spec.ts:210:5 › repeated palette cycles release document listeners and bound heap growth
+  [desktop-1440] › ui-keyboard.spec.ts:245:5 › Ctrl+K keeps the focused palette visually above the touch dialog
+  [desktop-1440] › ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+  [desktop-1920] › ui-keyboard.spec.ts:30:5 › body controls retain native keyboard activation
+  [desktop-1920] › ui-keyboard.spec.ts:55:5 › header sorting ignores nested controls and preserves keyboard resizing
+  [desktop-1920] › ui-keyboard.spec.ts:84:5 › managed and server header sorting still use Enter and Space
+  [desktop-1920] › ui-keyboard.spec.ts:102:5 › palette wraps dynamic results, closes Escape from a button and restores its trigger
+  [desktop-1920] › ui-keyboard.spec.ts:136:5 › touch dialog wraps both directions, returns focus and survives a removed trigger
+  [desktop-1920] › ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: en
+  [desktop-1920] › ui-keyboard.spec.ts:165:7 › touch replacement hands focus to visible name search: ru
+  [desktop-1920] › ui-keyboard.spec.ts:182:5 › lineup replacement focuses the next step
+  [desktop-1920] › ui-keyboard.spec.ts:191:5 › replacement during pool loading uses a visible focus fallback
+  [desktop-1920] › ui-keyboard.spec.ts:210:5 › repeated palette cycles release document listeners and bound heap growth
+  [desktop-1920] › ui-keyboard.spec.ts:245:5 › Ctrl+K keeps the focused palette visually above the touch dialog
+  [desktop-1920] › ui-keyboard.spec.ts:267:5 › responsive themes keep actual dialogs visible and contained
+Total: 60 tests in 1 file

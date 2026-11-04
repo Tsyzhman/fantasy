@@ -1,0 +1,846 @@
+{
+  "capturedAt": "2026-11-04T09:08:56.410184+00:00",
+  "sourceCommit": "158556f99c8cc9ba6ba929ddd69d776c61c88c04",
+  "method": "Public GET plus SSH PostgreSQL BEGIN READ ONLY; statement_timeout 12s; lock_timeout 1s; ROLLBACK. Aggregate/public sports identifiers only. No production writes.",
+  "health": [
+    {
+      "path": "/api/health/data-quality",
+      "http": 503,
+      "body": {
+        "healthy": false,
+        "results": [
+          {
+            "leagueId": "63",
+            "season": "2026/2027",
+            "healthy": false,
+            "ageHours": 2.148,
+            "status": "COMPLETED",
+            "gatePassed": false,
+            "forecastCoverage": 92.25,
+            "playerDataCoverage": 92.25,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 99.957,
+            "promotionLatencyCoverage": 100
+          },
+          {
+            "leagueId": "47",
+            "season": "2026/2027",
+            "healthy": true,
+            "ageHours": 2.145,
+            "status": "COMPLETED",
+            "gatePassed": true,
+            "forecastCoverage": 99.816,
+            "playerDataCoverage": 99.816,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 99.972,
+            "promotionLatencyCoverage": 100
+          },
+          {
+            "leagueId": "87",
+            "season": "2026/2027",
+            "healthy": true,
+            "ageHours": 2.144,
+            "status": "COMPLETED",
+            "gatePassed": true,
+            "forecastCoverage": 99.427,
+            "playerDataCoverage": 99.427,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 99.98,
+            "promotionLatencyCoverage": 100
+          },
+          {
+            "leagueId": "54",
+            "season": "2026/2027",
+            "healthy": false,
+            "ageHours": 2.143,
+            "status": "COMPLETED",
+            "gatePassed": false,
+            "forecastCoverage": 94.569,
+            "playerDataCoverage": 94.569,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 100,
+            "promotionLatencyCoverage": 100
+          },
+          {
+            "leagueId": "55",
+            "season": "2026/2027",
+            "healthy": true,
+            "ageHours": 2.142,
+            "status": "COMPLETED",
+            "gatePassed": true,
+            "forecastCoverage": 99.012,
+            "playerDataCoverage": 99.012,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 99.896,
+            "promotionLatencyCoverage": 100
+          },
+          {
+            "leagueId": "53",
+            "season": "2026/2027",
+            "healthy": false,
+            "ageHours": 2.141,
+            "status": "COMPLETED",
+            "gatePassed": false,
+            "forecastCoverage": 97.431,
+            "playerDataCoverage": 97.431,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 99.846,
+            "promotionLatencyCoverage": 100
+          },
+          {
+            "leagueId": "61",
+            "season": "2026/2027",
+            "healthy": false,
+            "ageHours": 2.141,
+            "status": "COMPLETED",
+            "gatePassed": false,
+            "forecastCoverage": 95.652,
+            "playerDataCoverage": 95.652,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 99.975,
+            "promotionLatencyCoverage": 100
+          },
+          {
+            "leagueId": "57",
+            "season": "2026/2027",
+            "healthy": true,
+            "ageHours": 2.14,
+            "status": "COMPLETED",
+            "gatePassed": true,
+            "forecastCoverage": 99.448,
+            "playerDataCoverage": 99.448,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 99.909,
+            "promotionLatencyCoverage": 100
+          },
+          {
+            "leagueId": "71",
+            "season": "2026/2027",
+            "healthy": false,
+            "ageHours": 2.139,
+            "status": "COMPLETED",
+            "gatePassed": false,
+            "forecastCoverage": 93.784,
+            "playerDataCoverage": 93.601,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 99.814,
+            "promotionLatencyCoverage": 100
+          },
+          {
+            "leagueId": "48",
+            "season": "2026/2027",
+            "healthy": true,
+            "ageHours": 2.138,
+            "status": "COMPLETED",
+            "gatePassed": true,
+            "forecastCoverage": 99.692,
+            "playerDataCoverage": 99.692,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 99.985,
+            "promotionLatencyCoverage": 100
+          },
+          {
+            "leagueId": "42",
+            "season": "2026/2027",
+            "healthy": false,
+            "ageHours": 2.137,
+            "status": "COMPLETED",
+            "gatePassed": false,
+            "forecastCoverage": 95.368,
+            "playerDataCoverage": 95.368,
+            "matchDataCoverage": 96.183,
+            "statRowCoverage": 100,
+            "promotionLatencyCoverage": 96.183
+          },
+          {
+            "leagueId": "73",
+            "season": "2026/2027",
+            "healthy": false,
+            "ageHours": 2.136,
+            "status": "COMPLETED",
+            "gatePassed": false,
+            "forecastCoverage": 92.242,
+            "playerDataCoverage": 92.242,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 99.832,
+            "promotionLatencyCoverage": 100
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/health/fantasy-prices",
+      "http": 503,
+      "body": {
+        "healthy": false,
+        "thresholds": {
+          "maximumAgeHours": 7,
+          "minimumPlayers": 100,
+          "minimumMappedPercent": 98
+        },
+        "configDrift": {
+          "configured": [
+            "63:2026/2027:russia",
+            "47:2026/2027:england",
+            "87:2026/2027:spain",
+            "54:2026/2027:germany",
+            "55:2026/2027:italy",
+            "53:2026/2027:france",
+            "61:2026/2027:portugal",
+            "57:2026/2027:netherlands",
+            "71:2026/2027:turkey",
+            "48:2026/2027:championship",
+            "42:2026/2027:champions-league",
+            "73:2026/2027:europa-league"
+          ],
+          "observed": [
+            "73:2026/2027:europa-league",
+            "42:2026/2027:champions-league",
+            "48:2026/2027:championship",
+            "71:2026/2027:turkey",
+            "57:2026/2027:netherlands",
+            "61:2026/2027:portugal",
+            "53:2026/2027:france",
+            "55:2026/2027:italy",
+            "54:2026/2027:germany",
+            "87:2026/2027:spain",
+            "47:2026/2027:england",
+            "63:2026/2027:russia"
+          ],
+          "missingInDatabase": [],
+          "notConfigured": [],
+          "tournamentMismatch": []
+        },
+        "results": [
+          {
+            "leagueId": "63",
+            "season": "2026/2027",
+            "healthy": false,
+            "lastSyncedAt": "2026-11-04T08:55:44.181Z",
+            "priceCount": 516,
+            "mappedCount": 498,
+            "excludedCount": 1,
+            "eligibleCount": 515,
+            "mappedPercent": 96.699
+          },
+          {
+            "leagueId": "47",
+            "season": "2026/2027",
+            "healthy": false,
+            "lastSyncedAt": "2026-11-04T08:55:52.341Z",
+            "priceCount": 688,
+            "mappedCount": 666,
+            "excludedCount": 0,
+            "eligibleCount": 688,
+            "mappedPercent": 96.802
+          },
+          {
+            "leagueId": "87",
+            "season": "2026/2027",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T08:56:00.598Z",
+            "priceCount": 741,
+            "mappedCount": 734,
+            "excludedCount": 0,
+            "eligibleCount": 741,
+            "mappedPercent": 99.055
+          },
+          {
+            "leagueId": "54",
+            "season": "2026/2027",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T08:56:10.187Z",
+            "priceCount": 538,
+            "mappedCount": 528,
+            "excludedCount": 0,
+            "eligibleCount": 538,
+            "mappedPercent": 98.141
+          },
+          {
+            "leagueId": "55",
+            "season": "2026/2027",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T08:56:17.378Z",
+            "priceCount": 638,
+            "mappedCount": 636,
+            "excludedCount": 0,
+            "eligibleCount": 638,
+            "mappedPercent": 99.687
+          },
+          {
+            "leagueId": "53",
+            "season": "2026/2027",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T08:56:29.053Z",
+            "priceCount": 533,
+            "mappedCount": 526,
+            "excludedCount": 0,
+            "eligibleCount": 533,
+            "mappedPercent": 98.687
+          },
+          {
+            "leagueId": "61",
+            "season": "2026/2027",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T08:56:37.928Z",
+            "priceCount": 629,
+            "mappedCount": 625,
+            "excludedCount": 0,
+            "eligibleCount": 629,
+            "mappedPercent": 99.364
+          },
+          {
+            "leagueId": "57",
+            "season": "2026/2027",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T08:56:50.246Z",
+            "priceCount": 613,
+            "mappedCount": 612,
+            "excludedCount": 0,
+            "eligibleCount": 613,
+            "mappedPercent": 99.837
+          },
+          {
+            "leagueId": "71",
+            "season": "2026/2027",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T08:57:00.832Z",
+            "priceCount": 563,
+            "mappedCount": 563,
+            "excludedCount": 0,
+            "eligibleCount": 563,
+            "mappedPercent": 100
+          },
+          {
+            "leagueId": "48",
+            "season": "2026/2027",
+            "healthy": true,
+            "lastSyncedAt": "2026-11-04T08:57:13.348Z",
+            "priceCount": 790,
+            "mappedCount": 785,
+            "excludedCount": 0,
+            "eligibleCount": 790,
+            "mappedPercent": 99.367
+          },
+          {
+            "leagueId": "42",
+            "season": "2026/2027",
+            "healthy": false,
+            "lastSyncedAt": "2026-11-04T08:57:22.849Z",
+            "priceCount": 1193,
+            "mappedCount": 1157,
+            "excludedCount": 1,
+            "eligibleCount": 1192,
+            "mappedPercent": 97.064
+          },
+          {
+            "leagueId": "73",
+            "season": "2026/2027",
+            "healthy": false,
+            "lastSyncedAt": "2026-11-04T08:57:34.437Z",
+            "priceCount": 1161,
+            "mappedCount": 1134,
+            "excludedCount": 0,
+            "eligibleCount": 1161,
+            "mappedPercent": 97.674
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/health/fpl",
+      "http": 200,
+      "body": {
+        "healthy": true,
+        "fresh": true,
+        "complete": true,
+        "scoreStatus": "READY",
+        "counts": {
+          "prices": 670,
+          "mappedPlayers": 668,
+          "mappedPercent": 99.70149253731343,
+          "matchedEntities": 688,
+          "unmatchedEntities": 2,
+          "latestOfficialGameweek": 9,
+          "officialScoreRows": 670,
+          "mappedOfficialScoreRows": 668,
+          "officialScoreMappedPercent": 99.70149253731343
+        }
+      }
+    }
+  ],
+  "sqlAggregates": [
+    {
+      "kind": "audit-counts",
+      "active": 993,
+      "reasons": [
+        "forecast coverage 95.368% is below 98%",
+        "active-player data coverage 95.368% is below 98%",
+        "finished-match data coverage 96.183% is below 98%",
+        "only 252/262 finished matches have verifiable data promotion within 6 hours"
+      ],
+      "leagueId": 42,
+      "withStats": 252,
+      "basicStats": 947,
+      "finishedMatches": 262,
+      "forecastAvailable": 947
+    },
+    {
+      "kind": "audit-counts",
+      "active": 543,
+      "reasons": [],
+      "leagueId": 47,
+      "withStats": 90,
+      "basicStats": 542,
+      "finishedMatches": 90,
+      "forecastAvailable": 542
+    },
+    {
+      "kind": "audit-counts",
+      "active": 649,
+      "reasons": [],
+      "leagueId": 48,
+      "withStats": 165,
+      "basicStats": 647,
+      "finishedMatches": 165,
+      "forecastAvailable": 647
+    },
+    {
+      "kind": "audit-counts",
+      "active": 506,
+      "reasons": [
+        "forecast coverage 97.431% is below 98%",
+        "active-player data coverage 97.431% is below 98%"
+      ],
+      "leagueId": 53,
+      "withStats": 81,
+      "basicStats": 493,
+      "finishedMatches": 81,
+      "forecastAvailable": 493
+    },
+    {
+      "kind": "audit-counts",
+      "active": 534,
+      "reasons": [
+        "forecast coverage 94.569% is below 98%",
+        "active-player data coverage 94.569% is below 98%"
+      ],
+      "leagueId": 54,
+      "withStats": 72,
+      "basicStats": 505,
+      "finishedMatches": 72,
+      "forecastAvailable": 505
+    },
+    {
+      "kind": "audit-counts",
+      "active": 607,
+      "reasons": [],
+      "leagueId": 55,
+      "withStats": 100,
+      "basicStats": 601,
+      "finishedMatches": 100,
+      "forecastAvailable": 601
+    },
+    {
+      "kind": "audit-counts",
+      "active": 543,
+      "reasons": [],
+      "leagueId": 57,
+      "withStats": 99,
+      "basicStats": 540,
+      "finishedMatches": 99,
+      "forecastAvailable": 540
+    },
+    {
+      "kind": "audit-counts",
+      "active": 552,
+      "reasons": [
+        "forecast coverage 95.652% is below 98%",
+        "active-player data coverage 95.652% is below 98%"
+      ],
+      "leagueId": 61,
+      "withStats": 90,
+      "basicStats": 528,
+      "finishedMatches": 90,
+      "forecastAvailable": 528
+    },
+    {
+      "kind": "audit-counts",
+      "active": 529,
+      "reasons": [
+        "forecast coverage 92.25% is below 98%",
+        "active-player data coverage 92.25% is below 98%"
+      ],
+      "leagueId": 63,
+      "withStats": 104,
+      "basicStats": 488,
+      "finishedMatches": 104,
+      "forecastAvailable": 488
+    },
+    {
+      "kind": "audit-counts",
+      "active": 547,
+      "reasons": [
+        "forecast coverage 93.784% is below 98%",
+        "active-player data coverage 93.601% is below 98%"
+      ],
+      "leagueId": 71,
+      "withStats": 90,
+      "basicStats": 512,
+      "finishedMatches": 90,
+      "forecastAvailable": 513
+    },
+    {
+      "kind": "audit-counts",
+      "active": 1173,
+      "reasons": [
+        "forecast coverage 92.242% is below 98%",
+        "active-player data coverage 92.242% is below 98%"
+      ],
+      "leagueId": 73,
+      "withStats": 54,
+      "basicStats": 1082,
+      "finishedMatches": 54,
+      "forecastAvailable": 1082
+    },
+    {
+      "kind": "audit-counts",
+      "active": 524,
+      "reasons": [],
+      "leagueId": 87,
+      "withStats": 110,
+      "basicStats": 521,
+      "finishedMatches": 110,
+      "forecastAvailable": 521
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 46,
+      "leagueId": 42,
+      "mappedInSportsPool": 38,
+      "positiveArchiveAppearances": 4,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 1,
+      "leagueId": 47,
+      "mappedInSportsPool": 1,
+      "positiveArchiveAppearances": 0,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 2,
+      "leagueId": 48,
+      "mappedInSportsPool": 1,
+      "positiveArchiveAppearances": 0,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 13,
+      "leagueId": 53,
+      "mappedInSportsPool": 10,
+      "positiveArchiveAppearances": 0,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 29,
+      "leagueId": 54,
+      "mappedInSportsPool": 16,
+      "positiveArchiveAppearances": 0,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 6,
+      "leagueId": 55,
+      "mappedInSportsPool": 0,
+      "positiveArchiveAppearances": 0,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 3,
+      "leagueId": 57,
+      "mappedInSportsPool": 0,
+      "positiveArchiveAppearances": 0,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 24,
+      "leagueId": 61,
+      "mappedInSportsPool": 13,
+      "positiveArchiveAppearances": 2,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 41,
+      "leagueId": 63,
+      "mappedInSportsPool": 6,
+      "positiveArchiveAppearances": 9,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 34,
+      "leagueId": 71,
+      "mappedInSportsPool": 18,
+      "positiveArchiveAppearances": 0,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 91,
+      "leagueId": 73,
+      "mappedInSportsPool": 56,
+      "positiveArchiveAppearances": 13,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "forecast-gap-history",
+      "missing": 3,
+      "leagueId": 87,
+      "mappedInSportsPool": 1,
+      "positiveArchiveAppearances": 0,
+      "withAnyQualifyingPerMatchHistory": 0
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 1,
+      "leagueId": 42,
+      "mapStatus": "EXCLUDED",
+      "matchedBy": "MANUAL_SOURCE_IDENTITY_CONFLICT",
+      "withBirthDate": 1,
+      "withProviderStatId": 1
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 35,
+      "leagueId": 42,
+      "mapStatus": "UNMATCHED",
+      "matchedBy": null,
+      "withBirthDate": 35,
+      "withProviderStatId": 35
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 22,
+      "leagueId": 47,
+      "mapStatus": "UNMATCHED",
+      "matchedBy": null,
+      "withBirthDate": 21,
+      "withProviderStatId": 22
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 5,
+      "leagueId": 48,
+      "mapStatus": "UNMATCHED",
+      "matchedBy": null,
+      "withBirthDate": 5,
+      "withProviderStatId": 5
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 7,
+      "leagueId": 53,
+      "mapStatus": "UNMATCHED",
+      "matchedBy": null,
+      "withBirthDate": 7,
+      "withProviderStatId": 7
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 10,
+      "leagueId": 54,
+      "mapStatus": "UNMATCHED",
+      "matchedBy": null,
+      "withBirthDate": 10,
+      "withProviderStatId": 10
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 2,
+      "leagueId": 55,
+      "mapStatus": "UNMATCHED",
+      "matchedBy": null,
+      "withBirthDate": 2,
+      "withProviderStatId": 2
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 1,
+      "leagueId": 57,
+      "mapStatus": "UNMATCHED",
+      "matchedBy": null,
+      "withBirthDate": 1,
+      "withProviderStatId": 1
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 4,
+      "leagueId": 61,
+      "mapStatus": "UNMATCHED",
+      "matchedBy": null,
+      "withBirthDate": 4,
+      "withProviderStatId": 4
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 1,
+      "leagueId": 63,
+      "mapStatus": "EXCLUDED",
+      "matchedBy": "MANUAL_TRANSFERRED_OUT",
+      "withBirthDate": 1,
+      "withProviderStatId": 1
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 17,
+      "leagueId": 63,
+      "mapStatus": "UNMATCHED",
+      "matchedBy": null,
+      "withBirthDate": 17,
+      "withProviderStatId": 17
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 27,
+      "leagueId": 73,
+      "mapStatus": "UNMATCHED",
+      "matchedBy": null,
+      "withBirthDate": 27,
+      "withProviderStatId": 27
+    },
+    {
+      "kind": "unmapped-prices",
+      "rows": 7,
+      "leagueId": 87,
+      "mapStatus": "UNMATCHED",
+      "matchedBy": null,
+      "withBirthDate": 7,
+      "withProviderStatId": 7
+    },
+    {
+      "date": "2026-07-07T16:00:00",
+      "kind": "ucl-match-gap",
+      "round": "1st Qualifying Round",
+      "matchId": 1000022632,
+      "rawPayload": false,
+      "rawTimestamp": false,
+      "teamStatRows": 2,
+      "normalizedTimestamp": false
+    },
+    {
+      "date": "2026-07-07T16:00:00",
+      "kind": "ucl-match-gap",
+      "round": "1st Qualifying Round",
+      "matchId": 1000022636,
+      "rawPayload": false,
+      "rawTimestamp": false,
+      "teamStatRows": 2,
+      "normalizedTimestamp": false
+    },
+    {
+      "date": "2026-07-07T16:00:00",
+      "kind": "ucl-match-gap",
+      "round": "1st Qualifying Round",
+      "matchId": 1000022642,
+      "rawPayload": false,
+      "rawTimestamp": false,
+      "teamStatRows": 2,
+      "normalizedTimestamp": false
+    },
+    {
+      "date": "2026-07-07T16:00:00",
+      "kind": "ucl-match-gap",
+      "round": "1st Qualifying Round",
+      "matchId": 1000022655,
+      "rawPayload": false,
+      "rawTimestamp": false,
+      "teamStatRows": 2,
+      "normalizedTimestamp": false
+    },
+    {
+      "date": "2026-07-07T17:00:00",
+      "kind": "ucl-match-gap",
+      "round": "1st Qualifying Round",
+      "matchId": 1000022634,
+      "rawPayload": false,
+      "rawTimestamp": false,
+      "teamStatRows": 2,
+      "normalizedTimestamp": false
+    },
+    {
+      "date": "2026-07-07T17:30:00",
+      "kind": "ucl-match-gap",
+      "round": "1st Qualifying Round",
+      "matchId": 1000022649,
+      "rawPayload": false,
+      "rawTimestamp": false,
+      "teamStatRows": 2,
+      "normalizedTimestamp": false
+    },
+    {
+      "date": "2026-07-07T18:30:00",
+      "kind": "ucl-match-gap",
+      "round": "1st Qualifying Round",
+      "matchId": 1000022629,
+      "rawPayload": false,
+      "rawTimestamp": false,
+      "teamStatRows": 2,
+      "normalizedTimestamp": false
+    },
+    {
+      "date": "2026-07-07T18:30:00",
+      "kind": "ucl-match-gap",
+      "round": "1st Qualifying Round",
+      "matchId": 1000022644,
+      "rawPayload": false,
+      "rawTimestamp": false,
+      "teamStatRows": 2,
+      "normalizedTimestamp": false
+    },
+    {
+      "date": "2026-07-07T18:45:00",
+      "kind": "ucl-match-gap",
+      "round": "1st Qualifying Round",
+      "matchId": 1000022656,
+      "rawPayload": false,
+      "rawTimestamp": false,
+      "teamStatRows": 2,
+      "normalizedTimestamp": false
+    },
+    {
+      "date": "2026-07-07T19:00:00",
+      "kind": "ucl-match-gap",
+      "round": "1st Qualifying Round",
+      "matchId": 1000022646,
+      "rawPayload": false,
+      "rawTimestamp": false,
+      "teamStatRows": 0,
+      "normalizedTimestamp": false
+    }
+  ],
+  "primarySourceProbe": {
+    "matchId": "1000022632",
+    "method": "UnofficialFotMobClient.getFixtureDetails, one attempt, 8s request timeout",
+    "returnedId": "1000022632",
+    "playerStatRows": 0,
+    "rawContentPlayerStats": null,
+    "rawLineupPresent": true,
+    "rawTeamStatsPresent": true,
+    "elapsedMs": 3580
+  },
+  "interpretationLimits": [
+    "No identity repair, deletion, threshold relaxation or synthetic player-stat rows.",
+    "Missing per-match history is not proof that a player has never played; coverage is limited to stored provider history.",
+    "Only one of ten UCL missing-player-stat fixtures was directly probed upstream.",
+    "Current denominator of every active TeamPlayerSeason row is explicitly documented."
+  ]
+}

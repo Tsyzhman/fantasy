@@ -1,0 +1,21 @@
+{
+  "at": "2026-11-04T12:28:51.632405+00:00",
+  "snapshots": [
+    {
+      "season": "2026/2027",
+      "version": 2,
+      "generated_at": "2026-10-21T10:36:02.838",
+      "squads": 54639,
+      "bytes": 15791411,
+      "sha256": "a59ecee27820d092cf769c8ebd07fc5a71b2486b234715926210730552e096ab"
+    }
+  ],
+  "jobs": [],
+  "temporary_environment_files": 0,
+  "markers": {
+    ".sync.lock": false,
+    ".collection.lock": false,
+    ".heavy-job.lock": true,
+    "snapshot.json.gz.tmp": false
+  }
+}

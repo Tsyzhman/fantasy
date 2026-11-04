@@ -5,7 +5,7 @@ import { type UiLanguage, fantasyForecastTitle, minuteHistoryProvenanceLines, fo
 import { ColumnResizeHandle } from "./ColumnResizeHandle";
 /** @spec spec://modules/machete/FEAT-004-rotation-risk#scenarios */
 import { currentRotationRisk, rotationRiskDescription } from "@/machete/rotation-risk";
-import { ArrowLeft, ArrowRight, Bookmark, Check, Columns3, Lock, Plus, Save, Search, SlidersHorizontal, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Bookmark, Check, Columns3, Lock, Plus, Save, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { type PointerEvent as ReactPointerEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { I18nText } from "@/components/i18n-text";
 import { localizedText } from "@/components/localized-option";
@@ -201,6 +201,7 @@ export function PlayerPoolNameSearch({ language, value, onChange }: {
   );
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
 export function CustomizablePlayerPoolTable({
   initialVisibleColumns,
   initialColumnWidths,
@@ -215,13 +216,14 @@ export function CustomizablePlayerPoolTable({
   const [columnWidths, setColumnWidths] = useState(initialColumnWidths);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [compactViewport, setCompactViewport] = useState<boolean | null>(null);
-  const [playerSort, setPlayerSort] = useState<{ key: string; direction: SortDirection } | null>(null);
+  const [requestedSort, setPlayerSort] = useState<{ key: string; direction: SortDirection } | null>(null);
   const preferencesMounted = useRef(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const columnsByKey = useMemo(() => new Map(columns.map((column) => [column.key, column])), [columns]);
   const visibleColumns = visibleColumnKeys
     .map((key) => columnsByKey.get(key))
     .filter((column): column is PlayerPoolOptionalColumn => Boolean(column));
+  const playerSort = supportedPlayerPoolSort(requestedSort, visibleColumns);
   const fixedColumnTitles = playerPoolFixedColumnTitles(language, props.provider);
   const widthFor = (key: string, fallback: number) => columnWidths[key] ?? fallback;
   const tableWidth = widthFor("action", playerPoolFixedColumnWidths.action)
@@ -273,7 +275,12 @@ export function CustomizablePlayerPoolTable({
   }, [columnWidths, visibleColumnKeys]);
 
   function toggleColumn(key: string) {
-    setVisibleColumnKeys((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
+    changeVisibleColumns(visibleColumnKeys.includes(key) ? visibleColumnKeys.filter((item) => item !== key) : [...visibleColumnKeys, key]);
+  }
+
+  function changeVisibleColumns(next: string[]) {
+    setVisibleColumnKeys(next);
+    if (requestedSort && !["player", "team", "position", "price", ...next].includes(requestedSort.key)) setPlayerSort(null);
   }
 
   function moveVisibleColumn(key: string, direction: -1 | 1) {
@@ -375,10 +382,10 @@ export function CustomizablePlayerPoolTable({
               }}><I18nText en="Close" ru="Закрыть" /></button>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={() => setVisibleColumnKeys(columns.map((column) => column.key))} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Select all" ru="Выбрать все" /></button>
-              <button type="button" onClick={() => setVisibleColumnKeys([...defaultSquadTableColumns])} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Reset" ru="Сбросить" /></button>
+              <button type="button" onClick={() => changeVisibleColumns(columns.map((column) => column.key))} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Select all" ru="Выбрать все" /></button>
+              <button type="button" onClick={() => changeVisibleColumns([...defaultSquadTableColumns])} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Reset" ru="Сбросить" /></button>
               <button type="button" onClick={() => setColumnWidths({})} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Reset widths" ru="Сбросить ширину" /></button>
-              <button type="button" onClick={() => setVisibleColumnKeys([])} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Hide optional" ru="Скрыть дополнительные" /></button>
+              <button type="button" onClick={() => changeVisibleColumns([])} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Hide optional" ru="Скрыть дополнительные" /></button>
             </div>
             {visibleColumns.length > 0 ? (
               <div className="mt-3 rounded border border-slate-200 bg-slate-50 p-3">
@@ -412,7 +419,8 @@ export function CustomizablePlayerPoolTable({
       ) : null}
 
       {compactViewport === true ? <div className="col-span-full">
-        <PlayerPoolMobileList key={props.replacementSource?.playerId ?? "browse"} {...props} players={sortedPlayers} columns={visibleColumns} />
+        <PlayerPoolMobileSort players={players} columns={visibleColumns} horizon={horizon} language={language} sort={playerSort} onSortChange={setPlayerSort} />
+        <PlayerPoolMobileList key={`${props.replacementSource?.playerId ?? "browse"}:${playerSort?.key ?? ""}:${playerSort?.direction ?? ""}:${playerOrderKey}`} {...props} players={sortedPlayers} columns={visibleColumns} />
       </div> : null}
 
       {compactViewport === false ? <div className="col-span-full min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white" data-testid="player-pool-table">
@@ -843,6 +851,68 @@ export function playerPoolFilterValue(key: string, player: FantasyPlannerPlayer,
   return customPlayerPoolColumnValue(key, player, horizon);
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+export function supportedPlayerPoolSort(sort: { key: string; direction: SortDirection } | null, columns: PlayerPoolOptionalColumn[]) {
+  if (!sort) return null;
+  return ["player", "team", "position", "price"].includes(sort.key)
+    || columns.some((column) => column.key === sort.key && !["fixtures", "action"].includes(column.key))
+    ? sort
+    : null;
+}
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+export function playerPoolSortOptions(columns: PlayerPoolOptionalColumn[], players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage) {
+  const supported = [
+    { key: "player", label: localizedText(language, "Player", "Игрок"), numeric: false },
+    { key: "team", label: localizedText(language, "Team", "Клуб"), numeric: false },
+    { key: "position", label: localizedText(language, "Position", "Позиция"), numeric: false },
+    { key: "price", label: localizedText(language, "Price", "Цена"), numeric: true },
+    ...columns.filter((column) => column.key !== "fixtures" && column.key !== "action")
+  ];
+  return supported.map((column) => ({
+    ...column,
+    available: players.some((player) => {
+      const value = playerPoolFilterValue(column.key, player, horizon);
+      return typeof value === "number" ? Number.isFinite(value) : value !== null && value.trim() !== "";
+    })
+  }));
+}
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+export function PlayerPoolMobileSort({ players, columns, horizon, language, sort, onSortChange }: {
+  players: FantasyPlannerPlayer[];
+  columns: PlayerPoolOptionalColumn[];
+  horizon: number;
+  language: UiLanguage;
+  sort: { key: string; direction: SortDirection } | null;
+  onSortChange: (sort: { key: string; direction: SortDirection } | null) => void;
+}) {
+  const options = playerPoolSortOptions(columns, players, horizon, language);
+  const active = options.find((column) => column.key === sort?.key);
+  const ascending = sort?.direction === "asc";
+  const directionLabel = localizedText(language, ascending ? "Ascending" : "Descending", ascending ? "По возрастанию" : "По убыванию");
+  return (
+    <div role="group" aria-label={localizedText(language, "Player sorting", "Сортировка игроков")} data-testid="player-pool-sort" data-sort-key={sort?.key ?? ""} data-sort-direction={sort?.direction ?? ""} className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
+      <label className="min-w-0 text-xs font-semibold text-slate-700">
+        <span className="mb-1 block"><I18nText en="Sort by" ru="Сортировка" /></span>
+        <select value={active?.key ?? ""} onChange={(event) => {
+          const column = options.find((option) => option.key === event.target.value && option.available);
+          onSortChange(column ? { key: column.key, direction: column.numeric ? "desc" : "asc" } : null);
+        }} className="min-h-12 w-full min-w-0 rounded border border-slate-200 bg-white px-2 text-sm font-semibold text-ink">
+          <option value="">{localizedText(language, "Original order", "Исходный порядок")}</option>
+          {options.map((column) => <option key={column.key} value={column.key} disabled={!column.available}>{column.label}{column.available ? "" : localizedText(language, " — no data", " — нет данных")}</option>)}
+        </select>
+      </label>
+      <button type="button" disabled={!sort || !active?.available} onClick={() => {
+        if (sort) onSortChange({ key: sort.key, direction: ascending ? "desc" : "asc" });
+      }} aria-label={localizedText(language, ascending ? "Sort descending" : "Sort ascending", ascending ? "Сортировать по убыванию" : "Сортировать по возрастанию")} className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 disabled:opacity-50">
+        {ascending ? <ArrowUp className="h-4 w-4 shrink-0" aria-hidden="true" /> : <ArrowDown className="h-4 w-4 shrink-0" aria-hidden="true" />}
+        <span>{sort ? directionLabel : localizedText(language, "Direction", "Направление")}</span>
+      </button>
+    </div>
+  );
+}
+
 export function sortPlayerPoolRows(
   players: FantasyPlannerPlayer[],
   sort: { key: string; direction: SortDirection } | null,
@@ -1263,6 +1333,7 @@ export function PlayerPoolMobileList({
         return (
           <article
             key={player.playerId}
+            data-player-id={player.playerId}
             className={cn(
               "overflow-hidden rounded border p-3",
               isSelected

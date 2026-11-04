@@ -1,0 +1,11 @@
+{
+  "expectedCommit": "269980b7bbc8d16c850aad89229423f5a2383346",
+  "oldAsset": "/_next/static/css/3653d57808cf7129.css?dpl=ef9830df24a8696494f857f0eb8ccf8654573730",
+  "samples": 611,
+  "errors": 0,
+  "consecutiveNewRevision": 20,
+  "revisions": [
+    "269980b7bbc8d16c850aad89229423f5a2383346",
+    "ef9830df24a8696494f857f0eb8ccf8654573730"
+  ]
+}

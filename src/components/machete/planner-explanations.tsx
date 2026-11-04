@@ -787,19 +787,25 @@ export function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, lan
   return lines.join("\n");
 }
 
+/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
 export function playerPrimaryHorizonForecastTitle(
   player: FantasyPlannerPlayer,
   language: UiLanguage,
   primaryHorizonForecast: number | null,
   horizon: number
 ) {
-  const available = player.roundPoints.slice(0, horizon).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  const values = player.roundPoints.slice(0, horizon);
   const lines = [localizedText(language, `Primary forecast total over ${horizon} rounds: ${formatScore(primaryHorizonForecast)} FP`, `Основной прогноз на ${horizon} тура: ${formatScore(primaryHorizonForecast)} ФО`)];
-  if (available.length > 0) {
-    lines.push(localizedText(language, "Round-by-round values:", "По турам:"));
-    available.forEach((value, index) => lines.push(localizedText(language, `Round ${index + 1}: ${formatScore(value)} FP`, `Тур ${index + 1}: ${formatScore(value)} ФО`)));
+  lines.push(localizedText(language, "Round-by-round values:", "По турам:"));
+  for (let index = 0; index < horizon; index += 1) {
+    const value = values[index];
+    lines.push(
+      typeof value === "number" && Number.isFinite(value)
+        ? localizedText(language, `Round ${index + 1}: ${formatScore(value)} FP`, `Тур ${index + 1}: ${formatScore(value)} ФО`)
+        : localizedText(language, `Round ${index + 1}: unavailable`, `Тур ${index + 1}: нет прогноза`)
+    );
   }
-  if (available.length === 0) {
+  if (!values.some((value) => typeof value === "number" && Number.isFinite(value))) {
     lines.push(localizedText(language, "No round-by-round values available yet.", "Значений по отдельным турам пока нет."));
   }
   if (player.forecastModelVersion) {
@@ -906,11 +912,12 @@ export function alternativePredictedFpTitle(language: UiLanguage) {
   );
 }
 
+/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
 export function alternativeFiveRoundFpTitle(language: UiLanguage, horizon = 5) {
   return localizedText(
     language,
     `Total alternative forecast over ${horizon} rounds.`,
-    "Суммарный альтернативный прогноз FP на следующие пять туров, рассчитанный по матчам каждого тура."
+    `Суммарный альтернативный прогноз FP на выбранном горизонте в ${horizon} туров, рассчитанный по матчам каждого тура.`
   );
 }
 

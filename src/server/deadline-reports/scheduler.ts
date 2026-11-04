@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import { expireTelegramLinkArtifacts } from "@/server/telegram/link-service";
-import { deadlineReportsEnabled, deadlineSendEnabled, DEADLINE_DEFAULT_BATCH } from "./config";
+import { deadlineReportsEnabled, deadlineSendEnabled, deadlineClock, DEADLINE_DEFAULT_BATCH } from "./config";
 import { deadlinePlanningVersion, executeDueStageJobs, planDeadlineCampaigns, type CampaignPlanSummary, type StageExecutionSummary } from "./campaigns";
 import { expireOverdueOutbox, markBuiltCampaignsDelivering, runDeadlineDeliveryTick, type DeliveryTickResult } from "./delivery";
 
@@ -39,9 +39,11 @@ export interface DeadlineTickSummary {
 
 export async function runDeadlineTick(
   prismaClient = prisma,
-  options: { now?: Date; send?: boolean; maxBatch?: number; forcePlan?: boolean } = {}
+  options: { now?: Date; send?: boolean; maxBatch?: number; forcePlan?: boolean; clock?: () => Date;
+    sendMessage?: (chatId: string, text: string) => Promise<{ messageId: string }> } = {}
 ): Promise<DeadlineTickSummary> {
-  const now = options.now ?? new Date();
+  const clock = options.clock ?? deadlineClock(options.now);
+  const now = clock();
   const state = schedulerState();
   const planningVersion = await deadlinePlanningVersion(prismaClient);
   const needsPlan = options.forcePlan || state.planningVersion !== planningVersion
@@ -52,11 +54,11 @@ export async function runDeadlineTick(
     state.planningVersion = planningVersion;
     state.plannedAt = now.getTime();
   }
-  const stages = await executeDueStageJobs(prismaClient, { now });
-  const delivering = await markBuiltCampaignsDelivering(prismaClient, now);
-  const expired = await expireOverdueOutbox(prismaClient, now);
+  const stages = await executeDueStageJobs(prismaClient, { clock });
+  const delivering = await markBuiltCampaignsDelivering(prismaClient, clock());
+  const expired = await expireOverdueOutbox(prismaClient, clock());
   const delivery = options.send ?? deadlineSendEnabled()
-    ? await runDeadlineDeliveryTick(prismaClient, { now, maxBatch: options.maxBatch ?? DEADLINE_DEFAULT_BATCH })
+    ? await runDeadlineDeliveryTick(prismaClient, { clock, sendMessage: options.sendMessage, maxBatch: options.maxBatch ?? DEADLINE_DEFAULT_BATCH })
     : null;
   state.ticks += 1;
   const purged = state.ticks % ARTIFACT_PURGE_EVERY_TICKS === 0;

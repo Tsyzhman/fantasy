@@ -57,21 +57,14 @@ jobs:
       - name: Validate configuration script syntax
         run: bash -n scripts/configure-production-amneziawg.sh
 
-      - name: Prepare SSH key
+      # @spec spec://common/INFRA-006-continuous-deployment#contracts
+      - name: Prepare pinned SSH identity
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-        run: |
-          set -euo pipefail
-          : "${DEPLOY_SSH_KEY:?DEPLOY_SSH_KEY secret is required}"
-          : "${DEPLOY_HOST:?DEPLOY_HOST secret is required}"
-          DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: python3 -B scripts/prepare-deploy-ssh.py
 
       - name: Transfer VPN configuration over SSH
         env:
@@ -84,7 +77,7 @@ jobs:
           set -euo pipefail
           : "${DEPLOY_USER:?DEPLOY_USER secret is required}"
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
+          scp -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
             "$LOCAL_CONFIG" "$DEPLOY_USER@$DEPLOY_HOST:$REMOTE_CONFIG"
 
       - name: Promote verified AmneziaWG network namespace
@@ -97,7 +90,7 @@ jobs:
         run: |
           set -euo pipefail
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
+          ssh -F ~/.ssh/deploy_config -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
             -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
             "AMNEZIAWG_ALLOW_BOOTSTRAP=1 timeout --signal=TERM --kill-after=30s 5m bash -s -- '$REMOTE_CONFIG' '$CONFIG_SHA256'" \
             < scripts/configure-production-amneziawg.sh
@@ -110,7 +103,7 @@ jobs:
         run: |
           set -euo pipefail
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
-          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+          ssh -F ~/.ssh/deploy_config -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
             "docker exec fantasy-scout-web node -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
 
       - name: Remove runner copy of VPN configuration
@@ -118,3 +111,7 @@ jobs:
         env:
           LOCAL_CONFIG: ${{ steps.config.outputs.path }}
         run: rm -f -- "$LOCAL_CONFIG"
+
+      - name: Remove runner SSH material
+        if: always()
+        run: rm -f -- ~/.ssh/deploy_key ~/.ssh/deploy_known_hosts ~/.ssh/deploy_config

@@ -1,0 +1,35 @@
+{
+  "sourceCommit": "c16c7f88143f7c72ef9b925509e5692c90697793",
+  "cancelledRun": 41812628792,
+  "artifactId": 13313178213,
+  "artifactBytes": 882557412,
+  "transferStartedUtc": "2026-11-04T10:24:58Z",
+  "cancelledPartialSourceBytes": 12533760,
+  "lastPartialWriteUtc": "2026-11-04T10:32:34Z",
+  "reason": "Source upload sustained only approximately 20-28 KiB/s; the full image transfer could not fit the canonical job timeout at this rate",
+  "completedBeforeCancellation": [
+    "full exact-SHA reusable Check",
+    "runtime/setup image build and Node/non-root checks",
+    "immutable artifact retention"
+  ],
+  "notStarted": [
+    "Promote Docker release",
+    "new production release target"
+  ],
+  "cancellationVerified": true,
+  "remotePromoterAndTransferAbsent": true,
+  "partialArchiveCleanup": "Exact cancelled-run file removed after lsof and path checks; absence rechecked. Other files, running release and backup preserved",
+  "localDiagnosticArtifactDownload": "Stopped the uniquely identified own gh download process; no output directory created",
+  "retryRun": 41814939270,
+  "retry": "Canonical Deploy Production, all jobs repeated, same full source SHA; no manual promotion or runtime rebuild on production",
+  "independentReview": "Release reviewer confirmed the canonical workflow-only entry point and ancestry checks remain mandatory",
+  "secondCancellation": {
+    "run": 41814939270,
+    "sourcePartialBytes": 19061760,
+    "promoterStarted": false,
+    "remoteWritersAbsent": true,
+    "partialRemoved": true,
+    "reason": "SCP route remained approximately 90 KiB/s; immutable artifact could not fit budget"
+  },
+  "selectedRecovery": "WI-090 current-run operator-prestage via local verified parallel HTTPS download and pinned SSH upload, canonical workflow verification and promotion"
+}

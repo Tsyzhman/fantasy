@@ -47,7 +47,7 @@ Use two running web generations and a graceful upstream reload rather than rebui
 
 ## Runtime and traffic {#runtime}
 
-- CI builds runtime and migration images from the frozen lockfile on a digest-pinned Node 24 LTS base. The promoter loads the checksum-verified image archive and verifies both exact image IDs and release labels. Production never builds application images.
+- CI builds runtime and migration images from the frozen lockfile on a digest-pinned Node 24 LTS base. The exact Node patch in `.nvmrc` matches every base stage; CI runs both runtime and setup image IDs without networking to verify their Node version and verifies the runtime non-root user before publishing the archive. The promoter loads the checksum-verified image archive and verifies both exact image IDs and release labels. Production never builds application images.
 - Web and worker run as uid 1000 with all capabilities dropped and no-new-privileges. Web: 2 GiB, 2 CPUs, 128 PIDs and 1 GiB V8 old heap; worker: 4 GiB, 3 CPUs, 256 PIDs and 2 GiB V8 old heap. PostgreSQL has a separately measured 2 GiB/2 CPU/256 PID budget, applied online; relay has 128 MiB/0.5 CPU/64 PIDs. Validate full imports and simultaneous web versions against these budgets.
 - Each Node process shares one Prisma client, connection pool and query listener across independently compiled Next server bundles. Loading another bundle must not create another pool.
 - Docker's classic store identifies a config digest while containerd may identify an OCI manifest. Verify both through the exact exported archive: unique CI tags, Linux/amd64 config hash, source label and the OCI manifest-to-config digest binding. The loaded daemon ID must be one of those verified identities. Preserve both CI and loaded IDs in the release manifest; never accept labels alone or rebuild on the server to work around a mismatch.
@@ -69,7 +69,7 @@ On the Linux production worker, full player-pool refreshes, isolated model forec
 
 Franchise source recovery reads at most 100 identities and 25 missing squad payloads per batch. Existing source files do not trigger JSON payload reads. Preserve the previous ready snapshot on failure and verify old collector processes are absent before removing stale collection markers.
 
-The franchise CLI runs in one disposable container named `fantasy-scout-franchises-job`, using the exact worker image digest, database network and persistent franchise source volume. It starts no web server or schedulers and publishes no ports. Its 5 GiB RAM/no-swap, two-CPU and 128-PID caps do not share the long-lived worker's 4 GiB cgroup. Startup requires at least 6 GiB available host memory, including 1 GiB headroom. It retains the host collector/deploy exclusion and the same kernel calculation lock across containers. A private temporary environment file is removed on every launcher exit; `docker run --rm` removes the job container after completion. User data and rollback web generations are unaffected.
+The franchise CLI runs in one disposable container named `fantasy-scout-franchises-job`, using the exact worker image digest, database network and persistent franchise source volume. It starts no web server or schedulers and publishes no ports. Its 3.5 GiB RAM/no-swap, two-CPU and 128-PID caps do not share the long-lived worker's 4 GiB cgroup. Startup requires at least 4.5 GiB available host memory, including 1 GiB headroom. Column-based aggregation and streamed detailed JSON avoid retaining wide per-player dictionaries and several full serialization copies simultaneously; they preserve all domain records and calculated results. A budget change requires measured working sets and a monitored complete production refresh; synthetic profiling alone does not certify production capacity. It retains the host collector/deploy exclusion and the same kernel calculation lock across containers. A private temporary environment file is removed on every launcher exit; `docker run --rm` removes the job container after completion. User data and rollback web generations are unaffected.
 
 An operator may resume a verified interrupted acquisition with `FRANCHISE_RESUME_AFTER=<timezone-qualified timestamp>` no older than three hours. Only H2H responses and squad records acquired since that checkpoint, together with settled valid lineups, may be reused beyond the normal HTTP TTL. Database statistics/forecast exports are always refreshed. The regular timer does not set this override. The exact known H2H blank historical-lineup template remains missing data, never a zero XI, and is retried on later normal collections; malformed/error pages still abort publication.
 
@@ -89,6 +89,14 @@ Keep custom-format backup verification and restore/apply rehearsal, but perform 
 <a name="contracts"></a>
 
 ## Contracts and entry points {#contracts}
+
+Deployment resolves the requested source to one full commit SHA and runs the reusable Check workflow freshly against that SHA before packaging. Required checks include production dependency audit, unit and database integration tests, migration drift, lint, types/build, isolated UI keyboard checks and release/SSH/resource regressions. Packaging checks out the same validated SHA and rechecks ancestry against current main; moving a ref cannot substitute an unvalidated tree. Validation failures preserve the running release.
+
+All production SSH/SCP workflows require `DEPLOY_KNOWN_HOSTS`, provisioned by matching a host key through an independently trusted channel. An isolated private SSH configuration uses strict host verification and only this known-hosts file. Missing, malformed or mismatching keys abort the connection; live `ssh-keyscan` output is not an identity authority.
+
+The canonical workflow may transfer its own freshly built immutable release artifact by HTTPS from GitHub artifact storage, controlled over the same pinned SSH channel. Bind the artifact to the current run and expected validated source; verify the full artifact digest and individual source/image checksums and identities before publishing the archive files atomically. Download into bounded private temporary storage, restrict ZIP entries to the expected release files, reject traversal/symlinks/mismatches and remove temporary downloads on failure. Obtain a short-lived verified HTTPS download URL immediately before transfer; never persist a GitHub token on the server or print the URL/token in logs. This transport changes neither the mandatory fresh Check and ancestry gates nor the canonical promoter, image verification, locks and continuous rollback behavior.
+
+An explicit current-run prestaged transport mode may wait for the same artifact ZIP delivered by an operator over the trusted SSH channel when the runner/storage route is degraded. The receiving path is derived from the current run and artifact identity, receives complete bytes atomically, and is subject to exactly the same provenance/digest/allowlist checks and bounded waiting/cleanup. Operator delivery supplies bytes only: promotion remains exclusively inside Deploy Production after its fresh Check, ancestry and image checks. Parallel HTTPS range downloads are bounded, verify each range's status, position and length, and still require the complete artifact digest.
 
 `Deploy Production` packages the exact Git tree and invokes the promoter with source archive path/SHA-256, release/commit/tree/version, image archive path/SHA-256 and exact runtime/setup image IDs. Internal `/api/health` checks include the requested commit; public health confirms the upstream actually changed. After compatible migrations, a bounded authenticated canary checks Squad SSR, the materialized player-pool route and its progressive API fallback; its ephemeral session is deleted. The routing helper accepts only the expected old and alternate port, rejecting unknown/ambiguous sites and concurrent configuration changes. Release manifests and `PRODUCTION_HISTORY.tsv` identify the resulting runtime.
 
@@ -120,6 +128,8 @@ The promoter, routing helper, online migration validator, relay adapter and thei
 
 Unready candidates and unsafe migrations preserve the serving version. Routing validation/reload failures restore the old configuration. Successful promotion has no interval with zero serving web processes, one scheduler worker, available prior static files, exact public revision and bounded retained resources.
 
+Regression checks reject invalid/different release SHAs and require packaging to depend on full validation. An isolated loopback SSH server verifies that a trusted key reaches authentication while a substituted key fails before authentication without modifying the trust file; malformed and wrong-endpoint input also fails closed.
+
 <a name="relationships"></a>
 
 ## Related contracts {#relationships}
@@ -132,6 +142,10 @@ Unready candidates and unsafe migrations preserve the serving version. Routing v
 <a name="changelog"></a>
 
 ## Change history {#changelog}
+
+- 2026-11-04: WI-090 — current-run HTTPS artifact delivery with provenance, full archive digests, strict SSH control, bounded allowlisted extraction and atomic transport files; canonical validation/promotion is unchanged.
+- 2026-11-04: WI-087 — fresh exact-SHA reusable validation before packaging and independently trusted pinned SSH host identity across production workflows.
+- 2026-11-04: WI-088 — column-based aggregation and streamed output; measured 3.5 GiB disposable job budget with unchanged 1 GiB host headroom and mandatory complete-refresh verification.
 
 - 2026-10-23: WI-081 — retain one verified full dump, publish backups atomically, share the deployment lock for scheduled cleanup and support explicit complete host build-cache removal.
 
