@@ -1,7 +1,7 @@
 /** @spec spec://modules/machete/INFRA-004-sorareinside-starters#mapping */
 import test from "node:test";
 import assert from "node:assert/strict";
-import {resolveSourcePlayer,resolveSourceTeam,hasUpcomingSorareLineup} from "./sorareinside-identity";
+import {isSourceTeamInScope,resolveSourcePlayer,resolveSourceTeam,hasUpcomingSorareLineup} from "./sorareinside-identity";
 const source={id:"s",name:"José Silva",slug:"jose-silva",birthDate:"2000-01-01",position:"Midfielder",index:2};
 const roster=[{id:1n,name:"Jose Silva",birthDate:new Date("2000-01-01")}];
 test("initial exact club-roster match becomes an ID match even after display-name changes",()=> {
@@ -38,6 +38,47 @@ test("reviewed team aliases distinguish Celta from its reserve team",()=> {
   const src={id:"s",name:"RC Celta",slug:"celta",country:"es",national:false};
   assert.equal(resolveSourceTeam(src,teams)?.id,1n);
   assert.equal(resolveSourceTeam({...src,name:"Real Club Celta de Vigo II"},teams),null);
+});
+
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#source */
+test("club scope uses only current catalog IDs and exact identity rules",()=> {
+  const teams=[{id:1n,name:"Celta Vigo",country:"ESP"}];
+  assert.equal(isSourceTeamInScope({id:"known"},teams,1n),true);
+  assert.equal(isSourceTeamInScope({id:"removed",name:"RC Celta",country:"es"},teams,99n),false);
+  assert.equal(isSourceTeamInScope({name:"Santos FC Sao Paulo"},teams),false);
+  assert.equal(isSourceTeamInScope({name:"RC Celta",country:"es"},teams),true);
+  assert.equal(isSourceTeamInScope({name:"Real Club Celta de Vigo II",country:"es"},teams),false);
+  assert.equal(isSourceTeamInScope({name:"RC Celta",country:"es",national:true},teams),false);
+});
+
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#source */
+test("a potentially relevant sparse club is kept for strict parsing without guessing country",()=> {
+  const teams=[{id:1n,name:"Celta Vigo",country:"ESP"}];
+  assert.equal(isSourceTeamInScope({name:"RC Celta"},teams),true);
+  assert.equal(isSourceTeamInScope({name:"Celta Vigo"},teams),true);
+  assert.equal(isSourceTeamInScope({name:"Unrelated club"},teams),false);
+  assert.equal(resolveSourceTeam({id:"new",name:"RC Celta",slug:"celta",country:null,national:false},teams),null);
+});
+
+test("reviewed Europa aliases resolve uniquely without broadening name matching",()=> {
+  const pairs=[
+    ["be","RSC Anderlecht","Anderlecht"], ["be","Royal Union Saint-Gilloise","Union St.Gilloise"],
+    ["hr","GNK Dinamo Zagreb","Dinamo Zagreb"], ["cz","AC Sparta Praha","Sparta Prague"],
+    ["gr","Olympiakos CFP","Olympiacos"], ["at","SK Puntigamer Sturm Graz","Sturm Graz"],
+    ["at","FC Red Bull Salzburg","Salzburg"], ["pl","KKS Lech Poznań","Lech Poznań"],
+    ["no","Lillestrøm SK","Lillestrøm"], ["bg","PFC Levski Sofia","Levski Sofia"],
+    ["pl","SSA Jagiellonia Białystok","Jagiellonia Białystok"], ["gr","OFI FC","OFI Crete"],
+    ["si","NK Celje","NK Celje"], ["hu","Ferencvárosi TC","Ferencváros"],
+    ["am","Ararat-Armenia FC","Ararat Armenia"], ["pt","SC União Torreense","Torreense"]
+  ];
+  const teams=pairs.map(([, , name],i)=>({id:BigInt(i+1),name,country:null}));
+  for(const [i,[country,name]] of pairs.entries()) {
+    const src={id:`source-${i}`,name,slug:`club-${i}`,country,national:false};
+    assert.equal(resolveSourceTeam(src,teams)?.id,BigInt(i+1),name);
+    assert.equal(resolveSourceTeam({...src,name:`${name} II`},teams),null,name);
+    assert.equal(resolveSourceTeam({...src,country:"unverified"},teams),null,name);
+    assert.equal(resolveSourceTeam(src,[...teams,{...teams[i],id:999n}]),null,name);
+  }
 });
 /** @spec spec://modules/machete/INFRA-004-sorareinside-starters#apply */
 test("other sources respect upcoming SorareInside predictions only while fixture is future",()=> {

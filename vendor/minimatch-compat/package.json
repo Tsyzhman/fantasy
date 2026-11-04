@@ -1,0 +1,9 @@
+{
+  "name": "minimatch",
+  "version": "11.0.1",
+  "description": "Patched minimatch with legacy glob token metadata for ExcelJS archive dependencies.",
+  "main": "index.cjs",
+  "license": "MIT",
+  "engines": { "node": ">=24.11.0" },
+  "dependencies": { "minimatch-v11": "npm:minimatch@11.0.1" }
+}
