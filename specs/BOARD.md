@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-084](work/WI-084-project-server-audit.md) | Audit current production and coordinate verified remediation | INFRA-006, PROP-002 | @tsyzhman | 2026-11-04 | — |
 | [WI-082](work/WI-082-scheduled-browser-smoke.md) | Restore scheduled GitHub browser checks and release the aligned revision | PROP-002, INFRA-006 | @tsyzhman | 2026-10-26 | — |
 | [WI-078](work/WI-078-ucl-round-three-transfers.md) | Six transfers only in Champions League round three | FEAT-001 | @tsyzhman | 2026-10-20 | — |
 | [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
@@ -101,3 +102,4 @@
 | [WI-004](work/archive/2026/WI-004-squad-contact-sheet.md) | squad card “Contact sheet” | @tsyzhman | 2026-09-07 |
 | [WI-003](work/archive/2026/WI-003-betting-features.md) | Advanced check of betting factors | @tsyzhman | 2026-09-07 |
 | [WI-002](work/archive/2026/WI-002-betting-feasibility.md) | Checking the profitability of bets according to statistics | @tsyzhman | 2026-09-07 |
+
