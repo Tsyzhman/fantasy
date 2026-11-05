@@ -129,7 +129,14 @@ export default async function MixerrPage({ searchParams }: PageProps) {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
-      <SectionCrumb items={[{ label: <I18nText en="MiXerr" ru="Миксер" /> }]} />
+      <SectionCrumb
+        items={[{ label: <I18nText en="MiXerr" ru="Миксер" /> }]}
+        tools={(
+          <Link href="/mixerr/passing-networks" prefetch={false} className="ui-button ml-auto text-sm">
+            <I18nText en="Passing networks" ru="Карты передач" />
+          </Link>
+        )}
+      />
 
       <FilterShell
         className="mt-4"

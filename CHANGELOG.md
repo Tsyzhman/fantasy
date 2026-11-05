@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.154 - 2026-11-05
+
+- Add league-season Massey team ratings with raw xG and played schedule comparisons.
+- Add browser-local MiXerr passing networks from a StatsBomb event file, with independent starting-lineup cutoffs.
+
 ## 0.3.153 - 2026-11-05
 
 - Give marked Sports.ru outfield starters at least 55 minutes of event exposure in the nearest fixture FO forecast.

@@ -47,6 +47,8 @@ Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, th
 
 | Area | Responsibility | Primary code |
 |---|---|---|
+| League strength | `spec://modules/machete/FEAT-009-league-strength#root`: bounded season reader and Massey rating view | `src/machete/league-strength*.ts`, `src/app/machete/leagues/[leagueId]/strength/` |
+| MiXerr passing networks | `spec://modules/mixerr/FEAT-001-passing-networks#root`: event file validation, starting lineup windows and pitch graphs | `src/mixerr/passing-network.ts`, `src/components/mixerr/PassingNetworks.tsx`, `src/app/mixerr/passing-networks/` |
 | Spec workflow tooling | PROP-001: explicit standalone/managed mode validation, mirrored client skills and contract fixtures | `.agents/skills/spec-driven-work/scripts/check-workflow.mjs`, `.claude/skills/spec-driven-work/scripts/check-workflow.mjs`, `src/lib/workflow-validator.test.ts` |
 | Machete UI | League, player, model, squad, and sync screens | `src/app/machete` |
 | Squad player card | FEAT-003: contact-sheet pitch/bench card and themed styles | `src/components/machete/FantasySquadPlanner.tsx`, `src/app/globals.css` |
