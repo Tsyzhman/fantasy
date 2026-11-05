@@ -13,6 +13,7 @@ import { OFFICIAL_TRANSFER_ROSTER_SOURCE } from "@/core_data/models";
 import { formatDate } from "@/lib/format";
 import { ExpiringPromiseCache } from "@/lib/expiring-promise-cache";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
+import { createLogger } from "@/lib/logger";
 import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 import { FPL_PROVIDER, FPL_SEASON } from "@/lib/providers/fpl";
 import { fpl202627Rules } from "@/lib/providers/fpl-rules";
@@ -35,11 +36,13 @@ import {
 import {
   ProjectionInputError,
   projectTeamPlayers,
+  withPlayerAttackEvents,
   type PlayerFixtureProjection,
   type PlayerFantasyPointComponents,
   type ProbableParticipantInput,
   type ProjectedTeamTotals
 } from "./deterministic_fantasy_projection";
+import { loadHistoricalOpponentFactors, type OpponentAttackAdjustment } from "./historical-opponent-strength";
 
 import type { FantasyBacktestSample } from "./fantasy_backtest";
 import {
@@ -277,6 +280,7 @@ export type SportsRuFantasyPriceRef = {
 };
 
 const maxProjectionRounds = 10;
+const opponentForecastLogger = createLogger("historical-opponent-forecast");
 const teamStrengthHalfLifeDays = 180;
 const teamStrengthOverallPriorMatches = 6;
 const teamStrengthVenuePriorMatches = 8;
@@ -815,6 +819,7 @@ export async function loadFantasySquadPlannerData(
 ): Promise<FantasySquadPlannerData> {
   const provider = options?.provider ?? "SPORTS_RU";
   const isFpl = provider === FPL_PROVIDER;
+  const preferredProjectionEngine = configuredFantasyProjectionEngine();
   if (isFpl && (league.leagueId !== 47n || league.season !== FPL_SEASON)) {
     throw new Error(`FPL is available only for CoreLeague 47 season ${FPL_SEASON}.`);
   }
@@ -884,7 +889,8 @@ export async function loadFantasySquadPlannerData(
       options?.playerIds,
       options?.deferFormulaProjections,
       rosterOverrides,
-      isFpl && !starterStatusKnown
+      isFpl && !starterStatusKnown,
+      !isFpl && preferredProjectionEngine === "COMPONENT_XFP_V1"
     ),
     loadUpcomingRoundFixtures(
       prisma,
@@ -965,6 +971,9 @@ export async function loadFantasySquadPlannerData(
     : playerRows;
   const effectivePlayerRows = projectionRows;
   const projectedByPlayerTeam = new Map(effectivePlayerRows.rows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
+  const opponentAdjustments = new Map(effectivePlayerRows.friendRows.flatMap((row) =>
+    row.opponentAttackAdjustment ? [[playerTeamKey(row.playerId, row.teamId), row.opponentAttackAdjustment] as const] : []
+  ));
   const componentProjections = options?.deferFormulaProjections
     ? emptyComponentProjectionIndex()
     : buildFormulaProjectionIndex(
@@ -985,7 +994,6 @@ export async function loadFantasySquadPlannerData(
         true,
         isFpl ? "FPL" : "GENERIC"
       );
-  const preferredProjectionEngine = configuredFantasyProjectionEngine();
   const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const playerId = String(row.playerId);
     const teamId = String(row.teamId);
@@ -1160,6 +1168,12 @@ export async function loadFantasySquadPlannerData(
         ? null
         : roundFantasyValue(values.reduce<number>((total, value) => total + (value ?? 0), 0));
     });
+    const opponentAttackAdjustment = opponentAdjustments.get(playerTeamKey(playerId, teamId));
+    const opponentAdjustedRoundPoints = opponentAttackAdjustment
+      ? teamFixturesByRound.map((fixtures) => opponentAdjustedRoundForecast(
+          fixtures, playerId, componentProjections, playerRows.expectedProjectionConfig, opponentAttackAdjustment
+        ))
+      : undefined;
     const roundFixtureCounts = teamFixturesByRound.map((teamFixtures) => teamFixtures.length);
     const fixtures = teamFixturesByRound.map((teamFixtures) => {
       return teamFixtures.map((fixture) => `${fixture.side} ${fixture.opponentName}`).join(", ");
@@ -1259,6 +1273,8 @@ export async function loadFantasySquadPlannerData(
         alternativeProjectionFormula: nextFriendRoundFormula,
         alternativePredictedFp,
         alternativeRoundPoints,
+        opponentAdjustedRoundPoints,
+        opponentAttackAdjustment,
         foontasyPoints: foontasy?.points ?? null,
         ownershipPercent: resolveFantasyPlannerOwnership(priceRow, foontasy),
         // Foontasy publishes its current round only. Do not invent a T3/T5
@@ -2771,7 +2787,8 @@ async function loadProjectedPlayerRows(
   playerIds?: bigint[],
   deferFormulaProjections = false,
   rosterOverrides: SharedRosterOverride[] = [],
-  ignoreStarterFlags = false
+  ignoreStarterFlags = false,
+  includeHistoricalOpponentFactors = false
 ) {
   const [modelBundle, preference] = await Promise.all([
     getActiveScoringModelBundleForSource("MACHETE", prisma),
@@ -2782,6 +2799,16 @@ async function loadProjectedPlayerRows(
   const alternativeProjectionConfig = resolvedAlternativeProjectionConfig(preference);
   const baseModelVersion = `${modelBundle.identity.configuredModelSource}:${modelBundle.identity.configuredModelId ?? "built-in"}:v${modelBundle.identity.configuredModelVersion}`;
   const readContext = createSharedMacheteReadContext();
+  const projectionLeagueIds = [...new Set(history.projectionScopes.map((scope) => scope.leagueId))];
+  const historicalOpponentFactors = !deferFormulaProjections && includeHistoricalOpponentFactors
+    ? loadHistoricalOpponentFactors(prisma, projectionLeagueIds).catch((error: unknown) => {
+        opponentForecastLogger.warn("Historical opponent factors are unavailable.", {
+          leagueId: String(league.leagueId),
+          error: error instanceof Error ? error.message : String(error)
+        });
+        return undefined;
+      })
+    : Promise.resolve(undefined);
   const [rawRows, rawFriendRows, calibration] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
       scopes: history.historyScopes,
@@ -2798,20 +2825,21 @@ async function loadProjectedPlayerRows(
     }),
     deferFormulaProjections
       ? Promise.resolve([])
-      : loadSharedMachetePlayerRows(prisma, {
+      : historicalOpponentFactors.then((factors) => loadSharedMachetePlayerRows(prisma, {
           scopes: history.projectionScopes,
           rosterScopes: history.rosterScopes,
           matchWindow: { kind: "days", days: 365 },
           combineTeamCompetitions: true,
           fallbackToRecentPlayerHistory: false,
           fallbackToRecentClubHistory: true,
-          fallbackLeagueIds: [...new Set(history.projectionScopes.map((scope) => scope.leagueId))],
+          fallbackLeagueIds: projectionLeagueIds,
           scoringModel: modelBundle.model,
           playerIds,
           rosterOverrides,
           ignoreStarterFlags,
+          historicalOpponentFactors: factors,
           readContext
-        }),
+        })),
     loadFantasyProjectionCalibration(prisma, {
       leagueId: league.leagueId,
       currentSeason: league.season,
@@ -3154,6 +3182,32 @@ export function projectionFormulaFantasyPoints(
     config.scoreByPosition[projection.position],
     componentProjectionFormulaMetrics(projection, fixture, extraMetrics)
   ));
+}
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast */
+export function opponentAdjustedRoundForecast(
+  fixtures: readonly PlannerFixture[],
+  playerId: string,
+  index: ComponentProjectionIndex,
+  config: ProjectionFormulaConfig,
+  adjustment: OpponentAttackAdjustment
+) {
+  let points = 0;
+  for (const fixture of fixtures) {
+    const key = fixturePlayerProjectionKey(fixture.id, playerId);
+    const projection = index.byFixturePlayer.get(key);
+    const metrics = index.formulaMetricsByFixturePlayer.get(key);
+    const teamGoals = numericOrNull(metrics?.expected_goals);
+    const assistsPerGoal = numericOrNull(metrics?.assists_per_goal);
+    if (!projection || teamGoals === null || assistsPerGoal === null) return null;
+    const adjusted = withPlayerAttackEvents(
+      projection,
+      Math.min(teamGoals, projection.expectedEvents.goals * adjustment.goalFactor),
+      Math.min(teamGoals * assistsPerGoal, projection.expectedEvents.assists * adjustment.assistFactor)
+    );
+    points += projectionFormulaFantasyPoints(adjusted, fixture, config, metrics);
+  }
+  return roundFantasyValue(points);
 }
 
 function projectionFormulaWithBreakdown(

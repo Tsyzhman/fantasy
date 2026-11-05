@@ -9,6 +9,8 @@ test("squad list DTO preserves provider identity, strips breakdowns and keeps pr
   const player = {
     playerId: "7",
     providerPlayerId: "315",
+    opponentAttackAdjustment: { goalFactor: 1.05, assistFactor: 0.98, ratedMatches: 7 },
+    opponentAdjustedRoundPoints: [3.4, null, 0],
     projectedFixtureComponents: {
       sixtyMinutesProbability: 0.7,
       fullMatchProbability: 0.5,
@@ -30,6 +32,8 @@ test("squad list DTO preserves provider identity, strips breakdowns and keeps pr
 
   const listItem = toFantasyPlayerPoolListItem(player);
   assert.equal(listItem.providerPlayerId, "315");
+  assert.deepEqual(listItem.opponentAdjustedRoundPoints, [3.4, null, 0]);
+  assert.equal(listItem.opponentAttackAdjustment?.ratedMatches, 7);
   assert.equal("projectionFormula" in listItem, false);
   assert.equal("projectedFixtureComponents" in listItem, false);
   assert.deepEqual(listItem.projectionListMetrics, {

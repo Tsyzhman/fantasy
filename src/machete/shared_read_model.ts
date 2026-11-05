@@ -10,6 +10,11 @@ import { normalizeName, slugify } from "@/lib/text";
 import { compareFantasyPositions } from "@/lib/players/fantasy-position-order";
 import { daysAgo, matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
+import {
+  historicalOpponentAttackAdjustment,
+  type HistoricalOpponentFactors,
+  type OpponentAttackAdjustment
+} from "./historical-opponent-strength";
 
 export type SharedLeagueSeasonOption = {
   leagueId: bigint;
@@ -66,6 +71,7 @@ export type SharedMachetePlayerRow = {
   averageRating: number | null;
   averageRating10?: number | null;
   minuteHistoryProvenance?: SharedMinuteHistoryProvenance | null;
+  opponentAttackAdjustment?: OpponentAttackAdjustment;
   fantasyScore: number | null;
   scoringScore: number | null;
   alternativeScore: number | null;
@@ -530,6 +536,7 @@ export async function loadSharedMachetePlayerRows(
     playerIds?: bigint[];
     rosterOverrides?: SharedRosterOverride[];
     ignoreStarterFlags?: boolean;
+    historicalOpponentFactors?: HistoricalOpponentFactors;
     readContext?: SharedMacheteReadContext;
   }
 ): Promise<SharedMachetePlayerRow[]> {
@@ -692,7 +699,10 @@ export async function loadSharedMachetePlayerRows(
         const ratingStats = mergeRecentPlayerStats(scopedRatingStats, fallbackStatsByPlayer.get(String(first.playerId)) ?? [], matchDateById, AVERAGE_RATING_WINDOW);
         const position = inferSharedPosition(firstNonEmpty(rows.map((row) => row.position)), playerStats, matchDateById);
         const leagueNames = uniqueStrings(rows.map(leagueNameForRosterRow));
-        const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow, ratingStats, mergedHistory.provenance);
+        const aggregate = aggregateSharedStats(
+          playerStats, position, scoringModel, matchDateById, input.matchWindow, ratingStats,
+          mergedHistory.provenance, input.historicalOpponentFactors
+        );
 
         return {
           id: `combined:${first.teamId}:${first.playerId}:${rows.map((row) => `${row.leagueId}:${row.season}`).join("|")}`,
@@ -740,7 +750,10 @@ export async function loadSharedMachetePlayerRows(
       const playerStats = mergedHistory.stats;
       const ratingStats = mergeRecentPlayerStats(scopedRatingStats, fallbackStatsByPlayer.get(String(row.playerId)) ?? [], matchDateById, AVERAGE_RATING_WINDOW);
       const position = inferSharedPosition(row.position, playerStats, matchDateById);
-      const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow, ratingStats, mergedHistory.provenance);
+      const aggregate = aggregateSharedStats(
+        playerStats, position, scoringModel, matchDateById, input.matchWindow, ratingStats,
+        mergedHistory.provenance, input.historicalOpponentFactors
+      );
       const leagueName = leagueNameForRosterRow(row);
 
       return {
@@ -1731,10 +1744,17 @@ export function calculateFriendWindowMetrics(
   stats: FriendWindowStat[],
   matchDateById?: Map<string, Date | null>
 ): Record<string, number> {
-  const ordered = [...stats].sort((left, right) => {
+  return friendWindowMetrics(orderedFriendHistory(stats, matchDateById));
+}
+
+function orderedFriendHistory<T extends FriendWindowStat>(stats: T[], matchDateById?: Map<string, Date | null>) {
+  return [...stats].sort((left, right) => {
     const dateDifference = dateMs(matchDateById?.get(String(right.matchId)) ?? null) - dateMs(matchDateById?.get(String(left.matchId)) ?? null);
     return dateDifference || compareBigints(right.matchId, left.matchId);
   });
+}
+
+function friendWindowMetrics(ordered: FriendWindowStat[]) {
   const annual = friendWindowAggregate(ordered);
   const last10 = friendWindowAggregate(ordered.slice(0, 10));
   const last5 = friendWindowAggregate(ordered.slice(0, 5));
@@ -1861,7 +1881,8 @@ function aggregateSharedStats(
   matchDateById?: Map<string, Date | null>,
   matchWindow?: MacheteMatchWindow,
   ratingStats: MatchPlayerStatRecord[] = stats,
-  minuteHistoryProvenance: SharedMinuteHistoryProvenance = minuteHistoryProvenanceForStats(stats)
+  minuteHistoryProvenance: SharedMinuteHistoryProvenance = minuteHistoryProvenanceForStats(stats),
+  historicalOpponentFactors?: HistoricalOpponentFactors
 ) {
   const matchesPlayed = stats.length;
   const appearances = stats.filter(isPlayerAppearance).length;
@@ -1908,6 +1929,9 @@ function aggregateSharedStats(
     return !latest || stat.updatedAt > latest ? stat.updatedAt : latest;
   }, null);
 
+  const friendHistory = matchWindow?.kind === "days" && matchWindow.days === 365
+    ? orderedFriendHistory(stats, matchDateById)
+    : null;
   const rawMetrics = {
     matches_played: matchesPlayed,
     observed_rounds: matchesPlayed,
@@ -1950,7 +1974,7 @@ function aggregateSharedStats(
     previous_club_penalty_factor: minuteHistoryProvenance.previousClubMatches > 0
       ? minuteHistoryProvenance.previousClubPenaltyFactor
       : 1,
-    ...(matchWindow?.kind === "days" && matchWindow.days === 365 ? calculateFriendWindowMetrics(stats, matchDateById) : {})
+    ...(friendHistory ? friendWindowMetrics(friendHistory) : {})
   };
   const positionGroup = machetePositionGroup(position);
 
@@ -1967,6 +1991,9 @@ function aggregateSharedStats(
     averageRating,
     averageRating10,
     minuteHistoryProvenance,
+    opponentAttackAdjustment: historicalOpponentFactors && friendHistory
+      ? historicalOpponentAttackAdjustment(friendHistory, historicalOpponentFactors)
+      : undefined,
     fantasyScore: calculateFantasyScore(rawMetrics, positionGroup, model),
     scoringScore: calculateScoringScore(rawMetrics, positionGroup, model),
     alternativeScore: calculateAlternativeScore(rawMetrics, positionGroup, model),

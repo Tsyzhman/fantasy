@@ -3,6 +3,7 @@ import { fantasyPositionRank } from "@/lib/players/fantasy-position-order";
 import { currentRotationRisk, type RotationRisk } from "./rotation-risk";
 import { optimizeGlobalSquad, buildGlobalTransferSuggestions } from "./global-strategy-planner";
 import type { GlobalStrategyRequestContext } from "./global-strategy";
+import type { OpponentAttackAdjustment } from "./historical-opponent-strength";
 
 export type FantasyPositionGroup = "GK" | "DEF" | "MID" | "FWD" | "UNK";
 
@@ -210,6 +211,8 @@ export type FantasyPlannerPlayer = {
   } | null;
   alternativePredictedFp?: number | null;
   alternativeRoundPoints?: Array<number | null>;
+  opponentAdjustedRoundPoints?: Array<number | null>;
+  opponentAttackAdjustment?: OpponentAttackAdjustment;
   foontasyPoints?: number | null;
   foontasyHorizonPoints?: number | null;
   foontasyFetchedAt?: string | null;
@@ -2527,8 +2530,12 @@ export function playerAlternativeHorizonPoints(
   player: Pick<FantasyPlannerPlayer, "alternativePredictedFp" | "alternativeRoundPoints">,
   horizon: number
 ) {
+  return sumCompleteRoundForecasts(player.alternativeRoundPoints, horizon);
+}
+
+export function sumCompleteRoundForecasts(points: readonly (number | null)[] | undefined, horizon: number) {
   const requestedHorizon = Math.max(1, horizon);
-  const values = player.alternativeRoundPoints?.slice(0, requestedHorizon) ?? [];
+  const values = points?.slice(0, requestedHorizon) ?? [];
   if (values.length < requestedHorizon || values.some((value) => typeof value !== "number" || !Number.isFinite(value))) return null;
   return roundFantasyValue((values as number[]).reduce((total, value) => total + value, 0));
 }

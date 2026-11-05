@@ -47,8 +47,10 @@ import {
   loadFantasySquadPlannerData,
   loadSportsRuFantasySquadPlannerShellData,
   normalizeFantasySquadName,
+  opponentAdjustedRoundForecast,
   preferredArchivedSeason,
   projectFixtureFantasyPoints,
+  projectionFormulaFantasyPoints,
   projectionRoundFormulaWithBreakdown,
   resolveFantasyPlannerOwnership,
   resolveFantasyPlannerPrice,
@@ -87,6 +89,49 @@ import { defaultFantasySquadRules, fantasyProviderPlaceholderPlayerId, fantasyTr
 import { expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig } from "./projection-formula-config";
 import { positionEventPriorPer90 } from "./player-season-prior";
 import { parseFantasyPlayerPoolSnapshotMetadata } from "./fantasy-player-pool-snapshots";
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast */
+test("the opponent comparison adjusts the attack once and sums complete double rounds", () => {
+  const config = {
+    ...expectedProjectionFormulaConfig,
+    history: {
+      ...expectedProjectionFormulaConfig.history,
+      expectedMinutes: "75", appearanceProbability: "1", sixtyProbability: "1", fullMatchProbability: "0",
+      xgRate: "0.4", xaRate: "0.2"
+    },
+    team: { ...expectedProjectionFormulaConfig.team, expectedGoals: "1" },
+    scoreByPosition: {
+      ...expectedProjectionFormulaConfig.scoreByPosition,
+      FWD: "{Appearance probability} + 4 * {Expected goals} + 3 * {Expected assists}"
+    }
+  };
+  const first = {
+    id: "first", roundId: "double", teamId: "team", opponentTeamId: "opponent",
+    opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
+    kickoffAt: new Date("2026-11-08T12:00:00Z"), projectedXg: 1, projectedXga: 1,
+    attackMultiplier: 0.6, defenseMultiplier: 1.4
+  };
+  const fixtures = [first, { ...first, id: "second" }];
+  const round = { rounds: [], fixturesByTeamRound: new Map([["double", new Map([["team", fixtures]])]]), teamShortNameById: new Map() };
+  const rows = ["hard-history", "easy-history"].map((playerId) => ({
+    playerId, teamId: "team", position: "FWD", isStarter: false, minutesPlayed: 600
+  }));
+  const index = buildFormulaProjectionIndex(rows as never, round, new Map(), config);
+  const original = index.byFixturePlayer.get("first:hard-history")!;
+  assert.equal(projectionFormulaFantasyPoints(original, first, config), 4.2);
+  assert.equal(opponentAdjustedRoundForecast(fixtures, "hard-history", index, config, { goalFactor: 1.1, assistFactor: 1.1, ratedMatches: 8 }), 9);
+  assert.equal(opponentAdjustedRoundForecast(fixtures, "easy-history", index, config, { goalFactor: 0.9, assistFactor: 0.9, ratedMatches: 8 }), 7.8);
+  const neutral = { goalFactor: 1, assistFactor: 1, ratedMatches: 8 };
+  assert.equal(opponentAdjustedRoundForecast([], "hard-history", index, config, neutral), 0);
+  assert.equal(opponentAdjustedRoundForecast(fixtures, "missing", index, config, neutral), null);
+  assert.equal(original.expectedEvents.goals, 0.5);
+  assert.equal(original.expectedEvents.assists, 0.4);
+
+  const solo = buildFormulaProjectionIndex(rows.slice(0, 1) as never, round, new Map(), config);
+  assert.equal(opponentAdjustedRoundForecast([first], "hard-history", solo, config, {
+    goalFactor: 1.1, assistFactor: 1.1, ratedMatches: 8
+  }), 7.4);
+});
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
 test("Sports.ru configured transfer allowance remains three for both default and contest rules", () => {

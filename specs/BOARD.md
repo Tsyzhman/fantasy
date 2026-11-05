@@ -29,6 +29,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-093](work/archive/2026/WI-093-opponent-adjusted-fo.md) | Compare FO with a historical opponent adjustment | @tsyzhman | 2026-11-05 |
 | [WI-092](work/archive/2026/WI-092-promoted-player-league-translation.md) | Translate lower-division player history for promoted clubs | @tsyzhman | 2026-11-05 |
 | [WI-091](work/archive/2026/WI-091-starter-minute-projections.md) | Calibrate football projections for players marked in the starting XI | @tsyzhman | 2026-11-05 |
 | [WI-084](work/archive/2026/WI-084-project-server-audit.md) | Audit current production and coordinate verified remediation | @tsyzhman | 2026-11-04 |
