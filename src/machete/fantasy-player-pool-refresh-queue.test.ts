@@ -8,6 +8,12 @@ import {
   enqueueCurrentXiTeamsSnapshotRefresh,
   fantasyPlayerPoolRefreshRetryDelayMs
 } from "./fantasy-player-pool-refresh-queue";
+import {
+  parseFantasyPlayerPoolSnapshotMetadata,
+  refreshCurrentXiTeamsSnapshot,
+  refreshFantasyPlayerPoolSnapshots
+} from "./fantasy-player-pool-snapshots";
+import { COMPONENT_PROJECTION_VERSION } from "./squad-projection";
 
 test("enqueue deduplicates a mass-import team list into one atomic upsert without calculating", async () => {
   const queries: Prisma.Sql[] = [];
@@ -38,6 +44,42 @@ test("worker groups teams by league and season and drains only a bounded batch",
   ]);
   assert.deepEqual(result, { requests: 3, scopes: 2, completed: 3, failed: 0 });
   assert.equal(mock.rows.size, 0);
+});
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#starter-event-minutes */
+test("previous component projections are readable and require a full refresh before team updates", async () => {
+  const scope = { leagueId: 48n, season: "2026/2027" };
+  const metadata = {
+    version: 1, providerIdentityVersion: 1, readiness: {}, rules: {}, rounds: [],
+    bookmakerFavorites: [], priceStatus: {}, historySeasonOptions: [], dataFreshness: {},
+    fixtureCalendar: { version: 1, teams: [], rounds: [] },
+    rotationRiskVersion: "RR_V1", rotationRiskExpiresAt: new Date(Date.now() + 60_000).toISOString(),
+    startingXiTeamRevisions: {}
+  };
+  const previous = { id: "ready", metadata };
+  const current = { ...previous, metadata: { ...metadata, componentProjectionVersion: COMPONENT_PROJECTION_VERSION } };
+  let ready = previous;
+  const fullRefresh = new Error("reached full planner calculation");
+  const prisma = {
+    leagueSeason: { findMany: async () => [{ ...scope, league: { name: "Championship", country: "England" } }] },
+    fantasyContest: { findMany: async () => [{ ...scope, id: "contest" }] },
+    fantasyPlayerPoolSnapshot: { findFirst: async () => ready },
+    teamPlayerSeason: { findMany: async () => [] },
+    ingestionJob: { findMany: async () => { throw fullRefresh; } }
+  } as unknown as PrismaClient;
+  const teamRefresh = { ...scope, teamIds: [20n] };
+
+  assert.ok(parseFantasyPlayerPoolSnapshotMetadata(previous.metadata));
+  const upgrade = await refreshFantasyPlayerPoolSnapshots(prisma, { ...scope, onlyMissing: true });
+  assert.equal(upgrade.failed.length, 1);
+  assert.match(upgrade.failed[0].error, /reached full planner calculation/);
+  await assert.rejects(refreshCurrentXiTeamsSnapshot(prisma, teamRefresh), fullRefresh);
+
+  ready = current;
+  const upToDate = await refreshFantasyPlayerPoolSnapshots(prisma, { ...scope, onlyMissing: true });
+  assert.equal(upToDate.snapshots, 0);
+  assert.deepEqual(upToDate.failed, []);
+  assert.equal(await refreshCurrentXiTeamsSnapshot(prisma, teamRefresh), current);
 });
 
 test("a new flag event arriving during a calculation survives acknowledgment even at the same timestamp", async () => {

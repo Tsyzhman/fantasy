@@ -2,13 +2,35 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { FantasyPlannerPlayer } from "@/machete/squad_logic";
-import { playerPoolSortOptions, sortPlayerPoolRows, supportedPlayerPoolSort, type PlayerPoolOptionalColumn } from "./PlayerPool";
+import {
+  customPlayerPoolColumnValue, playerPoolOptionalColumns, playerPoolSortOptions, playerPoolValueCellTitle,
+  sortPlayerPoolRows, supportedPlayerPoolSort, type PlayerPoolOptionalColumn
+} from "./PlayerPool";
+import { fantasyPlayerAtRoundOffset } from "./planner-squad-commands";
 
 function player(id: string, fields: Partial<FantasyPlannerPlayer> = {}): FantasyPlannerPlayer {
   return { id, playerId: id, name: id, teamId: "club", teamName: "Club", leagueName: "Fixture", position: "MID", positionGroup: "MID", price: 5, priceSource: "ESTIMATED", predictedFp: 0, valueScore: 0, roundPoints: [0], fixtures: [], fixtureDifficulties: [], ...fields };
 }
 const column = (key: string): PlayerPoolOptionalColumn => ({ key, label: key, title: key, numeric: true, width: 72 });
 const rows = [player("missing", { foontasyPoints: null }), player("zero", { foontasyPoints: 0 }), player("tie-first", { foontasyPoints: 4 }), player("tie-second", { foontasyPoints: 4 }), player("negative", { foontasyPoints: -2 })];
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast */
+test("opponent columns expose the selected round and sort complete horizons ahead of old snapshots", () => {
+  const adjusted = player("adjusted", {
+    opponentAdjustedRoundPoints: [4.5, 0, 3.2],
+    opponentAttackAdjustment: { goalFactor: 1.08, assistFactor: 0.96, ratedMatches: 7 }
+  });
+  const old = player("old");
+  const options = playerPoolOptionalColumns([adjusted, old], 3, "ru");
+  const next = options.find((item) => item.key === "opponentAdjustedFp")!;
+  assert.equal(next.label, "ФО соп.");
+  assert.match(playerPoolValueCellTitle(next, adjusted, 3, "ru", 4.5), /Матчей с рейтингом соперника — 7/);
+  assert.equal(customPlayerPoolColumnValue(next.key, fantasyPlayerAtRoundOffset(adjusted, 1), 3), 0);
+  assert.equal(customPlayerPoolColumnValue("opponentAdjustedHorizon", adjusted, 3), 7.7);
+  assert.equal(customPlayerPoolColumnValue("opponentAdjustedHorizon", fantasyPlayerAtRoundOffset(adjusted, 1), 3), null);
+  assert.deepEqual(sortPlayerPoolRows([old, adjusted], { key: "opponentAdjustedHorizon", direction: "desc" }, 3).map((row) => row.playerId), ["adjusted", "old"]);
+  assert.ok(!playerPoolOptionalColumns([], 3, "en", "FPL").some((item) => item.key === next.key));
+});
 
 for (const language of ["en", "ru"] as const) {
   test(`mobile choices include fixed and selected metrics, excluding fixtures/actions: ${language}`, () => {

@@ -10,6 +10,33 @@ export const FEEDER_TO_TOP_EVENT_FACTOR = 0.78;
 // adaptation was shared by every supported top division.
 export const FNL_TO_RPL_EVENT_FACTOR = FEEDER_TO_TOP_EVENT_FACTOR;
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#league-translation */
+const feederDivisions = new Map<bigint, { leagueId: bigint; attackFactor?: number }>([
+  [38n, { leagueId: 119n }],
+  [40n, { leagueId: 264n }],
+  [47n, { leagueId: 48n, attackFactor: 0.74 }],
+  [48n, { leagueId: 108n }],
+  [53n, { leagueId: 110n }],
+  [54n, { leagueId: 146n }],
+  [55n, { leagueId: 86n }],
+  [57n, { leagueId: 111n, attackFactor: 0.70 }],
+  [61n, { leagueId: 185n }],
+  [63n, { leagueId: 338n }],
+  [64n, { leagueId: 123n }],
+  [69n, { leagueId: 163n }],
+  [71n, { leagueId: 165n }],
+  [87n, { leagueId: 140n, attackFactor: 0.70 }]
+]);
+
+export function feederLeagueIdFor(leagueId: bigint) {
+  return feederDivisions.get(leagueId)?.leagueId;
+}
+
+export function leagueAttackTranslationFactor(sourceLeagueId: bigint | null, destinationLeagueId: bigint) {
+  const feeder = feederDivisions.get(destinationLeagueId);
+  return feeder && feeder.leagueId === sourceLeagueId ? feeder.attackFactor ?? FEEDER_TO_TOP_EVENT_FACTOR : 1;
+}
+
 const POSITION_EVENT_PRIORS: Record<Exclude<FantasyPositionGroup, "UNK">, { goals: number; assists: number }> = {
   GK: { goals: 0.003, assists: 0.002 },
   DEF: { goals: 0.035, assists: 0.04 },

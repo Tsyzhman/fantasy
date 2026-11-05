@@ -384,6 +384,17 @@ function allocateExactly(total: number, weights: readonly number[]) {
   return allocated;
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast */
+export function withPlayerAttackEvents(projection: PlayerFixtureProjection, goals: number, assists: number) {
+  if (goals === projection.expectedEvents.goals && assists === projection.expectedEvents.assists) return projection;
+  const expectedEvents = { ...projection.expectedEvents, goals, assists };
+  return {
+    ...projection,
+    expectedEvents,
+    components: fantasyPointComponents(projection.position, projection.probabilities, expectedEvents)
+  };
+}
+
 function fantasyPointComponents(
   position: FantasyPosition,
   probabilities: { appearance: number; sixtyMinutes: number; fullMatch: number },

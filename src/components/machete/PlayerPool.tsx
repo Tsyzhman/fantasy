@@ -19,7 +19,7 @@ import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { fantasyPlayerMatchesNameQuery } from "@/machete/player-identity";
 import { compareFantasyPositions, isFantasyPositionSortKey } from "@/lib/players/fantasy-position-order";
-import { nextAlternativeFantasyPoints, nextFantasyPoints, playerAlternativeHorizonPoints, playerHorizonPoints, type FantasyPlannerPlayer, type FantasyPositionGroup, type FantasySquadSelection } from "@/machete/squad_logic";
+import { nextAlternativeFantasyPoints, nextFantasyPoints, playerAlternativeHorizonPoints, playerHorizonPoints, sumCompleteRoundForecasts, type FantasyPlannerPlayer, type FantasyPositionGroup, type FantasySquadSelection } from "@/machete/squad_logic";
 import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
 import type { SquadFilterPreset } from "@/machete/squad-filter-presets";
 import { defaultSquadTableColumns, emptySquadTableValueFilter, moveSquadTableColumn, type SquadTableValueFilter } from "@/machete/squad-table-columns";
@@ -542,6 +542,7 @@ export function CustomPlayerPoolRow({ player, columns, horizon, language, provid
   );
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast */
 export function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage, provider = "SPORTS_RU"): PlayerPoolOptionalColumn[] {
   const priceProviderLabel = provider === "FPL" ? "FPL" : "Sports.ru";
   const column = (key: string, en: string, ru: string, titleEn = en, titleRu = ru, numeric = true, width = 72): PlayerPoolOptionalColumn => ({
@@ -559,6 +560,10 @@ export function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horiz
     column("foontasyPerPrice", "FFO/price", "ФФО/цена", `Foontasy current-round forecast divided by the current ${priceProviderLabel} price. Higher means more FFO per one price unit.`, `Прогноз Foontasy на текущий тур, делённый на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше ФФО на одну единицу стоимости.`, true, 82),
     column("modelHorizon", `${horizon}R FFO`, `${horizon}Т ФФО`, `Our reproducible Foontasy-style forecast for the selected ${horizon}-round horizon. Every fixture is calculated separately from expected minutes, smoothed player rates, and fresh odds, xG form, or goals fallback. It is our model, not Foontasy's external forecast.`, `Наш воспроизводимый прогноз в стиле Foontasy на выбранный горизонт ${horizon} туров. Каждый матч считается отдельно по ожидаемым минутам, сглаженным показателям игрока и свежим коэффициентам, xG-форме или голам. Это наша модель, а не внешний прогноз Foontasy.`),
     column("alternative", "Alt", "Альт", "Alternative forecast for the next provider round. Each fixture is calculated independently with the user's personal Alt formula, then double-round results are summed.", "Альтернативный прогноз на следующий тур провайдера. Каждый матч отдельно рассчитывается по личной формуле Alt пользователя, затем результаты двойного тура складываются."),
+    ...(provider === "SPORTS_RU" ? [
+      column("opponentAdjustedFp", "FO Opp.", "ФО соп.", "Experimental forecast for the selected round. Historical opponent defense adjusts the player's expected goals and assists.", "Экспериментальный прогноз на выбранный тур. Сила защиты прошлых соперников корректирует ожидаемые голы и передачи игрока.", true, 78),
+      column("opponentAdjustedHorizon", `FO Opp. ${horizon}R`, `ФО соп. ${horizon}Т`, "Sum of the historical opponent forecasts over the selected horizon.", "Сумма прогнозов с поправкой на прошлых соперников за выбранный горизонт.", true, 96)
+    ] : []),
     column("alternativePerPrice", "Alt/price", "Альт/цена", `Alternative next-round expected fantasy points divided by the current ${priceProviderLabel} price. Higher means more Alt points per one price unit.`, `Альтернативные ожидаемые ФО на следующий тур, делённые на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.`, true, 82),
     column("alternativeHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of independently calculated personal Alt forecasts for the next ${horizon} rounds.`, `Сумма отдельно рассчитанных личных прогнозов Alt на следующие ${horizon} туров.`),
     column("fixtures", "Fixtures", "Матчи", "The next opponents in the selected horizon. Chip colour represents fixture difficulty; hover a chip for the full opponent name and home/away context.", "Следующие соперники на выбранном горизонте. Цвет плашки показывает сложность матча; при наведении доступны полное имя соперника и поле дома/в гостях.", false, 230),
@@ -695,6 +700,20 @@ export function playerPoolValueCellTitle(column: PlayerPoolOptionalColumn, playe
   if (column.key === "alternative") return alternativePlayerForecastTitle(player, language);
   if (column.key === "alternativePerPrice") return forecastEfficiencyTitle(player, language, "Alt", nextAlternativeFantasyPoints(player), numericValue);
   if (column.key === "alternativeHorizon") return alternativePlayerHorizonForecastTitle(player, language, horizon);
+  if (column.key === "opponentAdjustedFp" || column.key === "opponentAdjustedHorizon") {
+    const adjustment = player.opponentAttackAdjustment;
+    if (numericValue === null || !adjustment) return localizedText(
+      language, "Historical opponent forecast is unavailable for this selection.", "Прогноз с поправкой на прошлых соперников недоступен для выбранных туров."
+    );
+    return [
+      column.title,
+      localizedText(
+        language,
+        `${adjustment.ratedMatches} rated appearances. Goal factor ×${formatNumber(adjustment.goalFactor, 3)}, assist factor ×${formatNumber(adjustment.assistFactor, 3)}.`,
+        `Матчей с рейтингом соперника — ${adjustment.ratedMatches}. Множитель голов ×${formatNumber(adjustment.goalFactor, 3)}, передач ×${formatNumber(adjustment.assistFactor, 3)}.`
+      )
+    ].join("\n");
+  }
   return playerPoolMetricValueTitle(column, player, language, rawValue);
 }
 
@@ -1003,6 +1022,8 @@ export function customPlayerPoolColumnValue(key: string, player: FantasyPlannerP
     case "foontasyPerPrice": return forecastPointsPerPrice(player.foontasyPoints, player.price);
     case "modelHorizon": return horizon === 3 ? player.modelT3Points ?? null : player.modelT5Points ?? null;
     case "alternative": return nextAlternativeFantasyPoints(player);
+    case "opponentAdjustedFp": return sumCompleteRoundForecasts(player.opponentAdjustedRoundPoints, 1);
+    case "opponentAdjustedHorizon": return sumCompleteRoundForecasts(player.opponentAdjustedRoundPoints, horizon);
     case "alternativePerPrice": return forecastPointsPerPrice(nextAlternativeFantasyPoints(player), player.price);
     case "alternativeHorizon": return playerAlternativeHorizonPoints(player, horizon);
     case "fixtures": return [...(player.fixtureFullNames ?? []), ...(player.fixtures ?? [])].join(" ");

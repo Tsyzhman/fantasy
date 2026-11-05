@@ -1,6 +1,14 @@
 # Production release history
 
-## Latest verified release: 0.3.152 — 2026-11-04
+## Latest verified release: 0.3.153 — 2026-11-05
+
+[Deploy Production 42009437469](https://github.com/Tsyzhman/fantasy/actions/runs/42009437469) and its [dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42007646881) passed for `3d9a9b213db73b92bb8a3ef47b1a228d5687c4cb`. The recorded release is `20261105T102538Z-v0.3.153-3d9a9b2`. Public and loopback health, the release manifest and both running image labels agree. CI passed 1,387 main tests and 48 browser scenarios, and the production Squad page and both pool routes passed the authenticated canary.
+
+Sports.ru FO gives marked outfield starters at least 55 event minutes in the nearest fixture. Recognized lower-division attacking histories use the calibrated league-pair factors. Squad adds FO Opp. as a comparison using the defense of past opponents. The new worker published version-2 pools for all 12 active scopes with 8,464 players. In the nearest round, FO Opp. has a numeric result for 4,027 players, including 419 whose value differs from FO. The 3- and 5-round model finished its first recalculation for all 12 scopes.
+
+All 404 public health and old-CSS probes passed, including 20 consecutive probes after switching to the new commit. Caddy and PostgreSQL retained their processes. One interrupted artifact upload resumed and passed complete SHA-256 verification on both ends. Cleanup removed the temporary archive, retained 0.3.152 for rollback and left one verified database dump. The pool queue drained, with three READY revisions per scope and zero duplicate player, forecast, job or delivery keys. After recalculation, the worker used 1.074 GiB of its 4 GiB budget.
+
+## 0.3.152 — 2026-11-04
 
 Canonical Deploy [41855866227](https://github.com/Tsyzhman/fantasy/actions/runs/41855866227) and independent Check [41855846586](https://github.com/Tsyzhman/fantasy/actions/runs/41855846586) passed for `3e58a9f3d7d45fc9f26b815f9b9c33a80e2d4b65`. Release `20261104T152419Z-v0.3.152-3e58a9f` runs Node 24.22.2. Public health, release markers, web/worker image labels and committed Python hashes agree. PostgreSQL retained its August 19 start time. Exact identities are recorded in `specs/work/evidence/WI-088/release-identity-0152.json`.
 

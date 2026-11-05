@@ -1,0 +1,53 @@
+{
+  "baselineRevision": "9845d1f018d87a93926cbb181de0d1e129acc124",
+  "cutoffUtc": "2026-11-05T08:34:00Z",
+  "sources": {
+    "playerMatchCsvSha256": "eae7b798e6c8ba9641f1d74c604b5d247efd6dcbf5eda97617920e810e5ba5b2",
+    "playerMatchRows": 154399,
+    "matches": 4979,
+    "ratedMatchTeamSides": 8048,
+    "duplicateInputKeys": 0
+  },
+  "isolatedAttackReplay": {
+    "2025/26": {
+      "n": 59784,
+      "maeBefore": 0.151368,
+      "maeAfter": 0.151384,
+      "rmseBefore": 0.240304,
+      "rmseAfter": 0.240301
+    },
+    "2026/27": {
+      "n": 17949,
+      "maeBefore": 0.150802,
+      "maeAfter": 0.151150,
+      "rmseBefore": 0.241700,
+      "rmseAfter": 0.241992
+    },
+    "maxRssMiB": 146.988281
+  },
+  "examples": [
+    { "player": "Frank Anguissa", "matchId": "5749735", "ratedMatches": 6, "xgi90Before": 0.340665, "xgi90After": 0.379188 },
+    { "player": "Asier Osambela", "matchId": "5868113", "ratedMatches": 8, "xgi90Before": 0.143902, "xgi90After": 0.131770 }
+  ],
+  "verification": {
+    "unitSuite": { "passed": 1383, "failed": 0, "skipped": 4 },
+    "typecheck": "passed",
+    "targetedLint": { "errors": 0, "preexistingWarnings": 1 },
+    "workflow": "passed"
+  },
+  "productionReadOnly": {
+    "readyPools": 12,
+    "maximumReadyRevisions": 3,
+    "excessReadyRevisions": 0,
+    "queueRows": 0,
+    "duplicateQueueKeys": 0,
+    "rawCacheRows": 4,
+    "duplicateRawKeys": 0,
+    "availableMemoryMiB": 4419,
+    "workerMemoryGiB": 1.255
+  },
+  "localCleanup": {
+    "rawExtractBytesRemoved": 13109344,
+    "availableMemoryMiB": 15183
+  }
+}

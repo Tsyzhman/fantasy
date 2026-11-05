@@ -7,6 +7,7 @@ export const defaultSquadTableColumns = [
   "foontasyPerPrice",
   "modelHorizon",
   "alternative",
+  "opponentAdjustedFp",
   "alternativePerPrice",
   "alternativeHorizon",
   "fixtures"
@@ -50,6 +51,7 @@ export function squadTableValueFilterIsActive(filter: SquadTableValueFilter, num
 
 export const staticSquadTableColumnKeys = new Set([
   ...defaultSquadTableColumns,
+  "opponentAdjustedHorizon",
   "age",
   "nationality",
   "rosterStarter",

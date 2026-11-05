@@ -118,6 +118,7 @@ export function fantasyPlayerAtRoundOffset(player: FantasyPlannerPlayer, roundOf
     expectedMinutes: null,
     startProbability: null,
     alternativeRoundPoints: player.alternativeRoundPoints?.slice(roundOffset),
+    opponentAdjustedRoundPoints: player.opponentAdjustedRoundPoints?.slice(roundOffset),
     roundPoints: player.roundPoints.slice(roundOffset),
     roundFixtureCounts: player.roundFixtureCounts?.slice(roundOffset),
     fixtures: player.fixtures.slice(roundOffset),

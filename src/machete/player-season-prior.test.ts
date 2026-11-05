@@ -1,7 +1,24 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { archivedExpectedMinutes, blendArchivedEventRate, FNL_TO_RPL_EVENT_FACTOR } from "./player-season-prior";
+import {
+  archivedExpectedMinutes,
+  blendArchivedEventRate,
+  FNL_TO_RPL_EVENT_FACTOR,
+  leagueAttackTranslationFactor
+} from "./player-season-prior";
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#league-translation */
+test("attack factors are directional and apply only to the configured feeder pair", () => {
+  assert.equal(leagueAttackTranslationFactor(48n, 47n), 0.74);
+  assert.equal(leagueAttackTranslationFactor(111n, 57n), 0.7);
+  assert.equal(leagueAttackTranslationFactor(140n, 87n), 0.7);
+  assert.equal(leagueAttackTranslationFactor(338n, 63n), 0.78);
+  assert.equal(leagueAttackTranslationFactor(47n, 47n), 1);
+  assert.equal(leagueAttackTranslationFactor(47n, 48n), 1);
+  assert.equal(leagueAttackTranslationFactor(48n, 87n), 1);
+  assert.equal(leagueAttackTranslationFactor(null, 47n), 1);
+});
 
 test("prior-season rate remains after one RPL match and disappears after 900 minutes", () => {
   const afterOne = blendArchivedEventRate({

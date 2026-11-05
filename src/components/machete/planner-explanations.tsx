@@ -153,6 +153,7 @@ export function sparseTeamAttackAllocationLines(
   )];
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#starter-event-minutes */
 export function starterMinuteFloorLines(
   inputs: FantasyProjectionFixtureInputs | null | undefined,
   language: UiLanguage
@@ -183,7 +184,12 @@ export function starterMinuteFloorLines(
     inputs.eventExposureMinutes !== undefined &&
     inputs.eventExposureMinutes < inputs.expectedMinutes - 0.01
   ) {
-    lines.push(localizedText(
+    const eventExposureFloor = inputs.starterEventExposureFloor ?? 0;
+    lines.push(eventExposureFloor > 0 ? localizedText(
+      language,
+      `The starting XI mark raises the event minutes from ${formatNumber(inputs.baseExpectedMinutes + adjustment * finalReliability, 1)} to ${formatNumber(eventExposureFloor, 0)}. Goals, assists, recoveries and cards use this playing time with their estimated rates per 90.`,
+      `Отметка в основе поднимает минуты для событий с ${formatNumber(inputs.baseExpectedMinutes + adjustment * finalReliability, 1)} до ${formatNumber(eventExposureFloor, 0)}. Голы, передачи, возвраты и карточки рассчитываются за это время по оценённым темпам на 90 минут.`
+    ) : localizedText(
       language,
       `Cautious per-90 exposure: base ${formatNumber(inputs.baseExpectedMinutes, 1)} + starter uplift ${formatNumber(adjustment, 1)} × final reliability min(sample ${formatNumber(sampleReliability * 100, 1)}% from ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)} historical minutes; role ${formatNumber(roleReliability * 100, 1)}% from max(historical starts ${formatNumber(historicalStartProbability * 100, 1)}%, base/floor ${formatNumber(baseMinuteReliability * 100, 1)}%)) = ${formatNumber(finalReliability * 100, 1)}% = ${formatNumber(inputs.eventExposureMinutes, 1)} event minutes. Appearance and 60-minute points still use ${formatNumber(inputs.expectedMinutes, 1)} minutes; xG/xA, recoveries, saves and cards use the cautious exposure.`,
       `Осторожная экспозиция per 90: базовые ${formatNumber(inputs.baseExpectedMinutes, 1)} + прибавка старта ${formatNumber(adjustment, 1)} × итоговая надёжность min(выборка ${formatNumber(sampleReliability * 100, 1)}% по ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)} минутам истории; роль ${formatNumber(roleReliability * 100, 1)}% из max(исторические старты ${formatNumber(historicalStartProbability * 100, 1)}%, базовые минуты/минимум ${formatNumber(baseMinuteReliability * 100, 1)}%)) = ${formatNumber(finalReliability * 100, 1)}% = ${formatNumber(inputs.eventExposureMinutes, 1)} минуты событий. Очки за выход и 60 минут по-прежнему используют ${formatNumber(inputs.expectedMinutes, 1)} минуты; xG/xA, возвраты, сейвы и карточки используют осторожную экспозицию.`
