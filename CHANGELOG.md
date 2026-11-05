@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.153 - 2026-11-05
+
+- Give marked Sports.ru outfield starters at least 55 minutes of event exposure in the nearest fixture FO forecast.
+- Translate historical attacking rates from recognized lower divisions before forecasting promoted players in the higher division.
+- Add an optional Squad forecast column that adjusts player attacking history for the opponents it was earned against.
+
 ## 0.3.152 - 2026-11-04
 
 - Preserve unfinished personal football rounds whose source title contains only the round number, while retaining strict source/team/competition identity checks.
