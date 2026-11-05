@@ -54,6 +54,7 @@ export type FantasyProjectionFixtureInputs = {
   rosterStarter?: boolean | null;
   rosterStarterMinuteFloor?: number | null;
   rosterStarterMinutesUplift?: number | null;
+  starterEventExposureFloor?: number | null;
   eventExposureMinutes?: number | null;
   per90SampleMinutes?: number | null;
   per90SampleReliability?: number | null;

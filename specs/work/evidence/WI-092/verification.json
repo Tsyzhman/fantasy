@@ -1,0 +1,40 @@
+{
+  "baselineRevision": "717715e784a1e993343fb76caf0868921cdffbf1",
+  "cutoffUtc": "2026-11-05T08:34:00Z",
+  "holdoutStartsUtc": "2026-10-01T00:00:00Z",
+  "sourceSha256": "720a28378f9e0511967593ac24706da4483b882e8c3cacf455c0d979726eec71",
+  "uniquePlayerMatchRows": 21151,
+  "training": { "retainedPlayers": 159, "leaguePairs": 7, "lowerMinimumMinutes": 450, "upperMinimumMinutes": 180 },
+  "attackFactors": {
+    "48->47": { "value": 0.74, "trainingPlayers": 19, "clubs": 3 },
+    "111->57": { "value": 0.70, "trainingPlayers": 22, "clubs": 3 },
+    "140->87": { "value": 0.70, "trainingPlayers": 28, "clubs": 3 },
+    "recognizedFallback": 0.78
+  },
+  "holdout": {
+    "n": 162,
+    "actualXgiPer90": 0.2168,
+    "priorBefore": { "mean": 0.2279, "mae": 0.1115, "rmse": 0.1600 },
+    "priorAfter": { "mean": 0.2204, "mae": 0.1087, "rmse": 0.1580 },
+    "blendBefore": { "mean": 0.2304, "mae": 0.1012, "rmse": 0.1461 },
+    "blendAfter": { "mean": 0.2270, "mae": 0.1008, "rmse": 0.1466 },
+    "horizonShare": { "clubs": 24, "samples": 1088, "maeBefore": 0.037797, "maeAfter": 0.037582 },
+    "priorSeasonEredivisie": { "n": 25, "priorMaeBefore": 0.0835, "priorMaeAfter": 0.0752 }
+  },
+  "productionReadOnly": {
+    "readyPools": 12,
+    "maximumReadyRevisions": 3,
+    "excessReadyRevisions": 0,
+    "queueRows": 0,
+    "duplicateQueueKeys": 0,
+    "rawCacheRows": 4,
+    "duplicateRawKeys": 0,
+    "availableMemoryMiB": 5820,
+    "workerMemoryGiB": 1.262
+  },
+  "localCleanup": {
+    "rawExtractsRemoved": 3,
+    "rawExtractBytesRemoved": 26392541,
+    "availableMemoryMiB": 15355
+  }
+}

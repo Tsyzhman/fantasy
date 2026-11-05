@@ -76,6 +76,22 @@ Pure functions in `src/machete/global-strategy.ts` and `src/machete/global-strat
 
 `PATCH` of this route binds only the team of the associated profile in the selected season. `POST` maintains a compact recommendation audit: the server checks its own context and budget, and the sent forecast marks `CLIENT_EP_REPORTED`; This is not server-side verification of the forecast. The start and captain are selected separately for each round, the bench gives 0 EP until the auto-replacement model appears. Old pool snapshots are read by the regular UI and are sequentially rebuilt by workers in the absence of `providerIdentityVersion: 1`; incomplete mapping disables GLOBAL_AUTO until rebuilding.
 
+<a name="starter-event-minutes"></a>
+
+### Playing time for marked starters in Sports.ru FO {#starter-event-minutes}
+
+In the nearest projected fixture, a field player marked in the club XI gets at least 55 minutes of exposure for per-90 events in the primary component FO forecast. Use the larger of 55 and the history-adjusted exposure, within the existing expected playing time. The mark is a lineup forecast. Appearance thresholds, rate estimates, position priors and team event totals keep their own calculations. The fixture breakdown shows the event-minute floor when it raises exposure. Alt, FPL, and the external FFO feed use their own forecasts.
+
+Squad pool metadata records the component projection version. Earlier READY pools remain readable until sequential refresh publishes a full revision with the current version. Incremental team refreshes copy player rows only from a revision using that version.
+
+<a name="league-translation"></a>
+
+### Attacking history across divisions {#league-translation}
+
+An explicitly paired feeder division contributes historical goals, assists, xG and xA at its calibrated attack factor when forecasting the higher division. Championship to Premier League uses 0.74, Eerste Divisie to Eredivisie 0.70, and LaLiga2 to LaLiga 0.70. Other recognized feeder pairs use the shared 0.78 prior. Same-division and unrelated histories use factor 1. The static pair table is shared by the archive reader, team-strength lookup and internal horizon forecast, and is bounded by the supported divisions.
+
+In the latest available earlier archive season, use destination-league appearances before feeder appearances, preferring the player's current club within each competition. FO and Alt translate the archived attacking prior once before blending it with current evidence. The internal 3/5-round forecast translates detailed lower-division attack inputs before calculating shares or rate fallbacks. The factor applies to attacking event rates. Minutes, provider observations, team totals and the scoring rules keep their independent calculations. Component pools refresh under the projection version. Internal horizon forecasts use the existing recalculation and upsert keys.
+
 <a name="player-identity"></a>
 
 ### Player identity and availability {#player-identity}
@@ -192,6 +208,8 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 
 ## 12. Changelog {#changelog}
 
+- 2026-11-05: WI-092 — share feeder-division translation factors across archive priors and internal horizon forecasts, with destination-league evidence first.
+- 2026-11-05: WI-091 — calibrate per-90 event exposure for field players marked in the nearest XI in Sports.ru FO.
 - 2026-11-04: WI-089 — expose player-column sorting and direction on touch screens with the same arithmetic/state as desktop and pagination after sorting.
 
 - 2026-10-20: WI-078 — allow six transfers only in Champions League provider tour 2755; subsequent tours retain three without banking.

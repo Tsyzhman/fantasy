@@ -22,6 +22,7 @@ export function buildFixtureComponentInputs(
       : numericProjectionMetric(formulaMetrics?.roster_starter) === 1,
     rosterStarterMinuteFloor: numericProjectionMetric(formulaMetrics?.roster_starter_minute_floor),
     rosterStarterMinutesUplift: numericProjectionMetric(formulaMetrics?.roster_starter_minutes_uplift),
+    starterEventExposureFloor: numericProjectionMetric(formulaMetrics?.starter_event_exposure_floor),
     eventExposureMinutes: numericProjectionMetric(formulaMetrics?.event_exposure_minutes),
     per90SampleMinutes: numericProjectionMetric(formulaMetrics?.per90_sample_minutes),
     per90SampleReliability: numericProjectionMetric(formulaMetrics?.per90_sample_reliability),
@@ -154,6 +155,10 @@ export const starterPer90FullReliabilityMinutes = 450;
 
 export const starterPer90MinimumReliability = 0.25;
 
+// Increment when changes require rebuilding the materialized forecast pool.
+export const COMPONENT_PROJECTION_VERSION = 1 as const;
+const foStarterEventMinutesFloor = 55;
+
 export const completeTeamPlayerMinutes = 11 * 90;
 
 export const minimumSparseGuardRosterSize = 11;
@@ -173,6 +178,7 @@ export const standardAttackAllocationPositions = [
   "FWD", "FWD"
 ] as const;
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#starter-event-minutes */
 export function buildFormulaProjectionIndex(
   rows: Array<SharedMachetePlayerRow & { teamId: string; playerId: string }>,
   roundsAndFixtures: PlannerRoundFixtures,
@@ -198,13 +204,16 @@ export function buildFormulaProjectionIndex(
     }
   }
   const nearestFixtureIdByTeam = nearestFixtureIdsByTeam(uniqueFixtures.values());
+  const starterExposureFloor = !probableXiOnly && scoringScope === "GENERIC" ? foStarterEventMinutesFloor : 0;
 
   for (const [fixtureTeamKey, fixture] of uniqueFixtures) {
     try {
       const starterFloorApplies = nearestFixtureIdByTeam.get(fixture.teamId) === fixture.id;
       const rankedCandidates = rankPipelineCandidates(
         (rowsByTeam.get(fixture.teamId) ?? [])
-          .map((row) => pipelineParticipant(row, sportsPositionsByPlayerId.get(row.playerId), config, starterFloorApplies, scoringScope))
+          .map((row) => pipelineParticipant(
+            row, sportsPositionsByPlayerId.get(row.playerId), config, starterFloorApplies, scoringScope, starterExposureFloor
+          ))
           .filter((entry): entry is PipelineParticipant => entry !== null)
       );
       const historyCandidates = probableXiOnly
@@ -262,7 +271,8 @@ export function pipelineParticipant(
   sportsPosition: string | undefined,
   config: ProjectionFormulaConfig,
   starterFloorApplies: boolean,
-  scoringScope: "GENERIC" | "FPL"
+  scoringScope: "GENERIC" | "FPL",
+  starterExposureFloor = 0
 ): PipelineParticipant | null {
   const position = normalizeFantasyPosition(fantasyPlannerPosition(sportsPosition ?? null, null, row.position));
   if (position === "UNK") return null;
@@ -297,10 +307,8 @@ export function pipelineParticipant(
   const starterMinuteFloor = position === "GK" ? 90 : 60;
   const expectedMinutes = rosterStarterApplies ? Math.max(baseExpectedMinutes, starterMinuteFloor) : baseExpectedMinutes;
   const historyMinutes = Math.max(0, numericOrNull(metrics.minutes_365) ?? row.minutesPlayed ?? 0);
-  // A manual XI mark is strong evidence of availability, but it does not turn a
-  // short or substitute-heavy historical sample into a reliable starter per-90
-  // event rate. Appearance thresholds use the full starter floor; event-rate
-  // uplift is capped by both sample size and the player's historical role.
+  // Keep historical role and sample reliability separate from the calibrated
+  // event minutes used for an outfield starter in Sports.ru FO.
   const historicalStartProbability = clamp(row.startProbability ?? 0, 0, 1);
   const baseMinuteRoleReliability = starterMinuteFloor > 0
     ? clamp(baseExpectedMinutes / starterMinuteFloor, 0, 1)
@@ -318,9 +326,11 @@ export function pipelineParticipant(
   const per90UpliftReliability = rosterStarterApplies
     ? Math.min(sampleReliability, roleReliability)
     : 1;
-  const eventExposureMinutes = rosterStarterApplies
+  const historicalEventExposure = rosterStarterApplies
     ? baseExpectedMinutes + (expectedMinutes - baseExpectedMinutes) * per90UpliftReliability
     : expectedMinutes;
+  const minimumEventExposure = rosterStarterApplies && position !== "GK" ? Math.min(expectedMinutes, starterExposureFloor) : 0;
+  const eventExposureMinutes = Math.max(historicalEventExposure, minimumEventExposure);
   const transferRatePenalty = blendedTransferRatePenalty(row.minuteHistoryProvenance);
   metrics.base_expected_minutes = baseExpectedMinutes;
   metrics.roster_starter_minute_floor = rosterStarterApplies ? starterMinuteFloor : 0;
@@ -332,6 +342,7 @@ export function pipelineParticipant(
   metrics.starter_base_minute_reliability = baseMinuteRoleReliability;
   metrics.starter_role_reliability = roleReliability;
   metrics.per90_uplift_reliability = per90UpliftReliability;
+  metrics.starter_event_exposure_floor = minimumEventExposure > historicalEventExposure ? minimumEventExposure : 0;
   metrics.event_exposure_minutes = eventExposureMinutes;
   metrics.transfer_rate_penalty = transferRatePenalty;
   const countsAsFullMatch = countsAsFullFantasyMatch(expectedMinutes);

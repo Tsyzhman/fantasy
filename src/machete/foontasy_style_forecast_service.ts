@@ -1,5 +1,6 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { normalizeFantasyPosition } from "@/machete/squad_logic";
+import { leagueAttackTranslationFactor } from "@/machete/player-season-prior";
 import {
   FANTASY_MODEL_VERSION,
   calculatePlayerHorizons,
@@ -18,6 +19,7 @@ export type RecalculateFantasyModelOptions = {
   calculatedAt?: Date;
 };
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#league-translation */
 export async function recalculateFantasyModelForecasts(prisma: PrismaClient, options: RecalculateFantasyModelOptions) {
   const calculatedAt = options.calculatedAt ?? new Date();
   const roster = await prisma.teamPlayerSeason.findMany({
@@ -47,19 +49,24 @@ export async function recalculateFantasyModelForecasts(prisma: PrismaClient, opt
         league: { OR: [{ country: null }, { country: { not: "International" } }] }
       }
     },
-    include: { match: { select: { matchDate: true } } },
+    select: {
+      matchId: true, playerId: true, teamId: true, minutes: true, started: true,
+      xg: true, xa: true, goals: true, assists: true, yellowCards: true, redCards: true,
+      saves: true, recoveries: true, match: { select: { matchDate: true, leagueId: true } }
+    },
     orderBy: { match: { matchDate: "desc" } }
   });
 
   const historyByPlayer = new Map<string, PlayerHistoryRow[]>();
   for (const row of playerStats) {
     if (!row.match.matchDate) continue;
+    const attackFactor = leagueAttackTranslationFactor(row.match.leagueId, options.leagueId);
     const historyRow: PlayerHistoryRow = {
       matchDate: row.match.matchDate,
       minutes: Math.max(0, row.minutes ?? 0),
       started: row.started,
-      xg: row.xg,
-      xa: row.xa,
+      xg: attackFactor === 1 ? row.xg : (row.xg ?? row.goals ?? 0) * attackFactor,
+      xa: attackFactor === 1 ? row.xa : (row.xa ?? row.assists ?? 0) * attackFactor,
       goals: row.goals ?? 0,
       assists: row.assists ?? 0,
       yellowCards: row.yellowCards ?? 0,
@@ -68,7 +75,9 @@ export async function recalculateFantasyModelForecasts(prisma: PrismaClient, opt
       recoveries: row.recoveries ?? 0
     };
     const key = String(row.playerId);
-    historyByPlayer.set(key, [...(historyByPlayer.get(key) ?? []), historyRow]);
+    const history = historyByPlayer.get(key);
+    if (history) history.push(historyRow);
+    else historyByPlayer.set(key, [historyRow]);
   }
 
   const positionByPlayer = new Map<string, FantasyPosition>();

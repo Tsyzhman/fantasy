@@ -1,0 +1,33 @@
+{
+  "baselineRevision": "717715e784a1e993343fb76caf0868921cdffbf1",
+  "cutoffUtc": "2026-11-05T08:34:00Z",
+  "sources": {
+    "playerMatchStatsSha256": "2272d4f7aa7683988636ab9b7dc364b5bc9e0a80bca69140c5cfb7e6d6c8a493",
+    "prematchArchiveSha256": "ca42fdf6583b71bc2d1cc74bbfacce515576875f72a2364f2ac1eac9bfdcabdc",
+    "eligibleMatches": { "2025/26": 3454, "2026/27": 1129 },
+    "excludedMatches": 16,
+    "archivedMatchTeamSides": 1820,
+    "playerMatchRows": 195954,
+    "archivedPlayerFlags": 57724,
+    "competitions": [42, 47, 48, 53, 54, 55, 57, 61, 63, 71, 73, 87],
+    "duplicateInputKeys": 0
+  },
+  "selectedOutfieldFloor": 55,
+  "replay": {
+    "priorSeasonKnownXI": { "n": 3782, "maeBefore": 1.8581, "maeAfter": 1.5193 },
+    "archivedRecentBench": { "n": 970, "maeBefore": 1.9455, "maeAfter": 1.8952, "rmseBefore": 2.5973, "rmseAfter": 2.4673 },
+    "archivedRecentBenchOctoberHoldout": { "n": 564, "maeBefore": 1.8249, "maeAfter": 1.7952 },
+    "started": { "n": 628, "maeBefore": 2.2928, "maeAfter": 2.01 },
+    "missedStart": { "n": 342, "maeBefore": 1.3079, "maeAfter": 1.6845 },
+    "allArchiveFO": { "n": 57724, "maeBefore": 1.239, "maeAfter": 1.2308 },
+    "rejectedAltVariant": { "n": 968, "maeBefore": 2.0709, "maeWithFloor": 2.3014 },
+    "candidateMaxRssMiB": 410.9492
+  },
+  "verification": {
+    "originalRegression": { "expectedFailures": 2, "substituteHeavyOldExposure": 29.867493333333332 },
+    "unitSuite": { "passed": 1379, "failed": 0, "skipped": 4 },
+    "typecheck": "passed",
+    "targetedLint": "passed",
+    "workflow": "passed"
+  }
+}

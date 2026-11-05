@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { PrismaClient } from "@prisma/client";
 
+import { recalculateFantasyModelForecasts } from "./foontasy_style_forecast_service";
 import {
   calculatePlayerHorizons,
   defaultFantasyModelConfig,
@@ -8,10 +10,46 @@ import {
   historyBeforeFixture,
   inversePoissonOver15,
   selectTeamProjection,
+  type FixtureBreakdown,
   type ModelFixture,
   type ModelPlayer,
   type RateProfile
 } from "./foontasy_style_model";
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#league-translation */
+test("horizon recalculation translates feeder attack before allocating team shares", async () => {
+  const kickoff = new Date("2026-09-08T12:00:00Z");
+  const historyRow = (playerId: bigint, leagueId: bigint, xg: number | null, xa: number | null, goals: number, assists: number) => ({
+    ...history(leagueId === 48n ? "2026-05-02T12:00:00Z" : "2026-08-22T12:00:00Z", 90),
+    playerId, teamId: 10n, matchId: leagueId, xg, xa, goals, assists,
+    match: { matchDate: new Date(leagueId === 48n ? "2026-05-02T12:00:00Z" : "2026-08-22T12:00:00Z"), leagueId }
+  });
+  const written = new Map<string, FixtureBreakdown>();
+  const prisma = {
+    teamPlayerSeason: { findMany: async () => [1n, 2n].map((playerId) => ({
+      playerId, teamId: 10n, position: "MID", isStarter: true
+    })) },
+    coreMatch: { findMany: async ({ where }: { where: { finished: boolean } }) => where.finished ? [] : [{
+      id: 100n, round: "4", matchDate: kickoff, homeTeamId: 10n, awayTeamId: 20n,
+      homeTeam: { name: "Promoted" }, awayTeam: { name: "Opponent" }, oddsSnapshots: []
+    }] },
+    matchPlayerStat: { findMany: async () => [
+      historyRow(1n, 48n, null, 0, 1, 2),
+      historyRow(1n, 47n, 0.2, 0.2, 0, 0),
+      historyRow(2n, 47n, 0.6, 0.6, 0, 0)
+    ] },
+    fantasyModelForecast: { upsert: async ({ create }: { create: { playerId: bigint; horizon: number; breakdown: FixtureBreakdown[] } }) => {
+      if (create.horizon === 3) written.set(String(create.playerId), create.breakdown[0]);
+    } },
+    $transaction: (writes: Promise<unknown>[]) => Promise.all(writes)
+  } as unknown as PrismaClient;
+  await recalculateFantasyModelForecasts(prisma, {
+    leagueId: 47n, season: "2026/2027", calculatedAt: new Date("2026-09-05T12:00:00Z")
+  });
+  assert.equal(written.size, 2);
+  assert.ok(Math.abs(written.get("1")!.xgShare!.season - (0.74 + 0.2) / (0.74 + 0.2 + 0.6)) < 1e-12);
+  assert.equal(written.get("1")?.xaShare?.season, 0.25);
+});
 
 test("inverse Poisson reconstructs P(G >= 2)", () => {
   for (const probability of [0.1, 0.35, 0.7, 0.9]) {

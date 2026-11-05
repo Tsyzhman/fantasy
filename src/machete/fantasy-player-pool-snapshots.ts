@@ -14,6 +14,7 @@ import {
 import { defaultFantasyHistorySettings, fantasyHistorySettingsKey } from "@/machete/squad-history";
 import { withoutRetiredFantasyForecasts } from "@/machete/retired-fantasy-forecasts";
 import { parseFantasyFixtureCalendar } from "@/machete/squad-fixture-calendar";
+import { COMPONENT_PROJECTION_VERSION } from "@/machete/squad-projection";
 import { toFantasyPlayerPoolListItem, type FantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
 import { sportsRuTransferRules } from "@/machete/squad_logic";
 import {
@@ -33,6 +34,7 @@ export type FantasyPlayerPoolSnapshotVariant = typeof FANTASY_PLAYER_POOL_SNAPSH
 export type FantasyPlayerPoolSnapshotMetadata = {
   version: typeof FANTASY_PLAYER_POOL_SNAPSHOT_METADATA_VERSION;
   providerIdentityVersion?: 1;
+  componentProjectionVersion?: typeof COMPONENT_PROJECTION_VERSION;
   rotationRiskVersion?: typeof ROTATION_RISK_VERSION;
   rotationRiskExpiresAt?: string;
   readiness: FantasySquadPlannerData["readiness"];
@@ -93,9 +95,12 @@ export async function refreshFantasyPlayerPoolSnapshots(
       try {
         if (options.onlyMissing) {
           const existing = await latestFantasyPlayerPoolSnapshot(prisma, { contestId: scope.contestId, variant });
-          // Upgrade old metadata once in the sequential worker, never on a page request.
+          const metadata = parseFantasyPlayerPoolSnapshotMetadata(existing?.metadata);
+          // @spec spec://modules/machete/FEAT-001-global-ranking-strategy#starter-event-minutes
+          // Upgrade old projections in the sequential worker.
           if (fantasyPlayerPoolSnapshotHasFixtureCalendar(existing?.metadata)
-            && parseFantasyPlayerPoolSnapshotMetadata(existing?.metadata)?.providerIdentityVersion === 1
+            && metadata?.providerIdentityVersion === 1
+            && metadata.componentProjectionVersion === COMPONENT_PROJECTION_VERSION
             && fantasyPlayerPoolSnapshotHasCurrentRotationRisk(existing?.metadata)) continue;
         }
         const snapshot = await withFantasyPlayerPoolScopeLock(
@@ -199,7 +204,12 @@ async function refreshCurrentXiTeamsSnapshotUnlocked(
   }
 
   const previousMetadata = parseFantasyPlayerPoolSnapshotMetadata(previous.metadata);
-  if (!previousMetadata?.startingXiTeamRevisions || previousMetadata.providerIdentityVersion !== 1 || !fantasyPlayerPoolSnapshotHasCurrentRotationRisk(previous.metadata)) {
+  if (
+    !previousMetadata?.startingXiTeamRevisions ||
+    previousMetadata.providerIdentityVersion !== 1 ||
+    previousMetadata.componentProjectionVersion !== COMPONENT_PROJECTION_VERSION ||
+    !fantasyPlayerPoolSnapshotHasCurrentRotationRisk(previous.metadata)
+  ) {
     return buildAndPublishFantasyPlayerPoolSnapshot(prisma, scope, FANTASY_PLAYER_POOL_SNAPSHOT_CURRENT_XI);
   }
   const xiBefore = await loadFantasyStartingXiState(prisma, scope.league);
@@ -406,6 +416,7 @@ function fantasyPlayerPoolSnapshotMetadata(
     // @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts
     // Rebuild legacy pools in the sequential worker; retain their ordinary UI until ready.
     providerIdentityVersion: 1,
+    componentProjectionVersion: COMPONENT_PROJECTION_VERSION,
     rotationRiskVersion: ROTATION_RISK_VERSION,
     rotationRiskExpiresAt: new Date(data.players.reduce((expires, player) => Math.min(expires, Date.parse(player.rotationRisk?.expiresAt ?? "") || expires), Date.now() + ROTATION_RISK_TTL_MS)).toISOString(),
     readiness: data.readiness,

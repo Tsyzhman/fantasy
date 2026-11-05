@@ -55,7 +55,8 @@ import { FANTASY_MODEL_VERSION } from "./foontasy_style_model";
 import {
   archivedExpectedMinutes,
   blendArchivedEventRate,
-  FEEDER_TO_TOP_EVENT_FACTOR,
+  feederLeagueIdFor,
+  leagueAttackTranslationFactor,
   positionEventPriorPer90
 } from "./player-season-prior";
 import { loadPlannerReadinessByScope, plannerReadinessKey, type PlannerReadiness } from "./planner_readiness";
@@ -279,22 +280,6 @@ const maxProjectionRounds = 10;
 const teamStrengthHalfLifeDays = 180;
 const teamStrengthOverallPriorMatches = 6;
 const teamStrengthVenuePriorMatches = 8;
-const teamStrengthFeederLeagueByTopLeague = new Map<string, bigint>([
-  ["38", 119n],
-  ["40", 264n],
-  ["47", 48n],
-  ["48", 108n],
-  ["53", 110n],
-  ["54", 146n],
-  ["55", 86n],
-  ["57", 111n],
-  ["61", 185n],
-  ["63", 338n],
-  ["64", 123n],
-  ["69", 163n],
-  ["71", 165n],
-  ["87", 140n]
-]);
 
 type FantasyPlayerScoringOverlay = Pick<
   FantasyPlannerPlayer,
@@ -2866,6 +2851,7 @@ async function loadProjectedPlayerRows(
   };
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#league-translation */
 async function addArchivedPlayerSeasonMetrics(
   prisma: PrismaClient,
   rows: SharedMachetePlayerRow[],
@@ -2880,7 +2866,7 @@ async function addArchivedPlayerSeasonMetrics(
     prisma.playerSeasonArchive.findMany({
       where: {
         playerId: { in: playerIds },
-        season: { not: league.season },
+        season: { lt: league.season },
         aggregateScope: "LEAGUE"
       },
       orderBy: [{ season: "desc" }, { fetchedAt: "desc" }]
@@ -2890,7 +2876,7 @@ async function addArchivedPlayerSeasonMetrics(
         playerId: { in: playerIds },
         match: { leagueId: league.leagueId, season: league.season }
       },
-      select: { playerId: true, teamId: true, matchId: true, minutes: true, xg: true, xa: true }
+      select: { playerId: true, matchId: true, minutes: true, xg: true, xa: true, goals: true, assists: true }
     }),
     prisma.matchPlayerStat.findMany({
       where: {
@@ -2912,8 +2898,8 @@ async function addArchivedPlayerSeasonMetrics(
     const key = String(stat.playerId);
     const current = currentByPlayer.get(key) ?? { minutes: 0, xg: 0, xa: 0, appearances: new Set<string>() };
     current.minutes += Math.max(0, stat.minutes ?? 0);
-    current.xg += Math.max(0, stat.xg ?? 0);
-    current.xa += Math.max(0, stat.xa ?? 0);
+    current.xg += Math.max(0, stat.xg ?? stat.goals ?? 0);
+    current.xa += Math.max(0, stat.xa ?? stat.assists ?? 0);
     if ((stat.minutes ?? 0) > 0 || stat.xg !== null || stat.xa !== null) current.appearances.add(String(stat.matchId));
     currentByPlayer.set(key, current);
   }
@@ -2932,8 +2918,6 @@ async function addArchivedPlayerSeasonMetrics(
     const archive = preferredArchivedSeason(options, identity.teamId, league.leagueId);
     if (!archive || !archive.appearances || archive.appearances <= 0) return row;
     const current = currentByPlayer.get(identity.playerId);
-    const feederLeagueId = teamStrengthFeederLeagueByTopLeague.get(String(league.leagueId));
-    const tierFactor = feederLeagueId === archive.leagueId ? FEEDER_TO_TOP_EVENT_FACTOR : 1;
     return {
       ...row,
       rawMetrics: {
@@ -2952,7 +2936,7 @@ async function addArchivedPlayerSeasonMetrics(
         archive_prior_assists: archive.assists,
         archive_prior_team_matches: archive.teamMatches,
         archive_prior_same_team: String(archive.teamId) === identity.teamId ? 1 : 0,
-        archive_tier_factor: tierFactor
+        archive_tier_factor: leagueAttackTranslationFactor(archive.leagueId, league.leagueId)
       }
     };
   });
@@ -2964,19 +2948,18 @@ export function preferredArchivedSeason<T extends {
   leagueId: bigint;
   appearances: number | null;
 }>(options: T[], currentTeamId: string, currentLeagueId: bigint) {
-  const latestSeason = options[0]?.season;
+  const latestSeason = options.find((candidate) => (candidate.appearances ?? 0) > 0)?.season;
   if (!latestSeason) return null;
-  const latest = options.filter((candidate) => candidate.season === latestSeason);
-  const feederLeagueId = teamStrengthFeederLeagueByTopLeague.get(String(currentLeagueId));
+  const latest = options.filter((candidate) => candidate.season === latestSeason && (candidate.appearances ?? 0) > 0);
+  const feederLeagueId = feederLeagueIdFor(currentLeagueId);
+  const sameClub = (candidate: T) => String(candidate.teamId) === currentTeamId;
   return (
-    (feederLeagueId
-      ? latest.find((candidate) => candidate.teamId === BigInt(currentTeamId) && candidate.leagueId === feederLeagueId)
-      : null) ??
-    (feederLeagueId ? latest.find((candidate) => candidate.leagueId === feederLeagueId) : null) ??
-    latest.find((candidate) => candidate.teamId === BigInt(currentTeamId) && candidate.leagueId === currentLeagueId) ??
+    latest.find((candidate) => candidate.leagueId === currentLeagueId && sameClub(candidate)) ??
     latest.find((candidate) => candidate.leagueId === currentLeagueId) ??
+    latest.find((candidate) => candidate.leagueId === feederLeagueId && sameClub(candidate)) ??
+    latest.find((candidate) => candidate.leagueId === feederLeagueId) ??
     latest
-      .filter((candidate) => String(candidate.teamId) === currentTeamId)
+      .filter(sameClub)
       .sort((left, right) => (right.appearances ?? 0) - (left.appearances ?? 0))[0] ??
     [...latest].sort((left, right) => (right.appearances ?? 0) - (left.appearances ?? 0))[0] ??
     null
@@ -3913,7 +3896,7 @@ function applyFixtureStrength(fixtures: PlannerRoundFixtures, profiles: TeamStre
 }
 
 async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint) {
-  const feederLeagueId = teamStrengthFeederLeagueByTopLeague.get(String(leagueId));
+  const feederLeagueId = feederLeagueIdFor(leagueId);
   const [matches, feederMatches] = await Promise.all([
     loadTeamStrengthMatches(prisma, leagueId),
     feederLeagueId ? loadTeamStrengthMatches(prisma, feederLeagueId) : Promise.resolve([])

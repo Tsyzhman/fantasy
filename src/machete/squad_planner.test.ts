@@ -348,6 +348,17 @@ test("Liga Portugal promoted-player archive prefers Liga Portugal 2 over a cup c
   assert.equal(archive?.appearances, 31);
 });
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#league-translation */
+test("the latest archive prefers destination-league appearances over lower-division history", () => {
+  const archives = [
+    { season: "2025/2026", teamId: 10n, leagueId: 47n, appearances: 0 },
+    { season: "2025/2026", teamId: 10n, leagueId: 48n, appearances: 34 },
+    { season: "2025/2026", teamId: 11n, leagueId: 47n, appearances: 12 }
+  ];
+  assert.equal(preferredArchivedSeason(archives, "10", 47n), archives[2]);
+  assert.equal(preferredArchivedSeason(archives.slice(0, 2), "10", 47n), archives[1]);
+});
+
 test("editable pipeline applies history, fixture, allocation and final score formulas in order", () => {
   const config = {
     ...expectedProjectionFormulaConfig,
@@ -1036,7 +1047,8 @@ test("an incomplete team history cannot give all team xG and xA to its only evid
   assert.ok(Math.abs(completeGoals - 1.6) < 1e-12);
 });
 
-test("a short history sample applies the starter uplift cautiously to per-90 events", () => {
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#starter-event-minutes */
+test("Sports.ru FO applies the event-minute floor to a marked starter with a short history", () => {
   const config = {
     ...expectedProjectionFormulaConfig,
     history: {
@@ -1085,21 +1097,29 @@ test("a short history sample applies the starter uplift cautiously to per-90 eve
     teamShortNameById: new Map()
   };
 
-  for (const formulaConfig of [config, { ...config, ...friendAltProjectionFormulaConfig, history: config.history, team: config.team }]) {
+  const altConfig = { ...friendAltProjectionFormulaConfig, history: config.history, team: config.team };
+  for (const [formulaConfig, alt, scope, floor] of [
+    [config, false, "GENERIC", 55],
+    [altConfig, true, "GENERIC", 0],
+    [config, false, "FPL", 0]
+  ] as const) {
     const shortSample = buildFormulaProjectionIndex(
       [row("short", 140)],
       fixtures,
       new Map([["short", "FWD"]]),
-      formulaConfig
+      formulaConfig,
+      alt,
+      scope
     );
     const expectedReliability = 140 / 450;
-    const expectedEventMinutes = 28 + (60 - 28) * expectedReliability;
+    const expectedEventMinutes = Math.max(28 + (60 - 28) * expectedReliability, floor);
     const expectedRoleReliability = 28 / 60;
     const positionGoalPrior = positionEventPriorPer90("FWD", "goals");
     const expectedRoleAdjustedXg = positionGoalPrior + (1 - positionGoalPrior) * expectedRoleReliability;
     const nearestMetrics = shortSample.formulaMetricsByFixturePlayer.get("fixture-nearest:short");
 
     assert.equal(shortSample.byFixturePlayer.get("fixture-nearest:short")?.expectedMinutes, 60);
+    assert.equal(nearestMetrics?.starter_event_exposure_floor, floor);
     assert.ok(Math.abs(Number(nearestMetrics?.per90_uplift_reliability) - expectedReliability) < 1e-12);
     assert.ok(Math.abs(Number(nearestMetrics?.event_exposure_minutes) - expectedEventMinutes) < 1e-12);
     assert.ok(Math.abs(Number(nearestMetrics?.starter_role_reliability) - expectedRoleReliability) < 1e-12);
@@ -1120,7 +1140,8 @@ test("a short history sample applies the starter uplift cautiously to per-90 eve
   assert.ok(Math.abs((stableSample.byFixturePlayer.get("fixture-nearest:stable")?.allocationWeights.goals ?? 0) - 2 / 3) < 1e-12);
 });
 
-test("a substitute-heavy history caps the manual starter uplift in every formula", () => {
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#starter-event-minutes */
+test("Sports.ru FO uses a starter's event minutes with the historical per-90 rate blend", () => {
   const baseExpectedMinutes = 17.48;
   const historicalStartProbability = 2 / 38;
   const config = {
@@ -1154,7 +1175,7 @@ test("a substitute-heavy history caps the manual starter uplift in every formula
     expectedMinutes: baseExpectedMinutes,
     minutesPlayed: 573,
     rawMetrics: { minutes_365: 573 }
-  } as never;
+  };
   const fixture = {
     id: "fixture-1", roundId: "round-1", teamId: "team-1", opponentTeamId: "team-2",
     opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
@@ -1167,31 +1188,30 @@ test("a substitute-heavy history caps the manual starter uplift in every formula
     teamShortNameById: new Map()
   };
   const expectedRoleReliability = baseExpectedMinutes / 60;
-  const expectedEventMinutes = baseExpectedMinutes + (60 - baseExpectedMinutes) * expectedRoleReliability;
+  const expectedEventMinutes = 55;
   const positionGoalPrior = positionEventPriorPer90("FWD", "goals");
   const expectedRoleAdjustedXg = positionGoalPrior + (1 - positionGoalPrior) * expectedRoleReliability;
 
-  for (const formulaConfig of [config, { ...config, ...friendAltProjectionFormulaConfig, history: config.history, team: config.team }]) {
-    const index = buildFormulaProjectionIndex(
-      [row],
-      fixtures,
-      new Map([["substitute-heavy", "FWD"]]),
-      formulaConfig
-    );
-    const metrics = index.formulaMetricsByFixturePlayer.get("fixture-1:substitute-heavy");
+  const index = buildFormulaProjectionIndex(
+    [row, { ...row, playerId: "unmarked", isStarter: false }] as never,
+    fixtures,
+    new Map([["substitute-heavy", "FWD"], ["unmarked", "FWD"]]),
+    config
+  );
+  const metrics = index.formulaMetricsByFixturePlayer.get("fixture-1:substitute-heavy");
+  const projection = index.byFixturePlayer.get("fixture-1:substitute-heavy");
+  const unmarked = index.byFixturePlayer.get("fixture-1:unmarked");
 
-    assert.equal(index.byFixturePlayer.get("fixture-1:substitute-heavy")?.expectedMinutes, 60);
-    assert.equal(metrics?.per90_sample_reliability, 1);
-    assert.equal(metrics?.historical_start_probability, historicalStartProbability);
-    assert.ok(Math.abs(Number(metrics?.starter_base_minute_reliability) - expectedRoleReliability) < 1e-12);
-    assert.ok(Math.abs(Number(metrics?.starter_role_reliability) - expectedRoleReliability) < 1e-12);
-    assert.ok(Math.abs(Number(metrics?.per90_uplift_reliability) - expectedRoleReliability) < 1e-12);
-    assert.ok(Math.abs(Number(metrics?.event_exposure_minutes) - expectedEventMinutes) < 1e-12);
-    assert.equal(metrics?.pre_role_xg_per_90, 1);
-    assert.equal(metrics?.starter_role_position_xg_prior_per_90, positionGoalPrior);
-    assert.ok(Math.abs(Number(metrics?.blended_xg_per_90) - expectedRoleAdjustedXg) < 1e-12);
-    assert.ok(Math.abs((index.byFixturePlayer.get("fixture-1:substitute-heavy")?.expectedEvents.yellowCards ?? 0) - expectedEventMinutes / 90) < 1e-12);
-  }
+  assert.equal(projection?.expectedMinutes, 60);
+  assert.equal(metrics?.per90_sample_reliability, 1);
+  assert.equal(metrics?.historical_start_probability, historicalStartProbability);
+  assert.ok(Math.abs(Number(metrics?.starter_role_reliability) - expectedRoleReliability) < 1e-12);
+  assert.equal(metrics?.event_exposure_minutes, expectedEventMinutes);
+  assert.equal(metrics?.pre_role_xg_per_90, 1);
+  assert.ok(Math.abs(Number(metrics?.blended_xg_per_90) - expectedRoleAdjustedXg) < 1e-12);
+  assert.ok(Math.abs((projection?.expectedEvents.yellowCards ?? 0) - expectedEventMinutes / 90) < 1e-12);
+  assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-1:unmarked")?.event_exposure_minutes, baseExpectedMinutes);
+  assert.ok(Math.abs((projection?.expectedEvents.goals ?? 0) + (unmarked?.expectedEvents.goals ?? 0) - 1) < 1e-12);
 });
 
 test("previous-club fallback applies a real penalty to per-90 forecast rates", () => {
