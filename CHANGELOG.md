@@ -4,6 +4,7 @@
 
 - Add league-season Massey team ratings with raw xG and played schedule comparisons.
 - Add browser-local MiXerr passing networks from a StatsBomb event file, with independent starting-lineup cutoffs.
+- Use Python 3.12 for the pinned franchise dependencies in release checks.
 
 ## 0.3.153 - 2026-11-05
 

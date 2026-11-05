@@ -144,6 +144,11 @@ jobs:
       - name: Verify browser-free KHL HTTP transport
         run: python3 -B scripts/khl-protocol-http.test.py
 
+      - name: Set up Python for pinned franchise dependencies
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
       - name: Verify franchise database adapter, formulas and bounded memory
         run: |
           python3 -m pip install --no-cache-dir -r scripts/franchise-analytics/requirements.txt

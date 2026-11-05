@@ -16,7 +16,7 @@ The verified league-strength and passing-network release serves production and i
 
 ## Scope
 
-- In: semantic version, GitHub change set, immutable dry run and promotion, release receipt and live verification.
+- In: semantic version, GitHub change set, compatible CI Python for the existing franchise checks, immutable dry run and promotion, release receipt and live verification.
 - Out: runtime migrations, source refresh, and automatic pass-event ingestion.
 
 ## Acceptance
@@ -28,4 +28,4 @@ The verified league-strength and passing-network release serves production and i
 
 ## Result
 
-Pending release verification.
+The first dry run reached the existing franchise suite on Ubuntu 26.04. The runner defaulted to Python 3.14 and pip attempted to compile the pinned SciPy 1.15.3 from source. It failed on the OpenBLAS dependency. The reusable Check workflow now selects Python 3.12 for the existing pinned requirements. [First dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42095816377)
