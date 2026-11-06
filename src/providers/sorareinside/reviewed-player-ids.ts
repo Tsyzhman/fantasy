@@ -15,3 +15,45 @@ export const REVIEWED_SORARE_PLAYER_IDS: Record<string,{playerId:bigint;birthDat
   // Alejandro Pozo Pozo = Alex Pozo: https://www.fotmob.com/es/players/785855/alejandro-pozo
   "4340cca6-8053-4f3d-9990-0f5e5926240d":{playerId:785855n,birthDate:"1999-02-22"}
 };
+
+// Club and league records corroborate these existing UUID bindings. Keep both
+// observed dates in each review so a new discrepancy requires a new review.
+export const REVIEWED_SORARE_BIRTH_DATE_CONFLICTS: Readonly<Record<string, {
+  playerId: bigint;
+  teamId: bigint;
+  sourceBirthDate: string;
+  canonicalBirthDate: string;
+}>> = {
+  // Eduardo Anderson: https://www.fc-baltika.ru/team/eduardo-anderson/
+  "daeafd83-49d3-4e64-9902-244d4655dc5e": {
+    playerId: 1421394n, teamId: 49694n, sourceBirthDate: "2001-01-31", canonicalBirthDate: "2001-03-01"
+  },
+  // Ángel Pérez Hidalgo: https://www.laliga.com/jugador/angel-perez-1
+  "c537a7dc-0aec-435c-8644-1f0deb596945": {
+    playerId: 1563022n, teamId: 9866n, sourceBirthDate: "2002-06-08", canonicalBirthDate: "2002-08-29"
+  },
+  // Santiago Ferreira Serra: https://cdmafrasad.pt/santiago-serra/
+  "d06164fb-a206-43b6-9828-66aa341d4caa": {
+    playerId: 1797326n, teamId: 1074320n, sourceBirthDate: "2007-01-23", canonicalBirthDate: "2007-01-28"
+  },
+  // Maksim Samorodov: https://fc-akhmat.ru/team/players/samorodov-maksim/
+  "3bc265ca-e6c0-47c2-889d-564430a5dd3a": {
+    playerId: 1241852n, teamId: 8708n, sourceBirthDate: "2001-05-09", canonicalBirthDate: "2002-06-29"
+  },
+  // Nobel Mendy: https://www.premierleague.com/en/players/606930/nobel-mendy/career
+  "c7b1b78e-e986-43b2-9f2d-e79b23038c70": {
+    playerId: 1428427n, teamId: 8667n, sourceBirthDate: "2004-09-03", canonicalBirthDate: "2004-08-16"
+  },
+  // Nacho Pérez Gómez: https://www.levanteud.com/jugadores/nacho-perez-gomez
+  "4a8749ff-503f-47c1-87bb-d0000122fa7b": {
+    playerId: 1800611n, teamId: 8581n, sourceBirthDate: "2008-09-01", canonicalBirthDate: "2008-08-29"
+  },
+  // Arsène Kouassi: https://www.fclorient.bzh/joueur/arsene-kouassi/
+  "db7a7683-b766-4926-a420-db7e31dc0191": {
+    playerId: 1640832n, teamId: 8689n, sourceBirthDate: "2004-01-02", canonicalBirthDate: "2004-09-11"
+  },
+  // Samuele Birindelli: https://www.acmonza.com/it/news/3734/
+  "433dce04-fb95-4e5b-ac23-be947c9266c6": {
+    playerId: 799497n, teamId: 6504n, sourceBirthDate: "1999-07-19", canonicalBirthDate: "1999-08-19"
+  }
+};

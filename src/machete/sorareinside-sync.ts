@@ -1,35 +1,36 @@
 /** @spec spec://modules/machete/INFRA-004-sorareinside-starters#root */
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { SorareInsideClient, nearestTeamGames, type SourceLineup, type SourceTeamScope } from "../providers/sorareinside/client";
+import { IncompleteSorareInsideLineupError, SorareInsideClient, nearestTeamGames, type SourceLineup, type SourceTeamScope } from "../providers/sorareinside/client";
 import { isSourceTeamInScope, resolveSourcePlayer, resolveSourceTeam, type IdentityTeam } from "./sorareinside-identity";
 import { applyProbableLineupTeamPlan, type ProbableLineupTeamPlan } from "./probable-lineup-sync";
 import { enqueueCurrentXiTeamsSnapshotRefresh } from "./fantasy-player-pool-refresh-queue";
 import { corroboratedSorareRosterRepair, loadSorareRosterEvidence, restoreSorareRosterMembers, sorareRosterIdentity,
   type SorareRosterRepair, type SorareRosterEvidence } from "./sorareinside-roster";
+import { loadLastPlayedClubMatch, refreshLastPlayedClubXi, type LastPlayedXiReport } from "./sorareinside-last-played";
 
 const PROVIDER="SORAREINSIDE";
 const LEAGUE_COUNTRY: Record<string,string>={"47":"ENG","48":"ENG","53":"FRA","54":"GER","55":"ITA","57":"NED","61":"POR","63":"RUS","71":"TUR","87":"ESP"};
 type Mapping={type:"TEAM"|"PLAYER";sourceId:string;internalId:bigint;matchedBy:string};
-export type SorareTeamReport={leagueId:string;season:string;teamId:string;team:string;sourceTeamId?:string;fixtureId?:string;kickoff?:string;lineupId?:string|null;status:string;problems:string[];restoredRosterPlayerIds?:string[];players?:Array<{sourceId:string;name:string;playerId:string|null;reason:string}>};
-export type SorareSyncReport={status:string;startedAt:string;finishedAt?:string;apply:boolean;teams:SorareTeamReport[];totals:Record<string,number>;rssMiB?:number};
+export type SorareTeamReport={leagueId:string;season:string;teamId:string;team:string;sourceTeamId?:string;fixtureId?:string;kickoff?:string;lineupId?:string|null;status:string;problems:string[];restoredRosterPlayerIds?:string[];players?:Array<{sourceId:string;name:string;playerId:string|null;reason:string}>;lastPlayed?:LastPlayedXiReport};
+export type SorareSyncReport={status:string;startedAt:string;finishedAt?:string;apply:boolean;teams:SorareTeamReport[];totals:Record<string,number>;lastPlayedTotals:Record<string,number>;rssMiB?:number};
 
 export async function runSorareInsideSync(db:PrismaClient, client:SorareInsideClient, apply=false):Promise<SorareSyncReport> {
   // Hold one bounded lock connection; short flag transactions use the other pool
   // connections. CLI and the worker share this lock, including across replicas.
   return db.$transaction(async lock=> {
     const [row]=await lock.$queryRaw<Array<{locked:boolean}>>`SELECT pg_try_advisory_xact_lock(hashtext('sorareinside-sync')) AS locked`;
-    if(!row.locked) return {status:"ALREADY_RUNNING",startedAt:new Date().toISOString(),apply,teams:[],totals:{}};
+    if(!row.locked) return {status:"ALREADY_RUNNING",startedAt:new Date().toISOString(),apply,teams:[],totals:{},lastPlayedTotals:{}};
     return syncLocked(db,client,apply);
   },{timeout:15*60_000,maxWait:5000});
 }
 
 async function syncLocked(db:PrismaClient,client:SorareInsideClient,apply:boolean):Promise<SorareSyncReport> {
   const now=new Date(); const deadline=now.getTime()+12*60_000;
-  const report:SorareSyncReport={status:"SUCCEEDED",startedAt:now.toISOString(),apply,teams:[],totals:{}};
+  const report:SorareSyncReport={status:"SUCCEEDED",startedAt:now.toISOString(),apply,teams:[],totals:{},lastPlayedTotals:{}};
   const scopes=await db.fantasyPlayerPrice.groupBy({by:["leagueId","season"]});
   const seasons=await db.leagueSeason.findMany({
     where:{isCurrent:true,OR:scopes.map(s=>({leagueId:s.leagueId,season:s.season})),NOT:{leagueId:{in:[44n,50n,77n]}}},
-    select:{leagueId:true,season:true,league:{select:{name:true}},teams:{where:{active:true},select:{team:{select:{id:true,name:true,country:true}},players:{select:{player:{select:{id:true,name:true,birthDate:true}},active:true,position:true,shirtNumber:true,isStarter:true}}}}}
+    select:{leagueId:true,season:true,league:{select:{name:true}},teams:{where:{active:true},select:{metadata:true,team:{select:{id:true,name:true,country:true}},players:{select:{player:{select:{id:true,name:true,birthDate:true}},active:true,position:true,shirtNumber:true,isStarter:true}}}}}
   });
   if(!seasons.length) throw new Error("SorareInside: no current fantasy club scopes");
   const maps=await db.providerEntityMap.findMany({where:{provider:PROVIDER,providerSeason:"GLOBAL"}});
@@ -80,15 +81,35 @@ async function syncLocked(db:PrismaClient,client:SorareInsideClient,apply:boolea
     if(Date.now()>deadline) throw new Error("SorareInside: run deadline exceeded");
     const selected=assignments.get(id);
     let lineup:SourceLineup|null=null; let fetchError:string|null=null;
-    if(selected?.lineupId) try {lineup=await client.lineup(selected);} catch(error) {fetchError=safeError(error);}
+    let useLastPlayed = !selected?.lineupId;
+    if (selected?.lineupId) {
+      try { lineup = await client.lineup(selected); }
+      catch (error) {
+        fetchError = safeError(error);
+        useLastPlayed = error instanceof IncompleteSorareInsideLineupError;
+      }
+    }
+    const lastPlayedMatch = useLastPlayed ? await loadLastPlayedClubMatch(db, team.id, now) : null;
     for(const season of seasons) {
       const t=season.teams.find(t=>String(t.team.id)===id); if(!t) continue;
       const entry:SorareTeamReport={leagueId:String(season.leagueId),season:season.season,teamId:id,team:team.name,status:"NO_MATCH_OR_TEAM_MAPPING",problems:[]};
       report.teams.push(entry);
-      if(!selected) continue;
-      Object.assign(entry,{sourceTeamId:selected.team.id,fixtureId:selected.game.id,kickoff:selected.game.kickoff,lineupId:selected.lineupId});
-      if(!selected.lineupId) {entry.status="NO_PREDICTION_FOR_NEAREST_MATCH";continue;}
-      if(!lineup) {entry.status="SOURCE_ERROR";entry.problems.push(fetchError??"Missing lineup");continue;}
+      if (selected) {
+        Object.assign(entry,{sourceTeamId:selected.team.id,fixtureId:selected.game.id,kickoff:selected.game.kickoff,lineupId:selected.lineupId});
+        if (!selected.lineupId) entry.status = "NO_PREDICTION_FOR_NEAREST_MATCH";
+        else if (!lineup) {
+          entry.status = "SOURCE_ERROR";
+          entry.problems.push(fetchError ?? "Missing lineup");
+        }
+      }
+      if (!selected || !lineup) {
+        if (useLastPlayed) entry.lastPlayed = await refreshLastPlayedClubXi(db, {
+          leagueId: season.leagueId, leagueName: season.league.name, season: season.season,
+          teamId: team.id, teamName: team.name, roster: t.players, metadata: t.metadata,
+          match: lastPlayedMatch, checkedAt: now, apply
+        });
+        continue;
+      }
       const scope={leagueId:season.leagueId,season:season.season,teamId:team.id};
       const teamEvidence=evidenceByTeam.get(id)??[];
       const repairs=new Map<string,SorareRosterRepair>();
@@ -103,7 +124,7 @@ async function syncLocked(db:PrismaClient,client:SorareInsideClient,apply:boolea
         }
         return [sorareRosterIdentity({...member.player,birthDate:member.player.birthDate??births.get(String(member.player.id))??null},teamEvidence)];
       });
-      const resolved=lineup.players.map(p=>({source:p,...resolveSourcePlayer(p,roster,savedId("PLAYER",p.id))}));
+      const resolved=lineup.players.map(p=>({source:p,...resolveSourcePlayer(p,roster,savedId("PLAYER",p.id),team.id)}));
       entry.players=resolved.map(p=>({sourceId:p.source.id,name:p.source.name,playerId:p.player?String(p.player.id):null,reason:p.reason}));
       const targets=resolved.flatMap(p=>p.player?[p.player.id]:[]);
       if(targets.length!==11 || new Set(targets.map(String)).size!==11) {entry.status="PLAYERS_UNMAPPED";continue;}
@@ -125,7 +146,13 @@ async function syncLocked(db:PrismaClient,client:SorareInsideClient,apply:boolea
       } catch(error) {entry.status="APPLY_ERROR";entry.problems.push(safeError(error));}
     }
   }
-  for(const team of report.teams) report.totals[team.status]=(report.totals[team.status]??0)+1;
+  for (const team of report.teams) {
+    report.totals[team.status] = (report.totals[team.status] ?? 0) + 1;
+    if (team.lastPlayed) {
+      const status = team.lastPlayed.status;
+      report.lastPlayedTotals[status] = (report.lastPlayedTotals[status] ?? 0) + 1;
+    }
+  }
   if(report.teams.some(t=>!["APPLIED","READY","UNCHANGED"].includes(t.status))) report.status="PARTIAL";
   report.finishedAt=new Date().toISOString();report.rssMiB=Math.round(process.memoryUsage().rss/1048576);
   return report;

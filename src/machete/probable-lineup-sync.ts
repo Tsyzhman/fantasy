@@ -26,6 +26,7 @@ import {
 } from "./probable-lineup-parsers";
 import { normalizeFantasyPosition } from "./squad_logic";
 import { hasUpcomingSorareLineup } from "./sorareinside-protection";
+import { startingXiMatchOrderDecision } from "./starting-xi-from-match";
 
 const EXPECTED_PLAYERS_PER_TEAM = 11;
 const DEFAULT_TIMEOUT_MS = 20_000;
@@ -152,6 +153,7 @@ export type ProbableLineupTeamPlan = {
   startersToSet: number;
   startersToClear: number;
   problems: string[];
+  lastPlayedMatch?: { id: bigint; date: Date };
 };
 
 export type ProbableLineupSyncPlan = {
@@ -170,6 +172,7 @@ export type ProbableLineupApplyResult = {
   startersSet: number;
   startersCleared: number;
   otherTeamFlagsCleared: number;
+  skippedReason?: "UPCOMING_PREDICTION" | "NEWER_COMPLETED_MATCH";
 };
 
 type StartingXiTeamsChangedListener = import("./fantasy-player-pool-refresh-queue").StartingXiTeamsChangedListener;
@@ -592,6 +595,23 @@ export async function applyProbableLineupTeamPlan(
   }
   const teamId = plan.teamId;
   const teamName = plan.databaseTeamName;
+  const lastPlayed = plan.lastPlayedMatch;
+  const playedMatchFields = lastPlayed ? {
+    startingXiSourceMatchId: lastPlayed.id,
+    startingXiSourceMatchDate: lastPlayed.date
+  } : {};
+  const unchanged = (skippedReason?: ProbableLineupApplyResult["skippedReason"]) => ({
+    result: {
+      teamId,
+      teamName,
+      status: "UNCHANGED" as const,
+      startersSet: 0,
+      startersCleared: 0,
+      otherTeamFlagsCleared: 0,
+      ...(skippedReason ? { skippedReason } : {})
+    },
+    changedTeamIds: [] as bigint[]
+  });
 
   const outcome = await prisma.$transaction(async (tx) => {
     const lockKey = `starting-xi:${plan.leagueId}:${plan.season}:${teamId}`;
@@ -604,12 +624,18 @@ export async function applyProbableLineupTeamPlan(
           teamId
         }
       },
-      select: { active: true, metadata: true }
+      select: { active: true, metadata: true, startingXiSourceMatchId: true, startingXiSourceMatchDate: true }
     });
     if (!seasonTeam?.active) throw new Error(`${teamName} is no longer active in ${plan.season}.`);
     if (plan.source !== "SORAREINSIDE" && hasUpcomingSorareLineup(seasonTeam.metadata, appliedAt)) {
-      return { result: { teamId, teamName, status: "UNCHANGED" as const, startersSet: 0, startersCleared: 0, otherTeamFlagsCleared: 0 }, changedTeamIds: [] as bigint[] };
+      return unchanged(lastPlayed ? "UPCOMING_PREDICTION" : undefined);
     }
+    if (lastPlayed && startingXiMatchOrderDecision({
+      previousMatchId: seasonTeam.startingXiSourceMatchId,
+      previousMatchDate: seasonTeam.startingXiSourceMatchDate,
+      nextMatchId: lastPlayed.id,
+      nextMatchDate: lastPlayed.date
+    }) === "OLDER_MATCH") return unchanged("NEWER_COMPLETED_MATCH");
     if (plan.source === "SORAREINSIDE" && !(Date.parse(plan.sourceLineup.sourceKickoff ?? "") > Date.now())) throw new Error("SorareInside fixture has already started");
 
     if (plan.source === "SORAREINSIDE") await reconcileRoster?.(tx);
@@ -632,21 +658,16 @@ export async function applyProbableLineupTeamPlan(
     const currentStarterIds = rosterRows.filter((row) => row.isStarter).map((row) => row.playerId);
     await beforeApply?.(tx);
     if (sameBigIntSet(currentStarterIds, plan.targetPlayerIds)) {
-      if (plan.source === "SORAREINSIDE") await tx.leagueSeasonTeam.update({
+      const previousLineup = jsonObject(seasonTeam.metadata).probableLineup;
+      const samePlayedMatch = lastPlayed && seasonTeam.startingXiSourceMatchId === lastPlayed.id &&
+        seasonTeam.startingXiSourceMatchDate?.getTime() === lastPlayed.date.getTime() &&
+        previousLineup && typeof previousLineup === "object" && "fingerprint" in previousLineup &&
+        previousLineup.fingerprint === lineupFingerprint(plan.sourceLineup);
+      if (plan.source === "SORAREINSIDE" || (lastPlayed && !samePlayedMatch)) await tx.leagueSeasonTeam.update({
         where: { leagueId_season_teamId: { leagueId: plan.leagueId, season: plan.season, teamId } },
-        data: { metadata: probableLineupMetadata(seasonTeam.metadata, plan, appliedAt) }
+        data: { ...playedMatchFields, metadata: probableLineupMetadata(seasonTeam.metadata, plan, appliedAt) }
       });
-      return {
-        result: {
-          teamId,
-          teamName,
-          status: "UNCHANGED" as const,
-          startersSet: 0,
-          startersCleared: 0,
-          otherTeamFlagsCleared: 0
-        },
-        changedTeamIds: [] as bigint[]
-      };
+      return unchanged();
     }
 
     const otherFlaggedTeams = await tx.teamPlayerSeason.findMany({
@@ -702,6 +723,7 @@ export async function applyProbableLineupTeamPlan(
       },
       data: {
         startingXiChangedAt: appliedAt,
+        ...playedMatchFields,
         metadata: probableLineupMetadata(seasonTeam.metadata, plan, appliedAt)
       }
     });
@@ -1002,7 +1024,8 @@ function probableLineupMetadata(existing: Prisma.JsonValue | null, plan: Probabl
       sourceUrl: plan.sourceUrl,
       sourceTeamCode: plan.sourceLineup.sourceTeamCode,
       sourceFixtureId: plan.sourceLineup.sourceFixtureId,
-      ...(plan.sourceLineup.sourceKickoff ? { sourceKickoff: plan.sourceLineup.sourceKickoff, sourceLineupId: plan.sourceLineup.sourceLineupId } : {}),
+      ...(plan.sourceLineup.sourceKickoff ? { sourceKickoff: plan.sourceLineup.sourceKickoff } : {}),
+      ...(plan.sourceLineup.sourceLineupId ? { sourceLineupId: plan.sourceLineup.sourceLineupId } : {}),
       sourceUpdatedText: plan.sourceLineup.sourceUpdatedText,
       fetchedAt: plan.fetchedAt.toISOString(),
       appliedAt: appliedAt.toISOString(),

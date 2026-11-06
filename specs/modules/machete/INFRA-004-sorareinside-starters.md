@@ -10,7 +10,7 @@ status: active
 
 ## Plain language {#plain-language}
 
-Starting-lineup flags refresh every hour at minute 05 from SorareInside forecasts for the club's nearest future match. An unknown player or a missing forecast preserves the previous flags for the whole team.
+Starting-lineup flags refresh every hour at minute 05. Use the published SorareInside forecast for the club's nearest future match when available. Otherwise the verified XI from the latest finished club match can supply the flags.
 
 <a name="scope"></a>
 
@@ -35,7 +35,7 @@ Node.js 20+, Prisma/PostgreSQL, HTTPS access to SorareInside. Production is an e
 <a name="decisions"></a>
 
 ## Canonical decisions {#decisions}
-Persistent UUIDs are stored in a common mapping table, the calendar is selected before the forecast, the entry is performed only for the full XI. Cache protection and updating use the project's existing transactional mechanisms.
+Persistent UUIDs are stored in a common mapping table. Choose the nearest fixture before inspecting the forecast. Both forecasts and last-played lineups require a complete XI. Use the existing transactions and Squad refresh queue.
 
 <a name="source"></a>
 
@@ -44,7 +44,7 @@ Authorized API `https://platform-api.sorareinside.com`, the same one the site us
 
 Derive the relevant club scope from active clubs in the current fantasy price scopes before parsing fixture metadata. Use established source UUIDs and the existing exact club/country identity rules, including reviewed aliases. Discard fixtures involving no relevant club before validating their countries, statuses or forecasts. Do not request or parse lineups for unrelated clubs. The scope covers every source competition of each relevant club, including cups, and never depends on the presence of a prediction. A potentially relevant club with incomplete identity remains subject to strict validation rather than being silently excluded.
 
-The scheduledLineups projection may omit a club's country. For a relevant club, reuse country only from complete gameweek data loaded in the same cycle for the identical source UUID, name, slug and club/national-team type. Full gameweeks still require country for relevant clubs; missing or conflicting corroborating metadata aborts the cycle. An unrelated opponent retains its validated fixture identity and name, but its country and forecast are not prerequisites for the relevant club's prediction. Never infer country from a club name, discard an unparseable window, or choose a later fixture to obtain a prediction. An empty scoped calendar preserves all teams and reports missing matches normally.
+The scheduledLineups projection may omit a club's country. For a relevant club, reuse country only from complete gameweek data loaded in the same cycle for the identical source UUID, name, slug and club/national-team type. Full gameweeks still require country for relevant clubs. Missing or conflicting corroborating metadata aborts the cycle. An unrelated opponent retains its validated fixture identity and name, but its country and forecast are not prerequisites for the relevant club's prediction. Never infer country from a club name, discard an unparseable window, or choose a later fixture to obtain a prediction. An empty validated scoped calendar reports missing matches and allows the last-played path.
 
 <a name="mapping"></a>
 
@@ -53,12 +53,18 @@ The existing `ProviderEntityMap` is used: provider `SORAREINSIDE`, providerSeaso
 
 Mapped Sports.ru prices checked within 48 hours may supply a full-name alias and birth date for the same canonical player and club. The price foreign key alone is insufficient: its MATCHED provider mapping must agree on player, contest and season. Conflicting birth dates or competing mapped club assignments are rejected. An existing inactive member may be restored only in the exact current league/season/club when a fresh mapped Sports.ru price, the published XI's full birth date and corroborated name agree, and there is no active membership in another club of that league/season. Missing roster rows, stale prices and transfer conflicts still block the whole XI. Revalidate that evidence and restore membership under the starting-XI transaction before validating the active XI; a failure rolls back membership, mappings, flags, metadata and refresh requests together. Keep the membership's source so normal roster refresh can deactivate it when corroboration disappears.
 
+An operator may review a known birth-date discrepancy after corroborating the player's identity with official club or league evidence. The exception requires an existing MATCHED SorareInside UUID, the exact canonical player and active club, and the two reviewed dates. A different binding, date or club still fails the normal validation. The reviewed record does not set a birth date or create a mapping.
+
 <a name="apply"></a>
 
 ## Application and competition {#apply}
 Only `lineup_players.starting_players`, exactly 11 unique players and one goalkeeper; not alternate_players and not the total start percentage. Game_id, team.id, is_published and future date are checked immediately before recording. In one transaction, under the existing starting-xi lock, the checkboxes are changed and a CURRENT_XI snapshot update request is written. An existing framework application implementation is used. Metadata stores match ID, kickoff, lineup ID, check time, source and fingerprint, including the case of permanent checkmarks. As long as the prediction is for a future match, other automated sources will not overwrite it. Manually setting the base retains the same scenario; the next import applies the current forecast according to the schedule.
 
 Ordinary club-roster refreshes atomically merge their metadata into the current database row and never replace the `probableLineup` field. Logo/short-name updates preserve the forecast's source, selected fixture, check time and fingerprint, including when a lineup publication happens concurrently.
+
+If the scoped calendar has no matching upcoming fixture, the nearest fixture has no published forecast, or its published starter list fails the full-XI check, take the latest finished, non-cancelled club match in the shared FotMob data across competitions. Choose the match before checking lineup completeness. Use the match's actual starters only when there are eleven unique players, one goalkeeper, and every player is active for that club in the target fantasy scope. Missing memberships and conflicting active club assignments block the fallback. A stored SorareInside forecast for a future kickoff and a newer recorded completed match have priority. Revalidate under the same team lock and publish changes through the existing CURRENT_XI queue.
+
+Store fallback provenance as `FOTMOB_LAST_PLAYED` with the completed match ID, kickoff and fingerprint. The fallback is a basis for Squad and is not an upcoming prediction for deadline reports. Repeating the same XI preserves the metadata and queues no update once that match is recorded.
 
 <a name="data"></a>
 
@@ -80,7 +86,7 @@ The worker's existing Sports.ru scheduler refreshes the configured corroborating
 <a name="errors"></a>
 
 ## Errors and validation {#errors}
-Authorization, HTTP/JSON, or schema failure does not reset the framework. A separate invalid squad saves the entire team. The log contains the result, the selected match, omissions and discrepancies without secrets and account data. Rerunning does not duplicate the mapping or cache queue; Unchanged checkboxes do not trigger recalculation. The logs are limited by the current Docker rotation.
+Authorization, transport, or unexpected schema failures preserve existing flags. Player-identity conflicts still block the forecast for the whole team. If a last-played lineup cannot be verified, preserve the prior flags. Reports distinguish SorareInside coverage from last-played results and include the match and reason. Rerunning does not duplicate mappings or queue entries. Unchanged flags do not trigger recalculation. The logs are limited by Docker rotation.
 
 <a name="observability"></a>
 
@@ -95,12 +101,12 @@ Clean commit to origin, checks, production dry-run and canonical Docker deploy. 
 <a name="acceptance"></a>
 
 ## Acceptance criteria {#acceptance}
-`@spec` on provider parser/client, sync, scheduler, CLI, guard and direct contract tests. Checks: selection of the minimum before checking the presence of a forecast, UUID/duplicates, ambiguity and club change, 11 players, atomicity/cache, :05 and competitive launch. Production evidence confirms real data, schedule, memory and re-run without duplication.
+`@spec` on provider parser/client, sync, scheduler, CLI, guard and direct contract tests. Verify nearest and latest match selection before checking lineup completeness, exact manual bindings, active players, forecast precedence, atomic publication, :05 scheduling and concurrent launch. Production evidence confirms real data, schedule, memory and repeat runs without duplication.
 
 <a name="traceability"></a>
 
 ## Implementation traceability {#traceability}
-`src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/machete/sorareinside-identity.ts`, `src/machete/sorareinside-protection.ts`, `src/server/sorareinside-scheduler.ts`, CLI and automatic writers. Direct unit/contract tests refer to the owning anchor.
+`src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/machete/sorareinside-identity.ts`, `src/machete/sorareinside-protection.ts`, `src/machete/sorareinside-last-played.ts`, `src/server/sorareinside-scheduler.ts`, CLI and automatic writers. Direct unit/contract tests refer to the owning anchor.
 
 <a name="relationships"></a>
 
@@ -110,6 +116,8 @@ Existing probable-lineup sync, starting-xi-from-match, fantasy-player-pool-refre
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-11-06: WI-097 — record exact reviewed SorareInside birth-date exceptions and fall back to the verified XI from the latest finished match when the nearest forecast is unavailable.
 
 - 2026-11-04: WI-083 — determine current fantasy club scope before schedule validation so unrelated source clubs cannot abort imports; retain nearest-match selection across all competitions and strict relevant-club/XI checks.
 

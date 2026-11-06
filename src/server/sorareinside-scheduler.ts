@@ -73,14 +73,16 @@ export async function runSorareInsideSyncNow(options: { notBefore?: Date } = {})
   state.refresh ??= createSorareInsideRefreshRunner(async () => {
     const result = await runSorareInsideSync(prisma, state.client!, true);
     logger.info("SorareInside sync finished", {
-      status: result.status, totals: result.totals, startedAt: result.startedAt,
+      status: result.status, totals: result.totals, lastPlayedTotals: result.lastPlayedTotals, startedAt: result.startedAt,
       finishedAt: result.finishedAt, rssMiB: result.rssMiB
     });
     const byScope: Record<string, Record<string, number>> = {};
     for (const team of result.teams) {
       const totals = byScope[`${team.leagueId}:${team.season}`] ??= {};
       totals[team.status] = (totals[team.status] ?? 0) + 1;
-      if (!["APPLIED", "UNCHANGED"].includes(team.status)) {
+      if (team.lastPlayed?.status === "APPLIED" || team.lastPlayed?.status === "UNCHANGED") {
+        logger.info("SorareInside last played lineup used", { ...team });
+      } else if (!["APPLIED", "UNCHANGED"].includes(team.status)) {
         logger.warn("SorareInside team preserved", { ...team, players: team.players?.filter((player) => !player.playerId) });
       }
     }

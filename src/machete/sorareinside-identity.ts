@@ -3,7 +3,7 @@ import { normalizeLineupIdentity } from "./probable-lineup-parsers";
 import { probableLineupTeamScore } from "./probable-lineup-sync";
 import type { SourcePlayer, SourceTeam } from "../providers/sorareinside/client";
 import { SORARE_TEAM_ALIASES } from "../providers/sorareinside/team-aliases";
-import { REVIEWED_SORARE_PLAYER_IDS } from "../providers/sorareinside/reviewed-player-ids";
+import { REVIEWED_SORARE_BIRTH_DATE_CONFLICTS, REVIEWED_SORARE_PLAYER_IDS } from "../providers/sorareinside/reviewed-player-ids";
 
 export type IdentityPlayer = { id: bigint; name: string; birthDate: Date | null; aliases?: readonly string[] };
 export type IdentityTeam = { id: bigint; name: string; country: string | null };
@@ -36,14 +36,22 @@ export function resolveSourceTeam(source: SourceTeam, teams: IdentityTeam[], sav
   return candidates.length===1 ? candidates[0] : null;
 }
 
-export function resolveSourcePlayer(source: SourcePlayer, roster: IdentityPlayer[], savedId?: bigint): { player: IdentityPlayer | null; reason: string } {
+export function resolveSourcePlayer(source: SourcePlayer, roster: IdentityPlayer[], savedId?: bigint, teamId?: bigint): { player: IdentityPlayer | null; reason: string } {
   const reviewed=REVIEWED_SORARE_PLAYER_IDS[source.id];
   const knownId=savedId??reviewed?.playerId;
   if (knownId !== undefined) {
     if(savedId===undefined && source.birthDate!==reviewed.birthDate) return {player:null,reason:"REVIEWED_ID_BIRTH_DATE_CONFLICT"};
     const player=roster.find(p=>p.id===knownId);
     if (!player) return { player:null, reason:"ID_NOT_IN_ACTIVE_ROSTER" };
-    if (source.birthDate && player.birthDate && source.birthDate!==player.birthDate.toISOString().slice(0,10)) return {player:null,reason:"BIRTH_DATE_CONFLICT"};
+    const canonicalBirthDate = player.birthDate?.toISOString().slice(0, 10);
+    if (source.birthDate && canonicalBirthDate && source.birthDate !== canonicalBirthDate) {
+      const conflict = REVIEWED_SORARE_BIRTH_DATE_CONFLICTS[source.id];
+      if (conflict && conflict.playerId === savedId && conflict.teamId === teamId &&
+          conflict.sourceBirthDate === source.birthDate && conflict.canonicalBirthDate === canonicalBirthDate) {
+        return { player, reason: "MANUAL_VERIFIED_ID" };
+      }
+      return { player: null, reason: "BIRTH_DATE_CONFLICT" };
+    }
     return {player,reason:savedId===undefined?"REVIEWED_UUID":"PROVIDER_ID"};
   }
   return resolveSourcePlayerByName(source,roster);

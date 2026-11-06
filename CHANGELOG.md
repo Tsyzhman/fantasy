@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.155 - 2026-11-06
+
+- Restore SorareInside forecasts for eight manually verified player bindings with conflicting birth dates.
+- Use the latest verified played lineup in Squad when the nearest match has no complete forecast.
+
 ## 0.3.153 - 2026-11-05
 
 - Give marked Sports.ru outfield starters at least 55 minutes of event exposure in the nearest fixture FO forecast.

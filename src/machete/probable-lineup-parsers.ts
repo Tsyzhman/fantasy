@@ -22,7 +22,7 @@ const FANTASY_COACH_LIGUE_1_PLAYER_ALIASES = new Map<string, string>([
   ["troyes|ifnaoui", "Merwan Ifnaou"]
 ]);
 
-export type ProbableLineupSource = "FANTASY_FOOTBALL_SCOUT" | "GAZZETTA" | "LIGAINSIDER" | "FANTASY_COACH_LIGUE_1" | "UEFA" | "SORAREINSIDE";
+export type ProbableLineupSource = "FANTASY_FOOTBALL_SCOUT" | "GAZZETTA" | "LIGAINSIDER" | "FANTASY_COACH_LIGUE_1" | "UEFA" | "SORAREINSIDE" | "FOTMOB_LAST_PLAYED";
 export type ProbableLineupVenue = "HOME" | "AWAY";
 
 export type LigaInsiderTeamPage = {
