@@ -67,3 +67,24 @@ function projectionListMetrics(
     expectedCleanSheets: input.expectedCleanSheets
   };
 }
+
+export type SquadFoontasyUpdate = {
+  revision: string;
+  pointsByPlayerId: Record<string, number>;
+};
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#ffo-current-round */
+export function applySquadFoontasyUpdate<
+  T extends Pick<FantasyPlannerPlayer, "playerId" | "foontasyPoints" | "foontasyFetchedAt">
+>(players: T[], update: SquadFoontasyUpdate): T[] {
+  let changed = false;
+  const updated = players.map((player) => {
+    const points = update.pointsByPlayerId[player.playerId];
+    const foontasyPoints = Number.isFinite(points) ? points : null;
+    const foontasyFetchedAt = foontasyPoints === null ? null : update.revision;
+    if (player.foontasyPoints === foontasyPoints && (player.foontasyFetchedAt ?? null) === foontasyFetchedAt) return player;
+    changed = true;
+    return { ...player, foontasyPoints, foontasyFetchedAt };
+  });
+  return changed ? updated : players;
+}

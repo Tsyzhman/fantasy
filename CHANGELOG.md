@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.159 - 2026-11-06
+
+- Use the latest Foontasy import for the displayed Sports.ru Squad tour, with live updates independent of the saved player-pool calculation.
+
 ## 0.3.158 - 2026-11-06
 
 - Show Sports.ru Squad player forecasts to two decimal places and retain hundredths in stored round scores.

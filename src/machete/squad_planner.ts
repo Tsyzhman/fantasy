@@ -27,6 +27,7 @@ import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display"
 import type { UserScoringFormulaPreference } from "@/lib/scoring/user-preferences";
 import { providerTeamShortName } from "@/lib/teams/display";
 import { playerPhotoPublicUrl } from "./player-photo-cache";
+import { loadSquadFoontasyForecasts, squadFoontasyRound, withSquadFoontasyForecasts } from "./squad-foontasy";
 import {
   expectedProjectionFormulaConfig,
   friendAltProjectionFormulaConfig,
@@ -805,7 +806,10 @@ function loadCachedFantasySquadPlayerPoolWithMetadata(
   ]).then(([features, overlays]) => mergeFantasyPlayerScoringOverlay(features, overlays));
 }
 
-/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+/**
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#ffo-current-round
+ */
 export async function loadFantasySquadPlannerData(
   prisma: PrismaClient,
   userId: string,
@@ -855,6 +859,9 @@ export async function loadFantasySquadPlannerData(
   const { priceRows, priceMaps, rosterOverrides } = isFpl
     ? await loadFplRosterPriceContext(prisma, league, scopedContest?.id ?? null, options?.playerIds)
     : await loadSportsRuAuthoritativeRosterContext(prisma, league, options?.playerIds, scopedContest?.id ?? null);
+  const schedule = loadUpcomingRoundFixtures(
+    prisma, league, provider, scopedContest?.id ?? null, scopedContest?.scheduleRevision ?? null
+  );
   const [savedSquads, fotmobRosterRows, playerRows, roundsAndFixtures, foontasyRows, modelForecastRows, baltikaMetricsByName, fplOfficialScoreRows] = await Promise.all([
     options?.skipSavedSquads
       ? Promise.resolve([])
@@ -897,21 +904,16 @@ export async function loadFantasySquadPlannerData(
       isFpl && !starterStatusKnown,
       !isFpl && preferredProjectionEngine === "COMPONENT_XFP_V1"
     ),
-    loadUpcomingRoundFixtures(
-      prisma,
-      league,
-      provider,
-      scopedContest?.id ?? null,
-      scopedContest?.scheduleRevision ?? null
-    ),
+    schedule,
     isFpl
       ? Promise.resolve([])
-      : prisma.foontasyForecast.findMany({
-          where: { leagueId: league.leagueId, season: league.season, sourceVariant: "sports", playerId: { not: null } },
-          orderBy: [{ fetchedAt: "desc" }, { updatedAt: "desc" }],
-          distinct: ["playerId"],
-          select: { playerId: true, points: true, selectedByPercent: true, fetchedAt: true }
-        }),
+      : schedule.then(({ rounds }) =>
+          loadSquadFoontasyForecasts(
+            prisma,
+            squadFoontasyRound(league, scopedContest?.rules, rounds[0]?.id),
+            options?.playerIds
+          )
+        ),
     isFpl
       ? Promise.resolve([])
       : prisma.fantasyModelForecast?.findMany({
@@ -952,7 +954,7 @@ export async function loadFantasySquadPlannerData(
   const savedSquad = (squadId ? savedSquads.find((squad) => squad.id === squadId) : null) ?? savedSquads[0] ?? null;
   const rules = fantasyRulesForLeague(league, scopedContest ?? null, provider, roundsAndFixtures.rounds);
   const prices = priceLookup(priceRows, priceMaps);
-  const foontasyByPlayerId = new Map(foontasyRows.flatMap((row) => row.playerId ? [[String(row.playerId), row] as const] : []));
+  const foontasyByPlayerId = new Map(foontasyRows.map((row) => [String(row.playerId), row]));
   const modelForecastByPlayerHorizon = new Map(modelForecastRows.map((row) => [`${row.playerId}:${row.horizon}`, row] as const));
   const officialFplPointsByPlayerId = isFpl ? buildFplRecentOfficialPoints(fplOfficialScoreRows) : new Map<string, number[]>();
   const fplPositionsByPlayerId = new Map<string, Exclude<FantasyPositionGroup, "UNK">>(isFpl
@@ -1592,12 +1594,13 @@ type FantasyPlayerPoolSnapshotShellMetadata = Pick<
   "readiness" | "rules" | "rounds" | "bookmakerFavorites" | "fixtureCalendar" | "priceStatus" | "historySeasonOptions" | "dataFreshness"
 > & { version: 1 };
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#ffo-current-round */
 async function loadSportsRuFantasySquadSnapshotShellData(
   prisma: PrismaClient,
   userId: string,
   league: SharedLeagueSeasonOption,
   squadId: string | null | undefined,
-  contest: { id: string; maxPlayersPerTeam: number },
+  contest: { id: string; maxPlayersPerTeam: number; rules: unknown },
   historySettings: FantasyHistorySettings | undefined
 ): Promise<FantasySquadPlannerData | null> {
   const requestedHistory = historySettings ?? defaultFantasyHistorySettings;
@@ -1673,7 +1676,12 @@ async function loadSportsRuFantasySquadSnapshotShellData(
   const placeholderPlayers = fantasyProviderPlaceholdersFromFilters(savedSquad?.filters, "SPORTS_RU").map((placeholder) =>
     fantasyProviderPlaceholderPlannerPlayer(placeholder, league.displayName, metadata.rounds.length || 5)
   );
-  const players = mergeFantasyPlannerPlayerPools(snapshotPlayers, placeholderPlayers);
+  const currentSnapshotPlayers = await withSquadFoontasyForecasts(
+    prisma,
+    snapshotPlayers,
+    squadFoontasyRound(league, contest.rules, metadata.rounds[0]?.id)
+  );
+  const players = mergeFantasyPlannerPlayerPools(currentSnapshotPlayers, placeholderPlayers);
   const playersById = new Map(players.map((player) => [player.playerId, player]));
   const savedSelections = savedSquad?.players.flatMap((player): FantasySquadSelection[] => {
     const playerId = String(player.playerId);

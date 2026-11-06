@@ -5,12 +5,15 @@ import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
   FANTASY_PLAYER_POOL_SNAPSHOT_CURRENT_XI,
-  latestFantasyPlayerPoolSnapshot
+  latestFantasyPlayerPoolSnapshot,
+  parseFantasyPlayerPoolSnapshotMetadata
 } from "@/machete/fantasy-player-pool-snapshots";
+import { loadSquadFoontasyUpdate, squadFoontasyRound } from "@/machete/squad-foontasy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#ffo-current-round */
 export const GET = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
@@ -28,7 +31,7 @@ export const GET = withApiHandler(async (request: Request) => {
         season
       }
     },
-    select: { id: true }
+    select: { id: true, rules: true }
   });
   if (!contest) return jsonError("CONTEST_NOT_SYNCED", "The selected Sports.ru contest is not synchronized yet.", 503);
 
@@ -36,8 +39,20 @@ export const GET = withApiHandler(async (request: Request) => {
     contestId: contest.id,
     variant: FANTASY_PLAYER_POOL_SNAPSHOT_CURRENT_XI
   });
+  const foontasy = snapshot && snapshot.id === params.get("snapshotId")
+    ? await loadSquadFoontasyUpdate(
+        prisma,
+        squadFoontasyRound(
+          { leagueId, season },
+          contest.rules,
+          parseFantasyPlayerPoolSnapshotMetadata(snapshot.metadata)?.rounds[0]?.id
+        ),
+        params.get("foontasyRevision")
+      )
+    : undefined;
   return NextResponse.json(
     {
+      foontasy,
       snapshot: snapshot
         ? {
             id: snapshot.id,

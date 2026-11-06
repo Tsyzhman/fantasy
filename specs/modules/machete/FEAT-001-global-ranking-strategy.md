@@ -108,6 +108,14 @@ Multiply each model's player goal and assist predictions once by the respective 
 
 Sports.ru Squad FO, Alt and their historical opponent comparisons store numeric round scores rounded to hundredths after summing full-precision fixtures. The player horizon adds the stored round values to hundredths. Desktop player-pool cells and their touch equivalents show exactly two fractional digits for numeric forecasts, including trailing zeroes. Unavailable comparisons retain the unavailable glyph. Sorting and filters use the numeric values, and the existing exports retain numeric forecast precision. The component snapshot version tracks these changes and uses the existing sequential upgrade path for READY revisions.
 
+<a name="ffo-current-round"></a>
+
+### Foontasy forecast for the displayed tour {#ffo-current-round}
+
+Sports.ru Squad uses the latest imported Sports.ru Foontasy batch for the tour in its first projected round. The contest, season, Sports.ru phase and provider tour identify the batch. A player missing from that batch has an unavailable forecast. A published zero is a numeric forecast.
+
+The saved roster and the player-pool detail batches read FFO from the imported forecasts at request time, including when the other projections come from a retained pool snapshot. The default open pool's existing visible-tab status check sends a compact FFO update when the import changes. An FFO-only update leaves the pool snapshot and the user's selections intact.
+
 <a name="retired-projections"></a>
 
 ### Retired forecasts {#retired-projections}
@@ -234,6 +242,7 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 
 ## 12. Changelog {#changelog}
 
+- 2026-11-06: WI-103 — match Squad FFO to the displayed Sports.ru tour and read new imports independently of the pool calculation.
 - 2026-11-06: WI-101 and WI-102 — show hundredths in Sports.ru Squad and apply the historical opponent comparison to Alt.
 - 2026-11-06: WI-099 records the retired forecast compatibility contract and removes the unused tooltip and model implementation.
 - 2026-11-05: WI-093 — add the Sports.ru historical opponent comparison in the Squad pool.

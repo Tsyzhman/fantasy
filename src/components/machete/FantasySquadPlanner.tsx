@@ -102,6 +102,7 @@ import {
   type TransferSuggestionForecastSource
 } from "@/machete/squad_logic";
 import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
+import { applySquadFoontasyUpdate, type SquadFoontasyUpdate } from "@/machete/squad-player-dto";
 import type { FantasyBookmakerFavorite, SavedFantasySquad } from "@/machete/squad_planner";
 import { plannerReadinessBlocksForecastActions, type PlannerReadiness } from "@/machete/planner_readiness";
 import type { SportsRuSquadSnapshotStatus } from "@/machete/sports_ru_squad_snapshots";
@@ -981,6 +982,8 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
     if (!statusHref) return;
 
     let cancelled = false;
+    let statusPending = false;
+    let foontasyRevision: string | null = null;
     const controller = new AbortController();
     const cancelBackgroundPlayerPoolLoad = () => {
       cancelled = true;
@@ -1048,32 +1051,53 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
       }
     }
 
+    /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#ffo-current-round */
     async function checkForSnapshotUpdate() {
+      const activeSnapshotId = activePlayerPoolSnapshotIdRef.current;
       if (
         cancelled ||
+        statusPending ||
         document.visibilityState !== "visible" ||
         !playerPoolInitialLoadCompleteRef.current ||
         playerPoolBackgroundRefreshRunningRef.current ||
-        !activePlayerPoolSnapshotIdRef.current
+        !activeSnapshotId
       ) return;
+      statusPending = true;
       try {
-        const response = await fetch(statusHref!, {
+        const statusUrl = new URL(statusHref!, window.location.origin);
+        statusUrl.searchParams.set("snapshotId", activeSnapshotId);
+        if (foontasyRevision !== null) statusUrl.searchParams.set("foontasyRevision", foontasyRevision);
+        const response = await fetch(statusUrl, {
           cache: "no-store",
           headers: { Accept: "application/json" },
           signal: controller.signal
         });
         if (!response.ok) return;
-        const payload = await response.json().catch(() => ({})) as { snapshot?: { id?: unknown } | null };
+        const payload = await response.json().catch(() => ({})) as {
+          snapshot?: { id?: unknown } | null;
+          foontasy?: SquadFoontasyUpdate;
+        };
         const snapshotId = typeof payload.snapshot?.id === "string" ? payload.snapshot.id : null;
-        if (
-          !snapshotId ||
-          snapshotId === activePlayerPoolSnapshotIdRef.current ||
-          playerPoolBackgroundRefreshRunningRef.current
-        ) return;
-        await refreshSnapshot(snapshotId);
+        if (cancelled || !snapshotId || activePlayerPoolSnapshotIdRef.current !== activeSnapshotId) return;
+        if (snapshotId !== activeSnapshotId) {
+          await refreshSnapshot(snapshotId);
+          foontasyRevision = null;
+        } else if (payload.foontasy && payload.foontasy.revision !== foontasyRevision) {
+          const update = payload.foontasy;
+          foontasyRevision = update.revision;
+          startPlayerPoolTransition(() => {
+            setSourcePlayers((current) => {
+              const updated = applySquadFoontasyUpdate(current, update);
+              sourcePlayersRef.current = updated;
+              return updated;
+            });
+          });
+        }
       } catch (error) {
         if (cancelled || controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) return;
         console.error("Failed to refresh the fantasy player pool snapshot in background.", error);
+      } finally {
+        statusPending = false;
       }
     }
 
