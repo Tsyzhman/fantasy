@@ -14,7 +14,7 @@ import { ProjectionFormulaHoverCard } from "@/components/machete/ProjectionFormu
 import { SortableTable, type SortDirection } from "@/components/sortable-table";
 import { FdrRow } from "@/components/ui/fdr-pill";
 import { compactPriceHeaderThreshold, responsivePriceHeaderLabel } from "@/components/machete/responsive-price-label";
-import { formatAlternativeScore, formatNumber, formatScore } from "@/lib/format";
+import { formatAlternativeScore, formatForecastScore, formatNumber, formatScore } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { fantasyPlayerMatchesNameQuery } from "@/machete/player-identity";
@@ -47,6 +47,13 @@ export type PlayerPoolOptionalColumn = {
 };
 
 export type PlayerPoolAdvancedFilterColumn = Pick<PlayerPoolOptionalColumn, "key" | "label" | "title" | "numeric">;
+
+const opponentForecastColumnKeys = new Set([
+  "opponentAdjustedFp", "opponentAdjustedHorizon", "alternativeOpponentAdjustedFp", "alternativeOpponentAdjustedHorizon"
+]);
+const forecastScoreColumnKeys = new Set([
+  "nextFp", "horizonFp", "alternative", "alternativeHorizon", "foontasy", "modelHorizon", ...opponentForecastColumnKeys
+]);
 
 export const playerPoolFixedColumnWidths = {
   player: 190,
@@ -562,7 +569,9 @@ export function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horiz
     column("alternative", "Alt", "Альт", "Alternative forecast for the next provider round. Each fixture is calculated independently with the user's personal Alt formula, then double-round results are summed.", "Альтернативный прогноз на следующий тур провайдера. Каждый матч отдельно рассчитывается по личной формуле Alt пользователя, затем результаты двойного тура складываются."),
     ...(provider === "SPORTS_RU" ? [
       column("opponentAdjustedFp", "FO Opp.", "ФО соп.", "Experimental forecast for the selected round. Historical opponent defense adjusts the player's expected goals and assists.", "Экспериментальный прогноз на выбранный тур. Сила защиты прошлых соперников корректирует ожидаемые голы и передачи игрока.", true, 78),
-      column("opponentAdjustedHorizon", `FO Opp. ${horizon}R`, `ФО соп. ${horizon}Т`, "Sum of the historical opponent forecasts over the selected horizon.", "Сумма прогнозов с поправкой на прошлых соперников за выбранный горизонт.", true, 96)
+      column("opponentAdjustedHorizon", `FO Opp. ${horizon}R`, `ФО соп. ${horizon}Т`, "Sum of the historical opponent forecasts over the selected horizon.", "Сумма прогнозов с поправкой на прошлых соперников за выбранный горизонт.", true, 96),
+      column("alternativeOpponentAdjustedFp", "Alt Opp.", "Альт соп.", "Alt forecast for the selected round with expected goals and assists adjusted for past opponents.", "Прогноз Альт на выбранный тур с поправкой на силу защиты прошлых соперников.", true, 86),
+      column("alternativeOpponentAdjustedHorizon", `Alt Opp. ${horizon}R`, `Альт соп. ${horizon}Т`, "Sum of Alt forecasts adjusted for past opponents over the selected horizon.", "Сумма прогнозов Альт с поправкой на прошлых соперников за выбранный горизонт.", true, 104)
     ] : []),
     column("alternativePerPrice", "Alt/price", "Альт/цена", `Alternative next-round expected fantasy points divided by the current ${priceProviderLabel} price. Higher means more Alt points per one price unit.`, `Альтернативные ожидаемые ФО на следующий тур, делённые на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.`, true, 82),
     column("alternativeHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of independently calculated personal Alt forecasts for the next ${horizon} rounds.`, `Сумма отдельно рассчитанных личных прогнозов Alt на следующие ${horizon} туров.`),
@@ -660,7 +669,7 @@ export function customPlayerPoolCell(
   }
 
   const rawValue = customPlayerPoolColumnValue(column.key, player, horizon);
-  const display = customPlayerPoolColumnDisplay(column.key, rawValue, language);
+  const display = customPlayerPoolColumnDisplay(column.key, rawValue, language, provider);
   const tone = column.key === "nextFp" || column.key === "nextFpPerPrice" ? "text-emerald-700"
     : column.key === "horizonFp" ? "text-sky-700"
       : column.key === "foontasy" || column.key === "foontasyPerPrice" ? "text-cyan-700"
@@ -671,7 +680,7 @@ export function customPlayerPoolCell(
     ? "primary"
     : column.key === "alternative" ? "alternative" : null;
   return (
-    <td key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={projectionKind ? undefined : cellTitle}>
+    <td key={column.key} data-column-key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={projectionKind ? undefined : cellTitle}>
       {projectionKind ? (
         <ProjectionFormulaHoverCard
           playerId={player.playerId}
@@ -700,7 +709,7 @@ export function playerPoolValueCellTitle(column: PlayerPoolOptionalColumn, playe
   if (column.key === "alternative") return alternativePlayerForecastTitle(player, language);
   if (column.key === "alternativePerPrice") return forecastEfficiencyTitle(player, language, "Alt", nextAlternativeFantasyPoints(player), numericValue);
   if (column.key === "alternativeHorizon") return alternativePlayerHorizonForecastTitle(player, language, horizon);
-  if (column.key === "opponentAdjustedFp" || column.key === "opponentAdjustedHorizon") {
+  if (opponentForecastColumnKeys.has(column.key)) {
     const adjustment = player.opponentAttackAdjustment;
     if (numericValue === null || !adjustment) return localizedText(
       language, "Historical opponent forecast is unavailable for this selection.", "Прогноз с поправкой на прошлых соперников недоступен для выбранных туров."
@@ -1024,6 +1033,8 @@ export function customPlayerPoolColumnValue(key: string, player: FantasyPlannerP
     case "alternative": return nextAlternativeFantasyPoints(player);
     case "opponentAdjustedFp": return sumCompleteRoundForecasts(player.opponentAdjustedRoundPoints, 1);
     case "opponentAdjustedHorizon": return sumCompleteRoundForecasts(player.opponentAdjustedRoundPoints, horizon);
+    case "alternativeOpponentAdjustedFp": return sumCompleteRoundForecasts(player.alternativeOpponentAdjustedRoundPoints, 1);
+    case "alternativeOpponentAdjustedHorizon": return sumCompleteRoundForecasts(player.alternativeOpponentAdjustedRoundPoints, horizon);
     case "alternativePerPrice": return forecastPointsPerPrice(nextAlternativeFantasyPoints(player), player.price);
     case "alternativeHorizon": return playerAlternativeHorizonPoints(player, horizon);
     case "fixtures": return [...(player.fixtureFullNames ?? []), ...(player.fixtures ?? [])].join(" ");
@@ -1053,9 +1064,11 @@ export function customPlayerPoolColumnValue(key: string, player: FantasyPlannerP
   }
 }
 
-export function customPlayerPoolColumnDisplay(key: string, value: string | number | null, language: UiLanguage) {
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#projection-precision */
+export function customPlayerPoolColumnDisplay(key: string, value: string | number | null, language: UiLanguage, provider = "SPORTS_RU") {
   if (value === null || value === undefined) return "—";
   if (typeof value === "string") return value;
+  if (provider === "SPORTS_RU" && forecastScoreColumnKeys.has(key)) return formatForecastScore(value);
   if (key.endsWith("PerPrice")) return formatNumber(value, 3);
   if (key === "rosterStarter") return value ? localizedText(language, "Yes", "Да") : localizedText(language, "No", "Нет");
   if (["rotationRisk", "startProbability", "sixtyProbability", "fullMatchProbability", "forecastConfidence"].includes(key) || /(?:appearance|sixty|full_match)_(?:probability|rate)/.test(key)) {
@@ -1314,6 +1327,7 @@ export function PlayerPoolMobileList({
   players,
   horizon,
   language,
+  provider = "SPORTS_RU",
   addBlockReason,
   selectionsByPlayerId,
   onAdd,
@@ -1324,6 +1338,7 @@ export function PlayerPoolMobileList({
   players: FantasyPlannerPlayer[];
   horizon: number;
   language: UiLanguage;
+  provider?: string;
   addBlockReason: (player: FantasyPlannerPlayer) => string | null;
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
   onAdd: (player: FantasyPlannerPlayer) => void;
@@ -1334,6 +1349,9 @@ export function PlayerPoolMobileList({
   const pageSize = 18;
   const [visibleCount, setVisibleCount] = useState(pageSize);
   const visiblePlayers = players.slice(0, visibleCount);
+  const metricColumns = columns ?? playerPoolOptionalColumns(players, horizon, language, provider);
+  const opponentNextColumns = metricColumns.filter(({ key }) => key === "opponentAdjustedFp" || key === "alternativeOpponentAdjustedFp");
+  const formatPoints = provider === "SPORTS_RU" ? formatForecastScore : formatScore;
 
   return (
     <div data-testid="player-pool-mobile">
@@ -1401,16 +1419,16 @@ export function PlayerPoolMobileList({
               )}
             </div>
 
-            <MobilePlayerAnalytics player={player} horizon={horizon} language={language} columns={columns ?? playerPoolOptionalColumns(players, horizon, language)} />
+            <MobilePlayerAnalytics player={player} horizon={horizon} language={language} provider={provider} columns={metricColumns} />
 
             <dl className="mt-2 grid grid-cols-4 divide-x divide-slate-200 rounded bg-white/80 px-1 py-2 text-center">
               <div className="min-w-0 px-1">
                 <dt className="text-[10px] font-semibold uppercase text-slate-500"><I18nText en="Next" ru="След." /></dt>
-                <dd className="truncate text-sm font-bold text-emerald-700 num-tabular">{formatScore(nextFantasyPoints(player))}</dd>
+                <dd className="truncate text-sm font-bold text-emerald-700 num-tabular">{formatPoints(nextFantasyPoints(player))}</dd>
               </div>
               <div className="min-w-0 px-1">
                 <dt className="text-[10px] font-semibold uppercase text-slate-500">{horizon}R</dt>
-                <dd className="truncate text-sm font-bold text-sky-700 num-tabular">{formatScore(playerHorizonPoints(player, horizon))}</dd>
+                <dd className="truncate text-sm font-bold text-sky-700 num-tabular">{formatPoints(playerHorizonPoints(player, horizon))}</dd>
               </div>
               <div className="min-w-0 px-1">
                 <dt className="text-[10px] font-semibold uppercase text-slate-500"><I18nText en="Price" ru="Цена" /></dt>
@@ -1418,16 +1436,29 @@ export function PlayerPoolMobileList({
               </div>
               <div className="min-w-0 px-1">
                 <dt className="text-[10px] font-semibold uppercase text-slate-500">Alt</dt>
-                <dd className="truncate text-sm font-bold text-amber-700 num-tabular">{formatAlternativeScore(nextAlternativeFantasyPoints(player))}</dd>
+                <dd className="truncate text-sm font-bold text-amber-700 num-tabular">{formatPoints(nextAlternativeFantasyPoints(player) ?? 0)}</dd>
               </div>
             </dl>
+
+            {opponentNextColumns.length > 0 ? (
+              <dl className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                {opponentNextColumns.map(({ key, label }) => (
+                  <div key={key} className="flex gap-1">
+                    <dt className="text-slate-500">{label}</dt>
+                    <dd data-column-key={key} className="font-semibold text-ink num-tabular">
+                      {customPlayerPoolColumnDisplay(key, customPlayerPoolColumnValue(key, player, horizon), language, provider)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
 
             <div className="mt-2 flex min-w-0 items-center justify-between gap-2 overflow-hidden">
               <div className="min-w-0 overflow-hidden">
                 {fixtureChips.length > 0 ? <FdrRow fixtures={fixtureChips} /> : <span className="text-[11px] text-slate-500"><I18nText en="No fixture loaded" ru="Матч не загружен" /></span>}
               </div>
               <span className="shrink-0 text-[11px] font-semibold text-violet-700 num-tabular">
-                <I18nText en="Alt 5R" ru="Альт 5Т" /> {formatAlternativeScore(playerAlternativeHorizonPoints(player, 5))}
+                <I18nText en="Alt 5R" ru="Альт 5Т" /> {formatPoints(playerAlternativeHorizonPoints(player, 5) ?? 0)}
               </span>
             </div>
 
@@ -1457,7 +1488,7 @@ export function PlayerPoolMobileList({
   );
 }
 
-export function MobilePlayerAnalytics({ player, columns, horizon, language }: { player: FantasyPlannerPlayer; columns: PlayerPoolOptionalColumn[]; horizon: number; language: UiLanguage }) {
+export function MobilePlayerAnalytics({ player, columns, horizon, language, provider }: { player: FantasyPlannerPlayer; columns: PlayerPoolOptionalColumn[]; horizon: number; language: UiLanguage; provider: string }) {
   const [open, setOpen] = useState(false);
   const confidence = player.forecastConfidence;
   const metrics = [...new Map([...columns, ...playerPoolOptionalColumns([], horizon, language).filter(column => column.key === "forecastConfidence")].map(column => [column.key, column])).values()];
@@ -1470,7 +1501,7 @@ export function MobilePlayerAnalytics({ player, columns, horizon, language }: { 
         const value = customPlayerPoolColumnValue(column.key, player, horizon);
         return <details key={column.key} className="rounded bg-white p-2">
           <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-xs">
-            <span>{column.label}</span><strong>{customPlayerPoolColumnDisplay(column.key, value, language)}</strong>
+            <span>{column.label}</span><strong>{customPlayerPoolColumnDisplay(column.key, value, language, provider)}</strong>
           </summary>
           <p className="whitespace-pre-wrap break-words text-[11px] leading-5 text-slate-600">{playerPoolValueCellTitle(column, player, horizon, language, value)}</p>
         </details>;

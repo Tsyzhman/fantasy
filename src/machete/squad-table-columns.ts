@@ -8,6 +8,7 @@ export const defaultSquadTableColumns = [
   "modelHorizon",
   "alternative",
   "opponentAdjustedFp",
+  "alternativeOpponentAdjustedFp",
   "alternativePerPrice",
   "alternativeHorizon",
   "fixtures"
@@ -52,6 +53,7 @@ export function squadTableValueFilterIsActive(filter: SquadTableValueFilter, num
 export const staticSquadTableColumnKeys = new Set([
   ...defaultSquadTableColumns,
   "opponentAdjustedHorizon",
+  "alternativeOpponentAdjustedHorizon",
   "age",
   "nationality",
   "rosterStarter",
@@ -82,16 +84,28 @@ const minimumColumnWidth = 40;
 const maximumColumnWidth = 640;
 const squadTableColumnsPreferenceVersion = 2;
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast */
 export function parseSquadTableColumns(value: unknown): string[] {
   const preference = storedSquadTableColumnsPreference(value);
   if (!preference) return [...defaultSquadTableColumns];
-  return parseSquadTableColumnList(preference.columns);
+  const columns = parseSquadTableColumnList(preference.columns);
+  const foOppIndex = columns.indexOf("opponentAdjustedFp");
+  if (
+    !preference.altOpponentInitialized &&
+    foOppIndex >= 0 &&
+    columns.length < maximumColumns &&
+    !columns.includes("alternativeOpponentAdjustedFp")
+  ) {
+    columns.splice(foOppIndex + 1, 0, "alternativeOpponentAdjustedFp");
+  }
+  return columns;
 }
 
 export function squadTableColumnsPreference(value: unknown) {
   return {
     version: squadTableColumnsPreferenceVersion,
-    columns: parseSquadTableColumnList(value)
+    columns: parseSquadTableColumnList(value),
+    altOpponentInitialized: true
   };
 }
 
@@ -109,11 +123,11 @@ function parseSquadTableColumnList(value: unknown): string[] {
 }
 
 function storedSquadTableColumnsPreference(value: unknown) {
-  if (Array.isArray(value)) return { columns: value };
+  if (Array.isArray(value)) return { columns: value, altOpponentInitialized: false };
   if (!value || typeof value !== "object") return null;
-  const preference = value as { version?: unknown; columns?: unknown };
+  const preference = value as { version?: unknown; columns?: unknown; altOpponentInitialized?: unknown };
   if (preference.version !== squadTableColumnsPreferenceVersion || !Array.isArray(preference.columns)) return null;
-  return { columns: preference.columns };
+  return { columns: preference.columns, altOpponentInitialized: preference.altOpponentInitialized === true };
 }
 
 export function isSquadTableColumnsInput(value: unknown) {

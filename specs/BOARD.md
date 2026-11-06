@@ -6,6 +6,8 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-102](work/WI-102-alt-opponent-forecast.md) | Compare Alt with a historical opponent adjustment | FEAT-001 | @tsyzhman | 2026-11-06 | — |
+| [WI-101](work/WI-101-squad-forecast-hundredths.md) | Show Sports.ru Squad forecasts to hundredths | FEAT-001 | @tsyzhman | 2026-11-06 | — |
 | [WI-082](work/WI-082-scheduled-browser-smoke.md) | Restore scheduled GitHub browser checks and release the aligned revision | PROP-002, INFRA-006 | @tsyzhman | 2026-10-26 | — |
 | [WI-078](work/WI-078-ucl-round-three-transfers.md) | Six transfers only in Champions League round three | FEAT-001 | @tsyzhman | 2026-10-20 | — |
 | [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |

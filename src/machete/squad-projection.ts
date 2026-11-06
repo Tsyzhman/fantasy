@@ -156,7 +156,7 @@ export const starterPer90FullReliabilityMinutes = 450;
 export const starterPer90MinimumReliability = 0.25;
 
 // Increment when changes require rebuilding the materialized forecast pool.
-export const COMPONENT_PROJECTION_VERSION = 2 as const;
+export const COMPONENT_PROJECTION_VERSION = 3 as const;
 const foStarterEventMinutesFloor = 55;
 
 export const completeTeamPlayerMinutes = 11 * 90;

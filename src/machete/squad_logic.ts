@@ -212,6 +212,7 @@ export type FantasyPlannerPlayer = {
   alternativePredictedFp?: number | null;
   alternativeRoundPoints?: Array<number | null>;
   opponentAdjustedRoundPoints?: Array<number | null>;
+  alternativeOpponentAdjustedRoundPoints?: Array<number | null>;
   opponentAttackAdjustment?: OpponentAttackAdjustment;
   foontasyPoints?: number | null;
   foontasyHorizonPoints?: number | null;
@@ -564,6 +565,11 @@ export function roundFantasyValue(value: number) {
   return Math.round(value * 10) / 10;
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#projection-precision */
+export function roundForecastPoints(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
 export function fantasyTransferLimitForHorizon(horizon: number, transferLimitPerRound?: number | null) {
   if (typeof transferLimitPerRound === "number" && Number.isInteger(transferLimitPerRound) && transferLimitPerRound > 0) {
     return transferLimitPerRound;
@@ -661,7 +667,7 @@ export function countFantasySquadTransfers(
 }
 
 export function playerHorizonPoints(player: Pick<FantasyPlannerPlayer, "roundPoints">, horizon: number) {
-  return roundFantasyValue(player.roundPoints.slice(0, horizon).reduce((total, value) => total + value, 0));
+  return roundForecastPoints(player.roundPoints.slice(0, horizon).reduce((total, value) => total + value, 0));
 }
 
 export function summarizeFantasySquad(
@@ -762,11 +768,11 @@ export function summarizeFantasySquad(
     benchPlayers,
     spent,
     bank,
-    projectedNext: roundFantasyValue(starterPairs.reduce(
+    projectedNext: roundForecastPoints(starterPairs.reduce(
       (total, pair) => total + nextFantasyPoints(pair.player) * fantasyCaptainMultiplier(pair.selection),
       0
     )),
-    projectedHorizon: roundFantasyValue(starterPairs.reduce(
+    projectedHorizon: roundForecastPoints(starterPairs.reduce(
       (total, pair) => total + playerHorizonPoints(pair.player, horizon) * fantasyCaptainMultiplier(pair.selection),
       0
     )),
@@ -2537,7 +2543,7 @@ export function sumCompleteRoundForecasts(points: readonly (number | null)[] | u
   const requestedHorizon = Math.max(1, horizon);
   const values = points?.slice(0, requestedHorizon) ?? [];
   if (values.length < requestedHorizon || values.some((value) => typeof value !== "number" || !Number.isFinite(value))) return null;
-  return roundFantasyValue((values as number[]).reduce((total, value) => total + value, 0));
+  return roundForecastPoints((values as number[]).reduce((total, value) => total + value, 0));
 }
 
 export function fantasyCaptainMultiplier(selection: Pick<FantasySquadSelection, "isStarter" | "isCaptain">) {

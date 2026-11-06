@@ -34,7 +34,7 @@ export type FantasyPlayerPoolSnapshotVariant = typeof FANTASY_PLAYER_POOL_SNAPSH
 export type FantasyPlayerPoolSnapshotMetadata = {
   version: typeof FANTASY_PLAYER_POOL_SNAPSHOT_METADATA_VERSION;
   providerIdentityVersion?: 1;
-  componentProjectionVersion?: typeof COMPONENT_PROJECTION_VERSION;
+  componentProjectionVersion?: number;
   rotationRiskVersion?: typeof ROTATION_RISK_VERSION;
   rotationRiskExpiresAt?: string;
   readiness: FantasySquadPlannerData["readiness"];
@@ -97,6 +97,7 @@ export async function refreshFantasyPlayerPoolSnapshots(
           const existing = await latestFantasyPlayerPoolSnapshot(prisma, { contestId: scope.contestId, variant });
           const metadata = parseFantasyPlayerPoolSnapshotMetadata(existing?.metadata);
           // @spec spec://modules/machete/FEAT-001-global-ranking-strategy#starter-event-minutes
+          // @spec spec://modules/machete/FEAT-001-global-ranking-strategy#projection-precision
           // Upgrade old projections in the sequential worker.
           if (fantasyPlayerPoolSnapshotHasFixtureCalendar(existing?.metadata)
             && metadata?.providerIdentityVersion === 1

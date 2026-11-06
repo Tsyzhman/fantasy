@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.158 - 2026-11-06
+
+- Show Sports.ru Squad player forecasts to two decimal places and retain hundredths in stored round scores.
+- Add Alt Opp. for the selected round and an optional horizon column using the user's Alt model and historical opponent factors.
+
 ## 0.3.157 - 2026-11-06
 
 - Remove the unused Position and Joint forecast implementation, retired adapters, and tests tied to those implementations.

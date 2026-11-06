@@ -90,7 +90,10 @@ import { expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig } fro
 import { positionEventPriorPer90 } from "./player-season-prior";
 import { parseFantasyPlayerPoolSnapshotMetadata } from "./fantasy-player-pool-snapshots";
 
-/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast */
+/**
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#projection-precision
+ */
 test("the opponent comparison adjusts the attack once and sums complete double rounds", () => {
   const config = {
     ...expectedProjectionFormulaConfig,
@@ -119,8 +122,8 @@ test("the opponent comparison adjusts the attack once and sums complete double r
   const index = buildFormulaProjectionIndex(rows as never, round, new Map(), config);
   const original = index.byFixturePlayer.get("first:hard-history")!;
   assert.equal(projectionFormulaFantasyPoints(original, first, config), 4.2);
-  assert.equal(opponentAdjustedRoundForecast(fixtures, "hard-history", index, config, { goalFactor: 1.1, assistFactor: 1.1, ratedMatches: 8 }), 9);
-  assert.equal(opponentAdjustedRoundForecast(fixtures, "easy-history", index, config, { goalFactor: 0.9, assistFactor: 0.9, ratedMatches: 8 }), 7.8);
+  assert.equal(opponentAdjustedRoundForecast(fixtures, "hard-history", index, config, { goalFactor: 1.1, assistFactor: 1.1, ratedMatches: 8 }), 9.04);
+  assert.equal(opponentAdjustedRoundForecast(fixtures, "easy-history", index, config, { goalFactor: 0.9, assistFactor: 0.9, ratedMatches: 8 }), 7.76);
   const neutral = { goalFactor: 1, assistFactor: 1, ratedMatches: 8 };
   assert.equal(opponentAdjustedRoundForecast([], "hard-history", index, config, neutral), 0);
   assert.equal(opponentAdjustedRoundForecast(fixtures, "missing", index, config, neutral), null);
@@ -131,6 +134,20 @@ test("the opponent comparison adjusts the attack once and sums complete double r
   assert.equal(opponentAdjustedRoundForecast([first], "hard-history", solo, config, {
     goalFactor: 1.1, assistFactor: 1.1, ratedMatches: 8
   }), 7.4);
+
+  const personalAlt = {
+    ...friendAltProjectionFormulaConfig,
+    history: config.history,
+    team: { ...friendAltProjectionFormulaConfig.team, expectedGoals: "0.8", assistsPerGoal: "0.5" },
+    scoreByPosition: {
+      ...friendAltProjectionFormulaConfig.scoreByPosition,
+      FWD: "{Appearance probability} + 2 * {Expected goals} + 4 * {Expected assists}"
+    }
+  };
+  const altIndex = buildFormulaProjectionIndex(rows as never, round, new Map(), personalAlt, true);
+  assert.equal(opponentAdjustedRoundForecast(fixtures, "hard-history", altIndex, personalAlt, {
+    goalFactor: 1.1, assistFactor: 0.8, ratedMatches: 8
+  }), 5.04);
 });
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
@@ -530,13 +547,13 @@ test("double provider round evaluates the formula for both opponents and sums th
     {
       id: "home-fixture", roundId: "provider-round", teamId: "team-1", opponentTeamId: "team-2",
       opponentName: "AAA", opponentFullName: "Alpha", side: "H" as const,
-      kickoffAt: new Date("2026-08-25T12:00:00Z"), projectedXg: 1.2, projectedXga: 1,
+      kickoffAt: new Date("2026-08-25T12:00:00Z"), projectedXg: 1.204, projectedXga: 1,
       attackMultiplier: 1, defenseMultiplier: 1
     },
     {
       id: "away-fixture", roundId: "provider-round", teamId: "team-1", opponentTeamId: "team-3",
       opponentName: "BBB", opponentFullName: "Beta", side: "A" as const,
-      kickoffAt: new Date("2026-08-29T12:00:00Z"), projectedXg: 2.3, projectedXga: 1,
+      kickoffAt: new Date("2026-08-29T12:00:00Z"), projectedXg: 2.304, projectedXga: 1,
       attackMultiplier: 1, defenseMultiplier: 1
     }
   ];
@@ -549,7 +566,10 @@ test("double provider round evaluates the formula for both opponents and sums th
   const round = projectionRoundFormulaWithBreakdown(fixtures, "double-player", index, config);
 
   assert.ok(round);
-  assert.equal(round.total, 3.5);
+  assert.equal(round.total, 3.51);
+  assert.equal(opponentAdjustedRoundForecast(fixtures, "double-player", index, config, {
+    goalFactor: 1, assistFactor: 1, ratedMatches: 8
+  }), 3.51);
   assert.deepEqual([...new Set(round.terms.map((term) => term.fixtureLabel))], ["H AAA", "A BBB"]);
 });
 

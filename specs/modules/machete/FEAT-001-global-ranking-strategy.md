@@ -96,11 +96,17 @@ In the latest available earlier archive season, use destination-league appearanc
 
 ### Historical opponent forecast {#historical-opponent-forecast}
 
-Sports.ru Squad offers a separate sortable comparison, `FO Opp.` / `ФО соп.`, for the selected round and an optional column for its selected horizon. It starts with the component FO fixture projection and applies historical opponent factors to the player's goals and assists. The upcoming fixture, minutes and other scoring components come from FO. The result is an individual comparison. FO and Alt remain the inputs to existing selection and transfer workflows.
+Sports.ru Squad offers two sortable comparisons for the selected round, `FO Opp.` / `ФО соп.` and `Alt Opp.` / `Альт соп.`, with optional horizon columns. Each starts with its corresponding FO or Alt fixture projection, uses that model's fixture, minutes, team totals and scoring formula, and adjusts the player's goals and assists. Alt Opp. follows the user's active Alt configuration. Both comparisons are available for column filters, sorting and export. The default layout shows both next-round comparisons. Earlier saved layouts showing FO Opp. receive Alt Opp. once and can then hide it. FO and Alt remain the inputs to existing selection and transfer workflows.
 
 For each earlier match use the opposing club's xG allowed at its venue, relative to the average of the same competition and venue. Use finished matches whose kickoff was more than three hours earlier, a 180-day half-life, and a league prior of six matches. The minimum is three earlier opponent observations and 16 league observations at that venue. Observed score is the fallback for a missing team xG cell. The inverse allowance ratio is bounded to 0.80–1.25 and applied at half strength. Player goal and assist factors are the adjusted event totals divided by the original totals over the last ten club observations within the forecast history window. Use observed goals or assists for missing xG or xA and factor 1 for missing opponent ratings. Three rated appearances and 180 rated minutes are required. A zero event total has factor 1.
 
-Multiply the FO player goal and assist predictions once by the respective factors, bounded by the club's forecast totals for each event. Recalculate the existing score formula and sum fixtures in each round. A scheduled blank is zero with valid history. Missing history or fixture projections render as unavailable. The comparison keeps provider and source statistics intact and uses the current component pool revision. A pool refresh reads team results once per competition set in a bounded window, retains the factor index only for the calculation, and saves compact factors and round totals in the existing snapshots.
+Multiply each model's player goal and assist predictions once by the respective factors, bounded by that model's club forecast totals for each event. Recalculate the corresponding score formula and sum fixtures in each round. A scheduled blank is zero with valid history. Missing history or fixture projections render as unavailable. A pool refresh reads team results once per competition set in a bounded window, retains the shared factor index only for the calculation, and saves compact factors and both sets of round totals in the existing snapshots.
+
+<a name="projection-precision"></a>
+
+### Precision of player projections {#projection-precision}
+
+Sports.ru Squad FO, Alt and their historical opponent comparisons store numeric round scores rounded to hundredths after summing full-precision fixtures. The player horizon adds the stored round values to hundredths. Desktop player-pool cells and their touch equivalents show exactly two fractional digits for numeric forecasts, including trailing zeroes. Unavailable comparisons retain the unavailable glyph. Sorting and filters use the numeric values, and the existing exports retain numeric forecast precision. The component snapshot version tracks these changes and uses the existing sequential upgrade path for READY revisions.
 
 <a name="retired-projections"></a>
 
@@ -228,6 +234,7 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 
 ## 12. Changelog {#changelog}
 
+- 2026-11-06: WI-101 and WI-102 — show hundredths in Sports.ru Squad and apply the historical opponent comparison to Alt.
 - 2026-11-06: WI-099 records the retired forecast compatibility contract and removes the unused tooltip and model implementation.
 - 2026-11-05: WI-093 — add the Sports.ru historical opponent comparison in the Squad pool.
 - 2026-11-05: WI-092 — share feeder-division translation factors across archive priors and internal horizon forecasts, with destination-league evidence first.
