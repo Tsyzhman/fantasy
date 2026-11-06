@@ -7,6 +7,7 @@ import { applyProbableLineupTeamPlan, type ProbableLineupTeamPlan } from './prob
 import { enqueueCurrentXiTeamsSnapshotRefresh } from './fantasy-player-pool-refresh-queue';
 import { loadSorareRosterEvidence, restoreSorareRosterMembers, type SorareRosterRepair } from './sorareinside-roster';
 import { CoreSeasonRosterRepository } from '../core_data/repositories';
+import { loadLastPlayedClubMatch, refreshLastPlayedClubXi } from './sorareinside-last-played';
 
 const db = new PrismaClient();
 const skip = !(process.env.CI === 'true' && process.env.DATABASE_URL?.includes('127.0.0.1:55439/fantasy_scout_test_ci'));
@@ -104,4 +105,62 @@ test('PostgreSQL: stale evidence and a failure after writing flags/metadata/queu
     assert.equal(await db.fantasyPlayerPoolRefreshRequest.count({ where: { leagueId: f.scope.leagueId, season: f.scope.season } }), 0);
     assert.equal(await db.providerEntityMap.count({ where: { providerEntityId: f.repair.source.id } }), 0);
   } finally { await f.cleanup(); }
+});
+
+test('PostgreSQL: last played XI selects the newest finished match, respects forecasts, and publishes once', { skip }, async () => {
+  const f = await fixture();
+  const { scope } = f;
+  const now = new Date();
+  const latest = { id: scope.teamId + 50n, homeTeamId: scope.teamId, matchDate: new Date(now.getTime() - 86400000), finished: true };
+  const older = { ...latest, id: latest.id - 1n, matchDate: new Date(now.getTime() - 2 * 86400000) };
+  const cancelled = { ...latest, id: latest.id + 1n, matchDate: new Date(now.getTime() - 3600000), cancelled: true };
+  const starters = f.ids.slice(0, 11).map((playerId, i) => ({
+    playerId, teamId: scope.teamId, started: true, position: i === 0 ? 'Goalkeeper' : 'Midfielder'
+  }));
+  const teamWhere = { leagueId_season_teamId: scope };
+  const apply = async (write: boolean) => refreshLastPlayedClubXi(db, {
+    ...scope, teamName: 'Test club', leagueName: 'Test league', checkedAt: now, apply: write,
+    metadata: null, // Simulate a plan made before a concurrent forecast publication.
+    match: await loadLastPlayedClubMatch(db, scope.teamId, now),
+    roster: await db.teamPlayerSeason.findMany({ where: scope, include: { player: { select: { id: true } } } })
+  });
+  try {
+    await db.coreMatch.createMany({ data: [older, latest, cancelled] });
+    await db.matchPlayerStat.createMany({ data: [
+      ...starters.map(row => ({ ...row, matchId: older.id })),
+      ...starters.slice(0, 10).map(row => ({ ...row, matchId: latest.id }))
+    ] });
+    const incomplete = await apply(true);
+    assert.equal(incomplete.matchId, String(latest.id));
+    assert.equal(incomplete.status, 'INCOMPLETE_XI');
+    await db.matchPlayerStat.create({ data: { ...starters[10], matchId: latest.id } });
+    assert.equal((await apply(true)).status, 'ROSTER_MISMATCH');
+    await db.teamPlayerSeason.updateMany({ where: { ...scope, playerId: f.ids[1] }, data: { active: true } });
+
+    await db.leagueSeasonTeam.update({ where: teamWhere, data: { metadata: { probableLineup: {
+      source: 'SORAREINSIDE', sourceKickoff: new Date(now.getTime() + 86400000).toISOString()
+    } } } });
+    assert.equal((await apply(true)).status, 'UPCOMING_PREDICTION');
+    assert.equal(await db.fantasyPlayerPoolRefreshRequest.count({ where: scope }), 0);
+
+    await db.leagueSeasonTeam.update({ where: teamWhere, data: { metadata: { retained: true } } });
+    assert.equal((await apply(false)).status, 'READY');
+    assert.equal(await db.fantasyPlayerPoolRefreshRequest.count({ where: scope }), 0);
+    assert.equal((await apply(true)).status, 'APPLIED');
+    const flags = await db.teamPlayerSeason.findMany({ where: { ...scope, active: true, isStarter: true }, select: { playerId: true } });
+    assert.deepEqual(new Set(flags.map(row => row.playerId)), new Set(starters.map(row => row.playerId)));
+    const saved = await db.leagueSeasonTeam.findUniqueOrThrow({ where: teamWhere });
+    const metadata = saved.metadata as { retained: boolean; probableLineup: { source: string; sourceFixtureId: string } };
+    assert.equal(saved.startingXiSourceMatchId, latest.id);
+    assert.equal(metadata.retained, true);
+    assert.equal(metadata.probableLineup.source, 'FOTMOB_LAST_PLAYED');
+    assert.equal(metadata.probableLineup.sourceFixtureId, String(latest.id));
+    const queued = await db.fantasyPlayerPoolRefreshRequest.findFirstOrThrow({ where: scope });
+    assert.equal((await apply(true)).status, 'UNCHANGED');
+    assert.deepEqual((await db.leagueSeasonTeam.findUniqueOrThrow({ where: teamWhere })).metadata, metadata);
+    assert.equal((await db.fantasyPlayerPoolRefreshRequest.findFirstOrThrow({ where: scope })).requestToken, queued.requestToken);
+  } finally {
+    await db.coreMatch.deleteMany({ where: { id: { in: [older.id, latest.id, cancelled.id] } } });
+    await f.cleanup();
+  }
 });

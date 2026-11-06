@@ -1,6 +1,14 @@
 # Production release history
 
-## Latest verified release: 0.3.153 — 2026-11-05
+## Latest verified release: 0.3.155 — 2026-11-06
+
+[Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42182014622) and [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/42183333553) passed for `ac22b542dc9ffa2b4908cda6fcf7347d26ecad09`, tree `575e718845c1b545b810835093b82ab17146d631`. The running release is `20261106T075530Z-v0.3.155-ac22b54`. Public health, release marker and both running images agree. CI passed the full Check on the pinned Ubuntu 24.04 runner.
+
+Eight manually reviewed SorareInside bindings now publish with the matching active players despite the recorded date discrepancies. The last played match supplied 23 XIs for unavailable forecasts, including Lillestrøm. Three scopes retained their prior flags because the full played XI was absent from the active roster. Production verified the 31 accepted starter sets against their Squad cache revisions.
+
+All 227 health and prior-CSS probes passed. The queue and duplicate checks returned zero. One worker, three READY revisions per scope and two releases remain. The worker settled at 1.13 GiB of 4 GiB, with zero restarts or OOM. The verified archive was consumed. Details are in [WI-097](../../specs/work/archive/2026/WI-097-sorare-last-played-xi.md).
+
+## 0.3.153 — 2026-11-05
 
 [Deploy Production 42009437469](https://github.com/Tsyzhman/fantasy/actions/runs/42009437469) and its [dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42007646881) passed for `3d9a9b213db73b92bb8a3ef47b1a228d5687c4cb`. The recorded release is `20261105T102538Z-v0.3.153-3d9a9b2`. Public and loopback health, the release manifest and both running image labels agree. CI passed 1,387 main tests and 48 browser scenarios, and the production Squad page and both pool routes passed the authenticated canary.
 

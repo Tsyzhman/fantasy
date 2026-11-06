@@ -2,6 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {isSourceTeamInScope,resolveSourcePlayer,resolveSourceTeam,hasUpcomingSorareLineup} from "./sorareinside-identity";
+import { REVIEWED_SORARE_BIRTH_DATE_CONFLICTS } from "../providers/sorareinside/reviewed-player-ids";
 const source={id:"s",name:"José Silva",slug:"jose-silva",birthDate:"2000-01-01",position:"Midfielder",index:2};
 const roster=[{id:1n,name:"Jose Silva",birthDate:new Date("2000-01-01")}];
 test("initial exact club-roster match becomes an ID match even after display-name changes",()=> {
@@ -15,6 +16,18 @@ test("ambiguous names and conflicting birthdays are blocked",()=> {
   assert.equal(resolveSourcePlayer(source,[...roster,{...roster[0],id:2n}]).reason,"AMBIGUOUS");
   assert.equal(resolveSourcePlayer({...source,birthDate:"2001-01-01"},roster).reason,"BIRTH_DATE_CONFLICT");
   assert.equal(resolveSourcePlayer({...source,name:"Silva",slug:"silva",birthDate:null},roster).player,null);
+});
+test("manual birth-date reviews require the saved player, exact club and both observed dates", () => {
+  for (const [id, review] of Object.entries(REVIEWED_SORARE_BIRTH_DATE_CONFLICTS)) {
+    const provider = { ...source, id, birthDate: review.sourceBirthDate };
+    const candidate = { ...roster[0], id: review.playerId, birthDate: new Date(review.canonicalBirthDate) };
+    assert.equal(resolveSourcePlayer(provider, [candidate], review.playerId, review.teamId).reason, "MANUAL_VERIFIED_ID");
+    assert.equal(resolveSourcePlayer(provider, [candidate], undefined, review.teamId).reason, "BIRTH_DATE_CONFLICT");
+    assert.equal(resolveSourcePlayer(provider, [candidate], review.playerId, 999n).reason, "BIRTH_DATE_CONFLICT");
+    assert.equal(resolveSourcePlayer({ ...provider, birthDate: "1990-01-01" }, [candidate], review.playerId, review.teamId).reason, "BIRTH_DATE_CONFLICT");
+    assert.equal(resolveSourcePlayer(provider, [{ ...candidate, birthDate: new Date("1990-01-01") }], review.playerId, review.teamId).reason, "BIRTH_DATE_CONFLICT");
+    assert.equal(resolveSourcePlayer(provider, [], review.playerId, review.teamId).reason, "ID_NOT_IN_ACTIVE_ROSTER");
+  }
 });
 test("birthday supports abbreviated names but cannot map an unrelated same-birthday player",()=> {
   assert.equal(resolveSourcePlayer({...source,name:"Silva",slug:"silva"},roster).reason,"BIRTH_DATE_AND_NAME_IN_TEAM");

@@ -14,7 +14,7 @@ async function main() {
   try {
     const report=await runSorareInsideSync(db,new SorareInsideClient({email,password}),process.argv.includes("--apply"));
     console.log(JSON.stringify(report,null,2));
-    if(report.teams.some(t=>["SOURCE_ERROR","APPLY_ERROR","MAPPING_CONFLICT"].includes(t.status))) process.exitCode=1;
+    if(report.teams.some(t=>["SOURCE_ERROR","APPLY_ERROR","MAPPING_CONFLICT"].includes(t.status) || t.lastPlayed?.status==="APPLY_ERROR")) process.exitCode=1;
   } finally {await db.$disconnect();}
 }
 void main().catch(error=>{console.error(safeError(error));process.exitCode=1;});

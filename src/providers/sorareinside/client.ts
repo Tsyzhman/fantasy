@@ -104,6 +104,12 @@ export function nearestTeamGames(games: SourceGame[], now: Date, inScope?: Sourc
   return result;
 }
 
+export class IncompleteSorareInsideLineupError extends Error {
+  constructor() {
+    super("SorareInside: expected 11 unique starters with one goalkeeper first");
+  }
+}
+
 export function parseLineup(input: unknown, selected: NextTeamGame): SourceLineup {
   const l = object(input);
   if (sourceId(l.id) !== selected.lineupId || sourceId(l.game_id) !== selected.game.id || sourceId(object(l.team).id) !== selected.team.id || l.is_published !== true) throw new Error("SorareInside: lineup does not match selected fixture/team or is unpublished");
@@ -112,7 +118,7 @@ export function parseLineup(input: unknown, selected: NextTeamGame): SourceLineu
     if (!Number.isInteger(p.lineup_position_index) || Number(p.lineup_position_index) < 0 || Number(p.lineup_position_index) > 10) throw new Error("SorareInside: invalid lineup position");
     return { id: sourceId(p.id), name: string(p.display_name), slug: string(p.slug), birthDate: p.birth_date == null ? null : date(p.birth_date).slice(0,10), position: string(p.position), index: Number(p.lineup_position_index) };
   }).sort((a,b) => a.index-b.index);
-  if (players.length !== 11 || new Set(players.map(p=>p.id)).size !== 11 || new Set(players.map(p=>p.index)).size !== 11 || players.filter(p=>p.position === "Goalkeeper").length !== 1 || players[0].position !== "Goalkeeper") throw new Error("SorareInside: expected 11 unique starters with one goalkeeper first");
+  if (players.length !== 11 || new Set(players.map(p=>p.id)).size !== 11 || new Set(players.map(p=>p.index)).size !== 11 || players.filter(p=>p.position === "Goalkeeper").length !== 1 || players[0].position !== "Goalkeeper") throw new IncompleteSorareInsideLineupError();
   return { id: sourceId(l.id), gameId: sourceId(l.game_id), teamId: selected.team.id, updatedAt: date(l.updated_at), formation: string(l.formation), players };
 }
 

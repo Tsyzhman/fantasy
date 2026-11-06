@@ -5,7 +5,10 @@ Contract: `spec://modules/machete/INFRA-004-sorareinside-starters#root`.
 The worker runs at :05 every hour and once on startup. It reads gameweeks and
 the full fixture schedule first, chooses the nearest future match per club
 across all competitions, then reads only that match's published prediction.
-If the nearest fixture has no lineup, a later fixture is never substituted.
+If the nearest forecast is missing or its starter list is incomplete, use the
+XI from the latest finished FotMob match across competitions. All eleven must
+still be active for the club in the target fantasy pool. A stored forecast for
+a future kickoff retains priority.
 
 Only the eleven `starting_players` count; alternates and confidence percentages
 do not add extra starters. All eleven must map uniquely into the active roster.
@@ -24,7 +27,8 @@ docker exec fantasy-scout-worker node scripts/sync-sorareinside.cjs --json
 Dry-run is the default. `--apply` writes persistent maps and team flags. A shared
 PostgreSQL advisory lock excludes overlapping CLI/scheduler cycles. Current-XI
 snapshot refresh requests are committed with flag changes, and deduplicated by
-league/season/team. Unchanged flags only refresh source metadata.
+league/season/team. When the flags already match, a newly used last-played
+match records provenance once and skips recalculation.
 
 Environment: `SORAREINSIDE_SYNC_ENABLED=true`, `SORAREINSIDE_EMAIL`,
 `SORAREINSIDE_PASSWORD`. On this production host deploy reads the three keys
@@ -51,11 +55,14 @@ To resolve a reported UUID, verify the player using club and date of birth,
 then insert a MATCHED PLAYER map to the verified FotMob ID (matchedBy=MANUAL).
 Never bulk approve fuzzy matches or overwrite an existing mapping to work around
 a transfer. The target must belong to the active roster for each affected pool.
+For a verified disagreement between two birth dates on an existing mapping,
+record the exact UUID, player, club and both dates in the reviewed registry.
 
 Status reports list league, season, team, selected kickoff/match/lineup, unresolved
-player UUIDs and reasons. SOURCE_ERROR/APPLY_ERROR/MAPPING_CONFLICT cause the CLI
-to exit nonzero; missing coverage is reported as PARTIAL. Provider failures never
-mean an empty XI. Worker logs use existing Docker retention. Schedule/lineup
+player UUIDs and reasons. The last-played match and result are reported
+separately from forecast coverage. SOURCE_ERROR/APPLY_ERROR/MAPPING_CONFLICT
+cause the CLI to exit nonzero. Missing coverage is reported as PARTIAL.
+Worker logs use existing Docker retention. Schedule/lineup
 bodies are per-run memory only; the worker reuses only its bounded cookie jar.
 
 Before initial apply, retain a private snapshot of affected `team_player_seasons`

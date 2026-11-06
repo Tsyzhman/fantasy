@@ -71,7 +71,7 @@ Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, th
 | Auth and shared lib | Sessions, Prisma client, request parsing, helpers | `src/lib` |
 | Session authentication | FEAT-009: atomic login, durable bootstrap, trusted returns and bounded expired-session cleanup | `src/lib/auth*.ts`, `src/app/login/`, `src/app/setup/`, `scripts/recover-admin.ts` |
 | Ingestion jobs | Backfill, incremental update, worker loop | `scripts/ingestion-runner.ts`, `src/app/api/admin/ingestion` |
-| SorareInside starters | INFRA-004: ближайший матч, UUID-маппинг и hourly :05 | `src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/server/sorareinside-scheduler.ts`, `scripts/sync-sorareinside.ts` |
+| SorareInside starters | INFRA-004: ближайший матч, UUID-маппинг, последний сыгранный XI и hourly :05 | `src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/machete/sorareinside-last-played.ts`, `src/server/sorareinside-scheduler.ts`, `scripts/sync-sorareinside.ts` |
 | Sports trends | FEAT-006: лента/статьи Sports, до 15 игроков, ownership и дельта | `src/providers/sports-ru-trends/`, `src/server/sports-trends/`, `src/machete/sports-trends.ts` |
 | Telegram linking | FEAT-007: link session, код 15 секунд, webhook, подписки | `src/server/telegram/`, `src/app/api/profile/telegram/`, `src/app/api/telegram/webhook/` |
 | Deadline reports | INFRA-005: кампании 08:00/08:10/09:00, классификация, рендер, outbox | `src/server/deadline-reports/`, `scripts/deadline-reports.ts` |
