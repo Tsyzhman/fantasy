@@ -1,6 +1,14 @@
 # Production release history
 
-## Latest verified release: 0.3.155 — 2026-11-06
+## Latest verified release 0.3.157 — 2026-11-06
+
+[Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42202407578) and [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/42203880768) passed for `a743a1dcd8929b48809192567fbabcfb68569fed`, tree `bc7cbaa1ee2522061268e8362e896a39ba8bb2a8`. Production runs `20261106T104343Z-v0.3.157-a743a1d`. The Baltika workspace and its API were removed, the retired forecast endpoint returns 410, and all three Squad canaries passed.
+
+Dry run took 10m39s and the live workflow took 20m06s. The artifact shrank from 816.1 MB to 754.3 MB and delivery fell from 6m50s to 5m23s. The release directory shrank from 54.7 MB to 26.4 MB.
+
+All 263 public health and previous-CSS probe pairs passed, including 31 after the switch. One healthy worker and the 0.3.155 rollback release remain. The queue and duplicate checks returned zero. One closed 249.8 MB partial from a failed prior run was removed. [WI-100](../../specs/work/archive/2026/WI-100-production-revamp.md) records the verification.
+
+## 0.3.155 — 2026-11-06
 
 [Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42182014622) and [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/42183333553) passed for `ac22b542dc9ffa2b4908cda6fcf7347d26ecad09`, tree `575e718845c1b545b810835093b82ab17146d631`. The running release is `20261106T075530Z-v0.3.155-ac22b54`. Public health, release marker and both running images agree. CI passed the full Check on the pinned Ubuntu 24.04 runner.
 
