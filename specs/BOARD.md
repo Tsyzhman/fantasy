@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-097](work/WI-097-sorare-last-played-xi.md) | Restore reviewed SorareInside XIs and use the last played lineup | INFRA-004 | @tsyzhman | 2026-11-06 | — |
 | [WI-082](work/WI-082-scheduled-browser-smoke.md) | Restore scheduled GitHub browser checks and release the aligned revision | PROP-002, INFRA-006 | @tsyzhman | 2026-10-26 | — |
 | [WI-078](work/WI-078-ucl-round-three-transfers.md) | Six transfers only in Champions League round three | FEAT-001 | @tsyzhman | 2026-10-20 | — |
 | [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
@@ -30,6 +29,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-097](work/archive/2026/WI-097-sorare-last-played-xi.md) | Restore reviewed SorareInside XIs and use the last played lineup | @tsyzhman | 2026-11-06 |
 | [WI-093](work/archive/2026/WI-093-opponent-adjusted-fo.md) | Compare FO with a historical opponent adjustment | @tsyzhman | 2026-11-05 |
 | [WI-092](work/archive/2026/WI-092-promoted-player-league-translation.md) | Translate lower-division player history for promoted clubs | @tsyzhman | 2026-11-05 |
 | [WI-091](work/archive/2026/WI-091-starter-minute-projections.md) | Calibrate football projections for players marked in the starting XI | @tsyzhman | 2026-11-05 |
