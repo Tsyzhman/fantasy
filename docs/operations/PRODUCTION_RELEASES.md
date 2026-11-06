@@ -1,6 +1,12 @@
 # Production release history
 
-## Latest verified release 0.3.157 — 2026-11-06
+## Latest verified release 0.3.158 — 2026-11-06
+
+[Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42209912686) and [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/42211104659) passed for `3c07029f302aaf8f083c0b5cbeadaf3ed6c956f8`. Production runs `20261106T113902Z-v0.3.158-3c07029`. Sports.ru Squad retains and displays hundredths and adds Alt Opp. alongside FO Opp. The authenticated saved Premier League page rendered both comparisons with two decimal places. The worker published version-3 pools for all 12 scopes and 8,464 players, with zero duplicates and an empty refresh queue.
+
+All 148 public health probes succeeded, including 20 on the promoted commit. The previous CSS returned HTTP 200 with its original checksum. The Caddy and PostgreSQL process identities matched the pre-release measurements. One healthy web, worker and relay serve the new release. The previous release is retained for rollback. The worker used 1.259 GiB after bootstrap within its 4 GiB limit. [WI-101](../../specs/work/archive/2026/WI-101-squad-forecast-hundredths.md) · [WI-102](../../specs/work/archive/2026/WI-102-alt-opponent-forecast.md)
+
+## 0.3.157 — 2026-11-06
 
 [Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42202407578) and [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/42203880768) passed for `a743a1dcd8929b48809192567fbabcfb68569fed`, tree `bc7cbaa1ee2522061268e8362e896a39ba8bb2a8`. Production runs `20261106T104343Z-v0.3.157-a743a1d`. The Baltika workspace and its API were removed, the retired forecast endpoint returns 410, and all three Squad canaries passed.
 
