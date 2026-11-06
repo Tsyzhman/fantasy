@@ -1,3 +1,4 @@
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data */
 import { Prisma, type PrismaClient } from "@prisma/client";
 
 import {
@@ -25,6 +26,12 @@ const SPORTS_RU_SQUAD_RETRY_DELAY_MS = 15 * 60 * 1_000;
 const SPORTS_RU_SQUAD_LEASE_MS = 10 * 60 * 1_000;
 const SPORTS_RU_SQUAD_MAX_PUBLICATION_ATTEMPTS = 8;
 const SPORTS_RU_SQUAD_MANUAL_RETRY_COOLDOWN_MS = 60 * 1_000;
+
+// Renumbering a tour can leave a retry row with the same kickoff as its published snapshot.
+const latestSportsRuSquadSnapshotOrder: Prisma.SportsRuSquadSnapshotOrderByWithRelationInput[] = [
+  { firstMatchAt: "desc" },
+  { completedAt: { sort: "desc", nulls: "last" } }
+];
 
 export type SportsRuSquadScheduleMatch = {
   id: bigint;
@@ -554,7 +561,7 @@ export async function loadStoredSportsRuSquadImportPreview(
       leagueId: input.leagueId,
       season: { in: sportsRuSeasonAliases(input.season) }
     },
-    orderBy: [{ firstMatchAt: "desc" }, { completedAt: "desc" }]
+    orderBy: latestSportsRuSquadSnapshotOrder
   });
   if (!snapshot || snapshot.status !== "COMPLETE") {
     throw new SportsRuSquadImportError(
@@ -603,7 +610,7 @@ export async function loadSportsRuSquadSnapshotStatus(
         leagueId: input.leagueId,
         season: { in: sportsRuSeasonAliases(input.season) }
       },
-      orderBy: [{ firstMatchAt: "desc" }, { completedAt: "desc" }],
+      orderBy: latestSportsRuSquadSnapshotOrder,
       select: {
         status: true,
         tourName: true,

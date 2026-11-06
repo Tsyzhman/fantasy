@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.160 - 2026-11-06
+
+- Show and import published Sports.ru squads when an old retry row shares the same kickoff.
+
 ## 0.3.159 - 2026-11-06
 
 - Use the latest Foontasy import for the displayed Sports.ru Squad tour, with live updates independent of the saved player-pool calculation.
