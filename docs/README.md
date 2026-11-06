@@ -11,7 +11,6 @@ retain their original language so they can be compared with the application.
 ## Product and feature guides
 
 - [Product brief](product/PRODUCT_BRIEF.md)
-- [Admin workflows](product/ADMIN_UX.md)
 - [Fantasy Arena](guides/BETTING_ARENA.md)
 - [KHL implementation status and readiness gates](guides/KHL_IMPLEMENTATION_STATUS.md)
 
@@ -33,7 +32,6 @@ retain their original language so they can be compared with the application.
 - [FotMob import](integrations/MACHETE_FOTMOB_IMPORT.md)
 - [FotMob collection and parsing details](integrations/FOTMOB_COLLECTION_AND_PARSING.md)
 - [Sports.ru fantasy prices](integrations/SPORTS_RU_FANTASY_SYNC.md)
-- [Wyscout-style Excel import](integrations/WYSCOUT_EXCEL_IMPORT.md)
 - [Probable lineup synchronization](integrations/PROBABLE_LINEUP_SYNC.md)
 - [SorareInside starters](integrations/SORAREINSIDE_STARTERS.md)
 - [Sports.ru squad-transfer extension](../extensions/sports-squad-transfer/README.md)
@@ -48,7 +46,6 @@ retain their original language so they can be compared with the application.
 
 ## Testing and validation
 
-- [Acceptance criteria](testing/ACCEPTANCE_CRITERIA.md)
 - [Data quality](testing/DATA_QUALITY.md)
 - [Model backtesting](testing/MODEL_BACKTEST.md)
 - [Beta load testing](testing/BETA_LOAD_TEST.md)

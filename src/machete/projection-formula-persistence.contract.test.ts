@@ -15,7 +15,7 @@ test("Expected and personal Alt pipelines have separate JSON persistence", () =>
   assert.match(schema, /alternativeProjectionFormulaConfig\s+Json\?/);
   assert.match(migration, /ADD COLUMN "projectionFormulaConfig" JSONB/);
   assert.match(migration, /ADD COLUMN "alternativeProjectionFormulaConfig" JSONB/);
-  assert.match(adminPage, /projectionFormulaConfig: projectionConfigResult!\.config/);
+  assert.match(adminPage, /projectionFormulaConfig: projectionConfigResult\.config/);
   assert.match(userPage, /alternativeProjectionFormulaConfig: parsed\.config/);
 });
 

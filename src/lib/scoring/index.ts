@@ -45,10 +45,6 @@ export type ActiveScoringModelBundle = {
   identity: ActiveScoringModelIdentity;
 };
 
-export async function getActiveScoringModel(): Promise<ActiveScoringModel> {
-  return getActiveScoringModelForSource("WYSCOUT");
-}
-
 export async function getActiveScoringModelForSource(source: ScoringModelSource, client: PrismaClient = prisma): Promise<ActiveScoringModel> {
   return (await getActiveScoringModelBundleForSource(source, client)).model;
 }
@@ -160,11 +156,6 @@ function mapActiveModel(
     projectionFormulaConfig: model.projectionFormulaConfig,
     rules: model.rules.length ? model.rules : seedScoringRules()
   };
-}
-
-export async function getActiveScoringRules(): Promise<ScoringRule[]> {
-  const model = await getActiveScoringModel();
-  return model.rules;
 }
 
 function seedScoringRules() {

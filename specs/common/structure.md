@@ -63,8 +63,6 @@ Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, th
 | Rotation risk | FEAT-004: RR math and bounded normalized history reader | `src/machete/rotation-risk.ts`, `src/server/rotation-risk.ts` |
 | Global ranking strategy | FEAT-001/002: pure K/EP-loss math, bounded candidate search, provider context/cache, recommendation audit and UI | `src/machete/global-strategy*.ts`, `src/server/global-strategy*.ts`, `src/app/api/machete/squads/global-strategy`, `src/components/machete/GlobalStrategyPanel.tsx` |
 | Shared FotMob core | Normalized match, team, player, shot, and event tables; profile birthdays survive roster/match payloads without birthdays (`FEAT-001#player-identity`) | `src/core_data` |
-| Baltika UI | Imported leagues, teams, schedule, models | `src/app/baltika` |
-| Baltika domain | Wyscout-style workbook and fixture/team-stat import | `src/server/baltika` |
 | MiXerr | Shot-map explorer and comparison UI | `src/app/mixerr` |
 | Admin | Users, leagues, ingestion controls, franchise squads | `src/app/admin` |
 | HTTP API | Auth, imports, ingestion, squads, shot maps, cron | `src/app/api` |
@@ -81,7 +79,7 @@ Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, th
 ## Namespaces
 
 - UI routes live under `src/app/<mode>` and `src/app/admin`.
-- Domain logic stays out of route files: Machete in `src/machete`, Baltika in `src/server/baltika`, shared provider tables in `src/core_data`.
+- Domain logic stays out of route files: Machete in `src/machete` and shared provider tables in `src/core_data`.
 - Cron routes under `src/app/api/cron` are protected by `CRON_SECRET`.
 
 ## Checks
@@ -136,6 +134,8 @@ workflow copies are intentional matching client entry points.
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-11-06: WI-098 removes the Baltika workspace and its exclusive runtime code.
 
 - 2026-10-23: WI-081 — map bounded full-backup verification and installed artifact maintenance.
 

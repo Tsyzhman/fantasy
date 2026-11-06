@@ -9,7 +9,6 @@ spreadsheet imports, and shot-map analysis in one application.
 | Area | Main workflow |
 |---|---|
 | **Machete** | Explore FotMob leagues, fixtures and player statistics; combine fantasy prices and projections; build and save legal squads. |
-| **Baltika** | Import Wyscout-style Excel workbooks, manage scouting tables and schedules, and configure models. |
 | **MiXerr** | Inspect player and team shot maps, xG overlays, and comparison views on normalized match data. |
 | **KHL beta** | Use an isolated hockey player pool, fantasy rules, statistics imports, and squad planning. Coverage and readiness are documented separately. |
 | **Fantasy Arena** | Place virtual-coin bets and compare algorithmic strategies using stored odds, an account ledger, and settlement rules. |
@@ -75,7 +74,7 @@ Open [localhost:3000](http://localhost:3000). Local PostgreSQL uses host port
 starting the app does not download every league automatically.
 
 Useful pages: `/machete/leagues`, `/machete/players`, `/machete/squad`,
-`/baltika/leagues`, `/mixerr`, `/betting`, and `/admin/ingestion`.
+`/mixerr`, `/betting`, and `/admin/ingestion`.
 
 See [local setup](docs/development/LOCAL_DEVELOPMENT.md) and the
 [FotMob import guide](docs/integrations/MACHETE_FOTMOB_IMPORT.md).

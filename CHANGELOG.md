@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.156 - 2026-11-06
+
+- Retire the Baltika workspace, its workbook imports, scheduling and legacy player endpoints. Machete can still read previously published Wyscout metrics.
+
 ## 0.3.155 - 2026-11-06
 
 - Restore SorareInside forecasts for eight manually verified player bindings with conflicting birth dates.

@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { ArrowRight, CalendarDays, Coins, Crosshair, Database, Eye, RadioTower, Sparkles, Star, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Coins, Crosshair, Eye, RadioTower, Sparkles, Star, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -28,18 +28,6 @@ const modes = [
     descriptionRu: "Лиги, календарь, статистика игроков, составы и фэнтези-прогнозы."
   },
   {
-    nameEn: "Baltika",
-    nameRu: "Балтика",
-    href: "/baltika/leagues",
-    imageSrc: "/mode-logos/wyscout-mode.jpg",
-    imageClassName: "h-16 w-16 rounded-full object-cover",
-    icon: Database,
-    kickerEn: "Wyscout Excel",
-    kickerRu: "Wyscout Excel",
-    descriptionEn: "Excel imports, published scouting tables and Baltika models.",
-    descriptionRu: "Excel-импорты, опубликованные таблицы игроков и модели Балтики."
-  },
-  {
     nameEn: "MiXerr",
     nameRu: "MiXerr",
     href: "/mixerr",
@@ -54,7 +42,10 @@ const modes = [
   }
 ];
 
-/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
+/**
+ * @spec spec://common/PROP-002-editorial-sport-design#contracts
+ * @spec spec://common/PROP-002-editorial-sport-design#workspace-navigation
+ */
 export default async function HomePage() {
   const user = process.env.NEXT_PHASE === "phase-production-build" ? null : await getCurrentUser();
   const dashboard = user ? await loadHomeDashboard(user.id).catch(() => null) : null;
@@ -81,7 +72,7 @@ export default async function HomePage() {
             <Users className="h-4 w-4" />
             <I18nText en="Open squad" ru="Открыть состав" />
           </Link>
-          <Link href="/players" className="ui-button">
+          <Link href="/machete/players" className="ui-button">
             <Sparkles className="h-4 w-4" />
             <I18nText en="Find players" ru="Искать игроков" />
           </Link>
@@ -205,7 +196,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {modes.map((mode) => {
             const Icon = mode.icon;
 
@@ -269,8 +260,8 @@ async function loadHomeDashboard(userId: string) {
       take: 5
     }),
     loadHomeSourceFreshness(prisma, userId),
-    prisma.userSavedView.count({ where: { userId } }),
-    prisma.userWatchlistPlayer.count({ where: { userId } })
+    prisma.userSavedView.count({ where: { userId, source: { not: "baltika" } } }),
+    prisma.userWatchlistPlayer.count({ where: { userId, source: "machete" } })
   ]);
 
   const squadTeamIds = latestSquad ? uniqueBigInts(latestSquad.players.map((player) => player.teamId).filter((teamId): teamId is bigint => teamId !== null)) : [];

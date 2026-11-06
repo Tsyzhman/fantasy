@@ -9,7 +9,7 @@ import { I18nText } from "@/components/i18n-text";
 import { localizedText, useLanguage } from "@/components/localized-option";
 import { cn } from "@/lib/cn";
 
-type SavedViewSource = "machete" | "baltika";
+type SavedViewSource = "machete";
 
 type PlayerSavedViewsProps = {
   source: SavedViewSource;
@@ -90,7 +90,7 @@ export function PlayerSavedViews({ source, className }: PlayerSavedViewsProps) {
       name.trim() ||
       localizedText(
         language,
-        source === "machete" ? "Machete view" : "Baltika view",
+        "Machete view",
         source === "machete" ? "Вид Machete" : "Вид Балтики"
       );
 
@@ -285,5 +285,5 @@ function filtersFromHref(href: string) {
 }
 
 function compactHref(href: string) {
-  return href.replace(/^\/(?:machete|baltika)\/players\??/, "");
+  return href.replace(/^\/machete\/players\??/, "");
 }

@@ -7,17 +7,14 @@ Fantasy Scout
 ## One-Liner
 
 A fantasy football scouting workspace for FotMob-backed projections, Sports.ru
-prices, squad planning, Wyscout-style team imports, and shot-map analysis.
+prices, squad planning, and shot-map analysis.
 
 ## Current Product Reality
 
-Fantasy Scout is no longer only a Wyscout spreadsheet MVP. It has three active
-workspaces:
+Fantasy Scout has two football scouting workspaces.
 
 - Machete: shared FotMob data, player projections, Sports.ru prices, squad
   planning, and sync operations.
-- Baltika: Wyscout-style Excel imports, scouting tables, manual schedules,
-  team-stat workbooks, and configurable models.
 - MiXerr: shot maps, xG overlays, and team/player shot comparisons.
 
 ## Problem
@@ -35,7 +32,6 @@ The app combines managed ingestion with decision-oriented views:
 - import Sports.ru fantasy prices and map them to FotMob players;
 - calculate fantasy projections and value scores;
 - let users build, validate, optimize, save, and export squads;
-- keep Baltika's Wyscout-style import workflow for uploaded scouting workbooks;
 - expose MiXerr shot-map analysis on top of normalized match shots.
 
 ## Primary Personas
@@ -49,7 +45,6 @@ Needs to:
 - configure leagues, teams, seasons, users, and fantasy models;
 - run initial backfills and incremental ingestion jobs;
 - inspect ingestion status and failures;
-- upload Wyscout-style player/team-stat workbooks;
 - upload Sports.ru price workbooks and fix player mappings;
 - trigger league/team sync jobs;
 - keep production secrets and migrations safe.
@@ -85,7 +80,6 @@ Needs to:
 - Machete FotMob ingestion and shared normalized core tables.
 - Sports.ru fantasy price imports and player mapping.
 - Machete player explorer and squad planner.
-- Baltika Wyscout-style workbook imports and model settings.
 - MiXerr shot maps and comparison APIs.
 - Saved views, watchlists, and squad export.
 - Production Docker/PM2 runbooks and CI checks.

@@ -10,33 +10,23 @@ map of the current model groups, not a full Prisma schema copy.
   views, watchlist rows, and fantasy squads.
 - `UserSession`: hashed cookie-session token with expiry.
 - `AuthRateLimit`: persisted login/setup rate-limit buckets.
-- `UserSavedView`: saved Machete or Baltika explorer URLs per user.
+- `UserSavedView`: saved Machete explorer URLs, player table preferences, and Squad presets per user.
 - `UserWatchlistPlayer`: watched player keys per user and source.
 
-## Baltika And Legacy Wyscout Imports
+## Historical Wyscout Records
 
-These models support the Excel-imported scouting workflow.
+These tables retain data from the retired Baltika workspace. Machete reads
+published player metrics from `PlayerSnapshot`.
 
-- `League`, `Season`, `Team`: admin-managed Baltika/Wyscout league structure.
+- `League`, `Season`, `Team`: league structure for historical imports.
 - `SourceFile`: uploaded workbook metadata and storage pointer.
 - `TeamImport`: versioned player workbook import for a team and season.
 - `Player`: canonical player identity for imported snapshots.
 - `PlayerSnapshot`: typed imported player metrics, fantasy scores, model scores,
-  starter flags, and current published explorer rows.
-- `FantasyModel`, `FantasyModelRule`: configurable scoring models for imported
-  player snapshots.
-- `FantasyBacktestRun`: immutable-by-convention model evaluation record with
-  model version/hash, season coverage, baseline and model MAE/RMSE, the full
-  report, and the beta-gate result.
-- `DataQualityAuditRun`: persisted forecast coverage, active-player and match
-  coverage, basic-stat completeness, ingestion-promotion latency, model
-  version/hash, and the data-quality gate result.
+  starter flags, and publication state.
 - `BaltikaTeamStatsImport`: versioned Wyscout Team Stats workbook import.
 - `BaltikaFixture`: manual or imported Baltika fixture.
-- `BaltikaTeamMatchStat`: team-level fixture statistics used for Baltika views.
-
-The Wyscout import path is still active, but it is one mode of the app rather
-than the whole product.
+- `BaltikaTeamMatchStat`: imported team-level fixture statistics.
 
 ## Shared FotMob Core
 
@@ -78,8 +68,16 @@ Machete has legacy provider-state tables plus read-model snapshots.
 - `ProviderEntityMap`: links provider ids to internal entities where automatic
   matching is not enough.
 
-Current player explorer pages increasingly read from the shared FotMob core and
-Machete read models instead of treating Wyscout snapshots as the primary source.
+- `FantasyModel`, `FantasyModelRule`: global scoring models and rules. Machete
+  can fall back to a stored Wyscout model.
+- `FantasyBacktestRun`: immutable-by-convention model evaluation record with
+  model version/hash, season coverage, baseline and model MAE/RMSE, the full
+  report, and the beta-gate result.
+- `DataQualityAuditRun`: persisted forecast coverage, active-player and match
+  coverage, basic-stat completeness, ingestion-promotion latency, model
+  version/hash, and the data-quality gate result.
+
+The player explorer reads the shared FotMob core and Machete read models.
 
 ## Fantasy Provider Prices And Squads
 

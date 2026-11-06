@@ -100,7 +100,7 @@ Rejected login/setup attempts retain the existing error UI. Login/setup handlers
 
 ## Relationships {#relationships}
 
-Shared by Machete, Baltika, MiXerr, KHL, Franchises, APIs and extension auth. Database roles and deployment remain governed by their infrastructure contracts.
+Shared by Machete, MiXerr, KHL, Franchises, APIs and extension auth. Database roles and deployment remain governed by their infrastructure contracts.
 
 <a name="changelog"></a>
 

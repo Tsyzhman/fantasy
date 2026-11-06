@@ -17,10 +17,10 @@ import { maximumSquadFilterPresets, parseSquadFilterPresetFilters } from "@/mach
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type SavedViewSource = "machete" | "baltika" | "squad" | typeof machetePlayerTableSettingsSource | typeof machetePlayerTableFiltersSource;
+type SavedViewSource = "machete" | "squad" | typeof machetePlayerTableSettingsSource | typeof machetePlayerTableFiltersSource;
 
 const maxSavedViews = 8;
-const validSources = new Set<SavedViewSource>(["machete", "baltika", "squad", machetePlayerTableSettingsSource, machetePlayerTableFiltersSource]);
+const validSources = new Set<SavedViewSource>(["machete", "squad", machetePlayerTableSettingsSource, machetePlayerTableFiltersSource]);
 
 export const GET = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
@@ -146,6 +146,7 @@ async function trimSavedViews(userId: string, source: SavedViewSource) {
   });
 }
 
+/** @spec spec://common/PROP-002-editorial-sport-design#workspace-navigation */
 function sourceValue(value: unknown): SavedViewSource | null {
   return typeof value === "string" && validSources.has(value as SavedViewSource) ? (value as SavedViewSource) : null;
 }
@@ -161,7 +162,7 @@ function isSafeExplorerHref(source: SavedViewSource, href: string) {
   if (source === "squad") return /^squad-filter:[a-z0-9_%.-]{1,240}$/i.test(href);
   if (source === machetePlayerTableSettingsSource) return href === "machete-table:preferences";
   if (source === machetePlayerTableFiltersSource) return /^machete-table-filter:[a-z0-9_%.-]{1,240}$/i.test(href);
-  const prefix = source === "machete" ? "/machete/players" : "/baltika/players";
+  const prefix = "/machete/players";
   return href === prefix || href.startsWith(`${prefix}?`);
 }
 

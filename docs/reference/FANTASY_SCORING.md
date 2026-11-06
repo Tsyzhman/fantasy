@@ -2,7 +2,7 @@
 
 ## Meaning
 
-`fantasyScore` is the player's predicted fantasy points for one upcoming round from the imported event metrics.
+`fantasyScore` is the player's predicted fantasy points for one upcoming round from the available match metrics.
 
 `valueScore` is fantasy output adjusted for market value:
 
@@ -24,8 +24,9 @@ fantasy_score = projected_one_round_events * position_rule_weight
 Rules can be `DEFAULT` for all positions or specific to `GK`, `DEF`, `MID`, and `FWD`.
 Imported totals are converted to per-match values. Per-90 fields are scaled by `expected_minutes / 90` when available.
 
-Admins can also enable custom formulas on `/admin/models`. Custom formulas are position-specific: GK, DEF, MID, and FWD
-can each have their own formula. If a position formula is empty, that position uses the default rule set.
+Admins can edit the global Expected FP pipeline and Actual FP formulas at
+`/admin/models/machete`. The editor provides formulas for GK, DEF, MID, and FWD.
+Users configure their own Alt FP at `/machete/models`.
 
 Custom formulas are evaluated exactly as written against the imported fields. For a per-round custom model, prefer per-90
 fields and scale them the way you want.
@@ -36,8 +37,7 @@ Custom formula syntax:
 4*{Goals} + 2*{xG/per90} + 3*{Assists} - {Yellow cards}
 ```
 
-Use numbers, `+`, `-`, `*`, `/`, and parentheses. Put metric names in braces. Metric labels are normalized like imported
-Wyscout headers, so `{xG/per90}` maps to `xg_per_90`, `{Yellow cards}` maps to `yellow_cards`, and missing fields count as
+Use numbers, `+`, `-`, `*`, `/`, and parentheses. Put metric names in braces. The formula editor normalizes metric labels so `{xG/per90}` maps to `xg_per_90`, `{Yellow cards}` maps to `yellow_cards`, and missing fields count as
 0.
 
 Supported transforms:
@@ -69,8 +69,7 @@ Supported transforms:
 | Yellow card | -1 | -1 | -1 | -1 |
 | Red card | -3 | -3 | -3 | -3 |
 
-Missing metric values count as 0 in formula calculation. Formula inputs come from the promoted typed metric columns on
-`PlayerSnapshot`; new formula fields need an importer mapping and a typed column.
+Missing metric values count as 0. Each editor stage lists the fields it supplies.
 
 ## Historical Evaluation
 
@@ -101,9 +100,7 @@ points.
 
 ## Formula Fields
 
-The `/admin/models` page includes the full field guide for formula aliases, normalized keys, field meanings, and fantasy
+The `/admin/models/machete` page includes the full field guide for formula aliases, normalized keys, field meanings, and fantasy
 points by position.
 
-It also includes the full Wyscout Excel field list. Any numeric source field can be used in a custom formula by wrapping
-its label in braces, for example `{Shots per 90}` or `{Accurate progressive passes, %}`. Extra fields have 0 fantasy
-points by default until a custom formula assigns a weight.
+Wrap a field label such as `{Shots per 90}` in braces to use it in a formula.

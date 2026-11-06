@@ -49,7 +49,7 @@ These files stay as authored project documentation. They are not typed Prist spe
 
 ## Next typed specs
 
-Register a PROP, FEAT, or INFRA only when a change needs an independently owned contract. Likely first areas: Machete squad planning, FotMob ingestion, Sports.ru price mapping, Baltika workbook import, MiXerr shot maps, and auth/session access.
+Register a PROP, FEAT, or INFRA only when a change needs an independently owned contract. Likely first areas: Machete squad planning, FotMob ingestion, Sports.ru price mapping, MiXerr shot maps, and auth/session access.
 
 ## KHL (isolated beta module)
 

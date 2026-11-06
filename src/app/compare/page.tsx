@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ImportStatus } from "@prisma/client";
+import { notFound } from "next/navigation";
 
 import { I18nText } from "@/components/i18n-text";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
@@ -113,10 +113,12 @@ const METRIC_GROUPS: Array<{
   }
 ];
 
+/** @spec spec://common/PROP-002-editorial-sport-design#workspace-navigation */
 export default async function ComparePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
+  if (params.source === "baltika") notFound();
+
   const currentUser = await getCurrentUser();
-  const source = params.source === "baltika" ? "baltika" : "machete";
   const rawIds = (params.ids ?? "")
     .split(",")
     .map((id) => id.trim())
@@ -124,13 +126,8 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
     .slice(0, MAX_PLAYERS);
 
   const window = parseMacheteMatchWindow({ mode: params.window ?? "last5" });
-  const rows = rawIds.length === 0
-    ? []
-    : source === "machete"
-      ? await loadMacheteRows(rawIds, window, currentUser?.id)
-      : await loadBaltikaRows(rawIds);
-
-  const backHref = source === "machete" ? "/machete/players" : "/baltika/players";
+  const rows = rawIds.length === 0 ? [] : await loadMacheteRows(rawIds, window, currentUser?.id);
+  const backHref = "/machete/players";
   const visibleMetricGroups = buildVisibleMetricGroups(rows);
   const xFpLeaderValue = bestMetricValue(rows.map((row) => row.fantasyScore), true);
 
@@ -140,7 +137,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
         backHref={backHref}
         backLabel={<I18nText en="Back" ru="Назад" />}
         items={[
-          { label: source === "machete" ? "Machete" : <I18nText en="Baltika" ru="Балтика" />, href: backHref },
+          { label: "Machete", href: backHref },
           { label: <I18nText en="Compare" ru="Сравнение" />, href: "/compare" }
         ]}
       />
@@ -166,7 +163,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
         </div>
         {rawIds.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
-            {source === "machete" ? <WindowSelector source={source} ids={rawIds} active={params.window ?? "last5"} /> : null}
+            <WindowSelector ids={rawIds} active={params.window ?? "last5"} />
             <CopyCurrentLinkButton />
           </div>
         ) : null}
@@ -218,45 +215,34 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
                   {visibleMetricGroups.map((group) => (
                     <MetricGroupRows key={group.key} group={group} rows={rows} />
                   ))}
-                  {source === "machete" ? (
-                    <tr className="hover:bg-slate-50">
-                      <th className="sticky left-0 z-10 bg-slate-50/95 px-4 py-2.5 text-left text-xs font-semibold uppercase text-slate-500">
-                        <I18nText en="Recent form" ru="Форма" />
-                      </th>
-                      {rows.map((row) => (
-                        <td key={row.id} className="px-3 py-2.5 text-center">
-                          <SparkLine values={row.recentFp} width={88} height={28} />
-                        </td>
-                      ))}
-                    </tr>
-                  ) : null}
+                  <tr className="hover:bg-slate-50">
+                    <th className="sticky left-0 z-10 bg-slate-50/95 px-4 py-2.5 text-left text-xs font-semibold uppercase text-slate-500">
+                      <I18nText en="Recent form" ru="Форма" />
+                    </th>
+                    {rows.map((row) => (
+                      <td key={row.id} className="px-3 py-2.5 text-center">
+                        <SparkLine values={row.recentFp} width={88} height={28} />
+                      </td>
+                    ))}
+                  </tr>
                 </tbody>
               </table>
             </div>
           </section>
         </>
       )}
-
-      {source === "baltika" && rawIds.length > 0 ? (
-        <p className="mt-3 text-xs text-slate-500">
-          <I18nText
-            en="Baltika snapshots are season-aggregated, so the match-window selector is not applicable."
-            ru="Снимки Балтики уже агрегированы по сезону — селектор окна не применяется."
-          />
-        </p>
-      ) : null}
     </main>
   );
 }
 
-function WindowSelector({ source, ids, active }: { source: string; ids: string[]; active: string }) {
+function WindowSelector({ ids, active }: { ids: string[]; active: string }) {
   return (
     <div className="flex flex-wrap items-center gap-1 rounded border border-slate-200 bg-white p-1 shadow-sm">
       <span className="px-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
         <I18nText en="Window" ru="Окно" />
       </span>
       {WINDOW_OPTIONS.map((option) => {
-        const href = `/compare?source=${source}&ids=${encodeURIComponent(ids.join(","))}&window=${option.value}`;
+        const href = `/compare?source=machete&ids=${encodeURIComponent(ids.join(","))}&window=${option.value}`;
         const isActive = active === option.value;
         return (
           <Link
@@ -599,52 +585,6 @@ function combinedSportsRuScopeKeysForMacheteRowId(rowId: string) {
     const [leagueId, season] = splitOnce(competition, ":", 1);
     return leagueId && season ? [sportsRuFantasyPriceScopeKey(leagueId, season, playerId)] : [];
   });
-}
-
-async function loadBaltikaRows(ids: string[]): Promise<CompareRow[]> {
-  const snapshots = await prisma.playerSnapshot.findMany({
-    where: {
-      id: { in: ids },
-      teamImport: {
-        status: ImportStatus.PUBLISHED,
-        isCurrentPublished: true
-      }
-    },
-    include: {
-      team: true,
-      league: true
-    }
-  });
-
-  const byId = new Map(snapshots.map((snapshot) => [snapshot.id, snapshot]));
-  return ids
-    .map((id) => {
-      const snapshot = byId.get(id);
-      if (!snapshot) return null;
-      const row: CompareRow = {
-        id: snapshot.id,
-        name: snapshot.playerName,
-        teamName: snapshot.team?.name ?? null,
-        teamShortName: null,
-        leagueName: snapshot.league?.name ?? null,
-        position: snapshot.positionGroup ?? null,
-        matchesPlayed: snapshot.matchesPlayed ?? null,
-        minutesPlayed: snapshot.minutesPlayed ?? null,
-        goals: snapshot.goals ?? null,
-        assists: snapshot.assists ?? null,
-        shotsOnTarget: null,
-        keyPasses: null,
-        tackles: null,
-        averageRating: null,
-        marketValue: snapshot.marketValue ?? null,
-        fantasyScore: snapshot.fantasyScore ?? null,
-        scoringScore: snapshot.scoringScore ?? null,
-        alternativeScore: snapshot.alternativeScore ?? null,
-        recentFp: []
-      };
-      return row;
-    })
-    .filter((row): row is CompareRow => row !== null);
 }
 
 function compareTeamDisplayName(row: Pick<CompareRow, "teamName" | "teamShortName">) {

@@ -4,8 +4,6 @@ import test from "node:test";
 
 const userPlayerSurfaces = [
   ["../../components/machete/MachetePlayerTable.tsx", 1],
-  ["../../app/baltika/players/page.tsx", 2],
-  ["../../app/baltika/leagues/[leagueId]/teams/[teamId]/page.tsx", 3],
   ["../../components/machete/FantasySquadPlanner.tsx", 6],
   ["../../components/machete/PlayerPool.tsx", 3],
   ["../../components/compare/player-compare.tsx", 1],

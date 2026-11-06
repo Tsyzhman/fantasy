@@ -14,7 +14,5 @@ test("forecast table distinguishes missing Alt while legacy score displays retai
   assert.match(read("./machete/PlayerPool.tsx"), /formatAlternativeScore\(nextAlternativeFantasyPoints\(player\)\)/);
   assert.match(read("./machete/MachetePlayerTable.tsx"), /ScoreHeatCell value=\{numberOrNull\(value\)\}/);
   assert.match(read("./ui/player-hover-card.tsx"), /value=\{player\.altFp \?\? 0\}/);
-  assert.match(read("../app/baltika/players/page.tsx"), /value=\{player\.alternativeScore \?\? 0\}/);
-  assert.match(read("../app/baltika/leagues/[leagueId]/teams/[teamId]/page.tsx"), /formatScore\(player\.alternativeScore \?\? 0\)/);
   assert.match(read("../app/compare/page.tsx"), /metric\.key === "alternativeScore" \? value \?\? 0 : value/);
 });

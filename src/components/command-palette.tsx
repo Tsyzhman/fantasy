@@ -25,24 +25,19 @@ type CommandItem = {
 
 const baseCommands: CommandItem[] = [
   { href: "/", labelEn: "Home", labelRu: "Главная", sectionEn: "Shell", sectionRu: "Оболочка", keywords: ["home", "dashboard", "главная"] },
-  { href: "/players", labelEn: "Players switchboard", labelRu: "Выбор таблицы игроков", sectionEn: "Players", sectionRu: "Игроки", keywords: ["players", "игроки", "all"] },
   { href: "/compare", labelEn: "Player compare", labelRu: "Сравнение игроков", sectionEn: "Players", sectionRu: "Игроки", keywords: ["compare", "comparison", "сравнить"] },
   { href: "/machete/leagues", labelEn: "Machete leagues", labelRu: "Лиги Machete", sectionEn: "Machete", sectionRu: "Machete", keywords: ["machete", "leagues", "fotmob"] },
   { href: "/machete/players", labelEn: "Machete players", labelRu: "Игроки Machete", sectionEn: "Machete", sectionRu: "Machete", keywords: ["machete", "players", "fotmob"] },
   { href: "/machete/squad", labelEn: "Squad planner", labelRu: "Планировщик состава", sectionEn: "Machete", sectionRu: "Machete", keywords: ["squad", "planner", "состав"] },
   { href: "/machete/models", labelEn: "Machete scoring models", labelRu: "Модели очков Machete", sectionEn: "Machete", sectionRu: "Machete", keywords: ["models", "scoring"] },
   { href: "/machete/sync-jobs", labelEn: "Machete sync jobs", labelRu: "Задачи синхронизации Machete", sectionEn: "Machete", sectionRu: "Machete", keywords: ["sync", "jobs", "ingestion"] },
-  { href: "/baltika/leagues", labelEn: "Baltika leagues", labelRu: "Лиги Балтики", sectionEn: "Baltika", sectionRu: "Балтика", keywords: ["baltika", "leagues", "wyscout"] },
-  { href: "/baltika/players", labelEn: "Baltika players", labelRu: "Игроки Балтики", sectionEn: "Baltika", sectionRu: "Балтика", keywords: ["baltika", "players", "wyscout"] },
-  { href: "/baltika/models", labelEn: "Baltika scoring models", labelRu: "Модели очков Балтики", sectionEn: "Baltika", sectionRu: "Балтика", keywords: ["baltika", "models", "scoring"] },
   { href: "/mixerr", labelEn: "MiXerr shot maps", labelRu: "Карты ударов Миксер", sectionEn: "MiXerr", sectionRu: "Миксер", keywords: ["mixerr", "shots", "xg", "карты"] }
 ];
 
 const adminCommands: CommandItem[] = [
   { href: "/admin/ingestion", labelEn: "Ingestion", labelRu: "Загрузка", sectionEn: "Admin", sectionRu: "Админ", keywords: ["admin", "ingestion", "sync"] },
   { href: "/admin/users", labelEn: "Users", labelRu: "Пользователи", sectionEn: "Admin", sectionRu: "Админ", keywords: ["admin", "users"] },
-  { href: "/admin/leagues", labelEn: "Admin leagues", labelRu: "Админ-лиги", sectionEn: "Admin", sectionRu: "Админ", keywords: ["admin", "leagues"] },
-  { href: "/admin/models", labelEn: "Admin models", labelRu: "Админ-модели", sectionEn: "Admin", sectionRu: "Админ", keywords: ["admin", "models"] }
+  { href: "/admin/models/machete", labelEn: "Admin models", labelRu: "Админ-модели", sectionEn: "Admin", sectionRu: "Админ", keywords: ["admin", "models"] }
 ];
 
 export function CommandPalette({ showAdmin = false }: CommandPaletteProps) {

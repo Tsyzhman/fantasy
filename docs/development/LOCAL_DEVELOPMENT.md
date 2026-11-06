@@ -20,9 +20,9 @@ contains `DATABASE_URL`, and restart `npm run dev`.
 
 Open:
 
-- Admin leagues: `http://localhost:3000/admin/leagues`
-- Premier League workspace: `http://localhost:3000/admin/leagues/premier-league`
-- Published players: `http://localhost:3000/players`
+- Admin ingestion: `http://localhost:3000/admin/ingestion`
+- League explorer: `http://localhost:3000/machete/leagues`
+- Player explorer: `http://localhost:3000/machete/players`
 
 Before pushing changes, run:
 

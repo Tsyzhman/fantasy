@@ -8,11 +8,11 @@ Visual contract: `spec://common/PROP-002-editorial-sport-design#root`, with the 
 
 ## Purpose {#purpose}
 
-Fantasy Scout is a fantasy football scouting workspace. It turns provider data, price sheets, and match events into decisions about which players to buy, who is underpriced, and which shot profiles are real.
+Fantasy Scout is a fantasy football scouting workspace. It turns provider data, fantasy prices, and match events into decisions about which players to buy, who is underpriced, and which shot profiles are real.
 
 ## Audience
 
-- Admins operate leagues, ingestion, mappings, workbook imports, and model settings.
+- Admins operate leagues, ingestion, player mappings, fantasy prices, and model settings.
 - Fantasy users browse players, compare projections and prices, and build legal squads.
 - Analysts inspect attacking and conceded shot maps on normalized match shots.
 
@@ -21,20 +21,22 @@ Fantasy Scout is a fantasy football scouting workspace. It turns provider data, 
 1. Ingest and normalize FotMob fixtures, rosters, player stats, shots, and events.
 2. Import Sports.ru fantasy prices and map them onto FotMob players.
 3. Calculate projections and value scores for squad planning.
-4. Keep Baltika's Wyscout-style workbook import path for uploaded scouting tables.
-5. Expose MiXerr shot maps and comparisons on the same normalized shots.
+4. Expose MiXerr shot maps and comparisons on the same normalized shots.
 
-## Product modes
+<a name="product-modes"></a>
+
+## Product modes {#product-modes}
 
 - **Machete** — FotMob-backed leagues, fixtures, stats, Sports.ru prices, projections, and squad planning.
-- **Baltika** — Wyscout-style Excel imports, scouting tables, manual schedules, and configurable models.
 - **MiXerr** — shot maps, xG overlays, and team or player shot comparisons.
 
 ## Boundaries
 
-In scope today: cookie/session auth with admin and user roles, Prisma/PostgreSQL, FotMob ingestion, Sports.ru price mapping, squad planning, Baltika workbook imports, MiXerr shot maps, saved views, watchlists, and operational runbooks.
+In scope today: cookie/session auth with admin and user roles, Prisma/PostgreSQL, FotMob ingestion, Sports.ru price mapping, squad planning, MiXerr shot maps, saved views, watchlists, and operational runbooks.
 
 Out of scope for now: payments, multi-tenant organizations, live-match updates, public anonymous league hosting, and a generic spreadsheet ETL builder.
+
+Historical Wyscout records stay in the existing database tables. Machete can read prior published scouting metrics and use the stored scoring model as a fallback.
 
 ## Sources
 
@@ -43,5 +45,7 @@ These facts come from `README.md`, `docs/product/PRODUCT_BRIEF.md`, and `docs/re
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-11-06: WI-098 removes the Baltika workspace and its workbook and schedule interfaces.
 
 - 2026-09-28: English repository documentation, topic-based navigation, and stable product-purpose anchors (WI-039).
