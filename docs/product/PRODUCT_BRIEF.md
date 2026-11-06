@@ -82,7 +82,7 @@ Needs to:
 - Machete player explorer and squad planner.
 - MiXerr shot maps and comparison APIs.
 - Saved views, watchlists, and squad export.
-- Production Docker/PM2 runbooks and CI checks.
+- Continuous Docker deployment and CI checks.
 
 ## Out Of Scope For Now
 

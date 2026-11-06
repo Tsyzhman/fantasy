@@ -12,9 +12,9 @@ The first pass was a test of the basic models. Now **548 configurations of model
 
 The project contains:
 
-- `src/machete/formula_adaptations.ts`: hypotheses of form for 3/5/10 matches, freshness, team style, possession, tackling/passing, coach, formation, opponent, zones and rest.
-- `src/machete/formula-adaptation-models.generated.json`: Trained weights and metadata from the FotMob/H2H study for 2024/25–2025/26. For one formula, the accepted freshness/selection windows are 3/5 matches, for the other 5/5; form and style more often than not in ten matches. Weather is clearly ruled out: `weatherIncluded: false`.
-- `scripts/export-formula-adaptation-models.py`: exporter referencing `run_formula_hypothesis_research.py` and archived replay JSON gzip.
+- [Historical forecast model code](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/src/machete/formula_adaptations.ts) records hypotheses of form for 3/5/10 matches, freshness, team style, possession, tackling/passing, coach, formation, opponent, zones and rest.
+- [Historical trained model artifact](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/src/machete/formula-adaptation-models.generated.json) contains trained weights and metadata from the FotMob/H2H study for 2024/25–2025/26. For one formula, the accepted freshness/selection windows are 3/5 matches, for the other 5/5; form and style more often than not in ten matches. Weather is clearly ruled out: `weatherIncluded: false`.
+- [Historical model exporter](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/scripts/export-formula-adaptation-models.py) is the script referencing `run_formula_hypothesis_research.py` and archived replay JSON gzip.
 - `docs/testing/MODEL_BACKTEST.md`: confirmed fantasy backtest and its limitations.
 
 The original research archive itself and `run_formula_hypothesis_research.py` were not found in the checked places: current project and transfer worktree, relevant server directories `/var/www`, `/var/backups`, `/home/deploy`, `/tmp`, `/root`, file names in Downloads and Codex outputs. User location hint requested. This is a limited search, not a statement that a file is missing from all drives.
@@ -103,17 +103,27 @@ The next meaningful hypothesis is the transfer of the signal to earlier/erroneou
 
 ## Evidence and Reproduction
 
-Catalog `specs/work/evidence/WI-003/` contains a complete grid, fixed options, rates for the next period, weather and provenance, information about previous research, checks and `additional_inputs.zip` (**772 047 bytes**). The base image is saved in WI-002; a new copy of its large tables was not created. Additional inputs are listed from SHA-256 to `input_manifest.json`.
+The [verification directory](../../specs/work/evidence/WI-003) contains the grid,
+fixed selections, weather provenance, and checks. The historical [base inputs](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/specs/work/evidence/WI-002/inputs.zip) and
+[additional inputs](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/specs/work/evidence/WI-003/additional_inputs.zip) are stored at the same Git revision. The [manifest](../../specs/work/evidence/WI-003/input_manifest.json)
+lists SHA-256 for the additional inputs.
 
 ```powershell
-Expand-Archive -LiteralPath specs/work/evidence/WI-002/inputs.zip -DestinationPath .tmp/betting-research-20260907 -Force
-Expand-Archive -LiteralPath specs/work/evidence/WI-003/additional_inputs.zip -DestinationPath .tmp/betting-features-20260907 -Force
+New-Item -ItemType Directory -Path .tmp -Force | Out-Null
+git archive --format=zip --output=.tmp/betting-inputs-history.zip bd493e0f61f64843f169821e2de9272ee018d561 `
+  specs/work/evidence/WI-002/inputs.zip `
+  specs/work/evidence/WI-003/additional_inputs.zip
+Expand-Archive -LiteralPath .tmp/betting-inputs-history.zip -DestinationPath .tmp/betting-inputs-history -Force
+Expand-Archive -LiteralPath .tmp/betting-inputs-history/specs/work/evidence/WI-002/inputs.zip -DestinationPath .tmp/betting-research-20260907 -Force
+Expand-Archive -LiteralPath .tmp/betting-inputs-history/specs/work/evidence/WI-003/additional_inputs.zip -DestinationPath .tmp/betting-features-20260907 -Force
 python scripts/research/betting_feature_data.py
 python scripts/research/betting_feature_data.py --weather
 python scripts/research/betting_feature_models.py
 python scripts/research/betting_feature_models.py --weather
 python scripts/research/betting_feature_verify.py
 ```
+
+Replays write reports and generated archives to `.tmp/betting-features-20260907/evidence`.
 
 Weather step reuses saved small JSON, does not download the entire archive again. `verification.json`: 124 independent checks of the weights of the previous window, checking the minimum validation loss of fixed models, the boundaries of the next period, the uniqueness of bets, the payout formula and the CRC/SHA-256 archive.
 

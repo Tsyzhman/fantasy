@@ -338,10 +338,7 @@ for required_file in \
   scripts/fpl-vpn-relay.mjs \
   scripts/prune-production-artifacts.sh \
   scripts/prune-production-backups.py \
-  src/app/api/machete/squads/formula-adaptations/route.ts \
-  src/components/machete/FormulaAdaptationHoverCard.tsx \
-  src/machete/formula-adaptation-models.generated.json \
-  src/machete/formula_adaptations.ts
+  src/app/api/machete/squads/formula-adaptations/route.ts
 do
   [[ -f "$target/$required_file" ]] || {
     echo "Required release file is missing: $required_file" >&2

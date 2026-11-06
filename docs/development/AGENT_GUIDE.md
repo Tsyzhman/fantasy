@@ -1,7 +1,8 @@
 # Agent guide
 
 Fantasy Scout is an existing Next.js application with provider-backed football
-analytics, an Excel import workflow, shot maps, and isolated additional modules.
+analytics, fantasy price imports, shot maps, and isolated modules for hockey,
+franchise analytics, and virtual betting.
 Start with the [project README](../../README.md),
 [architecture](../reference/ARCHITECTURE.md), and
 [technical ownership map](../../specs/common/structure.md).
@@ -41,5 +42,5 @@ UI/source literals when their original spelling matters. Update relative links
 when moving documents. Record the result and actual verification in the work
 item; do not claim checks that were not run.
 
-The [archived bootstrap prompts](../archive/README.md#original-bootstrap-prompts)
-describe the earlier MVP and provide historical context.
+Historical bootstrap prompts and superseded runbooks are available from the
+[archive index](../archive/README.md#superseded-guides-and-reports).

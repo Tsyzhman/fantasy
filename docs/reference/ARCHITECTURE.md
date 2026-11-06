@@ -5,17 +5,21 @@ This document describes the current application. Older MVP planning files in
 `docs/archive/planning/IMPROVEMENT_BACKLOG.md` are historical references, not the active
 architecture.
 
-## Product Modes
+## Product modules
 
-Fantasy Scout has two football scouting workspaces.
-
-- Machete: FotMob-backed competition data, fixtures, player stats, Sports.ru
-  fantasy prices, projections, and squad planning.
-- MiXerr: shot maps, xG overlays, player/team shot views, and comparison
-  workflows built on normalized FotMob match data.
+| Area | Entry | Implementation |
+|---|---|---|
+| Machete football | `/machete/leagues`, `/machete/players`, `/machete/squad` | `src/app/machete`, `src/machete` |
+| MiXerr | `/mixerr` | `src/app/mixerr`, `src/mixer` |
+| KHL beta | `/machete/khl/squad` | `src/khl`, `src/server/khl` |
+| Fantasy Arena | `/betting` | `src/app/betting`, `src/betting` |
+| Franchises | `/franchises` | `src/franchises`, `src/server/franchises`, `scripts/franchise-analytics` |
+| Telegram and deadline reports | Profile settings | `src/server/telegram`, `src/server/deadline-reports` |
+| Sports.ru squad transfer | Browser extension | `extensions/sports-squad-transfer`, `src/app/api/browser-extension` |
 
 Machete can read historical Wyscout metrics from published records and use the
-stored Wyscout scoring model as a fallback.
+stored Wyscout scoring model as a fallback. The technical map names the
+remaining modules and their contract owners. [Technical map](../../specs/common/structure.md)
 
 ## Runtime Stack
 

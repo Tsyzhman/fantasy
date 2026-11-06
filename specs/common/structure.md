@@ -14,7 +14,7 @@ Sports.ru club limits and cached Squad rule reads: `src/machete/sports_ru_team_l
 
 Player identity letter folding: `src/machete/player-identity.ts`; Sports.ru mapping, FPL full-name/position matching and FPL price-backed virtual roster reads share `spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity`. Shared FotMob memberships and starter flags are not written by FPL availability reads.
 
-Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://modules/telegram/FEAT-007-deadline-assistant#root`, `spec://modules/telegram/INFRA-005-deadline-pipeline#root`. Ownership: `src/providers/sports-ru-trends/` (feed/article HTTP и parser), `src/server/sports-trends/` (collector, ownership snapshots, scheduler), `src/machete/sports-trends.ts` (read view), `src/server/telegram/` (link service, webhook, bot API, rate limits), `src/server/deadline-reports/` (campaign planning, classifier, renderer, delivery) и `src/app/api/telegram/webhook/`. Флаги `SPORTS_TRENDS_SYNC_ENABLED`, `TELEGRAM_LINK_ENABLED`, `TELEGRAM_DEADLINE_ENABLED`, `TELEGRAM_SEND_ENABLED`, `TELEGRAM_PAID_BROADCAST_ENABLED` по умолчанию off. Existing Sports price/squad import, Sorare, scoring and session auth retain their ownership. See `docs/TELEGRAM_DEADLINE_PLAN.md`.
+Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://modules/telegram/FEAT-007-deadline-assistant#root`, `spec://modules/telegram/INFRA-005-deadline-pipeline#root`. Ownership: `src/providers/sports-ru-trends/` (feed/article HTTP и parser), `src/server/sports-trends/` (collector, ownership snapshots, scheduler), `src/machete/sports-trends.ts` (read view), `src/server/telegram/` (link service, webhook, bot API, rate limits), `src/server/deadline-reports/` (campaign planning, classifier, renderer, delivery) и `src/app/api/telegram/webhook/`. Флаги `SPORTS_TRENDS_SYNC_ENABLED`, `TELEGRAM_LINK_ENABLED`, `TELEGRAM_DEADLINE_ENABLED`, `TELEGRAM_SEND_ENABLED`, `TELEGRAM_PAID_BROADCAST_ENABLED` по умолчанию off. Existing Sports price/squad import, Sorare, scoring and session auth retain their ownership. The historical rollout plan is indexed in the [documentation archive](../../docs/archive/README.md#superseded-guides-and-reports).
 
 ## Runtime
 
@@ -131,9 +131,15 @@ relocating other documentation must preserve `spec://` addresses, contract
 anchors, code ownership, and relative navigation. The `.agents/` and `.claude/`
 workflow copies are intentional matching client entry points.
 
+Keep verification summaries with their work items. Large historical reports and
+replay inputs can point to their immutable Git revision. Use the archive index
+for retrieval. Release exports omit archived documentation and work evidence.
+
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-11-06: WI-099 records the release export boundary and historical evidence retrieval.
 
 - 2026-11-06: WI-098 removes the Baltika workspace and its exclusive runtime code.
 

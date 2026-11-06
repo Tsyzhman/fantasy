@@ -102,6 +102,16 @@ For each earlier match use the opposing club's xG allowed at its venue, relative
 
 Multiply the FO player goal and assist predictions once by the respective factors, bounded by the club's forecast totals for each event. Recalculate the existing score formula and sum fixtures in each round. A scheduled blank is zero with valid history. Missing history or fixture projections render as unavailable. The comparison keeps provider and source statistics intact and uses the current component pool revision. A pool refresh reads team results once per competition set in a bounded window, retains the factor index only for the calculation, and saves compact factors and round totals in the existing snapshots.
 
+<a name="retired-projections"></a>
+
+### Retired forecasts {#retired-projections}
+
+Squad reads FFO, FO, and Alt. Older snapshot rows and table settings may carry
+Position-calibrated or Joint fields. Drop those fields at the existing read
+boundaries. Authenticated requests from an older tab to
+`/api/machete/squads/formula-adaptations` receive `410 FORMULA_RETIRED` with
+`Cache-Control: private, no-store`.
+
 <a name="player-identity"></a>
 
 ### Player identity and availability {#player-identity}
@@ -218,6 +228,7 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 
 ## 12. Changelog {#changelog}
 
+- 2026-11-06: WI-099 records the retired forecast compatibility contract and removes the unused tooltip and model implementation.
 - 2026-11-05: WI-093 — add the Sports.ru historical opponent comparison in the Squad pool.
 - 2026-11-05: WI-092 — share feeder-division translation factors across archive priors and internal horizon forecasts, with destination-league evidence first.
 - 2026-11-05: WI-091 — calibrate per-90 event exposure for field players marked in the nearest XI in Sports.ru FO.

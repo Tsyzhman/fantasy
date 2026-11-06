@@ -78,7 +78,7 @@ Average bookmaker premium `sum(1/odds) − 1` in the test: **6,60% for 1X2**,**5
 
 The market is more accurate than tested models and in terms of the quality of probabilities: log loss of outcomes **0,9899**for the average market versus**1,0248**for regression and**1,0379**from Poisson; less is better. For totals, respectively,**0,6723 / 0,6831 / 0,6819**. In this test, adding our simple xG model to the market also did not improve the overall log loss.
 
-Interactive interval chart: `specs/work/evidence/WI-002/roi_intervals.html`.
+The [interactive interval chart](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/specs/work/evidence/WI-002/roi_intervals.html) is available as an HTML download.
 
 ## What has been proven and what has not yet been proven
 
@@ -109,16 +109,22 @@ The first diagnostic calculations were recalculated after correcting connections
 
 ## Reproducibility and resources
 
-`specs/work/evidence/WI-002/inputs.zip` contains one compressed instance of sports input data and external CSVs; The SHA-256 of each file is listed in `input_manifest.json`. Personal data, secrets and user tables were not uploaded. SQL worked in read-only transactions, with a query limit of 30 seconds and `work_mem=8MB`; models are calculated locally.
+The [original input archive](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/specs/work/evidence/WI-002/inputs.zip) contains the compressed sports data and external CSVs. The [input manifest](../../specs/work/evidence/WI-002/input_manifest.json) lists the SHA-256 of each file. Personal data, secrets and user tables were not uploaded. SQL worked in read-only transactions, with a query limit of 30 seconds and `work_mem=8MB`; models are calculated locally.
 
 Restore input data from repository root:
 
 ```powershell
-Expand-Archive -LiteralPath specs/work/evidence/WI-002/inputs.zip -DestinationPath .tmp/betting-research-20260907 -Force
+New-Item -ItemType Directory -Path .tmp -Force | Out-Null
+git archive --format=zip --output=.tmp/betting-inputs-history.zip bd493e0f61f64843f169821e2de9272ee018d561 `
+  specs/work/evidence/WI-002/inputs.zip
+Expand-Archive -LiteralPath .tmp/betting-inputs-history.zip -DestinationPath .tmp/betting-inputs-history -Force
+Expand-Archive -LiteralPath .tmp/betting-inputs-history/specs/work/evidence/WI-002/inputs.zip -DestinationPath .tmp/betting-research-20260907 -Force
 python scripts/research/betting_backtest.py
 python scripts/research/betting_evaluate.py
 python scripts/research/betting_report.py
 ```
+
+Replays write reports and generated archives to `.tmp/betting-research-20260907/evidence`.
 
 Used Python 3.14, NumPy, pandas, SciPy, scikit-learn, Plotly. The exact versions are saved in `verification.json`. For new unloading - `python scripts/research/betting_audit.py`; it accesses a live database, so it does not exactly reproduce the previous snapshot.
 

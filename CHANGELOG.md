@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.157 - 2026-11-06
+
+- Remove the unused Position and Joint forecast implementation, retired adapters, and tests tied to those implementations.
+- Build the migration and operator image directly from the application source and pinned dependencies.
+- Exclude historical evidence and archived documentation from release exports and align current guides with the supported workflows.
+
 ## 0.3.156 - 2026-11-06
 
 - Retire the Baltika workspace, its workbook imports, scheduling and legacy player endpoints. Machete can still read previously published Wyscout metrics.

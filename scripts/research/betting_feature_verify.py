@@ -37,5 +37,5 @@ with zipfile.ZipFile(EV/'additional_inputs.zip') as z:
     assert z.testzip() is None
     for name,meta in manifest.items():assert hashlib.sha256(z.read(name)).hexdigest()==meta['sha256']
 (EV/'input_manifest.json').write_text(json.dumps(manifest,indent=2))
-result={'independent_prior_day_ewm_checks':checks,'frozen_choices_min_validation_loss':'passed','fresh_period_and_unique_bet_payout_checks':'passed','weather_previous_day1_and_dedup':'passed','weather_matches':len(weather),'archive_sha256_crc':'passed','versions':{n:importlib.metadata.version(n) for n in ['numpy','pandas','scipy','scikit-learn']},'cache_bytes':sum(p.stat().st_size for p in NEW.rglob('*') if p.is_file()),'input_zip_bytes':(EV/'additional_inputs.zip').stat().st_size}
+result={'independent_prior_day_ewm_checks':checks,'frozen_choices_min_validation_loss':'passed','fresh_period_and_unique_bet_payout_checks':'passed','weather_previous_day1_and_dedup':'passed','weather_matches':len(weather),'archive_sha256_crc':'passed','versions':{n:importlib.metadata.version(n) for n in ['numpy','pandas','scipy','scikit-learn']},'cache_bytes':sum(p.stat().st_size for p in NEW.rglob('*') if p.is_file() and EV not in p.parents),'input_zip_bytes':(EV/'additional_inputs.zip').stat().st_size}
 (EV/'verification.json').write_text(json.dumps(result,indent=2));print(result)

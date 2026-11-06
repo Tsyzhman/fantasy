@@ -135,7 +135,7 @@ DATA_QUALITY_AUDIT_MAXIMUM_LATENCY_HOURS="6"
 DATA_QUALITY_AUDIT_MAXIMUM_RUN_AGE_HOURS="26"
 ```
 
-The Docker/PM2 process runs the same persisted audit service daily. The default
+The scheduled worker runs the same persisted audit service daily. The default
 10:00 Moscow time leaves seven hours after the 03:00 ingestion start. Vercel
 also calls `GET /api/cron/data-quality` at `07:00 UTC`. The route requires
 `Authorization: Bearer <CRON_SECRET>`.

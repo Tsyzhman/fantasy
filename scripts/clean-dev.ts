@@ -1,34 +1,46 @@
-import { readdirSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { resolve, sep } from "node:path";
 
-const root = resolve(process.cwd());
+/** @spec spec://common/INFRA-006-continuous-deployment#contracts */
+const generatedPaths = [
+  ".next",
+  "next-env.d.ts",
+  "tsconfig.tsbuildinfo",
+  "coverage",
+  "playwright-report",
+  "test-results",
+  "output/playwright-test-results"
+];
+
+const args = process.argv.slice(2);
+const dryRun = args[0] === "--dry-run";
+if (args.length > (dryRun ? 1 : 0)) {
+  throw new Error("Usage: npm run clean:dev -- [--dry-run]");
+}
+
+const root = realpathSync(process.cwd());
+const manifest = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
+if (manifest.name !== "fantasy-scout") {
+  throw new Error("Run dev cleanup from the Fantasy Scout root.");
+}
+
 const rootPrefix = root.endsWith(sep) ? root : `${root}${sep}`;
-const removed: string[] = [];
-
-for (const name of readdirSync(root)) {
-  if (!shouldRemove(name)) continue;
-
+const targets = generatedPaths.flatMap((name) => {
   const target = resolve(root, name);
-  if (!target.startsWith(rootPrefix)) {
-    throw new Error(`Refusing to remove path outside workspace: ${target}`);
+  if (!existsSync(target)) return [];
+  if (!target.startsWith(rootPrefix) || realpathSync(target) !== target) {
+    throw new Error(`Refusing to remove a linked path or path outside the workspace: ${target}`);
   }
+  return [{ name, target }];
+});
 
-  rmSync(target, { recursive: true, force: true });
-  removed.push(name);
+if (!dryRun && [".next/lock", ".next/dev/lock"].some(name => existsSync(resolve(root, name)))) {
+  throw new Error("Stop the local Next.js build or dev server before cleaning.");
 }
 
-if (removed.length === 0) {
-  console.log("No dev artifacts found.");
-} else {
-  console.log(`Removed ${removed.length} dev artifact${removed.length === 1 ? "" : "s"}:`);
-  for (const name of removed) console.log(`- ${name}`);
+for (const { name, target } of targets) {
+  if (!dryRun) rmSync(target, { recursive: true, force: true });
+  console.log(`${dryRun ? "Would remove" : "Removed"} ${name}`);
 }
 
-function shouldRemove(name: string) {
-  return (
-    name === ".next" ||
-    name === "tsconfig.tsbuildinfo" ||
-    name.startsWith("tmp_") ||
-    /^sports_ru_.*_backup_.*\.json$/.test(name)
-  );
-}
+if (targets.length === 0) console.log("No generated dev files found.");

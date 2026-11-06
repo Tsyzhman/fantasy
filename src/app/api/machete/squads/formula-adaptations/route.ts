@@ -4,8 +4,7 @@ import { requireApiUser } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Old open tabs may still request these tooltips. Never rebuild a retired
-// formula (or the entire player pool) in response to such a request.
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#retired-projections */
 export const GET = withApiHandler(async () => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;

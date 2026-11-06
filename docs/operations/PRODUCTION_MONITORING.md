@@ -23,4 +23,4 @@ journalctl -u fantasy-access-audit.service -n 5 --no-pager
 curl -fsS https://fantasy.tsyzhman.ru/_monitor/rolling-slo-audit.json
 ```
 
-Inspect windows around full imports/simultaneous web generations, one active worker, duplicate jobs/ownership buckets, finite cache/retention budgets and orphan canaries. Hourly session cleanup deletes only expired sessions and preserves active logins. [Deployment](DEPLOYMENT.md) owns budgets, exact revisions and rollback. [Historical fixed-window notes](archive/PRODUCTION_MONITORING-before-WI-072.md) preserve earlier evidence.
+Inspect windows around full imports/simultaneous web generations, one active worker, duplicate jobs/ownership buckets, finite cache/retention budgets and orphan canaries. Hourly session cleanup deletes only expired sessions and preserves active logins. [Deployment](DEPLOYMENT.md) owns budgets, exact revisions and rollback. [Historical fixed-window notes](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/docs/operations/archive/PRODUCTION_MONITORING-before-WI-072.md) preserve earlier evidence.

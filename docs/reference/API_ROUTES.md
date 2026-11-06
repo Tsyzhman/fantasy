@@ -2,6 +2,17 @@
 
 The app uses Next.js route handlers under `src/app/api`.
 
+## Module contracts
+
+| Area | Entry prefix | Contract |
+|---|---|---|
+| Machete football | `/api/machete` | [Squad and provider rules](../../specs/modules/machete/FEAT-001-global-ranking-strategy.md#contracts) |
+| KHL | `/api/machete/khl` | [KHL storage and API](../../specs/modules/khl/INFRA-002-khl-storage-and-api.md) |
+| Fantasy Arena | `/api/betting` | [Virtual league](../../specs/modules/betting/FEAT-001-virtual-league.md) |
+| Franchises | `/api/franchises` | [Franchise analytics](../../specs/modules/franchises/FEAT-005-franchise-analytics.md) |
+| Telegram | `/api/profile/telegram`, `/api/telegram/webhook` | [Linking and subscriptions](../../specs/modules/telegram/FEAT-007-deadline-assistant.md) |
+| Browser extension | `/api/browser-extension/sports-squad` | [Sports.ru squad transfer](../../extensions/sports-squad-transfer/README.md) |
+
 ## Health
 
 ### `GET /api/health`

@@ -98,6 +98,22 @@ Database constraints enforce a unique variant name per user/contest and one
 player per squad. Application validation enforces provider-specific budget,
 roster shape, team limits, and captain/vice-captain roles before persistence.
 
+## Hockey, Arena, Franchises and Notifications
+
+- `KhlCompetition`, `KhlSeason`, `KhlContest` and the `Khl*` match, player,
+  roster, forecast and squad models hold the isolated hockey module.
+  [KHL storage](../../specs/modules/khl/INFRA-002-khl-storage-and-api.md)
+- `BettingAccount`, `BettingEvent`, `BettingBet` and `BettingLedger`
+  hold virtual accounts, published events, bets and append-only movements.
+  [Fantasy Arena](../../specs/modules/betting/FEAT-001-virtual-league.md)
+- `FranchiseH2hSquad`, `FranchiseH2hRound` and `FranchiseAnalyticsSnapshot`
+  hold participant histories and prepared franchise analytics.
+  [Franchises](../../specs/modules/franchises/FEAT-005-franchise-analytics.md)
+- `TelegramLink`, `TelegramSubscription` and `TelegramInbox` hold linked
+  accounts, consent and received updates. Deadline campaign, report and
+  delivery records hold preparation and delivery state.
+  [Deadline pipeline](../../specs/modules/telegram/INFRA-005-deadline-pipeline.md)
+
 ## Moderated Beta Measurement
 
 - `BetaTestRun`: one opt-in moderated journey tied internally to a user for

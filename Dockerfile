@@ -15,9 +15,7 @@ RUN npm ci --no-audit --no-fund \
   --fetch-timeout=60000 --fetch-retries=3 \
   --fetch-retry-mintimeout=1000 --fetch-retry-maxtimeout=10000
 
-FROM deps AS builder
-
-WORKDIR /app
+FROM deps AS app-source
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG APP_RELEASE_COMMIT=unknown
 ARG APP_RELEASE_VERSION=development
@@ -25,6 +23,12 @@ ENV APP_RELEASE_COMMIT="${APP_RELEASE_COMMIT}"
 LABEL org.opencontainers.image.revision="${APP_RELEASE_COMMIT}" org.opencontainers.image.version="${APP_RELEASE_VERSION}"
 
 COPY . .
+
+# Prisma and operator commands use the source and pinned dependencies directly.
+FROM app-source AS setup
+RUN ./node_modules/.bin/prisma generate
+
+FROM app-source AS builder
 # Strip compiler material within the build layer, before any image can retain it.
 RUN --mount=type=secret,id=server_actions_id_salt,required=true \
   export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat /run/secrets/server_actions_id_salt)" \
@@ -38,10 +42,6 @@ RUN ./node_modules/.bin/esbuild scripts/franchise-report-worker.ts --bundle --pl
 RUN ./node_modules/.bin/esbuild scripts/reconcile-fpl-score-mappings.ts --bundle --platform=node --external:@prisma/client --outfile=/app/reconcile-fpl-score-mappings.cjs \
   && ./node_modules/.bin/esbuild scripts/repair-khl-archive-identities.ts --bundle --platform=node --external:@prisma/client --outfile=/app/repair-khl-archive-identities.cjs \
   && ./node_modules/.bin/esbuild scripts/recover-admin.ts --bundle --platform=node --external:@prisma/client --outfile=/app/recover-admin.cjs
-
-FROM builder AS setup
-
-WORKDIR /app
 
 FROM builder AS prod-deps
 
