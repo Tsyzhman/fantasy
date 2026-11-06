@@ -11,7 +11,7 @@ test("forecast table distinguishes missing Alt while legacy score displays retai
   assert.equal(formatAlternativeScore(undefined), "0");
   assert.equal(formatAlternativeScore(1.234), "1.23");
 
-  assert.match(read("./machete/PlayerPool.tsx"), /formatAlternativeScore\(nextAlternativeFantasyPoints\(player\)\)/);
+  assert.match(read("./machete/PlayerPool.tsx"), /formatPoints\(nextAlternativeFantasyPoints\(player\) \?\? 0\)/);
   assert.match(read("./machete/MachetePlayerTable.tsx"), /ScoreHeatCell value=\{numberOrNull\(value\)\}/);
   assert.match(read("./ui/player-hover-card.tsx"), /value=\{player\.altFp \?\? 0\}/);
   assert.match(read("../app/compare/page.tsx"), /metric\.key === "alternativeScore" \? value \?\? 0 : value/);
