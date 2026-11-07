@@ -1,8 +1,18 @@
 # Production release history
 
-## Latest verified release 0.3.158 — 2026-11-06
+## Latest verified release 0.3.161 — 2026-11-07
 
-[Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42209912686) and [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/42211104659) passed for `3c07029f302aaf8f083c0b5cbeadaf3ed6c956f8`. Production runs `20261106T113902Z-v0.3.158-3c07029`. Sports.ru Squad retains and displays hundredths and adds Alt Opp. alongside FO Opp. The authenticated saved Premier League page rendered both comparisons with two decimal places. The worker published version-3 pools for all 12 scopes and 8,464 players, with zero duplicates and an empty refresh queue.
+Production runs `20261107T082446Z-v0.3.161-866b1aa`, commit `866b1aacc7a4f949c8d43ab511133914c12a094b`, tree `10ccc39cb6d95b6ffd0ddc061583cb413e30f39b`. The verified release extends the serving 0.3.159 revision. The workflow independently verified the current-run ZIP staged over the `deploy` SSH profile. [Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42353897245) · [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/42354789557)
+
+Machete league seasons now link to the Massey strength table. MiXerr builds two passing maps from one StatsBomb event file. The authenticated browser showed all 18 Bundesliga clubs and rendered both maps from a completed match at desktop and mobile widths. All 263 health and previous-CSS probe pairs passed. The host kept 0.3.159 for rollback. [WI-096](../../specs/work/archive/2026/WI-096-release-league-analytics.md)
+
+## 0.3.159 — 2026-11-06
+
+Release `20261106T124536Z-v0.3.159-3e17630` uses the latest Foontasy import for the displayed Sports.ru Squad tour. The verified serving commit before 0.3.161 was `3e176300ec867ba42113a4f548653a1d0c154932`. [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/42219121484)
+
+## 0.3.158 — 2026-11-06
+
+Production ran `20261106T113902Z-v0.3.158-3c07029`, commit `3c07029f302aaf8f083c0b5cbeadaf3ed6c956f8`. Sports.ru Squad retains and displays hundredths and adds Alt Opp. alongside FO Opp. The authenticated saved Premier League page rendered both comparisons with two decimal places. The worker published version-3 pools for all 12 scopes and 8,464 players, with zero duplicates and an empty refresh queue. [Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42209912686) · [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/42211104659)
 
 All 148 public health probes succeeded, including 20 on the promoted commit. The previous CSS returned HTTP 200 with its original checksum. The Caddy and PostgreSQL process identities matched the pre-release measurements. One healthy web, worker and relay serve the new release. The previous release is retained for rollback. The worker used 1.259 GiB after bootstrap within its 4 GiB limit. [WI-101](../../specs/work/archive/2026/WI-101-squad-forecast-hundredths.md) · [WI-102](../../specs/work/archive/2026/WI-102-alt-opponent-forecast.md)
 
