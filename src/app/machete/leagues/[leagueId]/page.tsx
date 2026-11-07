@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import type { ReactNode } from "react";
-import { Download } from "lucide-react";
+import { BarChart3, Download } from "lucide-react";
 
 import { I18nText } from "@/components/i18n-text";
 import { MacheteRosterCoverageSummary } from "@/components/machete/MacheteRosterCoverageSummary";
@@ -160,6 +161,14 @@ export default async function MacheteLeaguePage({ params, searchParams }: PagePr
                 </select>
               </label>
             </AutoSubmitForm>
+            <Link
+              href={`/machete/leagues/${league.leagueId}/strength?season=${encodeURIComponent(league.season)}`}
+              prefetch={false}
+              className="ui-button justify-center text-sm"
+            >
+              <BarChart3 className="h-4 w-4" aria-hidden="true" />
+              <I18nText en="Massey team strength" ru="Рейтинг силы Massey" />
+            </Link>
             <a
               href={startingXiExportHref(league.leagueId, league.season)}
               className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"

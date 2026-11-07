@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.161 - 2026-11-07
+
+- Add league-season Massey team ratings with raw xG and played schedule comparisons.
+- Add MiXerr passing networks from a StatsBomb event file, with independent starting-lineup cutoffs.
+- Select Python 3.12 for the pinned franchise dependencies in release checks.
+
 ## 0.3.159 - 2026-11-06
 
 - Use the latest Foontasy import for the displayed Sports.ru Squad tour, with live updates independent of the saved player-pool calculation.
