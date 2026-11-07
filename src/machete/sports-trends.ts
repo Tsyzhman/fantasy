@@ -56,10 +56,14 @@ export function parseFantasyProviderRoundKey(roundKey: string): { ordinal: numbe
   const parts = roundKey.split(":");
   if (parts.length < 4 || parts[0] !== "sports-ru" || parts[1] !== "tour") return { ordinal: null, providerRoundId: null };
   const ordinal = Number(parts[2]);
-  return {
-    ordinal: Number.isFinite(ordinal) && ordinal > 0 ? ordinal : null,
-    providerRoundId: decodeURIComponent(parts.slice(3).join(":")) || null
-  };
+  try {
+    return {
+      ordinal: Number.isSafeInteger(ordinal) && ordinal > 0 ? ordinal : null,
+      providerRoundId: decodeURIComponent(parts.slice(3).join(":")) || null
+    };
+  } catch {
+    return { ordinal: null, providerRoundId: null };
+  }
 }
 
 export async function loadSportsTrendsView(prisma: PrismaClient, input: SportsTrendsViewInput): Promise<SportsTrendsView | null> {

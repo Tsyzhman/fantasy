@@ -30,8 +30,20 @@ test("legacy and current squad preferences discard retired columns without chang
   assert.deepEqual(parseSquadTableColumnWidths({ nextFp: 80, foJointAllFp: 140 }), { nextFp: 80 });
 
   const current = squadTableColumnsPreference(legacy);
-  assert.deepEqual(current, { version: 2, columns: legacy });
+  assert.deepEqual(current, { version: 2, columns: legacy, altOpponentInitialized: true });
   assert.deepEqual(parseSquadTableColumns(current), legacy);
+});
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast */
+test("old saved layouts acquire Alt Opp once beside FO Opp", () => {
+  const old = ["opponentAdjustedFp", "alternative", "fixtures"];
+  const migrated = ["opponentAdjustedFp", "alternativeOpponentAdjustedFp", "alternative", "fixtures"];
+  assert.deepEqual(parseSquadTableColumns(old), migrated);
+  assert.deepEqual(parseSquadTableColumns({ version: 2, columns: old }), migrated);
+  assert.deepEqual(parseSquadTableColumns({ version: 2, columns: migrated }), migrated);
+  assert.deepEqual(parseSquadTableColumns(squadTableColumnsPreference(old)), old);
+  assert.ok(defaultSquadTableColumns.includes("alternativeOpponentAdjustedFp"));
+  assert.ok(isSquadTableColumnsInput(["alternativeOpponentAdjustedHorizon"]));
 });
 
 test("squad table columns accept known and dynamic player stats but reject arbitrary keys", () => {

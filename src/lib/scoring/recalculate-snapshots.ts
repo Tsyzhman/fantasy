@@ -1,93 +1,13 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { calculateAlternativeScore, calculateFantasyScore, calculateScoringScore, calculateValueScore, getActiveScoringModel, getActiveScoringModelForSource } from ".";
-import type { ScoringModelSource } from ".";
-import { buildBaltikaTeamFormulaMetrics } from "./baltika-team-form-metrics";
-import { playerSnapshotScoringMetrics } from "@/lib/players/derived-metrics";
+import { calculateAlternativeScore, calculateFantasyScore, calculateScoringScore, getActiveScoringModelForSource } from ".";
 import { getMacheteAggregateMatchDenominators } from "@/scoring/machete/aggregate-match-denominator";
 import { shouldIgnoreProviderSeasonStats } from "@/scoring/machete/world-cup";
 
 const batchSize = 500;
 
-export async function recalculateSnapshotsForSource(prisma: PrismaClient, source: ScoringModelSource) {
-  return source === "MACHETE" ? recalculateMacheteSnapshots(prisma) : recalculateWyscoutSnapshots(prisma);
-}
-
-async function recalculateWyscoutSnapshots(prisma: PrismaClient) {
-  const scoringModel = await getActiveScoringModel();
-  let cursor: string | undefined;
-  let recalculated = 0;
-
-  while (true) {
-    const snapshots = await prisma.playerSnapshot.findMany({
-      where: cursor ? { id: { gt: cursor } } : undefined,
-      orderBy: { id: "asc" },
-      take: batchSize,
-      select: {
-        id: true,
-        positionGroup: true,
-        marketValue: true,
-        teamId: true,
-        seasonId: true,
-        matchesPlayed: true,
-        minutesPlayed: true,
-        goals: true,
-        xg: true,
-        assists: true,
-        xa: true,
-        fantasyAssists: true,
-        cleanSheets: true,
-        saves: true,
-        penaltySaves: true,
-        recoveries: true,
-        penaltiesConceded: true,
-        missedPenalties: true,
-        ownGoals: true,
-        goalsConceded: true,
-        shotsOnTarget: true,
-        keyPasses: true,
-        tacklesWon: true,
-        interceptions: true,
-        clearances: true,
-        yellowCards: true,
-        redCards: true,
-        averageRating: true
-      }
-    });
-
-    if (snapshots.length === 0) break;
-
-    const updates = [];
-    for (const snapshot of snapshots) {
-      const teamMetrics = await buildBaltikaTeamFormulaMetrics(prisma, snapshot.teamId, snapshot.seasonId);
-      const rawMetrics = playerSnapshotScoringMetrics(snapshot, teamMetrics);
-      const fantasyScore = calculateFantasyScore(rawMetrics, snapshot.positionGroup, scoringModel);
-      const scoringScore = calculateScoringScore(rawMetrics, snapshot.positionGroup, scoringModel);
-      const alternativeScore = calculateAlternativeScore(rawMetrics, snapshot.positionGroup, scoringModel);
-      const valueScore = calculateValueScore(fantasyScore, snapshot.marketValue);
-
-      updates.push(
-        prisma.playerSnapshot.update({
-          where: { id: snapshot.id },
-          data: {
-            fantasyScore,
-            scoringScore,
-            alternativeScore,
-            valueScore
-          }
-        })
-      );
-    }
-
-    await prisma.$transaction(updates);
-    recalculated += snapshots.length;
-    cursor = snapshots[snapshots.length - 1]?.id;
-  }
-
-  return recalculated;
-}
-
-async function recalculateMacheteSnapshots(prisma: PrismaClient) {
+/** @spec spec://common/PROP-002-editorial-sport-design#workspace-navigation */
+export async function recalculateMacheteSnapshots(prisma: PrismaClient) {
   const scoringModel = await getActiveScoringModelForSource("MACHETE");
   let cursor: string | undefined;
   let recalculated = 0;

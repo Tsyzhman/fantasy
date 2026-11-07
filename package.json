@@ -1,6 +1,6 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.155",
+  "version": "0.3.161",
   "private": true,
   "engines": {
     "node": ">=24.11.0 <25"
@@ -69,7 +69,6 @@
     "forecasts:analyze-foontasy": "tsx scripts/analyze-foontasy-archive.ts",
     "benchmark:squad-interactions": "tsx scripts/benchmark-squad-interactions.ts",
     "forecasts:recalculate-model": "tsx scripts/recalculate-fantasy-model-forecasts.ts",
-    "scores:recalculate": "tsx prisma/recalculate-fantasy.ts",
     "model:backtest": "tsx scripts/backtest-fantasy-model.ts",
     "model:explore-calibration": "tsx scripts/explore-fantasy-projection-calibration.ts",
     "beta:load": "tsx scripts/beta-load-test.ts",

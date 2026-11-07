@@ -23,6 +23,10 @@ Shared product presentation and browser preferences. Domain calculations and pro
 - Tables remain horizontally scrollable where needed, with visible sorting/focus and tabular numbers. Comfortable rows are 48px and compact rows 40px; coarse-pointer interactive targets remain at least 44px.
 - Shared navigation keeps 5–7 primary destinations; secondary tools remain accessible in a labeled disclosure. No decorative glass, cloud gradients, floating card shadows or oversized dashboard hero.
 
+### Football workspace navigation {#workspace-navigation}
+
+The football scouting workspace cards link to Machete and MiXerr. The common player entry forwards filters to the Machete explorer. Player comparison, explorer saved views, and watchlists use the Machete source. Global scoring edits and snapshot recalculation run through the Machete admin editor. The editor accepts only the Machete model source.
+
 ## Preferences {#preferences}
 
 Persist `fantasy-theme` as `light`, `dark` or `system`; absent/invalid values follow the OS. Explicit system mode follows OS changes. Persist `fantasy-density` independently as `comfortable` or `compact`. Initialize both before paint. Storage unavailable must not prevent interaction. Cross-tab updates and listener cleanup are required.
@@ -39,4 +43,5 @@ Verify palette and theme geometry, saved/system preferences, density, responsive
 
 ## Change history {#changelog}
 
+- 2026-11-06: WI-098 retires the Baltika workspace and connects the remaining player entry to Machete.
 - 2026-10-10: Adopted the attached Midnight Scout / Pressbox instruction at the user's request.

@@ -9,7 +9,7 @@ from collections import defaultdict,deque
 from betting_backtest import ROOT,OUT,CODES,similarity
 
 NEW=ROOT/'.tmp/betting-features-20260907'
-EV=ROOT/'specs/work/evidence/WI-003';EV.mkdir(exist_ok=True,parents=True)
+EV=NEW/'evidence';EV.mkdir(exist_ok=True,parents=True)
 
 def build():
     core=pd.read_json(OUT/'matches.json');core['date']=pd.to_datetime(core.match_date).dt.normalize()

@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminMacheteModelsPage({ searchParams }: PageProps) {
   return ModelSettingsPage({
-    source: "MACHETE",
     modeName: "Machete admin defaults",
     title: <I18nText en="Global Machete fantasy model" ru="Глобальная фэнтези-модель Machete" />,
     description: (

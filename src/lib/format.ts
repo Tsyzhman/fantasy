@@ -36,6 +36,13 @@ export function formatScore(value?: number | null) {
   return formatNumber(value, 2);
 }
 
+const forecastScoreFormat = new Intl.NumberFormat("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#projection-precision */
+export function formatForecastScore(value?: number | null) {
+  return typeof value === "number" && Number.isFinite(value) ? forecastScoreFormat.format(value) : NULL_GLYPH;
+}
+
 export function formatAlternativeScore(value?: number | null) {
   return formatScore(value ?? 0);
 }

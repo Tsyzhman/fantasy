@@ -195,7 +195,7 @@ npm run beta:user-test -- review --run-id=<uuid> --valid=false --environment=DES
    shows 0 real participants and FAIL, so acceptance does not fill in
    human-only summary below.
 
-   CLI version is intended for a working checkout, where `npm install` is executed:
+   CLI version is intended for a working checkout, with dependencies installed using `npm ci`:
 
 ```bash
 npm run beta:user-test -- report --since-days=30

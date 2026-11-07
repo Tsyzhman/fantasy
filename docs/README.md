@@ -11,7 +11,6 @@ retain their original language so they can be compared with the application.
 ## Product and feature guides
 
 - [Product brief](product/PRODUCT_BRIEF.md)
-- [Admin workflows](product/ADMIN_UX.md)
 - [Fantasy Arena](guides/BETTING_ARENA.md)
 - [KHL implementation status and readiness gates](guides/KHL_IMPLEMENTATION_STATUS.md)
 
@@ -26,14 +25,12 @@ retain their original language so they can be compared with the application.
 - [Data model](reference/DATA_MODEL.md)
 - [API routes](reference/API_ROUTES.md)
 - [Fantasy scoring](reference/FANTASY_SCORING.md)
-- [Source workbook columns](reference/SOURCE_TABLE_COLUMNS.md)
 
 ## Provider integrations
 
 - [FotMob import](integrations/MACHETE_FOTMOB_IMPORT.md)
 - [FotMob collection and parsing details](integrations/FOTMOB_COLLECTION_AND_PARSING.md)
 - [Sports.ru fantasy prices](integrations/SPORTS_RU_FANTASY_SYNC.md)
-- [Wyscout-style Excel import](integrations/WYSCOUT_EXCEL_IMPORT.md)
 - [Probable lineup synchronization](integrations/PROBABLE_LINEUP_SYNC.md)
 - [SorareInside starters](integrations/SORAREINSIDE_STARTERS.md)
 - [Sports.ru squad-transfer extension](../extensions/sports-squad-transfer/README.md)
@@ -48,11 +45,9 @@ retain their original language so they can be compared with the application.
 
 ## Testing and validation
 
-- [Acceptance criteria](testing/ACCEPTANCE_CRITERIA.md)
 - [Data quality](testing/DATA_QUALITY.md)
 - [Model backtesting](testing/MODEL_BACKTEST.md)
 - [Beta load testing](testing/BETA_LOAD_TEST.md)
-- [Beta readiness audit](testing/BETA_READINESS_AUDIT.md)
 - [Beta user-test protocol](testing/BETA_USER_TEST_PROTOCOL.md)
 - [Browser beta checks](testing/BROWSER_BETA_CHECK.md)
 
@@ -66,12 +61,13 @@ later revision has passed the same checks.
 - [Extended betting feature research, 7 September 2026](research/BETTING_FEATURE_RESEARCH_2026-09-07.md)
 - [KHL feasibility, 6 September 2026](research/KHL_FANTASY_FEASIBILITY_2026-09-06.md)
 - [KHL source evidence, 7 September 2026](research/KHL_SOURCE_EVIDENCE_2026-09-07.md)
+- [KHL player and protocol audit, 20 September 2026](research/KHL_PLAYER_AUDIT_2026-09-20.md)
 
 ## Design and historical planning
 
 - [Current design system: Midnight Scout / Pressbox](design/DESIGN.md)
 - [Squad-card design concepts](design/drafts/squad-player-card-concepts.html)
-- [Archive index](archive/README.md) — previous plans, original specification inputs, and imported design references.
+- [Archive index](archive/README.md) — superseded guides, original specification inputs, and retrieval of historical reports.
 
 ## Canonical specifications and work tracking
 

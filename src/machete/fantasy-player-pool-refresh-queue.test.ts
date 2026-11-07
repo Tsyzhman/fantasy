@@ -46,11 +46,14 @@ test("worker groups teams by league and season and drains only a bounded batch",
   assert.equal(mock.rows.size, 0);
 });
 
-/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#starter-event-minutes */
+/**
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#starter-event-minutes
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#projection-precision
+ */
 test("previous component projections are readable and require a full refresh before team updates", async () => {
   const scope = { leagueId: 48n, season: "2026/2027" };
   const metadata = {
-    version: 1, providerIdentityVersion: 1, readiness: {}, rules: {}, rounds: [],
+    version: 1, providerIdentityVersion: 1, componentProjectionVersion: 2, readiness: {}, rules: {}, rounds: [],
     bookmakerFavorites: [], priceStatus: {}, historySeasonOptions: [], dataFreshness: {},
     fixtureCalendar: { version: 1, teams: [], rounds: [] },
     rotationRiskVersion: "RR_V1", rotationRiskExpiresAt: new Date(Date.now() + 60_000).toISOString(),

@@ -39,4 +39,4 @@ Related: WI-017, WI-023.
 
 Ресурсы: кэш 816 payloads / 11.28 MiB (лимит 250 MiB / 7 суток), дубли stat/raw/активных задач=0; Node heap ограничен 384 MiB, разовый архивный backfill peak sampled RSS 241 MiB / 558 секунд; после завершения отдельного процесса КХЛ нет. 14-дневный soak не заявляется выполненным. Удаление собственных временных диагностических файлов отклонено automatic approval review: blocked by policy; повторных попыток обхода нет, рабочая retention выполняется.
 
-Evidence: `specs/work/evidence/WI-026/` (построчный identity audit, replay, архив, итоговые БД/read-model/server и release). Человекочитаемый отчёт: `docs/KHL_PLAYER_AUDIT_2026-09-20.md`; матрица источников: `docs/KHL_IMPLEMENTATION_STATUS.md`. WI-017 сохраняет только самостоятельный блокер ixG.
+Evidence: `specs/work/evidence/WI-026/` (построчный identity audit, replay, архив, итоговые БД/read-model/server и release). Человекочитаемый отчёт: `docs/research/KHL_PLAYER_AUDIT_2026-09-20.md`; матрица источников: `docs/guides/KHL_IMPLEMENTATION_STATUS.md`. WI-017 сохраняет только самостоятельный блокер ixG.

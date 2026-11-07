@@ -221,7 +221,7 @@ test("auto-pick ignores audit-only warnings but still requires real projections 
 
 test("top forecast metrics use only the starting XI and expose Alt totals", () => {
   assert.match(squadPlannerSource, /const previewNextRound = provider === "FPL"/);
-  assert.match(squadPlannerSource, /value=\{formatScore\(previewNextRound\)\}/);
+  assert.match(squadPlannerSource, /value=\{formatPoints\(previewNextRound\)\}/);
   assert.doesNotMatch(squadPlannerSource, /summary\.projectedNext\s*\+\s*\(captainBonus/);
   assert.match(squadPlannerSource, /const previewNextRoundAlternative = provider === "FPL"/);
   assert.match(squadPlannerSource, /const previewHorizonAlternative = provider === "FPL"/);
@@ -631,7 +631,7 @@ test("display-only Alt FP renders in the desktop pool, mobile pool, and squad ca
   const desktopAltFive = squadPlannerSource.indexOf('title={columnTitles.alternativeFive}', desktopAlt);
   const mobileMetrics = squadPlannerSource.indexOf('grid-cols-4');
   const mobilePrice = squadPlannerSource.indexOf('formatNumber(player.price, 1)', mobileMetrics);
-  const mobileAlt = squadPlannerSource.indexOf('formatAlternativeScore(nextAlternativeFantasyPoints(player))', mobilePrice);
+  const mobileAlt = squadPlannerSource.indexOf('formatPoints(nextAlternativeFantasyPoints(player) ?? 0)', mobilePrice);
 
   assert.ok(desktopNext >= 0 && desktopHorizon > desktopNext && desktopAlt > desktopHorizon && desktopAltFive > desktopAlt);
   assert.ok(mobileMetrics >= 0 && mobilePrice > mobileMetrics && mobileAlt > mobilePrice);

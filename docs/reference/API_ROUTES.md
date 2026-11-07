@@ -2,6 +2,17 @@
 
 The app uses Next.js route handlers under `src/app/api`.
 
+## Module contracts
+
+| Area | Entry prefix | Contract |
+|---|---|---|
+| Machete football | `/api/machete` | [Squad and provider rules](../../specs/modules/machete/FEAT-001-global-ranking-strategy.md#contracts) |
+| KHL | `/api/machete/khl` | [KHL storage and API](../../specs/modules/khl/INFRA-002-khl-storage-and-api.md) |
+| Fantasy Arena | `/api/betting` | [Virtual league](../../specs/modules/betting/FEAT-001-virtual-league.md) |
+| Franchises | `/api/franchises` | [Franchise analytics](../../specs/modules/franchises/FEAT-005-franchise-analytics.md) |
+| Telegram | `/api/profile/telegram`, `/api/telegram/webhook` | [Linking and subscriptions](../../specs/modules/telegram/FEAT-007-deadline-assistant.md) |
+| Browser extension | `/api/browser-extension/sports-squad` | [Sports.ru squad transfer](../../extensions/sports-squad-transfer/README.md) |
+
 ## Health
 
 ### `GET /api/health`
@@ -71,23 +82,6 @@ moderator review and aggregate reporting use the server-side
 
 All admin routes require a signed-in admin user.
 
-### `POST /api/admin/teams/:teamId/upload`
-
-Imports one Wyscout player workbook for a Baltika team.
-
-Request:
-
-- multipart form data;
-- `file`: `.xlsx` workbook;
-- `seasonId`: target Baltika season id.
-
-Invalid or non-form request bodies return `400 BAD_REQUEST`. Oversized workbook
-requests are rejected before workbook bytes are parsed.
-
-### `POST /api/admin/imports/:importId/publish`
-
-Publishes a ready Wyscout team import.
-
 ### Ingestion
 
 - `GET /api/admin/ingestion/status`
@@ -102,61 +96,6 @@ The initial-backfill start body is optional JSON:
   mode?: "full" | "current_league_47";
 }
 ```
-
-## Baltika
-
-All Baltika write routes require a signed-in admin user.
-
-### `POST /api/baltika/fixtures`
-
-Creates a manual fixture.
-
-JSON body:
-
-```ts
-{
-  leagueId: string;
-  seasonId: string;
-  homeTeamId?: string | null;
-  awayTeamId?: string | null;
-  homeTeamName?: string;
-  awayTeamName?: string;
-  roundNumber?: number | string | null;
-  kickoffAt?: string | null;
-}
-```
-
-### `PATCH /api/baltika/fixtures/:fixtureId`
-
-Updates a manual fixture. The body must be a JSON object; invalid JSON or
-non-object JSON returns `400 INVALID_PAYLOAD`.
-
-### `DELETE /api/baltika/fixtures/:fixtureId`
-
-Deletes a fixture and recalculates affected team snapshots.
-
-### `POST /api/baltika/leagues/:leagueId/bulk-upload`
-
-Imports multiple Wyscout player or team-stat workbooks. Files can be supplied in
-`files` or `file` multipart fields. Invalid or non-form request bodies return
-`400 BAD_REQUEST`. Oversized files are rejected individually with structured
-per-file errors.
-
-### `POST /api/baltika/leagues/:leagueId/sync-sports-schedule`
-
-Syncs fixtures from the Sports.ru calendar for the current Baltika season.
-
-### `POST /api/baltika/teams/:teamId/team-stats/upload`
-
-Imports one Wyscout Team Stats workbook for a team.
-
-Request:
-
-- multipart form data;
-- `file`: `.xlsx` workbook;
-- `seasonId`: target Baltika season id.
-
-Oversized workbook requests are rejected before workbook bytes are parsed.
 
 ## Machete
 
@@ -331,37 +270,6 @@ JSON body:
 }
 ```
 
-## Players
-
-### `GET /api/players`
-
-Returns published Baltika player snapshots. Requires a signed-in user.
-
-Supported query params:
-
-```text
-leagueId
-teamId
-positionGroup
-starterFilter=starter|bench
-starterOnly=1
-minMinutes
-sort=<column>:asc|desc
-```
-
-When `minMinutes` is absent or blank, no minutes filter is applied. Explicit
-`minMinutes=0` is treated as a real filter.
-
-### `PATCH /api/players/:snapshotId`
-
-Updates a player snapshot UI flag. Admin only.
-
-```ts
-{
-  isStarter: boolean;
-}
-```
-
 ## User Preferences
 
 ### `GET /api/user/saved-views`
@@ -370,7 +278,7 @@ Updates a player snapshot UI flag. Admin only.
 
 Stores up to eight saved player explorer views per user and source.
 
-Supported `source` values: `machete`, `baltika`.
+Use `source=machete` for player explorer views.
 
 ### `GET /api/user/watchlist`
 ### `POST /api/user/watchlist`
@@ -378,7 +286,7 @@ Supported `source` values: `machete`, `baltika`.
 
 Stores up to 32 watched players per user and source.
 
-Supported `source` values: `machete`, `baltika`.
+Use `source=machete` for the player watchlist.
 
 ## Shot Maps
 

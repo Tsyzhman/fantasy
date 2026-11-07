@@ -443,7 +443,7 @@ export function resolveFoontasySportsRound(
   };
 }
 
-function currentSportsRuPhase(rules: unknown) {
+export function currentSportsRuPhase(rules: unknown) {
   if (!rules || typeof rules !== "object" || Array.isArray(rules)) return null;
   const record = rules as Record<string, unknown>;
   const seasonId = typeof record.sportsRuSeasonId === "string" ? record.sportsRuSeasonId : null;

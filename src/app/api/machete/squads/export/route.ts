@@ -8,7 +8,7 @@ import { parseTableExportFormat, tableExportResponse } from "@/lib/table-export"
 import { loadSharedLeagueSeason } from "@/machete/shared_read_model";
 import { parseFantasyHistorySettings } from "@/machete/squad-history";
 import { loadFantasySquadPlannerData } from "@/machete/squad_planner";
-import type { FantasyPlannerPlayer, FantasySquadSelection } from "@/machete/squad_logic";
+import { playerHorizonPoints, type FantasyPlannerPlayer, type FantasySquadSelection } from "@/machete/squad_logic";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,6 +70,7 @@ function normalizeProvider(value: string | null) {
   return value?.trim().toUpperCase() === FPL_PROVIDER ? FPL_PROVIDER : "SPORTS_RU";
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#projection-precision */
 function squadExportRows(selections: FantasySquadSelection[], players: FantasyPlannerPlayer[], roundCount: number): SquadExportRow[] {
   const playersById = new Map(players.map((player) => [player.playerId, player]));
 
@@ -92,7 +93,7 @@ function squadExportRows(selections: FantasySquadSelection[], players: FantasyPl
         priceSource: player?.priceSource ?? null,
         predictedFp: player?.predictedFp ?? null,
         nextRoundPoints: roundPoints[0] ?? null,
-        horizonPoints: roundPoints.reduce((total, points) => total + points, 0),
+        horizonPoints: player ? playerHorizonPoints(player, roundCount) : 0,
         valueScore: player?.valueScore ?? null,
         fixtures: player?.fixtures.slice(0, roundCount).filter(Boolean).join(" | ") ?? "",
         roundPoints

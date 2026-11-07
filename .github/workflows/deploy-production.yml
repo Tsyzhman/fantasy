@@ -175,6 +175,14 @@ jobs:
           done
           docker run --rm --network none --entrypoint node "$runtime_id" \
             -e 'if(process.getuid()===0)process.exit(1)'
+          docker run --rm --network none --entrypoint sh "$setup_id" -ec '
+            test ! -e /app/.next
+            test -d /app/prisma/migrations
+            test -f /app/prisma/seed.ts
+            test -f /app/scripts/sync-production-fantasy-prices.ts
+            node -e "require(\"@prisma/client\")"
+            npm run prisma:migrate:deploy -- --help >/dev/null
+          '
           images_archive="$RUNNER_TEMP/fantasy-scout-images-${RELEASE}.tar.gz"
           docker save "fantasy-scout-ci:${COMMIT}-runtime" "fantasy-scout-ci:${COMMIT}-setup" | gzip -1 > "$images_archive"
           images_sha="$(sha256sum "$images_archive" | awk '{print $1}')"

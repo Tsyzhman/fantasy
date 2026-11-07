@@ -133,11 +133,10 @@ CPU отчётов: если сборка занимает измеренные 
 
 ## Выпуск и восстановление {#recovery}
 
-1. Перевести согласованные draft контракты в active; подготовить независимые implementation WI по этапам из [обзора](../../../docs/TELEGRAM_DEADLINE_PLAN.md#implementation).
-2. Additive migrations, feature flags `TELEGRAM_LINK_ENABLED`, `TELEGRAM_DEADLINE_ENABLED`, `TELEGRAM_SEND_ENABLED`, `TELEGRAM_PAID_BROADCAST_ENABLED`; по умолчанию off. Bot token и webhook secret вне Git, webhook registration отдельным контролируемым действием.
-3. Канонический immutable release: проверки → origin commit → миграционная копия/проверка → canary без scheduler → web/worker/delivery promotion. Нельзя повторно запустить все ingestion loops в delivery container.
-4. Shadow mode готовит отчёты без отправки; сравнить с ручной проверкой составов и календаря. Затем opt-in pilot 10–100 → 1000 → 10 000; до следующей ступени проверить source quotas, p95 latency, память, дубли и delivery window. Миллион тестировать синтетически без миллионной рассылки реальным людям.
-5. Rollback сначала выключает отправку и stops new claims, затем откатывает образ. Additive schema сохраняется. Lease/inbox/outbox переживают рестарт; неизвестные внешние доставки не повторяются автоматически. Existing UI и профили сохраняются.
+1. Additive migrations, feature flags `TELEGRAM_LINK_ENABLED`, `TELEGRAM_DEADLINE_ENABLED`, `TELEGRAM_SEND_ENABLED`, `TELEGRAM_PAID_BROADCAST_ENABLED`; по умолчанию off. Bot token и webhook secret вне Git, webhook registration отдельным контролируемым действием.
+2. Канонический immutable release: проверки → origin commit → миграционная копия/проверка → canary без scheduler → web/worker/delivery promotion. Нельзя повторно запустить все ingestion loops в delivery container.
+3. Shadow mode готовит отчёты без отправки; сравнить с ручной проверкой составов и календаря. Затем opt-in pilot 10–100 → 1000 → 10 000; до следующей ступени проверить source quotas, p95 latency, память, дубли и delivery window. Миллион тестировать синтетически без миллионной рассылки реальным людям.
+4. Rollback сначала выключает отправку и stops new claims, затем откатывает образ. Additive schema сохраняется. Lease/inbox/outbox переживают рестарт; неизвестные внешние доставки не повторяются автоматически. Existing UI и профили сохраняются.
 
 ## Контракты и точки входа {#contracts}
 
@@ -145,7 +144,7 @@ Scheduler создаёт jobs в БД; worker принимает только ca
 
 ## Трассировка {#traceability}
 
-Будущие `@spec`: `src/server/telegram/`, `src/server/deadline-reports/`, scheduler/CLI, migrations, webhook inbox/outbox и прямые contract tests. Не добавлять `@spec` draft в production-код.
+Точки ответственности `@spec`: `src/server/telegram/`, `src/server/deadline-reports/`, scheduler/CLI, migrations, webhook inbox/outbox и прямые contract tests.
 
 ## Критерии готовности {#acceptance}
 

@@ -21,7 +21,7 @@ import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { compactTeamDisplayName } from "@/lib/teams/display";
 
-export type CompareSource = "machete" | "baltika";
+type CompareSource = "machete";
 
 export type ComparePlayer = {
   id: string;

@@ -1,9 +1,10 @@
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
 import assert from "node:assert/strict";
 import test from "node:test";
+import { renderToStaticMarkup } from "react-dom/server";
 import type { FantasyPlannerPlayer } from "@/machete/squad_logic";
 import {
-  customPlayerPoolColumnValue, playerPoolOptionalColumns, playerPoolSortOptions, playerPoolValueCellTitle,
+  customPlayerPoolCell, customPlayerPoolColumnDisplay, customPlayerPoolColumnValue, playerPoolOptionalColumns, playerPoolSortOptions, playerPoolValueCellTitle,
   sortPlayerPoolRows, supportedPlayerPoolSort, type PlayerPoolOptionalColumn
 } from "./PlayerPool";
 import { fantasyPlayerAtRoundOffset } from "./planner-squad-commands";
@@ -18,6 +19,7 @@ const rows = [player("missing", { foontasyPoints: null }), player("zero", { foon
 test("opponent columns expose the selected round and sort complete horizons ahead of old snapshots", () => {
   const adjusted = player("adjusted", {
     opponentAdjustedRoundPoints: [4.5, 0, 3.2],
+    alternativeOpponentAdjustedRoundPoints: [4.61, 0, 3.18],
     opponentAttackAdjustment: { goalFactor: 1.08, assistFactor: 0.96, ratedMatches: 7 }
   });
   const old = player("old");
@@ -30,6 +32,42 @@ test("opponent columns expose the selected round and sort complete horizons ahea
   assert.equal(customPlayerPoolColumnValue("opponentAdjustedHorizon", fantasyPlayerAtRoundOffset(adjusted, 1), 3), null);
   assert.deepEqual(sortPlayerPoolRows([old, adjusted], { key: "opponentAdjustedHorizon", direction: "desc" }, 3).map((row) => row.playerId), ["adjusted", "old"]);
   assert.ok(!playerPoolOptionalColumns([], 3, "en", "FPL").some((item) => item.key === next.key));
+  const alt = options.find((item) => item.key === "alternativeOpponentAdjustedFp")!;
+  assert.equal(alt.label, "Альт соп.");
+  assert.match(playerPoolValueCellTitle(alt, adjusted, 3, "ru", 4.61), /Матчей с рейтингом соперника — 7/);
+  assert.equal(customPlayerPoolColumnValue(alt.key, fantasyPlayerAtRoundOffset(adjusted, 1), 3), 0);
+  assert.equal(customPlayerPoolColumnValue("alternativeOpponentAdjustedHorizon", adjusted, 3), 7.79);
+  assert.equal(customPlayerPoolColumnValue("alternativeOpponentAdjustedHorizon", fantasyPlayerAtRoundOffset(adjusted, 1), 3), null);
+  assert.deepEqual(sortPlayerPoolRows([old, adjusted], { key: alt.key, direction: "desc" }, 3).map((row) => row.playerId), ["adjusted", "old"]);
+  assert.ok(!playerPoolOptionalColumns([], 3, "en", "FPL").some((item) => item.key === alt.key));
+});
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#projection-precision */
+test("forecast columns display and sort numeric hundredths for a round and a horizon", () => {
+  const barco = player("barco", {
+    roundPoints: [6.26, 5.61],
+    alternativeRoundPoints: [5.24, 4.62],
+    opponentAdjustedRoundPoints: [6.25, 5.62]
+  });
+  for (const [key, expected] of [
+    ["nextFp", 6.26], ["opponentAdjustedFp", 6.25], ["horizonFp", 11.87],
+    ["opponentAdjustedHorizon", 11.87], ["alternativeHorizon", 9.86]
+  ] as const) {
+    const value = customPlayerPoolColumnValue(key, barco, 2);
+    assert.equal(value, expected);
+    assert.equal(customPlayerPoolColumnDisplay(key, value, "ru"), expected.toFixed(2));
+  }
+  assert.equal(customPlayerPoolColumnDisplay("nextFp", 6.3, "ru"), "6.30");
+  assert.equal(customPlayerPoolColumnDisplay("alternativeOpponentAdjustedFp", 0, "ru"), "0.00");
+  assert.equal(customPlayerPoolColumnDisplay("alternativeOpponentAdjustedFp", null, "ru"), "—");
+  assert.equal(customPlayerPoolColumnDisplay("nextFp", 6.3, "ru", "FPL"), "6.3");
+  const altOpp = playerPoolOptionalColumns([], 2, "ru").find(({ key }) => key === "alternativeOpponentAdjustedFp")!;
+  const withComparison = { ...barco, alternativeOpponentAdjustedRoundPoints: [6.3, 0] };
+  const cell = renderToStaticMarkup(customPlayerPoolCell(altOpp, withComparison, 2, "ru", false, undefined, false, "SPORTS_RU"));
+  assert.match(cell, /data-sort-value="6\.3"[^>]*>6\.30<\/td>/);
+  const second = player("second", { opponentAdjustedRoundPoints: [6.24] });
+  const sort = { key: "opponentAdjustedFp", direction: "desc" } as const;
+  assert.deepEqual(sortPlayerPoolRows([second, barco], sort, 1).map(({ playerId }) => playerId), ["barco", "second"]);
 });
 
 for (const language of ["en", "ru"] as const) {

@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-103](work/WI-103-current-round-ffo.md) | Keep Squad FFO current | FEAT-001 | @tsyzhman | 2026-11-06 | — |
 | [WI-082](work/WI-082-scheduled-browser-smoke.md) | Restore scheduled GitHub browser checks and release the aligned revision | PROP-002, INFRA-006 | @tsyzhman | 2026-10-26 | — |
 | [WI-078](work/WI-078-ucl-round-three-transfers.md) | Six transfers only in Champions League round three | FEAT-001 | @tsyzhman | 2026-10-20 | — |
 | [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
@@ -29,7 +30,15 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-096](work/archive/2026/WI-096-release-league-analytics.md) | Release league strength and passing networks | @tsyzhman | 2026-11-07 |
+| [WI-102](work/archive/2026/WI-102-alt-opponent-forecast.md) | Compare Alt with a historical opponent adjustment | @tsyzhman | 2026-11-06 |
+| [WI-101](work/archive/2026/WI-101-squad-forecast-hundredths.md) | Show Sports.ru Squad forecasts to hundredths | @tsyzhman | 2026-11-06 |
+| [WI-100](work/archive/2026/WI-100-production-revamp.md) | Promote the repository revamp to production | @tsyzhman | 2026-11-06 |
+| [WI-099](work/archive/2026/WI-099-repository-revamp.md) | Reduce repository and release clutter | @tsyzhman | 2026-11-06 |
+| [WI-098](work/archive/2026/WI-098-retire-baltika.md) | Retire the Baltika workspace | @tsyzhman | 2026-11-06 |
 | [WI-097](work/archive/2026/WI-097-sorare-last-played-xi.md) | Restore reviewed SorareInside XIs and use the last played lineup | @tsyzhman | 2026-11-06 |
+| [WI-095](work/archive/2026/WI-095-stable-lineup-passing-networks.md) | Passing networks for the starting lineups | @tsyzhman | 2026-11-05 |
+| [WI-094](work/archive/2026/WI-094-massey-strength.md) | Massey team strength by league | @tsyzhman | 2026-11-05 |
 | [WI-093](work/archive/2026/WI-093-opponent-adjusted-fo.md) | Compare FO with a historical opponent adjustment | @tsyzhman | 2026-11-05 |
 | [WI-092](work/archive/2026/WI-092-promoted-player-league-translation.md) | Translate lower-division player history for promoted clubs | @tsyzhman | 2026-11-05 |
 | [WI-091](work/archive/2026/WI-091-starter-minute-projections.md) | Calibrate football projections for players marked in the starting XI | @tsyzhman | 2026-11-05 |

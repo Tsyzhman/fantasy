@@ -57,7 +57,7 @@ import type {
   FantasySquadWorkerResponse,
   TransferSuggestionWorkerInput
 } from "@/components/machete/fantasy-squad-worker-contract";
-import { formatAlternativeScore, formatCompactScore, formatDate, formatDateTime, formatNumber, formatScore } from "@/lib/format";
+import { formatCompactScore, formatDate, formatDateTime, formatForecastScore, formatNumber, formatScore } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { fantasyPlayerMatchesNameQuery } from "@/machete/player-identity";
@@ -102,6 +102,7 @@ import {
   type TransferSuggestionForecastSource
 } from "@/machete/squad_logic";
 import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
+import { applySquadFoontasyUpdate, type SquadFoontasyUpdate } from "@/machete/squad-player-dto";
 import type { FantasyBookmakerFavorite, SavedFantasySquad } from "@/machete/squad_planner";
 import { plannerReadinessBlocksForecastActions, type PlannerReadiness } from "@/machete/planner_readiness";
 import type { SportsRuSquadSnapshotStatus } from "@/machete/sports_ru_squad_snapshots";
@@ -981,6 +982,8 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
     if (!statusHref) return;
 
     let cancelled = false;
+    let statusPending = false;
+    let foontasyRevision: string | null = null;
     const controller = new AbortController();
     const cancelBackgroundPlayerPoolLoad = () => {
       cancelled = true;
@@ -1048,32 +1051,53 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
       }
     }
 
+    /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#ffo-current-round */
     async function checkForSnapshotUpdate() {
+      const activeSnapshotId = activePlayerPoolSnapshotIdRef.current;
       if (
         cancelled ||
+        statusPending ||
         document.visibilityState !== "visible" ||
         !playerPoolInitialLoadCompleteRef.current ||
         playerPoolBackgroundRefreshRunningRef.current ||
-        !activePlayerPoolSnapshotIdRef.current
+        !activeSnapshotId
       ) return;
+      statusPending = true;
       try {
-        const response = await fetch(statusHref!, {
+        const statusUrl = new URL(statusHref!, window.location.origin);
+        statusUrl.searchParams.set("snapshotId", activeSnapshotId);
+        if (foontasyRevision !== null) statusUrl.searchParams.set("foontasyRevision", foontasyRevision);
+        const response = await fetch(statusUrl, {
           cache: "no-store",
           headers: { Accept: "application/json" },
           signal: controller.signal
         });
         if (!response.ok) return;
-        const payload = await response.json().catch(() => ({})) as { snapshot?: { id?: unknown } | null };
+        const payload = await response.json().catch(() => ({})) as {
+          snapshot?: { id?: unknown } | null;
+          foontasy?: SquadFoontasyUpdate;
+        };
         const snapshotId = typeof payload.snapshot?.id === "string" ? payload.snapshot.id : null;
-        if (
-          !snapshotId ||
-          snapshotId === activePlayerPoolSnapshotIdRef.current ||
-          playerPoolBackgroundRefreshRunningRef.current
-        ) return;
-        await refreshSnapshot(snapshotId);
+        if (cancelled || !snapshotId || activePlayerPoolSnapshotIdRef.current !== activeSnapshotId) return;
+        if (snapshotId !== activeSnapshotId) {
+          await refreshSnapshot(snapshotId);
+          foontasyRevision = null;
+        } else if (payload.foontasy && payload.foontasy.revision !== foontasyRevision) {
+          const update = payload.foontasy;
+          foontasyRevision = update.revision;
+          startPlayerPoolTransition(() => {
+            setSourcePlayers((current) => {
+              const updated = applySquadFoontasyUpdate(current, update);
+              sourcePlayersRef.current = updated;
+              return updated;
+            });
+          });
+        }
       } catch (error) {
         if (cancelled || controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) return;
         console.error("Failed to refresh the fantasy player pool snapshot in background.", error);
+      } finally {
+        statusPending = false;
       }
     }
 
@@ -1965,6 +1989,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
   const previewHorizonAlternative = provider === "FPL"
     ? Array.from({ length: Math.max(0, Math.floor(horizon)) }, (_, roundIndex) => fantasyAlternativeRoundPointsWithActiveChip(summary.starterPlayers, summary.benchPlayers, roundIndex, captainId, activeFplChip)).reduce((total, value) => total + value, 0)
     : horizonAlternative;
+  const formatPoints = provider === "SPORTS_RU" ? formatForecastScore : formatScore;
 
   return (
     <div
@@ -2300,18 +2325,18 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
             <div ref={budgetForecastRef} className="mb-3 grid grid-cols-2 overflow-hidden rounded border border-slate-200 bg-slate-50 text-[13px] [&>dl:nth-child(odd)]:border-r [&>dl:nth-child(n+5)]:border-b-0 [&>dl:last-child]:col-span-2 [&>dl:last-child]:border-r-0 sm:grid-cols-5 sm:divide-x sm:divide-slate-200 sm:[&>dl]:border-b-0 sm:[&>dl]:border-r-0 sm:[&>dl:last-child]:col-span-1">
               <Metric
                 label={<I18nText en="Next round" ru="След. тур" />}
-                value={formatScore(previewNextRound)}
+                value={formatPoints(previewNextRound)}
                 secondaryLabel={<I18nText en="Alt" ru="Альт" />}
-                secondaryValue={formatAlternativeScore(previewNextRoundAlternative)}
+                secondaryValue={formatPoints(previewNextRoundAlternative)}
                 tertiaryLabel="FFO"
-                tertiaryValue={formatScore(nextRoundFoontasyTotal)}
+                tertiaryValue={formatPoints(nextRoundFoontasyTotal)}
                 tone="good"
               />
               <Metric
                 label={<I18nText en={`Horizon ${horizon}R`} ru={`Горизонт ${horizon}т`} />}
-                value={formatScore(previewHorizon)}
+                value={formatPoints(previewHorizon)}
                 secondaryLabel={<I18nText en="Alt" ru="Альт" />}
-                secondaryValue={formatAlternativeScore(previewHorizonAlternative)}
+                secondaryValue={formatPoints(previewHorizonAlternative)}
                 tone="accent"
               />
               <Metric label={<I18nText en="Budget" ru="Бюджет" />} value={`${formatNumber(summary.spent, 1)} / ${formatNumber(rules.budgetLimit, 1)}`} tone={summary.spent > rules.budgetLimit || summary.bank < 0 ? "bad" : "default"} />
@@ -2699,7 +2724,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
                   </td>
                   {rounds.map((round, index) => (
                     <td key={round.id} className="px-4 py-3 text-right font-semibold text-emerald-700 num-tabular">
-                      {formatScore(provider === "FPL"
+                      {formatPoints(provider === "FPL"
                         ? fantasyRoundPointsWithActiveChip(summary.starterPlayers, summary.benchPlayers, index, captainId, activeFplChip)
                         : startingXiRoundPoints(summary.starterPlayers, index, captainId))}
                     </td>
@@ -2711,7 +2736,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
                   </td>
                   {rounds.map((round, index) => (
                     <td key={round.id} className="px-4 py-3 text-right font-semibold text-amber-700 num-tabular">
-                      {formatAlternativeScore(provider === "FPL"
+                      {formatPoints(provider === "FPL"
                         ? fantasyAlternativeRoundPointsWithActiveChip(summary.starterPlayers, summary.benchPlayers, index, captainId, activeFplChip)
                         : startingXiAlternativeRoundPoints(summary.starterPlayers, index, captainId))}
                     </td>

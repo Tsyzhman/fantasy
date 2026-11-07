@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { compactTeamDisplayName } from "@/lib/teams/display";
 
-type WatchlistSource = "machete" | "baltika";
+type WatchlistSource = "machete";
 
 type WatchlistPlayer = {
   id: string;

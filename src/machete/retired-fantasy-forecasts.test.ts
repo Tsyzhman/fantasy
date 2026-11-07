@@ -85,3 +85,13 @@ test("planner and shared history no longer load adaptation models, features, sho
   }
   assert.match(planner, /withoutRetiredFantasyForecasts\(player\)/, "SSR saved-squad rows also normalize old snapshots");
 });
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#retired-projections */
+test("legacy tooltip requests keep the authenticated, non-cacheable gone response", () => {
+  const route = readFileSync(new URL("../app/api/machete/squads/formula-adaptations/route.ts", import.meta.url), "utf8");
+
+  assert.match(route, /await requireApiUser\(\)/);
+  assert.match(route, /jsonError\(\s*"FORMULA_RETIRED",\s*"[^"]+",\s*410\s*\)/);
+  assert.match(route, /"Cache-Control", "private, no-store"/);
+  assert.doesNotMatch(route, /formula_adaptations|squad_planner|prisma/);
+});

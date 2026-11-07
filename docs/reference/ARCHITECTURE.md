@@ -5,19 +5,21 @@ This document describes the current application. Older MVP planning files in
 `docs/archive/planning/IMPROVEMENT_BACKLOG.md` are historical references, not the active
 architecture.
 
-## Product Modes
+## Product modules
 
-Fantasy Scout now has three active product modes:
+| Area | Entry | Implementation |
+|---|---|---|
+| Machete football | `/machete/leagues`, `/machete/players`, `/machete/squad` | `src/app/machete`, `src/machete` |
+| MiXerr | `/mixerr` | `src/app/mixerr`, `src/mixer` |
+| KHL beta | `/machete/khl/squad` | `src/khl`, `src/server/khl` |
+| Fantasy Arena | `/betting` | `src/app/betting`, `src/betting` |
+| Franchises | `/franchises` | `src/franchises`, `src/server/franchises`, `scripts/franchise-analytics` |
+| Telegram and deadline reports | Profile settings | `src/server/telegram`, `src/server/deadline-reports` |
+| Sports.ru squad transfer | Browser extension | `extensions/sports-squad-transfer`, `src/app/api/browser-extension` |
 
-- Machete: FotMob-backed competition data, fixtures, player stats, Sports.ru
-  fantasy prices, projections, and squad planning.
-- Baltika: admin-managed Wyscout-style Excel imports, team/player scouting
-  tables, manual fixtures, team-stat uploads, and fantasy model settings.
-- MiXerr: shot maps, xG overlays, player/team shot views, and comparison
-  workflows built on normalized FotMob match data.
-
-The old Wyscout-first MVP still exists as the Baltika import path. It is not the
-whole product anymore.
+Machete can read historical Wyscout metrics from published records and use the
+stored Wyscout scoring model as a fallback. The technical map names the
+remaining modules and their contract owners. [Technical map](../../specs/common/structure.md)
 
 ## Runtime Stack
 
@@ -35,14 +37,11 @@ whole product anymore.
 src/app/machete
   league setup, league detail, player explorer, models, squad planner, sync jobs
 
-src/app/baltika
-  Wyscout-style imported leagues, teams, players, schedule, models
-
 src/app/mixerr
   shot-map explorer and comparison UI
 
 src/app/admin
-  admin shell, legacy league/team management, user admin, ingestion controls
+  admin shell, user management, ingestion controls, global Machete model settings
 
 src/app/api
   route handlers for imports, ingestion jobs, squads, shot maps, cron, auth
@@ -53,14 +52,11 @@ src/core_data
 src/machete
   Machete read models, scoring, Sports.ru price mapping, squad planning
 
-src/server/baltika
-  Baltika workbook import and fixture/team-stat logic
-
 src/lib
   auth, Prisma client, request parsing, logging, scoring/import helpers
 
 prisma
-  datamodel, migrations, seed and recalculation scripts
+  datamodel, migrations, and seed script
 ```
 
 ## Data Flows
@@ -122,17 +118,6 @@ revision privately. Only a complete download is merged into player data; user
 draft state stays in the session. Nondefault history and personal alternative
 formulas retain the dynamic calculation fallback.
 
-### Baltika Excel imports
-
-```text
-Admin uploads player or team-stat workbook
--> route checks request and file size
--> workbook parser validates expected sheets and columns
--> SourceFile and import rows are recorded
--> PlayerSnapshot or Baltika team stats are written
--> scoring models calculate published scouting views
-```
-
 ### MiXerr shot maps
 
 ```text
@@ -156,7 +141,7 @@ around Prisma migrate deploy. New code should not add SQL there.
 
 Roles are `ADMIN` and `USER`.
 
-- Admin users can upload workbooks, trigger ingestion, edit models, manage users,
+- Admin users can import fantasy prices, trigger ingestion, edit models, manage users,
   and run sync jobs.
 - Signed-in users can view published data, save views, maintain watchlists, and
   save Machete squads.
@@ -175,7 +160,6 @@ Use these files for current behavior:
 - `docs/reference/API_ROUTES.md`
 - `docs/reference/DATA_MODEL.md`
 - `docs/integrations/MACHETE_FOTMOB_IMPORT.md`
-- `docs/integrations/WYSCOUT_EXCEL_IMPORT.md`
 
 Use planning/backlog documents only for historical context unless they have been
 freshly audited against code.

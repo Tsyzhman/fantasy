@@ -36,6 +36,7 @@ import {
 } from "@/machete/squad_logic";
 import { fantasyHistorySettingsKey, parseFantasyHistorySettings } from "@/machete/squad-history";
 import { toFantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
+import { squadFoontasyRound, withSquadFoontasyForecasts } from "@/machete/squad-foontasy";
 import { parseFantasyFixtureCalendar, type FantasyFixtureCalendar } from "@/machete/squad-fixture-calendar";
 import {
   loadFantasyPlayerPoolSnapshotPlayers,
@@ -52,6 +53,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#ffo-current-round */
 export const GET = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
@@ -141,7 +143,7 @@ export const GET = withApiHandler(async (request: Request) => {
   }
   const contest = await prisma.fantasyContest.findUnique({
     where: { provider_leagueId_season: { provider, leagueId, season } },
-    select: { id: true }
+    select: { id: true, rules: true }
   });
   if (!contest) return jsonError("CONTEST_NOT_SYNCED", "The selected fantasy provider contest is not synchronized yet.", 503);
   const placeholderPlayers = fantasyProviderPlaceholdersFromFilters(ownedSquadFilters, provider).map((placeholder) =>
@@ -207,16 +209,20 @@ export const GET = withApiHandler(async (request: Request) => {
         return jsonError("SNAPSHOT_EXPIRED", "The requested player-pool snapshot is no longer available.", 409);
       }
       if (snapshotPage?.snapshot) {
+        const metadata = parseFantasyPlayerPoolSnapshotMetadata(snapshotPage.snapshot.metadata);
         if (progressiveCursor === 0 && params.get("fixtureCalendar") === "1") {
-          fixtureCalendar = parseFantasyFixtureCalendar(
-            parseFantasyPlayerPoolSnapshotMetadata(snapshotPage.snapshot.metadata)?.fixtureCalendar
-          );
+          fixtureCalendar = parseFantasyFixtureCalendar(metadata?.fixtureCalendar);
         }
+        const currentPlayers = await withSquadFoontasyForecasts(
+          prisma,
+          snapshotPage.players,
+          squadFoontasyRound(plannerLeague, contest.rules, metadata?.rounds[0]?.id)
+        );
         const requestedIds = new Set(idPage.players);
         responsePayload = {
           players: orderProgressiveFantasyPlayerPool(
             mergeFantasyPlannerPlayerPools(
-              snapshotPage.players,
+              currentPlayers,
               placeholderPlayers.filter((player) => requestedIds.has(player.playerId))
             ),
             idPage.players

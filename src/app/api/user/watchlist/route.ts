@@ -10,7 +10,7 @@ import { watchlistMetadataWithTeamShortName, watchlistTeamShortName } from "@/li
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type WatchlistSource = "machete" | "baltika";
+type WatchlistSource = "machete";
 
 type WatchlistPlayerInput = {
   id: string;
@@ -21,7 +21,6 @@ type WatchlistPlayerInput = {
 };
 
 const maxWatchlistPlayers = 32;
-const validSources = new Set<WatchlistSource>(["machete", "baltika"]);
 
 export const GET = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
@@ -29,7 +28,7 @@ export const GET = withApiHandler(async (request: Request) => {
   const userId = auth.user.id;
 
   const source = sourceValue(new URL(request.url).searchParams.get("source"));
-  if (!source) return badRequest("source must be machete or baltika.");
+  if (!source) return badRequest("source must be machete.");
 
   return NextResponse.json({ players: await loadWatchlist(userId, source) });
 });
@@ -42,7 +41,7 @@ export const POST = withApiHandler(async (request: Request) => {
   const body = await readJsonObject(request);
   const source = sourceValue(body.source);
   const player = playerInput(body.player);
-  if (!source) return badRequest("source must be machete or baltika.");
+  if (!source) return badRequest("source must be machete.");
   if (!player) return badRequest("player.id and player.name are required.");
 
   const metadata = inputJson(body.metadata);
@@ -89,7 +88,7 @@ export const DELETE = withApiHandler(async (request: Request) => {
   const params = new URL(request.url).searchParams;
   const source = sourceValue(params.get("source"));
   const playerKey = trimmedString(params.get("playerKey"), 200);
-  if (!source) return badRequest("source must be machete or baltika.");
+  if (!source) return badRequest("source must be machete.");
   if (!playerKey) return badRequest("playerKey is required.");
 
   await prisma.userWatchlistPlayer.deleteMany({
@@ -136,8 +135,9 @@ async function trimWatchlist(userId: string, source: WatchlistSource) {
   });
 }
 
+/** @spec spec://common/PROP-002-editorial-sport-design#workspace-navigation */
 function sourceValue(value: unknown): WatchlistSource | null {
-  return typeof value === "string" && validSources.has(value as WatchlistSource) ? (value as WatchlistSource) : null;
+  return value === "machete" ? value : null;
 }
 
 function playerInput(value: unknown): WatchlistPlayerInput | null {

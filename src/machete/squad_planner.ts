@@ -27,6 +27,7 @@ import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display"
 import type { UserScoringFormulaPreference } from "@/lib/scoring/user-preferences";
 import { providerTeamShortName } from "@/lib/teams/display";
 import { playerPhotoPublicUrl } from "./player-photo-cache";
+import { loadSquadFoontasyForecasts, squadFoontasyRound, withSquadFoontasyForecasts } from "./squad-foontasy";
 import {
   expectedProjectionFormulaConfig,
   friendAltProjectionFormulaConfig,
@@ -93,6 +94,7 @@ import {
   normalizeFantasyHorizon,
   normalizeFantasyPosition,
   roundFantasyValue,
+  roundForecastPoints,
   summarizeFantasySquad,
   createFantasySquadRoundPlans,
   validateFantasySquadForSave,
@@ -294,6 +296,7 @@ type FantasyPlayerScoringOverlay = Pick<
   | "alternativeProjectionFormula"
   | "alternativePredictedFp"
   | "alternativeRoundPoints"
+  | "alternativeOpponentAdjustedRoundPoints"
 >;
 const fantasyPlayerPoolCacheTtlMs = 5 * 60_000;
 const fantasyPlayerFeaturePoolCache = new ExpiringPromiseCache<string, FantasyPlannerPlayer[]>({
@@ -725,6 +728,7 @@ function fantasyPlayerCommonFeatures(player: FantasyPlannerPlayer): FantasyPlann
     alternativeProjectionFormula: _alternativeProjectionFormula,
     alternativePredictedFp: _alternativePredictedFp,
     alternativeRoundPoints: _alternativeRoundPoints,
+    alternativeOpponentAdjustedRoundPoints: _alternativeOpponentAdjustedRoundPoints,
     ...features
   } = player;
   return features;
@@ -738,7 +742,8 @@ function fantasyPlayerScoringOverlay(player: FantasyPlannerPlayer): FantasyPlaye
     alternativeFplForecastBreakdown: player.alternativeFplForecastBreakdown,
     alternativeProjectionFormula: player.alternativeProjectionFormula,
     alternativePredictedFp: player.alternativePredictedFp,
-    alternativeRoundPoints: player.alternativeRoundPoints
+    alternativeRoundPoints: player.alternativeRoundPoints,
+    alternativeOpponentAdjustedRoundPoints: player.alternativeOpponentAdjustedRoundPoints
   };
 }
 
@@ -801,7 +806,10 @@ function loadCachedFantasySquadPlayerPoolWithMetadata(
   ]).then(([features, overlays]) => mergeFantasyPlayerScoringOverlay(features, overlays));
 }
 
-/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+/**
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#ffo-current-round
+ */
 export async function loadFantasySquadPlannerData(
   prisma: PrismaClient,
   userId: string,
@@ -819,6 +827,7 @@ export async function loadFantasySquadPlannerData(
 ): Promise<FantasySquadPlannerData> {
   const provider = options?.provider ?? "SPORTS_RU";
   const isFpl = provider === FPL_PROVIDER;
+  const roundComponentPoints = isFpl ? roundFantasyValue : roundForecastPoints;
   const preferredProjectionEngine = configuredFantasyProjectionEngine();
   if (isFpl && (league.leagueId !== 47n || league.season !== FPL_SEASON)) {
     throw new Error(`FPL is available only for CoreLeague 47 season ${FPL_SEASON}.`);
@@ -850,6 +859,9 @@ export async function loadFantasySquadPlannerData(
   const { priceRows, priceMaps, rosterOverrides } = isFpl
     ? await loadFplRosterPriceContext(prisma, league, scopedContest?.id ?? null, options?.playerIds)
     : await loadSportsRuAuthoritativeRosterContext(prisma, league, options?.playerIds, scopedContest?.id ?? null);
+  const schedule = loadUpcomingRoundFixtures(
+    prisma, league, provider, scopedContest?.id ?? null, scopedContest?.scheduleRevision ?? null
+  );
   const [savedSquads, fotmobRosterRows, playerRows, roundsAndFixtures, foontasyRows, modelForecastRows, baltikaMetricsByName, fplOfficialScoreRows] = await Promise.all([
     options?.skipSavedSquads
       ? Promise.resolve([])
@@ -892,21 +904,16 @@ export async function loadFantasySquadPlannerData(
       isFpl && !starterStatusKnown,
       !isFpl && preferredProjectionEngine === "COMPONENT_XFP_V1"
     ),
-    loadUpcomingRoundFixtures(
-      prisma,
-      league,
-      provider,
-      scopedContest?.id ?? null,
-      scopedContest?.scheduleRevision ?? null
-    ),
+    schedule,
     isFpl
       ? Promise.resolve([])
-      : prisma.foontasyForecast.findMany({
-          where: { leagueId: league.leagueId, season: league.season, sourceVariant: "sports", playerId: { not: null } },
-          orderBy: [{ fetchedAt: "desc" }, { updatedAt: "desc" }],
-          distinct: ["playerId"],
-          select: { playerId: true, points: true, selectedByPercent: true, fetchedAt: true }
-        }),
+      : schedule.then(({ rounds }) =>
+          loadSquadFoontasyForecasts(
+            prisma,
+            squadFoontasyRound(league, scopedContest?.rules, rounds[0]?.id),
+            options?.playerIds
+          )
+        ),
     isFpl
       ? Promise.resolve([])
       : prisma.fantasyModelForecast?.findMany({
@@ -947,7 +954,7 @@ export async function loadFantasySquadPlannerData(
   const savedSquad = (squadId ? savedSquads.find((squad) => squad.id === squadId) : null) ?? savedSquads[0] ?? null;
   const rules = fantasyRulesForLeague(league, scopedContest ?? null, provider, roundsAndFixtures.rounds);
   const prices = priceLookup(priceRows, priceMaps);
-  const foontasyByPlayerId = new Map(foontasyRows.flatMap((row) => row.playerId ? [[String(row.playerId), row] as const] : []));
+  const foontasyByPlayerId = new Map(foontasyRows.map((row) => [String(row.playerId), row]));
   const modelForecastByPlayerHorizon = new Map(modelForecastRows.map((row) => [`${row.playerId}:${row.horizon}`, row] as const));
   const officialFplPointsByPlayerId = isFpl ? buildFplRecentOfficialPoints(fplOfficialScoreRows) : new Map<string, number[]>();
   const fplPositionsByPlayerId = new Map<string, Exclude<FantasyPositionGroup, "UNK">>(isFpl
@@ -1023,11 +1030,12 @@ export async function loadFantasySquadPlannerData(
       legacyFixturePointsById.set(fixture.id, result);
       return result;
     };
-    const legacyPredictedFp = !isFpl && projected
+    const legacyNextPoints = !isFpl && projected
       ? roundsAndFixtures.rounds.length > 0
-        ? roundFantasyValue(nextRoundFixtures.reduce((total, fixture) => total + (legacyFixturePoints(fixture) ?? 0), 0))
+        ? nextRoundFixtures.reduce((total, fixture) => total + (legacyFixturePoints(fixture) ?? 0), 0)
         : calibratedPlayerFixturePoints(projected, nextFixture, playerRows.calibration?.model ?? null, playerRows.scoringModel)
       : null;
+    const legacyPredictedFp = legacyNextPoints === null ? null : roundForecastPoints(legacyNextPoints);
     const foontasy = foontasyByPlayerId.get(String(row.playerId)) ?? null;
     const modelT3 = modelForecastByPlayerHorizon.get(`${row.playerId}:3`) ?? null;
     const modelT5 = modelForecastByPlayerHorizon.get(`${row.playerId}:5`) ?? null;
@@ -1116,7 +1124,7 @@ export async function loadFantasySquadPlannerData(
       ? officialFplPointsByPlayerId.get(String(row.playerId)) ?? []
       : projected?.recentFp ?? [];
     const legacyRoundPoints = teamFixturesByRound.map((fixtures) => {
-      return roundFantasyValue(
+      return roundForecastPoints(
         fixtures.reduce((total, fixture) => total + (legacyFixturePoints(fixture) ?? 0), 0)
       );
     });
@@ -1139,7 +1147,7 @@ export async function loadFantasySquadPlannerData(
       });
       return values.some((value) => value === null)
         ? null
-        : roundFantasyValue(values.reduce<number>((total, value) => total + (value ?? 0), 0));
+        : roundComponentPoints(values.reduce<number>((total, value) => total + (value ?? 0), 0));
     });
     const roundPoints = roundsAndFixtures.rounds.map((_, index) => isFpl
       ? componentRoundPoints[index] ?? 0
@@ -1166,12 +1174,17 @@ export async function loadFantasySquadPlannerData(
       });
       return values.some((value) => value === null)
         ? null
-        : roundFantasyValue(values.reduce<number>((total, value) => total + (value ?? 0), 0));
+        : roundComponentPoints(values.reduce<number>((total, value) => total + (value ?? 0), 0));
     });
     const opponentAttackAdjustment = opponentAdjustments.get(playerTeamKey(playerId, teamId));
     const opponentAdjustedRoundPoints = opponentAttackAdjustment
       ? teamFixturesByRound.map((fixtures) => opponentAdjustedRoundForecast(
           fixtures, playerId, componentProjections, playerRows.expectedProjectionConfig, opponentAttackAdjustment
+        ))
+      : undefined;
+    const alternativeOpponentAdjustedRoundPoints = opponentAttackAdjustment
+      ? teamFixturesByRound.map((fixtures) => opponentAdjustedRoundForecast(
+          fixtures, playerId, friendAlternativeProjections, playerRows.alternativeProjectionConfig, opponentAttackAdjustment
         ))
       : undefined;
     const roundFixtureCounts = teamFixturesByRound.map((teamFixtures) => teamFixtures.length);
@@ -1274,6 +1287,7 @@ export async function loadFantasySquadPlannerData(
         alternativePredictedFp,
         alternativeRoundPoints,
         opponentAdjustedRoundPoints,
+        alternativeOpponentAdjustedRoundPoints,
         opponentAttackAdjustment,
         foontasyPoints: foontasy?.points ?? null,
         ownershipPercent: resolveFantasyPlannerOwnership(priceRow, foontasy),
@@ -1580,12 +1594,13 @@ type FantasyPlayerPoolSnapshotShellMetadata = Pick<
   "readiness" | "rules" | "rounds" | "bookmakerFavorites" | "fixtureCalendar" | "priceStatus" | "historySeasonOptions" | "dataFreshness"
 > & { version: 1 };
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#ffo-current-round */
 async function loadSportsRuFantasySquadSnapshotShellData(
   prisma: PrismaClient,
   userId: string,
   league: SharedLeagueSeasonOption,
   squadId: string | null | undefined,
-  contest: { id: string; maxPlayersPerTeam: number },
+  contest: { id: string; maxPlayersPerTeam: number; rules: unknown },
   historySettings: FantasyHistorySettings | undefined
 ): Promise<FantasySquadPlannerData | null> {
   const requestedHistory = historySettings ?? defaultFantasyHistorySettings;
@@ -1661,7 +1676,12 @@ async function loadSportsRuFantasySquadSnapshotShellData(
   const placeholderPlayers = fantasyProviderPlaceholdersFromFilters(savedSquad?.filters, "SPORTS_RU").map((placeholder) =>
     fantasyProviderPlaceholderPlannerPlayer(placeholder, league.displayName, metadata.rounds.length || 5)
   );
-  const players = mergeFantasyPlannerPlayerPools(snapshotPlayers, placeholderPlayers);
+  const currentSnapshotPlayers = await withSquadFoontasyForecasts(
+    prisma,
+    snapshotPlayers,
+    squadFoontasyRound(league, contest.rules, metadata.rounds[0]?.id)
+  );
+  const players = mergeFantasyPlannerPlayerPools(currentSnapshotPlayers, placeholderPlayers);
   const playersById = new Map(players.map((player) => [player.playerId, player]));
   const savedSelections = savedSquad?.players.flatMap((player): FantasySquadSelection[] => {
     const playerId = String(player.playerId);
@@ -3172,16 +3192,17 @@ export function aggregatePlayerFantasyPointComponents(
   ])) as PlayerFantasyPointComponents;
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#projection-precision */
 export function projectionFormulaFantasyPoints(
   projection: PlayerFixtureProjection,
   fixture: PlannerFixture | null,
   config: ProjectionFormulaConfig,
   extraMetrics?: Record<string, unknown>
 ) {
-  return roundFantasyValue(calculateCustomFormulaScore(
+  return calculateCustomFormulaScore(
     config.scoreByPosition[projection.position],
     componentProjectionFormulaMetrics(projection, fixture, extraMetrics)
-  ));
+  );
 }
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast */
@@ -3207,7 +3228,7 @@ export function opponentAdjustedRoundForecast(
     );
     points += projectionFormulaFantasyPoints(adjusted, fixture, config, metrics);
   }
-  return roundFantasyValue(points);
+  return roundForecastPoints(points);
 }
 
 function projectionFormulaWithBreakdown(
@@ -3223,7 +3244,7 @@ function projectionFormulaWithBreakdown(
   );
   return {
     formula,
-    total: roundFantasyValue(breakdown.value),
+    total: breakdown.value,
     terms: breakdown.terms
   };
 }
@@ -3252,7 +3273,7 @@ export function projectionRoundFormulaWithBreakdown(
   const hasMultipleFixtures = fixtureBreakdowns.length > 1;
   return {
     formula: fixtureBreakdowns[0].breakdown.formula,
-    total: roundFantasyValue(fixtureBreakdowns.reduce((total, item) => total + item.breakdown.total, 0)),
+    total: roundForecastPoints(fixtureBreakdowns.reduce((total, item) => total + item.breakdown.total, 0)),
     terms: fixtureBreakdowns.flatMap(({ fixture, breakdown }) => breakdown.terms.map((term) => ({
       ...term,
       fixtureLabel: hasMultipleFixtures ? `${fixture.side} ${fixture.opponentName}` : undefined

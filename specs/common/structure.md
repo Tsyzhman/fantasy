@@ -14,7 +14,7 @@ Sports.ru club limits and cached Squad rule reads: `src/machete/sports_ru_team_l
 
 Player identity letter folding: `src/machete/player-identity.ts`; Sports.ru mapping, FPL full-name/position matching and FPL price-backed virtual roster reads share `spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity`. Shared FotMob memberships and starter flags are not written by FPL availability reads.
 
-Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://modules/telegram/FEAT-007-deadline-assistant#root`, `spec://modules/telegram/INFRA-005-deadline-pipeline#root`. Ownership: `src/providers/sports-ru-trends/` (feed/article HTTP и parser), `src/server/sports-trends/` (collector, ownership snapshots, scheduler), `src/machete/sports-trends.ts` (read view), `src/server/telegram/` (link service, webhook, bot API, rate limits), `src/server/deadline-reports/` (campaign planning, classifier, renderer, delivery) и `src/app/api/telegram/webhook/`. Флаги `SPORTS_TRENDS_SYNC_ENABLED`, `TELEGRAM_LINK_ENABLED`, `TELEGRAM_DEADLINE_ENABLED`, `TELEGRAM_SEND_ENABLED`, `TELEGRAM_PAID_BROADCAST_ENABLED` по умолчанию off. Existing Sports price/squad import, Sorare, scoring and session auth retain their ownership. See `docs/TELEGRAM_DEADLINE_PLAN.md`.
+Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://modules/telegram/FEAT-007-deadline-assistant#root`, `spec://modules/telegram/INFRA-005-deadline-pipeline#root`. Ownership: `src/providers/sports-ru-trends/` (feed/article HTTP и parser), `src/server/sports-trends/` (collector, ownership snapshots, scheduler), `src/machete/sports-trends.ts` (read view), `src/server/telegram/` (link service, webhook, bot API, rate limits), `src/server/deadline-reports/` (campaign planning, classifier, renderer, delivery) и `src/app/api/telegram/webhook/`. Флаги `SPORTS_TRENDS_SYNC_ENABLED`, `TELEGRAM_LINK_ENABLED`, `TELEGRAM_DEADLINE_ENABLED`, `TELEGRAM_SEND_ENABLED`, `TELEGRAM_PAID_BROADCAST_ENABLED` по умолчанию off. Existing Sports price/squad import, Sorare, scoring and session auth retain their ownership. The historical rollout plan is indexed in the [documentation archive](../../docs/archive/README.md#superseded-guides-and-reports).
 
 ## Runtime
 
@@ -47,6 +47,8 @@ Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, th
 
 | Area | Responsibility | Primary code |
 |---|---|---|
+| League strength | `spec://modules/machete/FEAT-009-league-strength#root`: bounded season reader and Massey rating view | `src/machete/league-strength*.ts`, `src/app/machete/leagues/[leagueId]/strength/` |
+| MiXerr passing networks | `spec://modules/mixerr/FEAT-001-passing-networks#root`: event file validation, starting lineup windows and pitch graphs | `src/mixerr/passing-network.ts`, `src/components/mixerr/PassingNetworks.tsx`, `src/app/mixerr/passing-networks/` |
 | Spec workflow tooling | PROP-001: explicit standalone/managed mode validation, mirrored client skills and contract fixtures | `.agents/skills/spec-driven-work/scripts/check-workflow.mjs`, `.claude/skills/spec-driven-work/scripts/check-workflow.mjs`, `src/lib/workflow-validator.test.ts` |
 | Machete UI | League, player, model, squad, and sync screens | `src/app/machete` |
 | Squad player card | FEAT-003: contact-sheet pitch/bench card and themed styles | `src/components/machete/FantasySquadPlanner.tsx`, `src/app/globals.css` |
@@ -54,6 +56,7 @@ Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, th
 | Squad pool and explanations | FEAT-001: virtual desktop pool, paginated touch cards, selected metrics, accessible widths and forecast explanations | `src/components/machete/PlayerPool.tsx`, `ColumnResizeHandle.tsx`, `planner-explanations.tsx` |
 | Squad commands, data and drafts | FEAT-001/INFRA-006: captain/selection/round transitions, bounded saved-view and export requests, tab draft lifecycle | `src/components/machete/planner-squad-commands.ts`, `planner-data.ts`, `planner-draft.ts`, `use-planner-draft.ts` |
 | Squad projection and team strength | FEAT-001: pure forecast arithmetic and normalized team-strength inputs; public planner exports remain compatible | `src/machete/squad-projection.ts`, `src/machete/squad-team-strength.ts` |
+| Current Squad FFO | FEAT-001: exact Sports.ru tour, latest imported batch and compact status update | `src/machete/squad-foontasy.ts`, `src/app/api/machete/squads/snapshot/route.ts` |
 | Football league translation | FEAT-001: shared feeder pairs and attack factors for earlier player history in Squad and the internal horizon projection | `src/machete/player-season-prior.ts`, `src/machete/squad_planner.ts`, `src/machete/foontasy_style_forecast_service.ts` |
 | Historical opponent forecast | FEAT-001: pre-match defense factors, player history adjustment, and a parallel Squad comparison | `src/machete/historical-opponent-strength.ts`, `src/machete/shared_read_model.ts`, `src/components/machete/PlayerPool.tsx` |
 | Source scope and freshness | FEAT-001: shared active contest registry and receipt-based home/source health | `src/server/fantasy-source-registry.ts`, `src/server/home-freshness.ts` |
@@ -63,8 +66,6 @@ Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, th
 | Rotation risk | FEAT-004: RR math and bounded normalized history reader | `src/machete/rotation-risk.ts`, `src/server/rotation-risk.ts` |
 | Global ranking strategy | FEAT-001/002: pure K/EP-loss math, bounded candidate search, provider context/cache, recommendation audit and UI | `src/machete/global-strategy*.ts`, `src/server/global-strategy*.ts`, `src/app/api/machete/squads/global-strategy`, `src/components/machete/GlobalStrategyPanel.tsx` |
 | Shared FotMob core | Normalized match, team, player, shot, and event tables; profile birthdays survive roster/match payloads without birthdays (`FEAT-001#player-identity`) | `src/core_data` |
-| Baltika UI | Imported leagues, teams, schedule, models | `src/app/baltika` |
-| Baltika domain | Wyscout-style workbook and fixture/team-stat import | `src/server/baltika` |
 | MiXerr | Shot-map explorer and comparison UI | `src/app/mixerr` |
 | Admin | Users, leagues, ingestion controls, franchise squads | `src/app/admin` |
 | HTTP API | Auth, imports, ingestion, squads, shot maps, cron | `src/app/api` |
@@ -81,7 +82,7 @@ Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, th
 ## Namespaces
 
 - UI routes live under `src/app/<mode>` and `src/app/admin`.
-- Domain logic stays out of route files: Machete in `src/machete`, Baltika in `src/server/baltika`, shared provider tables in `src/core_data`.
+- Domain logic stays out of route files: Machete in `src/machete` and shared provider tables in `src/core_data`.
 - Cron routes under `src/app/api/cron` are protected by `CRON_SECRET`.
 
 ## Checks
@@ -133,9 +134,17 @@ relocating other documentation must preserve `spec://` addresses, contract
 anchors, code ownership, and relative navigation. The `.agents/` and `.claude/`
 workflow copies are intentional matching client entry points.
 
+Keep verification summaries with their work items. Large historical reports and
+replay inputs can point to their immutable Git revision. Use the archive index
+for retrieval. Release exports omit archived documentation and work evidence.
+
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-11-06: WI-099 records the release export boundary and historical evidence retrieval.
+
+- 2026-11-06: WI-098 removes the Baltika workspace and its exclusive runtime code.
 
 - 2026-10-23: WI-081 — map bounded full-backup verification and installed artifact maintenance.
 

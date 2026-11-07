@@ -9,9 +9,10 @@ spreadsheet imports, and shot-map analysis in one application.
 | Area | Main workflow |
 |---|---|
 | **Machete** | Explore FotMob leagues, fixtures and player statistics; combine fantasy prices and projections; build and save legal squads. |
-| **Baltika** | Import Wyscout-style Excel workbooks, manage scouting tables and schedules, and configure models. |
 | **MiXerr** | Inspect player and team shot maps, xG overlays, and comparison views on normalized match data. |
 | **KHL beta** | Use an isolated hockey player pool, fantasy rules, statistics imports, and squad planning. Coverage and readiness are documented separately. |
+| **Franchises** | Compare prepared histories, performance and forecast metrics across participant teams. |
+| **Telegram assistant** | Link an account, choose contests, and receive deadline reports when enabled. |
 | **Fantasy Arena** | Place virtual-coin bets and compare algorithmic strategies using stored odds, an account ledger, and settlement rules. |
 
 The application has session-based authentication, user/admin roles, saved views,
@@ -54,31 +55,12 @@ operational runbooks, and specifications linked from responsible code with
 
 ## Local development
 
-Requirements: Node.js `>=20.9.0`, npm, and Docker Compose. The pinned Node version
-is in [.nvmrc](.nvmrc); use `nvm use` if available.
+Use the Node.js 24 LTS version pinned in `.nvmrc`. The local development
+guide covers environment setup, PostgreSQL on port 5433, data seeding,
+integration tests, and cache cleanup. [Local development](docs/development/LOCAL_DEVELOPMENT.md)
 
-Copy [.env.example](.env.example) to `.env` and configure the required values.
-In PowerShell, use `Copy-Item .env.example .env`; on macOS/Linux, use
-`cp .env.example .env`.
-
-```sh
-docker compose up -d postgres
-npm ci
-npm run prisma:generate
-npm run prisma:migrate:deploy
-npm run db:seed
-npm run dev
-```
-
-Open [localhost:3000](http://localhost:3000). Local PostgreSQL uses host port
-`5433`. Provider data requires the corresponding imports or ingestion jobs;
-starting the app does not download every league automatically.
-
-Useful pages: `/machete/leagues`, `/machete/players`, `/machete/squad`,
-`/baltika/leagues`, `/mixerr`, `/betting`, and `/admin/ingestion`.
-
-See [local setup](docs/development/LOCAL_DEVELOPMENT.md) and the
-[FotMob import guide](docs/integrations/MACHETE_FOTMOB_IMPORT.md).
+The main entry points are `/machete/leagues`, `/machete/players`,
+`/machete/squad`, `/mixerr`, `/franchises`, `/betting`, and `/admin/ingestion`.
 
 ## Checks
 

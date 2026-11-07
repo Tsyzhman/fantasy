@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 OUT=ROOT/'.tmp/betting-research-20260907'
-EVIDENCE=ROOT/'specs/work/evidence/WI-002'
+EVIDENCE=OUT/'evidence'
 
 r=json.loads((EVIDENCE/'results.json').read_text(encoding='utf-8'))
 m=pd.read_json(OUT/'matches.json');m['match_date']=pd.to_datetime(m.match_date)

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.3.161 - 2026-11-07
+
+- Add league-season Massey team ratings with raw xG and played schedule comparisons.
+- Add MiXerr passing networks from a StatsBomb event file, with independent starting-lineup cutoffs.
+- Select Python 3.12 for the pinned franchise dependencies in release checks.
+
+## 0.3.159 - 2026-11-06
+
+- Use the latest Foontasy import for the displayed Sports.ru Squad tour, with live updates independent of the saved player-pool calculation.
+
+## 0.3.158 - 2026-11-06
+
+- Show Sports.ru Squad player forecasts to two decimal places and retain hundredths in stored round scores.
+- Add Alt Opp. for the selected round and an optional horizon column using the user's Alt model and historical opponent factors.
+
+## 0.3.157 - 2026-11-06
+
+- Remove the unused Position and Joint forecast implementation, retired adapters, and tests tied to those implementations.
+- Build the migration and operator image directly from the application source and pinned dependencies.
+- Exclude historical evidence and archived documentation from release exports and align current guides with the supported workflows.
+
+## 0.3.156 - 2026-11-06
+
+- Retire the Baltika workspace, its workbook imports, scheduling and legacy player endpoints. Machete can still read previously published Wyscout metrics.
+
 ## 0.3.155 - 2026-11-06
 
 - Restore SorareInside forecasts for eight manually verified player bindings with conflicting birth dates.

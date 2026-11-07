@@ -20,7 +20,7 @@ from sklearn.metrics import log_loss, brier_score_loss
 
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 OUT=ROOT/'.tmp/betting-research-20260907'
-EVIDENCE=ROOT/'specs/work/evidence/WI-002'
+EVIDENCE=OUT/'evidence'
 EVIDENCE.mkdir(parents=True,exist_ok=True)
 CODES={'E0':47,'E1':48,'D1':54,'I1':55,'SP1':87,'F1':53,'N1':57,'P1':61,'B1':40,'T1':71}
 ALIASES={'Man United':'Manchester United','Man City':'Manchester City','Wolves':'Wolverhampton Wanderers','Nott\'m Forest':'Nottingham Forest','Tottenham':'Tottenham Hotspur','M\'gladbach':'Borussia Moenchengladbach','Ein Frankfurt':'Eintracht Frankfurt','FC Koln':'FC Cologne','Bayern Munich':'Bayern München','Dortmund':'Borussia Dortmund','St Pauli':'St. Pauli','Leverkusen':'Bayer Leverkusen','RB Leipzig':'RB Leipzig','Hamburg':'Hamburger SV','Ath Madrid':'Atletico Madrid','Ath Bilbao':'Athletic Club','Sociedad':'Real Sociedad','Betis':'Real Betis','Espanol':'Espanyol','Paris SG':'Paris Saint-Germain','St Etienne':'Saint-Etienne','Inter':'Inter','Verona':'Hellas Verona','Milan':'AC Milan','Sp Lisbon':'Sporting CP','Sp Braga':'Braga','Guimaraes':'Vitoria de Guimaraes','AVS':'AVS Futebol SAD','AZ Alkmaar':'AZ Alkmaar','PSV Eindhoven':'PSV Eindhoven','St Truiden':'St.Truiden','Standard':'Standard Liege','Buyuksehyr':'Istanbul Basaksehir','Karagumruk':'Fatih Karagumruk','Genclerbirligi':'Genclerbirligi'}

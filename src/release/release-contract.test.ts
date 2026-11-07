@@ -34,6 +34,36 @@ test("Docker dependency builds include local packages and cannot download an unp
   assert.doesNotMatch(dockerfile, /RUN npx prisma generate/);
 });
 
+/** @spec spec://common/INFRA-006-continuous-deployment#runtime */
+test("setup is built from source and pinned dependencies before web compilation", () => {
+  const dockerfile = source("Dockerfile");
+  const workflow = source(".github/workflows/deploy-production.yml");
+  const stages = [...dockerfile.matchAll(/^FROM (.+) AS ([a-z-]+)$/gm)];
+  const setup = stages.find(stage => stage[2] === "setup");
+  const builder = stages.find(stage => stage[2] === "builder");
+
+  assert.equal(setup?.[1], "app-source");
+  assert.equal(builder?.[1], "app-source");
+  assert.match(dockerfile, /^FROM deps AS app-source$/m);
+  assert.match(dockerfile, /FROM app-source AS setup\nRUN \.\/node_modules\/\.bin\/prisma generate/);
+  assert.match(workflow, /test ! -e \/app\/\.next/);
+  assert.match(workflow, /npm run prisma:migrate:deploy -- --help/);
+});
+
+/** @spec spec://common/INFRA-006-continuous-deployment#contracts */
+test("release source export excludes historical evidence and archives", () => {
+  const attributes = source(".gitattributes");
+  const dockerIgnore = source(".dockerignore");
+
+  for (const path of ["docs/archive", "specs/work/evidence"]) {
+    assert.ok(attributes.split(/\r?\n/).includes(`${path} export-ignore`), path);
+    assert.ok(dockerIgnore.split(/\r?\n/).includes(path), path);
+  }
+  for (const path of [".cache", ".codex", ".prist", ".mcp.json", "specs/.me"]) {
+    assert.ok(dockerIgnore.split(/\r?\n/).includes(path), path);
+  }
+});
+
 test("production workflow packages committed Git source and never deploys the legacy PM2 checkout", () => {
   const workflow = source(".github/workflows/deploy-production.yml");
 
@@ -120,11 +150,11 @@ test("production fantasy price sync is an exact, non-runtime operator job", () =
 });
 
 /** @spec spec://common/INFRA-006-continuous-deployment#migrations */
-test("server promoter verifies formula files, rehearses migrations, and checks exact runtime commit", () => {
+test("server promoter keeps the retired route, rehearses migrations, and checks exact runtime commit", () => {
   const promoter = source("scripts/deploy-production-docker.sh");
   const relayLauncher = promoter.slice(promoter.indexOf("start_fpl_relay()"), promoter.indexOf("wait_for_fpl_relay()"));
 
-  assert.match(promoter, /src\/machete\/formula_adaptations\.ts/);
+  assert.match(promoter, /src\/app\/api\/machete\/squads\/formula-adaptations\/route\.ts/);
   assert.match(promoter, /Verified production backup/);
   assert.match(promoter, /Migration rehearsal did not apply the complete migration set/);
   assert.match(promoter, /npm run prisma:migrate:deploy/);
@@ -165,7 +195,7 @@ test("server promoter verifies formula files, rehearses migrations, and checks e
   assert.match(promoter, /Notification config must be mode 600/);
 });
 
-test("release-source verifier requires formula and version artifacts to be tracked", () => {
+test("release-source verifier requires active release inputs and the retired route", () => {
   const verifier = source("scripts/verify-release-source.mjs");
 
   for (const required of [
@@ -174,13 +204,11 @@ test("release-source verifier requires formula and version artifacts to be track
     "package.json",
     "scripts/verify-release-version.mjs",
     "src/app/api/machete/squads/formula-adaptations/route.ts",
-    "scripts/fpl-vpn-relay.mjs",
-    "src/components/machete/FormulaAdaptationHoverCard.tsx",
-    "src/machete/formula-adaptation-models.generated.json",
-    "src/machete/formula_adaptations.ts"
+    "scripts/fpl-vpn-relay.mjs"
   ]) {
     assert.match(verifier, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
+  assert.doesNotMatch(verifier, /formula-adaptation-models|formula_adaptations|FormulaAdaptationHoverCard/);
   assert.match(verifier, /verifyReleaseVersion\(\)/);
   assert.match(verifier, /Release source is dirty/);
   assert.match(verifier, /is not present on an origin remote ref/);

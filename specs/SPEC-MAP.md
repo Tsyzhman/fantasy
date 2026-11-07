@@ -6,6 +6,8 @@ Canon for Fantasy Scout. Work status lives in `BOARD.md`; this file is the catal
 
 | Document | Responsibility |
 |---|---|
+| [FEAT-009-league-strength.md](modules/machete/FEAT-009-league-strength.md) | Active: league-season Massey team strength, xG coverage and played schedule difficulty |
+| [FEAT-001-passing-networks.md](modules/mixerr/FEAT-001-passing-networks.md) | Active: browser-local passing networks with independent starting lineup cutoffs |
 | [PROP-002-editorial-sport-design.md](common/PROP-002-editorial-sport-design.md) | Active: Midnight Scout / Pressbox, shared UI and independent theme/density preferences |
 | [specs/common/INFRA-006-continuous-deployment.md](common/INFRA-006-continuous-deployment.md) | Active: verified second web version, graceful traffic switch, compatible online migrations, one rollback and one verified full backup |
 | [specs/common/PROP-001-workflow-validation.md](common/PROP-001-workflow-validation.md) | Active: explicit workflow modes, local validator contracts and mirrored-client parity |
@@ -49,7 +51,7 @@ These files stay as authored project documentation. They are not typed Prist spe
 
 ## Next typed specs
 
-Register a PROP, FEAT, or INFRA only when a change needs an independently owned contract. Likely first areas: Machete squad planning, FotMob ingestion, Sports.ru price mapping, Baltika workbook import, MiXerr shot maps, and auth/session access.
+Register a PROP, FEAT, or INFRA only when a change needs an independently owned contract. Likely first areas: Machete squad planning, FotMob ingestion, Sports.ru price mapping, MiXerr shot maps, and auth/session access.
 
 ## KHL (isolated beta module)
 

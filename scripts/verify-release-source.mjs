@@ -39,16 +39,12 @@ const requiredTrackedFiles = [
   "scripts/check-online-migrations.py",
   "scripts/continuous-deployment.test.py",
   "src/server/web-scheduler-activation.ts",
-  "scripts/export-formula-adaptation-models.py",
   "scripts/fpl-vpn-relay.mjs",
   "scripts/prune-production-artifacts.sh",
   "scripts/prune-production-backups.py",
   "scripts/verify-release-source.mjs",
   "scripts/verify-release-version.mjs",
-  "src/app/api/machete/squads/formula-adaptations/route.ts",
-  "src/components/machete/FormulaAdaptationHoverCard.tsx",
-  "src/machete/formula-adaptation-models.generated.json",
-  "src/machete/formula_adaptations.ts"
+  "src/app/api/machete/squads/formula-adaptations/route.ts"
 ];
 
 verifyReleaseVersion();
@@ -63,11 +59,6 @@ const trackedFiles = new Set(git(["ls-files"]).split(/\r?\n/).filter(Boolean));
 const missingTrackedFiles = requiredTrackedFiles.filter((path) => !trackedFiles.has(path));
 if (missingTrackedFiles.length > 0) {
   fail(`Required release files are not tracked: ${missingTrackedFiles.join(", ")}`);
-}
-
-const model = JSON.parse(readFileSync("src/machete/formula-adaptation-models.generated.json", "utf8"));
-if (model?.schemaVersion !== 1 || model?.weatherIncluded !== false || !model?.models) {
-  fail("Formula adaptation model artifact failed its release integrity check.");
 }
 
 const commit = git(["rev-parse", "HEAD"]);
