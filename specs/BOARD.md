@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-105](work/WI-105-squad-five-plus.md) | Повысить точность и охват прогноза 5+ в Squad | FEAT-001 | @tsyzhman | 2026-11-13 | — |
 | [WI-103](work/WI-103-current-round-ffo.md) | Keep Squad FFO current | FEAT-001 | @tsyzhman | 2026-11-06 | — |
 | [WI-082](work/WI-082-scheduled-browser-smoke.md) | Restore scheduled GitHub browser checks and release the aligned revision | PROP-002, INFRA-006 | @tsyzhman | 2026-10-26 | — |
 | [WI-078](work/WI-078-ucl-round-three-transfers.md) | Six transfers only in Champions League round three | FEAT-001 | @tsyzhman | 2026-10-20 | — |
@@ -31,6 +30,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-105](work/archive/2026/WI-105-squad-five-plus.md) | Повысить точность и охват прогноза 5+ в Squad | @tsyzhman | 2026-11-13 |
 | [WI-104](work/archive/2026/WI-104-squad-projection-research.md) | Проверить и добавить модели прогнозов в Squad | @tsyzhman | 2026-11-13 |
 | [WI-096](work/archive/2026/WI-096-release-league-analytics.md) | Release league strength and passing networks | @tsyzhman | 2026-11-07 |
 | [WI-102](work/archive/2026/WI-102-alt-opponent-forecast.md) | Compare Alt with a historical opponent adjustment | @tsyzhman | 2026-11-06 |
