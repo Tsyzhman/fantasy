@@ -78,8 +78,10 @@ commits inside that change set do not require separate version bumps.
 compares the candidate version with the base revision and requires it to be
 strictly newer.
 
-The manual GitHub workflow packages `git archive HEAD`, retains the archive as
-a workflow artifact, and passes its SHA-256 to the guarded Docker promoter.
+The manual GitHub workflow uses `scripts/archive-release-source.sh` to archive
+the validated commit without archived documentation or work evidence. It
+retains the archive as a workflow artifact and passes its SHA-256 to the
+guarded Docker promoter.
 The candidate ref must contain current `main`; after the first manifested
 release, it must also descend from the commit currently running in production.
 

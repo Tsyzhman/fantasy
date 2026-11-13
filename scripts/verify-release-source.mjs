@@ -33,6 +33,7 @@ const requiredTrackedFiles = [
   "Dockerfile",
   "package-lock.json",
   "package.json",
+  "scripts/archive-release-source.sh",
   "scripts/deploy-production-docker.sh",
   "scripts/production-rollout.sh",
   "scripts/production-web-routing.py",

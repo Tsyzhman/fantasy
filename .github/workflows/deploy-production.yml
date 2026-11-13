@@ -129,7 +129,7 @@ jobs:
           release="${timestamp}-v${version}-${commit:0:7}"
           archive="$RUNNER_TEMP/fantasy-scout-release-${release}.tar.gz"
           checksum_file="${archive}.sha256"
-          git archive --format=tar.gz --output="$archive" HEAD
+          bash scripts/archive-release-source.sh "$commit" "$archive"
           checksum="$(sha256sum "$archive" | awk '{print $1}')"
           printf '%s  %s\n' "$checksum" "$(basename "$archive")" > "$checksum_file"
           {
