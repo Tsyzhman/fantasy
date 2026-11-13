@@ -9,9 +9,9 @@ League visitors can compare team strength, raw xG difference and the difficulty 
 
 ## Specs
 
-- Governing: `spec://modules/machete/FEAT-009-league-strength#root`
+- Governing: `spec://modules/machete/FEAT-015-league-strength#root`
 - Constraint: `spec://common/PROP-002-editorial-sport-design#contracts`
-- Affected: `spec://modules/machete/FEAT-009-league-strength#root`
+- Affected: `spec://modules/machete/FEAT-015-league-strength#root`
 
 ## Scope
 

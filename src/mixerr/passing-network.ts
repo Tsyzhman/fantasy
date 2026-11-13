@@ -1,5 +1,5 @@
-/** @spec spec://modules/mixerr/FEAT-001-passing-networks#input
- * @spec spec://modules/mixerr/FEAT-001-passing-networks#aggregation
+/** @spec spec://modules/mixerr/FEAT-014-passing-networks#input
+ * @spec spec://modules/mixerr/FEAT-014-passing-networks#aggregation
  */
 
 export const MAX_PASSING_FILE_BYTES = 5 * 1024 * 1024;

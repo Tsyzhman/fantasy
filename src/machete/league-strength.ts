@@ -1,4 +1,4 @@
-/** @spec spec://modules/machete/FEAT-009-league-strength#model */
+/** @spec spec://modules/machete/FEAT-015-league-strength#model */
 
 export type LeagueStrengthTeam = { id: string; name: string };
 

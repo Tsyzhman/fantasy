@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-/** @spec spec://modules/khl/FEAT-002-khl-squad#layout */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#layout */
 test("KHL contact sheet retains slot shortcuts and player actions in both themes", async ({ page }, testInfo) => {
   test.skip(process.env.KHL_E2E_ENABLED !== "true", "Dedicated seeded local contest");
   await page.goto("/machete/khl/squad?contestId=khl-e2e&new=1");

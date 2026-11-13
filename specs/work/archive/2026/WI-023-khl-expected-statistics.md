@@ -7,8 +7,8 @@ Canon action: direct-edit
 The user sees the expected statistics and verifiable calculation of each future match; statistics are automatically updated in 10:00 and 20:00 MSK, the bookmaker's line is updated and participates in the opponent's marked assessment.
 
 ## Specs
-- Governing: spec://modules/khl/FEAT-002-khl-squad#table
-- Governing: spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta
+- Governing: spec://modules/khl/FEAT-012-khl-squad#table
+- Governing: spec://modules/khl/FEAT-013-khl-projections-and-optimizer#rolling-beta
 - Governing: spec://modules/khl/INFRA-001-khl-data-ingestion#operations
 - Governing: spec://modules/khl/INFRA-003-khl-fonbet-odds#markets
 - Affected: spec://modules/khl/INFRA-002-khl-storage-and-api#api

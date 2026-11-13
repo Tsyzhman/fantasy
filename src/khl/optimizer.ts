@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#optimizer */
+/** @spec spec://modules/khl/FEAT-013-khl-projections-and-optimizer#optimizer */
 import type { KhlPlayer, KhlPosition } from "./contracts";
 import { KHL_RULES, transferAvailability, validateRoster } from "./rules";
 export interface OptimizeInput {

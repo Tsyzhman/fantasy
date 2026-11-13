@@ -68,7 +68,7 @@ test('public hockey history: exact matches, nulls, repeat and played-to-DNP corr
  assert.equal(zeroKnown.pkToiSeconds.quality,'FACT');
  assert.equal(zeroKnown.pkToiSeconds.knownGames,1);
  assert.equal(zeroKnown.pkToiSeconds.totalGames,2);
- // @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta
+ // @spec spec://modules/khl/FEAT-013-khl-projections-and-optimizer#rolling-beta
  const future={...matches[0],eventId:key+'future',officialMatchId:key+'future',startsAt:'2026-09-09T12:00:00Z',status:'SCHEDULED' as const,score:null};
  const beyond={...future,eventId:key+'beyond',officialMatchId:key+'beyond',startsAt:'2026-09-17T12:00:00Z'};
  await importCalendar(db,{contestId:contest.id,stageId:key,officialSeasonId:key,matches:[...matches,future,beyond],batchId:randomUUID(),observedAt:now,complete:true,from:new Date('2026-09-01T00:00:00Z'),to:new Date('2026-09-20T00:00:00Z')});

@@ -1,4 +1,4 @@
-/** @spec spec://modules/mixerr/FEAT-001-passing-networks#view */
+/** @spec spec://modules/mixerr/FEAT-014-passing-networks#view */
 
 import { I18nText } from "@/components/i18n-text";
 import { PassingNetworks } from "@/components/mixerr/PassingNetworks";

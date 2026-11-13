@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#forecast */
+/** @spec spec://modules/khl/FEAT-013-khl-projections-and-optimizer#forecast */
 import { scoreMatch, type ScoreInput } from "./scoring";
 
 export interface ForecastState { probability: number; score: ScoreInput; participates: boolean }

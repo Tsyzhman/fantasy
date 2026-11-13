@@ -6,7 +6,6 @@ export { type PlannerRoundFixtures, buildFormulaProjectionIndex, countsAsFullFan
 
 export { type PlannerFixture, fixtureStrengthProjection, fixtureStrengthWithBookmaker, fillTeamStrengthStatsFromScore, addPromotedTeamStrengthProfiles, fixtureOddsAreFresh } from "./squad-team-strength";
 import { ImportStatus, Prisma, type PrismaClient } from "@prisma/client";
-/** @spec spec://modules/machete/FEAT-004-rotation-risk#contracts */
 import { loadRotationRisks } from "@/server/rotation-risk";
 
 import { OFFICIAL_TRANSFER_ROSTER_SOURCE } from "@/core_data/models";
@@ -809,6 +808,7 @@ function loadCachedFantasySquadPlayerPoolWithMetadata(
 /**
  * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts
  * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#ffo-current-round
+ * @spec spec://modules/machete/FEAT-004-rotation-risk#contracts
  */
 export async function loadFantasySquadPlannerData(
   prisma: PrismaClient,

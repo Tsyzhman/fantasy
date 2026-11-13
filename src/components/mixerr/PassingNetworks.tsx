@@ -1,6 +1,6 @@
 "use client";
 
-/** @spec spec://modules/mixerr/FEAT-001-passing-networks#view */
+/** @spec spec://modules/mixerr/FEAT-014-passing-networks#view */
 
 import { useId, useState, type ChangeEvent } from "react";
 
@@ -27,7 +27,7 @@ const cutoffReasons = {
   fullTime: { en: "full time", ru: "конец матча" }
 };
 
-/** @spec spec://modules/mixerr/FEAT-001-passing-networks#input */
+/** @spec spec://modules/mixerr/FEAT-014-passing-networks#input */
 export function PassingNetworks() {
   const inputId = useId();
   const [networks, setNetworks] = useState<PassingNetwork[] | null>(null);
@@ -107,7 +107,7 @@ export function PassingNetworks() {
 
 const NODE_RADIUS = 3.1;
 
-/** @spec spec://modules/mixerr/FEAT-001-passing-networks#aggregation */
+/** @spec spec://modules/mixerr/FEAT-014-passing-networks#aggregation */
 function NetworkPitch({ network, teamColor, maxPasses }: { network: PassingNetwork; teamColor: string; maxPasses: number }) {
   const arrowId = useId();
   const language = useLanguage();

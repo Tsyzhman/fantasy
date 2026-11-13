@@ -145,7 +145,7 @@ External import of squad - separate source: public profile → HTML commands →
 
 ## Related specifications {#relationships}
 
-`spec://modules/khl/FEAT-001-khl-module-and-rules#rules`, `spec://modules/khl/FEAT-002-khl-squad#transfers`, `spec://modules/khl/INFRA-001-khl-data-ingestion#operations`.
+`spec://modules/khl/FEAT-011-khl-module-and-rules#rules`, `spec://modules/khl/FEAT-012-khl-squad#transfers`, `spec://modules/khl/INFRA-001-khl-data-ingestion#operations`.
 
 <a name="changelog"></a>
 

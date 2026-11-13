@@ -12,7 +12,7 @@ Production calendar assignments follow current, agreeing Sports.ru observations 
 - Governing: `spec://modules/khl/INFRA-001-khl-data-ingestion#fantasy-weeks`
 - Governing: `spec://modules/khl/INFRA-002-khl-storage-and-api#schema`
 - Constraint: `spec://modules/khl/INFRA-001-khl-data-ingestion#operations`
-- Constraint: `spec://modules/khl/FEAT-001-khl-module-and-rules#root`
+- Constraint: `spec://modules/khl/FEAT-011-khl-module-and-rules#root`
 
 ## Scope
 

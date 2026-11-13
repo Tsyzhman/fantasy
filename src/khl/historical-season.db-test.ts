@@ -1,5 +1,5 @@
 /** @spec spec://modules/khl/INFRA-002-khl-storage-and-api#schema
- * @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta */
+ * @spec spec://modules/khl/FEAT-013-khl-projections-and-optimizer#rolling-beta */
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";

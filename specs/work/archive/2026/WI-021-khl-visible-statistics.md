@@ -7,9 +7,9 @@ Canon action: direct-edit
 The KHL catalog and card show known time/PP/PK/attack with partial coverage and image update, without false zeros.
 
 ## Specs
-- Governing: spec://modules/khl/FEAT-002-khl-squad#cards
+- Governing: spec://modules/khl/FEAT-012-khl-squad#cards
 - Governing: spec://modules/khl/INFRA-002-khl-storage-and-api#protocol-aggregates
-- Constraint: spec://modules/khl/FEAT-002-khl-squad#quality
+- Constraint: spec://modules/khl/FEAT-012-khl-squad#quality
 
 ## Scope
 In: replay production tables/API, partial averages and coverage, fresh snapshot without loss of squad/filters, local checks and safe release.

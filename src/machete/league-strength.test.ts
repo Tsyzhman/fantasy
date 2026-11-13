@@ -1,4 +1,4 @@
-/** @spec spec://modules/machete/FEAT-009-league-strength#model */
+/** @spec spec://modules/machete/FEAT-015-league-strength#model */
 
 import assert from "node:assert/strict";
 import test from "node:test";

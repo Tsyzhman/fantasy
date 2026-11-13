@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta */
+/** @spec spec://modules/khl/FEAT-013-khl-projections-and-optimizer#rolling-beta */
 import { seasonStatFields, expectedStatKeys, type KhlHistoricalStats, type KhlPosition, type KhlForecastExplanation, type KhlRateInput, type KhlForecastDetails, type KhlExpectedStats } from "./contracts";
 
 export type HistoryFact = Partial<Record<typeof seasonStatFields[number], number | null>> & { points: number | null; participationStatus: string };

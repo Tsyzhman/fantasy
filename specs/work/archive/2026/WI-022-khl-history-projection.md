@@ -7,11 +7,11 @@ Canon action: direct-edit
 The user compares shots, goals, assists, penalty minutes and plus/minus and sees a single explainable EP based on last season with a short current history.
 
 ## Specs
-- Governing: spec://modules/khl/FEAT-002-khl-squad#table
-- Governing: spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta
+- Governing: spec://modules/khl/FEAT-012-khl-squad#table
+- Governing: spec://modules/khl/FEAT-013-khl-projections-and-optimizer#rolling-beta
 - Governing: spec://modules/khl/INFRA-001-khl-data-ingestion#normalization
 - Governing: spec://modules/khl/INFRA-002-khl-storage-and-api#schema
-- Constraint: spec://modules/khl/FEAT-001-khl-module-and-rules#scoring
+- Constraint: spec://modules/khl/FEAT-011-khl-module-and-rules#scoring
 
 ## Scope
 In: individual indicators and sortings, maximum two decimal digits in the UI, import of 2025/2026 Sports history and addition of official KHL protocols (shots, exact TOI/PP/PK/attack), labeled prior and EP formula with breakdown, tooltips of all headers/cells and full XLSX of the entire catalog, local checks, Git and production.

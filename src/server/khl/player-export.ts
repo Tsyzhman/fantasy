@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-002-khl-squad#table
+/** @spec spec://modules/khl/FEAT-012-khl-squad#table
  * @spec spec://modules/khl/INFRA-002-khl-storage-and-api#api */
 import {Prisma,type PrismaClient} from '@prisma/client';
 import {historicalTableStats,seasonStatFields,expectedStatKeys,type KhlPlayer,type KhlSeasonStats} from '@/khl/contracts';

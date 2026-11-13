@@ -549,7 +549,10 @@ export function CustomPlayerPoolRow({ player, columns, horizon, language, provid
   );
 }
 
-/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast */
+/**
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast
+ * @spec spec://modules/machete/FEAT-004-rotation-risk#scenarios
+ */
 export function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage, provider = "SPORTS_RU"): PlayerPoolOptionalColumn[] {
   const priceProviderLabel = provider === "FPL" ? "FPL" : "Sports.ru";
   const column = (key: string, en: string, ru: string, titleEn = en, titleRu = ru, numeric = true, width = 72): PlayerPoolOptionalColumn => ({
@@ -698,6 +701,7 @@ export function customPlayerPoolCell(
   );
 }
 
+/** @spec spec://modules/machete/FEAT-004-rotation-risk#scenarios */
 export function playerPoolValueCellTitle(column: PlayerPoolOptionalColumn, player: FantasyPlannerPlayer, horizon: number, language: UiLanguage, rawValue: string | number | null) {
   if (column.key === "rotationRisk") return rotationRiskDescription(player.rotationRisk, language);
   const numericValue = typeof rawValue === "number" && Number.isFinite(rawValue) ? rawValue : null;

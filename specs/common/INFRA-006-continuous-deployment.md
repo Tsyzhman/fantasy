@@ -74,12 +74,15 @@ The franchise CLI runs in one disposable container named `fantasy-scout-franchis
 
 An operator may resume a verified interrupted acquisition with `FRANCHISE_RESUME_AFTER=<timezone-qualified timestamp>` no older than three hours. Only H2H responses and squad records acquired since that checkpoint, together with settled valid lineups, may be reused beyond the normal HTTP TTL. Database statistics/forecast exports are always refreshed. The regular timer does not set this override. The exact known H2H blank historical-lineup template remains missing data, never a zero XI, and is retried on later normal collections; malformed/error pages still abort publication.
 
-<a name="migrations"></a>
 <a name="data"></a>
 
 ## Data and compatible migrations {#data}
 
 `fantasy_app` retains only schema usage, table SELECT/INSERT/UPDATE/DELETE and sequence usage. It has no ownership, superuser, CREATEDB, CREATEROLE, replication, BYPASSRLS, TRUNCATE or migration-journal write privileges. `fantasy_migrator` owns application schema objects, applies migrations and creates the disposable rehearsal database; its protected host credential is never copied to web/worker. `fantasy_operator` is the protected administrative/recovery identity. Default privileges of the migration owner grant runtime access to future tables. Ownership/attribute changes are transactional with short lock timeouts, preceded by isolated positive/negative probes; existing application credentials and sessions remain valid.
+
+<a name="migrations"></a>
+
+### Online migration compatibility {#migrations}
 
 Pending migrations must carry a reviewed `deployment.json` with `mode: online` and the exact `sqlSha256` of `migration.sql`. This explicitly asserts compatibility with the currently serving and candidate binaries, including rollback to the old binary. An absent, mismatched or unsupported declaration aborts promotion without stopping the website.
 

@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta */
+/** @spec spec://modules/khl/FEAT-013-khl-projections-and-optimizer#rolling-beta */
 import { expectedStatKeys, formatKhlNumber as n, type KhlPlayer, type KhlRateInput, type ExpectedStatKey, type KhlForecastExplanation, type KhlMatchExpectation, type KhlExpectedStats } from './contracts';
 
 export const expectedStatLabels: Record<ExpectedStatKey, string> = { goals: 'Голы', assists: 'Передачи', shotsOnGoal: 'Броски в створ', pimMinutes: 'Штрафные минуты', plusMinus: 'Плюс-минус' };

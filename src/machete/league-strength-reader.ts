@@ -1,4 +1,4 @@
-/** @spec spec://modules/machete/FEAT-009-league-strength#input */
+/** @spec spec://modules/machete/FEAT-015-league-strength#input */
 
 import { Prisma, type PrismaClient } from "@prisma/client";
 

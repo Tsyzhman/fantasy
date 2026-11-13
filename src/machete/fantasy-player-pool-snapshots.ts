@@ -1,5 +1,4 @@
 import { createHash, randomUUID } from "node:crypto";
-/** @spec spec://modules/machete/FEAT-004-rotation-risk#contracts */
 import { ROTATION_RISK_VERSION, ROTATION_RISK_TTL_MS } from "./rotation-risk";
 
 import { Prisma, type PrismaClient } from "@prisma/client";
@@ -403,11 +402,13 @@ export function fantasyPlayerPoolSnapshotHasFixtureCalendar(value: unknown): boo
   return parseFantasyFixtureCalendar(metadata?.fixtureCalendar) !== null;
 }
 
+/** @spec spec://modules/machete/FEAT-004-rotation-risk#contracts */
 export function fantasyPlayerPoolSnapshotHasCurrentRotationRisk(value: unknown, now = Date.now()): boolean {
   const metadata = parseFantasyPlayerPoolSnapshotMetadata(value);
   return metadata?.rotationRiskVersion === ROTATION_RISK_VERSION && now < Date.parse(metadata.rotationRiskExpiresAt ?? "");
 }
 
+/** @spec spec://modules/machete/FEAT-004-rotation-risk#contracts */
 function fantasyPlayerPoolSnapshotMetadata(
   data: FantasySquadPlannerData,
   dataFreshness: FantasyPlayerPoolSnapshotMetadata["dataFreshness"]

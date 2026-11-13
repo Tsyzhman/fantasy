@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-002-khl-squad#sports-import */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#sports-import */
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { randomUUID, createHash } from "node:crypto";

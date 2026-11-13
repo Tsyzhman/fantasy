@@ -4,7 +4,7 @@ status: draft
 
 <a name="root"></a>
 
-# FEAT-001: separate KHL Fantasy module and Sports.ru rules {#root}
+# FEAT-011: separate KHL Fantasy module and Sports.ru rules {#root}
 
 <a name="plain-language"></a>
 
@@ -111,13 +111,15 @@ Open rules: exactly 10:00/40:00; awarding team points to a non-player/substitute
 
 ## Related specifications {#relationships}
 
-- `spec://modules/khl/FEAT-002-khl-squad#transfers`
+- `spec://modules/khl/FEAT-012-khl-squad#transfers`
 - `spec://modules/khl/INFRA-002-khl-storage-and-api#transactions`
 - [Sources and open dependencies](../../../docs/research/KHL_SOURCE_EVIDENCE_2026-09-07.md)
 
 <a name="changelog"></a>
 
 ## История {#changelog}
+
+- 2026-11-13: Для устранения конфликта идентификаторов номер спецификации изменён с FEAT-001 на FEAT-011.
 
 - 2026-09-25: пункт «КХЛ» остаётся в общей шапке; вторая навигация Machete заменена путём «Machete / КХЛ».
 

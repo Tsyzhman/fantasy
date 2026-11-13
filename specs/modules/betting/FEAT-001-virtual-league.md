@@ -4,7 +4,7 @@ status: active
 
 <a name="root"></a>
 
-# FEAT-001: Virtual Fantasy League {#root}
+# FEAT-016: Virtual Fantasy League {#root}
 
 <a name="plain-language"></a>
 
@@ -59,7 +59,7 @@ Section /betting in general navigation: league filter, search, grouping of marke
 
 <a name="opportunities"></a>
 
-## Opportunities in the {#opportunities} line
+## Opportunities in the line {#opportunities}
 The list of events is sorted by time or by the best estimated EV among outcomes that received a BET from at least one algorithm. By default, EV first; Sorting of the entire selected league/search is done before pagination. Equalities are resolved by time and ID. An event shows the best EV and number of unique matching outcomes; one outcome with five scores is counted once.
 
 In an open match, a separate block lists all unique eligible outcomes in descending order of best EV, with odds and supporting algorithm names/EVs; selecting opens an existing coupon. Five personal tips are saved. Multiple outcomes of the same match can be linked: EVs do not add up, selection does not create an express bet or an automatic bet. EV is an experimental estimate and not a guarantee of profit. The BET threshold and the rule of one outcome per match for bots do not change.
@@ -113,6 +113,8 @@ Studies BETTING_FEASIBILITY_2026-09-07 and BETTING_FEATURE_RESEARCH_2026-09-07 d
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-11-13: Assigned the project-wide ID FEAT-016. The original document address is retained for references in applied database migrations.
 
 - 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
 - 2026-09-07: Sorting events by estimated EV, a summary of unique outcomes, and a general list of several suitable options within a match.

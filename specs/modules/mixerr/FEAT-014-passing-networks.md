@@ -2,7 +2,7 @@
 status: active
 ---
 
-# FEAT-001: MiXerr passing networks {#root}
+# FEAT-014: MiXerr passing networks {#root}
 
 ## In simple words {#plain-language}
 
@@ -64,5 +64,7 @@ Verify actual event files, different cutoffs, same-minute event ordering, dismis
 The data format is defined by Hudl StatsBomb. [StatsBomb Open Data](https://github.com/statsbomb/open-data)
 
 ## Change history {#changelog}
+
+- 2026-11-13: Renumbered FEAT-001 to FEAT-014 to make the specification ID unique.
 
 - 2026-11-05. Introduced the StatsBomb-file passing network in WI-095.

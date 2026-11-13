@@ -1,10 +1,12 @@
 # Deployment
 
+<!-- @spec spec://common/INFRA-006-continuous-deployment#contracts -->
+
 The only production promoter is [Deploy Production](../../.github/workflows/deploy-production.yml), governed by `spec://common/INFRA-006-continuous-deployment#root`. Package a clean committed ref present on origin that contains both current main and the serving production commit.
 
 ## Prepare and verify
 
-Run `npm run check`, isolated database integration checks, `python3 scripts/continuous-deployment.test.py`, `node --test scripts/strip-server-action-key.test.mjs` and source/version verifiers. CI uses `.nvmrc` and `npm ci`; Docker uses digest-pinned Node 24 LTS. CI builds runtime/setup images with exact commit/version labels and a stable `NEXT_SERVER_ACTIONS_ID_SALT` supplied through BuildKit. The build removes that compiler salt from manifests/caches in the same layer and rejects residual salt. The separate active encryption key stays on the host and is injected only into runtime containers. The setup image uses pinned dependencies, Prisma Client, and operator source. CI verifies it can start the Prisma CLI and contains no web build. The source archive exports the verified Git commit with the repository export attributes. Work evidence and archived guides stay in Git. CI retains the source and image checksums, then removes its temporary builder. The VPS only verifies and loads those images.
+Run `npm run check`, isolated database integration checks, `python3 scripts/continuous-deployment.test.py`, `node --test scripts/strip-server-action-key.test.mjs` and source/version verifiers. CI uses `.nvmrc` and `npm ci`; Docker uses digest-pinned Node 24 LTS. CI builds runtime/setup images with exact commit/version labels and a stable `NEXT_SERVER_ACTIONS_ID_SALT` supplied through BuildKit. The build removes that compiler salt from manifests/caches in the same layer and rejects residual salt. The separate active encryption key stays on the host and is injected only into runtime containers. The setup image uses pinned dependencies, Prisma Client, and operator source. CI verifies it can start the Prisma CLI and contains no web build. `scripts/archive-release-source.sh` exports the verified Git commit and excludes work evidence and archived guides from the release archive. CI retains the source and image checksums, then removes its temporary builder. The VPS only verifies and loads those images.
 
 Run the workflow with `dry_run=true` first. Commit/tree/version, source checksum, exact runtime/setup image IDs and image checksum identify the reviewable release. Promote the same verified ref with `dry_run=false`. Releases are serialized; history rollback is rejected.
 

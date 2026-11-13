@@ -7,7 +7,7 @@ Canon action: direct-edit
 KHL Collector uses contact cards and a football Squad layout tailored to 17 hockey players.
 
 ## Specs
-- Governing: spec://modules/khl/FEAT-002-khl-squad#layout
+- Governing: spec://modules/khl/FEAT-012-khl-squad#layout
 - Governing: spec://modules/betting/FEAT-001-virtual-league#opportunities
 - Constraint: spec://modules/machete/FEAT-003-squad-player-card#contracts
 

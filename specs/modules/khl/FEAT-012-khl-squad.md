@@ -4,7 +4,7 @@ status: active
 
 <a name="root"></a>
 
-# FEAT-002: Hockey Squad on 17 players {#root}
+# FEAT-012: Hockey Squad on 17 players {#root}
 
 <a name="plain-language"></a>
 
@@ -132,11 +132,13 @@ The catalog is given in pages, detail is loaded upon opening. For the selector, 
 
 ## Related specifications {#relationships}
 
-`spec://modules/khl/FEAT-001-khl-module-and-rules#weeks`, `spec://modules/khl/INFRA-002-khl-storage-and-api#api`, `spec://modules/khl/FEAT-003-khl-projections-and-optimizer#optimizer`.
+`spec://modules/khl/FEAT-011-khl-module-and-rules#weeks`, `spec://modules/khl/INFRA-002-khl-storage-and-api#api`, `spec://modules/khl/FEAT-013-khl-projections-and-optimizer#optimizer`.
 
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-11-13: Renumbered FEAT-002 to FEAT-012 to make the specification ID unique.
 
 - 2026-09-28: WI-042 — shared KHL header shows real server refresh times, full-success and last-attempt outcomes, pending work and interruptions, with bounded status polling.
 

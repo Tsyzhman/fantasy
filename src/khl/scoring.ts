@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-001-khl-module-and-rules#scoring */
+/** @spec spec://modules/khl/FEAT-011-khl-module-and-rules#scoring */
 import type { KhlPosition } from "./contracts";
 export interface ScoreInput {
   position: KhlPosition; toiSeconds: number | null;

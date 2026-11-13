@@ -52,12 +52,12 @@ The catalog and base calendar are confirmed, but do not equal the readiness of t
 
 | Area | Mandatory examples | Contract reference |
 |---|---|---|
-| Rules | 2/6/9, cap 3, 20 000 initial and revalued capital, 5/6 transfer, week 1, goalie scoring | [FEAT-001](../../../specs/modules/khl/FEAT-001-khl-module-and-rules.md) |
+| Rules | 2/6/9, cap 3, 20 000 initial and revalued capital, 5/6 transfer, week 1, goalie scoring | [FEAT-011](../../../specs/modules/khl/FEAT-011-khl-module-and-rules.md) |
 | Data | Reimport/retry/correction, collision ID, incomplete page, null PP/SV, all clubs, ready xG gate | [INFRA-001](../../../specs/modules/khl/INFRA-001-khl-data-ingestion.md) |
 | Storage/API | CAS race, idempotency retry, A→B→A value history, alien squad, stale quote, sport mismatch, app rollback | [INFRA-002](../../../specs/modules/khl/INFRA-002-khl-storage-and-api.md) |
 | Odds | Regulation vs OT/SO, line/period uniqueness, aliases/transfer, tombstone vs timeout, no leakage | [INFRA-003](../../../specs/modules/khl/INFRA-003-khl-fonbet-odds.md) |
-| Squad | 17 without bench, responsive/keyboarding, G/D/F presets, keep vs lock, remaining games, compare/null | [FEAT-002](../../../specs/modules/khl/FEAT-002-khl-squad.md) |
-| Projection/solve | Conditional goalie, E[floor(SV/2)], PP exposure, deterministic result, brute-force oracle, cancellation, leakage audit | [FEAT-003](../../../specs/modules/khl/FEAT-003-khl-projections-and-optimizer.md) |
+| Squad | 17 without bench, responsive/keyboarding, G/D/F presets, keep vs lock, remaining games, compare/null | [FEAT-012](../../../specs/modules/khl/FEAT-012-khl-squad.md) |
+| Projection/solve | Conditional goalie, E[floor(SV/2)], PP exposure, deterministic result, brute-force oracle, cancellation, leakage audit | [FEAT-013](../../../specs/modules/khl/FEAT-013-khl-projections-and-optimizer.md) |
 
 A full xG release is not considered ready in the absence of XG-01. Read-only catalog or beta baseline can be separately accepted only with a strictly specified limited volume; this does not cover the original requirement of a ready-made xG and complete hockey module.
 
@@ -77,7 +77,7 @@ At the code stage, the final commands after the last edit are: `npm run test`, r
 
 After 1–2: uniqueness/FK, duplicate job lease, counts after repeated batch. After 3–4: raw size, retention, unambiguous provider mappings, sequence history A→B→A, no doubling of DOM events. After 5–6: solver timeout/abort, one worker, bounded pool, separate cache keys for sport and user. After 7: 14 days soak, queue depth, 50 UI transitions/rebounds, heap/RSS plateau, football latency before/after under comparable load.
 
-Starting numerical budgets are specified in INFRA-001 and FEAT-002. Any excess is recorded as a failed acceptance and is not hidden by clearing user/football data. In this document task, the source cache was not created, dependencies were not installed, and application processes were not started.
+Starting numerical budgets are specified in INFRA-001 and FEAT-012. Any excess is recorded as a failed acceptance and is not hidden by clearing user/football data. In this document task, the source cache was not created, dependencies were not installed, and application processes were not started.
 
 ## Result of the current task
 

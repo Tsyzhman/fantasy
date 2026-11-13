@@ -92,7 +92,7 @@ Retention: raw answers are included in the general KHL raw budget from INFRA-001
 
 ## Related specifications {#relationships}
 
-`spec://modules/khl/INFRA-001-khl-data-ingestion#operations`, `spec://modules/khl/INFRA-002-khl-storage-and-api#schema`, `spec://modules/khl/FEAT-003-khl-projections-and-optimizer#forecast`.
+`spec://modules/khl/INFRA-001-khl-data-ingestion#operations`, `spec://modules/khl/INFRA-002-khl-storage-and-api#schema`, `spec://modules/khl/FEAT-013-khl-projections-and-optimizer#forecast`.
 
 <a name="changelog"></a>
 

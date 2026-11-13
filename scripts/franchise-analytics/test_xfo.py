@@ -1,4 +1,4 @@
-"""@spec spec://modules/franchises/FEAT-005-franchise-analytics#xfo"""
+# @spec spec://modules/franchises/FEAT-005-franchise-analytics#xfo
 import unittest,math,json,pathlib
 from xfo import defense_points,from_components,match_xfo,h2h_score,compare_xi
 

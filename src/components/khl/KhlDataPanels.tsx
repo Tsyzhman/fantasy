@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { KhlForecastBreakdown } from "./KhlForecastBreakdown";
 import { formatToi, formatKhlNumber, historicalTableStats, type KhlPlayer, type KhlSeasonStats, type Observation } from "@/khl/contracts";
 
-/** @spec spec://modules/khl/FEAT-002-khl-squad#cards */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#cards */
 const control = "min-h-11 rounded border px-3 py-2";
 const statLabels = [["toiSeconds", "На льду"], ["ppToiSeconds", "В большинстве"], ["pkToiSeconds", "В меньшинстве"], ["attackZoneSeconds", "В атаке"], ["goals", "Голы"], ["assists", "Передачи"], ["shotsOnGoal", "Броски в створ"], ["blockedShots", "Блоки"], ["pimMinutes", "Штраф, мин"], ["plusMinus", "+/−"], ["saves", "Сэйвы"], ["goalsAgainst", "Пропущено"]] as const;
 function SeasonSummary({ stats, title }: { stats: KhlSeasonStats; title: string }) {

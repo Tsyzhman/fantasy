@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-002-khl-squad#table */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#table */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';

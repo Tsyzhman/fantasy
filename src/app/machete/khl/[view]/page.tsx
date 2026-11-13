@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-001-khl-module-and-rules#navigation */
+/** @spec spec://modules/khl/FEAT-011-khl-module-and-rules#navigation */
 import { notFound } from "next/navigation";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";

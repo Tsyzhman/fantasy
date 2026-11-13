@@ -1,5 +1,5 @@
 /** @spec spec://modules/khl/INFRA-001-khl-data-ingestion#sync-status
- * @spec spec://modules/khl/FEAT-002-khl-squad#layout
+ * @spec spec://modules/khl/FEAT-012-khl-squad#layout
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
