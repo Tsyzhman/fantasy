@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.164 - 2026-11-13
+
+- Add five evaluated next-round Sports.ru forecasts to Squad, with the chronological replay and official-score benchmark documented.
+
 ## 0.3.163 - 2026-11-13
 
 - Resolve Prist specification diagnostics by giving each specification a unique ID and repairing section anchors and ownership links.

@@ -7,6 +7,10 @@ import {
   customPlayerPoolCell, customPlayerPoolColumnDisplay, customPlayerPoolColumnValue, playerPoolOptionalColumns, playerPoolSortOptions, playerPoolValueCellTitle,
   sortPlayerPoolRows, supportedPlayerPoolSort, type PlayerPoolOptionalColumn
 } from "./PlayerPool";
+import { squadResearchColumnKeys } from "@/machete/squad-research-columns";
+import { toFantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
+import { squadTableValueMatchesFilter } from "@/machete/squad-table-columns";
+import { playerPoolExportCellValue } from "./planner-data";
 import { fantasyPlayerAtRoundOffset } from "./planner-squad-commands";
 
 function player(id: string, fields: Partial<FantasyPlannerPlayer> = {}): FantasyPlannerPlayer {
@@ -68,6 +72,25 @@ test("forecast columns display and sort numeric hundredths for a round and a hor
   const second = player("second", { opponentAdjustedRoundPoints: [6.24] });
   const sort = { key: "opponentAdjustedFp", direction: "desc" } as const;
   assert.deepEqual(sortPlayerPoolRows([second, barco], sort, 1).map(({ playerId }) => playerId), ["barco", "second"]);
+});
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#research-forecasts */
+test("research forecasts keep numeric round values in the compact table, filters, sort and export", () => {
+  const options = playerPoolOptionalColumns([], 3, "ru");
+  assert.deepEqual(options.filter(({ key }) => key.startsWith("research")).map(({ key }) => key), squadResearchColumnKeys);
+  assert.ok(playerPoolOptionalColumns([], 3, "ru", "FPL").every(({ key }) => !key.startsWith("research")));
+  const latest = toFantasyPlayerPoolListItem(player("latest", {
+    researchRoundPoints: [[4.23, 3.99, 4.01, 3.75, 4.18], [0, 0, 0, 0, 0], null]
+  }));
+  const old = player("old");
+  const key = "researchRidge";
+  assert.equal(customPlayerPoolColumnValue(key, latest, 3), 4.23);
+  assert.equal(customPlayerPoolColumnDisplay(key, customPlayerPoolColumnValue(key, latest, 3), "ru"), "4.23");
+  assert.equal(customPlayerPoolColumnValue(key, fantasyPlayerAtRoundOffset(latest, 1), 3), 0);
+  assert.equal(customPlayerPoolColumnValue(key, fantasyPlayerAtRoundOffset(latest, 2), 3), null);
+  assert.equal(playerPoolExportCellValue(key, latest, 3), 4.23);
+  assert.ok(squadTableValueMatchesFilter(playerPoolExportCellValue(key, latest, 3), { minimum: "4.20", maximum: "4.25", query: "" }, true));
+  assert.deepEqual(sortPlayerPoolRows([old, latest], { key, direction: "asc" }, 3).map(({ playerId }) => playerId), ["latest", "old"]);
 });
 
 for (const language of ["en", "ru"] as const) {

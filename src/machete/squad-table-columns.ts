@@ -1,3 +1,5 @@
+import { squadResearchColumnKeys } from "./squad-research-columns";
+
 export const defaultSquadTableColumns = [
   "rotationRisk",
   "nextFp",
@@ -11,6 +13,7 @@ export const defaultSquadTableColumns = [
   "alternativeOpponentAdjustedFp",
   "alternativePerPrice",
   "alternativeHorizon",
+  ...squadResearchColumnKeys,
   "fixtures"
 ] as const;
 

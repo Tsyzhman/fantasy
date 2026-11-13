@@ -2,6 +2,7 @@ import { fantasyPositionRank } from "@/lib/players/fantasy-position-order";
 import { currentRotationRisk, type RotationRisk } from "./rotation-risk";
 import { optimizeGlobalSquad, buildGlobalTransferSuggestions } from "./global-strategy-planner";
 import type { GlobalStrategyRequestContext } from "./global-strategy";
+import type { SquadResearchRounds } from "./squad-research-columns";
 import type { OpponentAttackAdjustment } from "./historical-opponent-strength";
 
 export type FantasyPositionGroup = "GK" | "DEF" | "MID" | "FWD" | "UNK";
@@ -212,6 +213,7 @@ export type FantasyPlannerPlayer = {
   alternativeRoundPoints?: Array<number | null>;
   opponentAdjustedRoundPoints?: Array<number | null>;
   alternativeOpponentAdjustedRoundPoints?: Array<number | null>;
+  researchRoundPoints?: SquadResearchRounds;
   opponentAttackAdjustment?: OpponentAttackAdjustment;
   foontasyPoints?: number | null;
   foontasyHorizonPoints?: number | null;

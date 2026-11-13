@@ -55,6 +55,7 @@ import { withoutRetiredFantasyForecasts } from "./retired-fantasy-forecasts";
 import { buildFantasyFixtureCalendar } from "./squad-fixture-calendar-builder";
 import { fixtureDifficultyFromSignal, parseFantasyFixtureCalendar, type FantasyFixtureCalendar } from "./squad-fixture-calendar";
 import { FANTASY_MODEL_VERSION } from "./foontasy_style_model";
+import { researchForecastableRounds, scoreSquadResearchRound } from "./squad-research-projection";
 import {
   archivedExpectedMinutes,
   blendArchivedEventRate,
@@ -808,6 +809,7 @@ function loadCachedFantasySquadPlayerPoolWithMetadata(
 /**
  * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts
  * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#ffo-current-round
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#research-forecasts
  * @spec spec://modules/machete/FEAT-004-rotation-risk#contracts
  */
 export async function loadFantasySquadPlannerData(
@@ -1001,6 +1003,10 @@ export async function loadFantasySquadPlannerData(
         true,
         isFpl ? "FPL" : "GENERIC"
       );
+  const researchRounds = provider === "SPORTS_RU" && !options?.deferFormulaProjections
+    ? researchForecastableRounds(roundsAndFixtures, new Date())
+    : [];
+  const hasResearchRounds = researchRounds.some(Boolean);
   const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const playerId = String(row.playerId);
     const teamId = String(row.teamId);
@@ -1123,6 +1129,11 @@ export async function loadFantasySquadPlannerData(
     const recentFp = isFpl
       ? officialFplPointsByPlayerId.get(String(row.playerId)) ?? []
       : projected?.recentFp ?? [];
+    const researchRoundPoints = hasResearchRounds
+      ? teamFixturesByRound.map((fixtures, i) => scoreSquadResearchRound(
+          researchRounds[i], fixtures, playerId, positionGroup, componentProjections, projected?.rawMetrics, recentFp
+        ))
+      : undefined;
     const legacyRoundPoints = teamFixturesByRound.map((fixtures) => {
       return roundForecastPoints(
         fixtures.reduce((total, fixture) => total + (legacyFixturePoints(fixture) ?? 0), 0)
@@ -1288,6 +1299,7 @@ export async function loadFantasySquadPlannerData(
         alternativeRoundPoints,
         opponentAdjustedRoundPoints,
         alternativeOpponentAdjustedRoundPoints,
+        researchRoundPoints,
         opponentAttackAdjustment,
         foontasyPoints: foontasy?.points ?? null,
         ownershipPercent: resolveFantasyPlannerOwnership(priceRow, foontasy),
