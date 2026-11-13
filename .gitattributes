@@ -1,6 +1,2 @@
 * text=auto eol=lf
 *.sh text eol=lf
-
-# Historical material remains in Git history and full clones.
-docs/archive export-ignore
-specs/work/evidence export-ignore

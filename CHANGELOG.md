@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.162 - 2026-11-13
+
+- Include the complete Git tree in GitHub source archives for Prist imports. Keep production deploy and price-sync archives compact.
+
 ## 0.3.161 - 2026-11-07
 
 - Add league-season Massey team ratings with raw xG and played schedule comparisons.

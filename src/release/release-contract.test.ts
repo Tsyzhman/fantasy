@@ -51,12 +51,15 @@ test("setup is built from source and pinned dependencies before web compilation"
 });
 
 /** @spec spec://common/INFRA-006-continuous-deployment#contracts */
-test("release source export excludes historical evidence and archives", () => {
+test("GitHub source archives include history files and release exports omit them", () => {
   const attributes = source(".gitattributes");
+  const archiveScript = source("scripts/archive-release-source.sh");
   const dockerIgnore = source(".dockerignore");
 
+  assert.doesNotMatch(attributes, /(?:^|\s)export-ignore(?:\s|$)/m);
+  assert.match(archiveScript, /git archive --format=tar\.gz --output="\$archive" "\$commit" -- \./);
   for (const path of ["docs/archive", "specs/work/evidence"]) {
-    assert.ok(attributes.split(/\r?\n/).includes(`${path} export-ignore`), path);
+    assert.ok(archiveScript.includes(`':(exclude)${path}'`), path);
     assert.ok(dockerIgnore.split(/\r?\n/).includes(path), path);
   }
   for (const path of [".cache", ".codex", ".prist", ".mcp.json", "specs/.me"]) {
@@ -70,7 +73,7 @@ test("production workflow packages committed Git source and never deploys the le
   assert.match(workflow, /git merge-base --is-ancestor origin\/main HEAD/);
   assert.match(workflow, /npm run release:verify-source -- --ci/);
   assert.match(workflow, /npm run release:verify-version -- --base origin\/main/);
-  assert.match(workflow, /git archive --format=tar\.gz/);
+  assert.match(workflow, /bash scripts\/archive-release-source\.sh "\$commit" "\$archive"/);
   assert.match(workflow, /scripts\/deploy-production-docker\.sh/);
   assert.match(workflow, /Reject production history rollback/);
   assert.doesNotMatch(workflow, /\bgit pull\b/);
@@ -127,7 +130,7 @@ test("production fantasy price sync is an exact, non-runtime operator job", () =
   const entrypoint = source("scripts/sync-production-fantasy-prices.ts");
 
   assert.match(workflow, /git merge-base --is-ancestor origin\/main HEAD/);
-  assert.match(workflow, /git archive --format=tar\.gz/);
+  assert.match(workflow, /bash scripts\/archive-release-source\.sh "\$commit" "\$archive"/);
   assert.match(workflow, /scripts\/sync-production-fantasy-prices\.sh/);
   assert.match(runner, /sha256sum/);
   assert.match(runner, /--target setup/);
@@ -197,6 +200,7 @@ test("server promoter keeps the retired route, rehearses migrations, and checks 
 
 test("release-source verifier requires active release inputs and the retired route", () => {
   const verifier = source("scripts/verify-release-source.mjs");
+  assert.ok(verifier.includes('"scripts/archive-release-source.sh"'));
 
   for (const required of [
     "CHANGELOG.md",
