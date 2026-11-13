@@ -7,8 +7,11 @@ import type { PlannerRoundFixtures, ComponentProjectionIndex } from "./squad-pro
 import type { PlannerFixture } from "./squad-team-strength";
 import { researchForecastableRounds, scoreSquadResearchRound } from "./squad-research-projection";
 import { researchFixtureInput, researchFixtureInputFromProjection, researchFixturePoints } from "./squad-research-forecast";
-import { fixturePlayerProjectionKey } from "./squad-projection";
+import { fixturePlayerProjectionKey, fixtureTeamProjectionKey } from "./squad-projection";
 import { squadResearchForecasts } from "./squad-research-columns";
+import { SquadFivePlusHistory, type FivePlusHistoryRow } from "./squad-research-five-plus-history";
+import { fivePlusFixtureFeatures } from "./squad-research-five-plus-features";
+import { scoreSquadFivePlusRound } from "./squad-research-five-plus";
 
 const kickoffAt = new Date("2026-11-20T18:00:00Z");
 const asOf = new Date("2026-11-20T17:00:00Z");
@@ -75,4 +78,52 @@ test("archived components and live fixture components produce the same model inp
   }, undefined, [2, 0, 6]);
   assert.deepEqual(archived, researchFixtureInputFromProjection("MID", projection, undefined, [2, 0, 6]));
   assert.equal(researchFixtureInput("MID", null, 0, {}, undefined, []), null);
+});
+
+test("5+ history respects availability for player stats, team stats and odds", () => {
+  const recent: FivePlusHistoryRow = {
+    match: "before", kickoff: "2026-11-17T16:00:00", created: "2026-11-17T16:00:00",
+    home: home.teamId, away: away.teamId,
+    teams: [
+      [home.teamId, "2026-11-20T17:01:00", [9], [2], "2026-11-18T16:00:00"],
+      [away.teamId, "2026-11-18T16:00:00", [2], [9], "2026-11-20T17:01:00"]
+    ],
+    players: [[projection.playerId, home.teamId, "2026-11-20T17:01:00", 90, true, false, [9]]]
+  };
+  const future: FivePlusHistoryRow = {
+    ...recent, match: "future", kickoff: "2026-11-21T16:00:00", created: "2026-11-18T00:00:00",
+    players: []
+  };
+  const history = new SquadFivePlusHistory([recent, future, {
+    odds: home.id, snapshot: ["2026-11-19T17:00:00Z", 0.6, 0.3, 0.5, 0.2]
+  }]);
+  const context = fivePlusFixtureFeatures({ ...home, matchId: home.id }, +asOf, history);
+  assert.equal(context.team[2], 1);
+  assert.equal(context.team[15], null);
+  assert.equal(context.team[63], 2);
+  assert.deepEqual(context.team.slice(-4), [0.6, 0.3, 0.5, 0.2]);
+  assert.deepEqual(history.market(home.id, +asOf, false), [0.3, 0.6, 0.2, 0.5]);
+  assert.deepEqual(history.market(home.id, +new Date("2026-11-19T16:59:59Z"), true), [null, null, null, null]);
+  assert.equal(context.player(projection.playerId)[0], 0);
+  assert.equal(history.player(home.teamId, projection.playerId, +asOf + 120_000, +kickoffAt)[0], 1);
+  assert.throws(() => new SquadFivePlusHistory([recent, recent]), /Duplicate match/);
+});
+
+test("5+ publishes five bounded probabilities for singles, zero for a blank and unavailable for doubles", () => {
+  const id = projection.playerId;
+  const index: ComponentProjectionIndex = {
+    byFixturePlayer: new Map([[fixturePlayerProjectionKey(home.id, id), projection]]),
+    formulaMetricsByFixturePlayer: new Map(), errorsByFixtureTeam: new Map()
+  };
+  const history = new SquadFivePlusHistory([]);
+  const features = new Map([[fixtureTeamProjectionKey(home.id, home.teamId), fivePlusFixtureFeatures(home, +asOf, history)]]);
+  const score = (forecastable: boolean, fixtures: PlannerFixture[], playerId = id) =>
+    scoreSquadFivePlusRound(forecastable, fixtures, playerId, "MID", index, features, { age: 23, price: 8, starter: true });
+  const values = score(true, [home]);
+  assert.equal(values?.length, 5);
+  assert.ok(values.every((value) => typeof value === "number" && value > 0 && value < 100));
+  assert.deepEqual(score(true, []), [0, 0, 0, 0, 0]);
+  assert.equal(score(false, [home]), null);
+  assert.equal(score(true, [home, { ...home, id: "double" }]), null);
+  assert.equal(score(true, [home], "missing"), null);
 });

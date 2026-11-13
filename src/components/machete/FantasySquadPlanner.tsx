@@ -119,6 +119,7 @@ import {
   squadTableValueMatchesFilter,
   type SquadTableValueFilter
 } from "@/machete/squad-table-columns";
+import { squadResearchColumnIndex, squadFivePlusColumnIndex } from "@/machete/squad-research-columns";
 import {
   applyFantasyHistorySearchParams,
   defaultFantasyHistorySettings,
@@ -459,6 +460,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
   const [maximumPrice, setMaximumPrice] = useState<number | null>(null);
   const [detailedFormulaTooltips, setDetailedFormulaTooltips] = useState(false);
   const [advancedTableFilters, setAdvancedTableFilters] = useState<Record<string, SquadTableValueFilter>>({});
+  const [fivePlusMode, setFivePlusMode] = useState(true);
   const [onlyAffordable, setOnlyAffordable] = useState(false);
   const [filterPresets, setFilterPresets] = useState<SquadFilterPreset[]>([]);
   const [filterPresetsPending, setFilterPresetsPending] = useState(false);
@@ -629,7 +631,8 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
     .map((player) => [player.teamId!, { id: player.teamId!, name: player.teamName }])).values()]
     .sort((left, right) => left.name.localeCompare(right.name)), [players]);
   const priceFilterOptions = useMemo(() => [...new Set(players.filter((player) => !player.isProviderPlaceholder).map((player) => player.price))].sort((left, right) => left - right), [players]);
-  const playerPoolColumns = useMemo(() => playerPoolOptionalColumns(players, tableHorizon, language, provider), [language, players, provider, tableHorizon]);
+  const showFivePlus = provider === "SPORTS_RU" && fivePlusMode;
+  const playerPoolColumns = useMemo(() => playerPoolOptionalColumns(players, tableHorizon, language, provider, showFivePlus), [language, players, provider, showFivePlus, tableHorizon]);
   const advancedFilterColumns = useMemo(() => playerPoolColumns.map(({ key, label, title, numeric }) => ({ key, label, title, numeric })), [playerPoolColumns]);
   const deferredAdvancedTableFilters = useDeferredValue(advancedTableFilters);
   const activeAdvancedFilterColumns = useMemo(() => advancedFilterColumns.filter((column) =>
@@ -1151,7 +1154,10 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
       horizon: tableHorizon,
       onlyAffordable,
       historyScope: appliedHistorySettings.scope === "ALL_PLAYER_MATCHES" ? "ALL_PLAYER_MATCHES" : "ALL_LOADED",
-      advancedFilters: advancedTableFilters
+      advancedFilters: Object.fromEntries(advancedFilterColumns.flatMap(({ key, numeric }) => {
+        const filter = advancedTableFilters[key];
+        return filter && squadTableValueFilterIsActive(filter, numeric) ? [[key, filter]] : [];
+      }))
     };
   }
 
@@ -1170,6 +1176,11 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
     setFitsPreparing(filters.onlyAffordable);
     if (!filters.onlyAffordable) setFitCalculation(null);
     setAdvancedTableFilters(filters.advancedFilters);
+    const keys = Object.entries(filters.advancedFilters)
+      .filter(([, filter]) => squadTableValueFilterIsActive(filter, true))
+      .map(([key]) => key);
+    if (keys.some((key) => squadFivePlusColumnIndex(key) !== undefined)) setFivePlusMode(true);
+    else if (keys.some((key) => squadResearchColumnIndex(key) !== undefined)) setFivePlusMode(false);
     setSelectedFilterPresetId(preset.id);
     applyQuickHistoryScope(filters.historyScope);
   }
@@ -2600,7 +2611,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
                       return;
                     }
                     setTableExportPending(true);
-                    void downloadPlayerPoolXlsx(exportPlayers, tableHorizon, language, leagueId, season, exportColumnKeys, provider)
+                    void downloadPlayerPoolXlsx(exportPlayers, tableHorizon, language, leagueId, season, exportColumnKeys, provider, showFivePlus)
                       .catch(() => setMessage(localizedText(language, "Could not export the player table.", "Не удалось выгрузить таблицу игроков.")))
                       .finally(() => setTableExportPending(false));
                   }}
@@ -2679,6 +2690,12 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
                         <option value="3">{localizedText(language, "3 rounds", "3 тура")}</option>
                         <option value="5">{localizedText(language, "5 rounds", "5 туров")}</option>
                       </select>
+                      {provider === "SPORTS_RU" ? (
+                        <select value={showFivePlus ? "chance" : "points"} onChange={(event) => setFivePlusMode(event.target.value === "chance")} aria-label={localizedText(language, "FIT, MIX, GAS, REF and TIK forecast display", "Вид прогноза FIT, MIX, GAS, REF и TIK")} className="min-h-12 min-w-0 rounded border border-slate-200 px-3 py-2 text-xs [@media(pointer:coarse)]:text-base">
+                          <option value="chance">{localizedText(language, "Chance of 5+ (%)", "Шанс 5+ (%)")}</option>
+                          <option value="points">{localizedText(language, "Expected points", "Ожидаемые очки")}</option>
+                        </select>
+                      ) : null}
                     </>
                   )}
                 />

@@ -6,6 +6,7 @@ import type { GlobalStrategyAnalysis } from "@/machete/global-strategy-planner";
 import { localizedText } from "@/components/localized-option";
 import { type FantasyPlannerPlayer } from "@/machete/squad_logic";
 import type { SquadFilterPreset, SquadFilterPresetFilters } from "@/machete/squad-filter-presets";
+import { squadFivePlusColumnIndex, squadResearchDisplayColumn } from "@/machete/squad-research-columns";
 
 export async function recordGlobalRecommendation(squadId: string | null, analysis: GlobalStrategyAnalysis) {
   if (!squadId || !["READY", "NEUTRAL"].includes(analysis.evaluation.status)) return;
@@ -22,18 +23,22 @@ export async function downloadPlayerPoolXlsx(
   leagueId: string,
   season: string,
   visibleColumnKeys: string[],
-  provider = "SPORTS_RU"
+  provider = "SPORTS_RU",
+  fivePlus = false
 ) {
-  const optionalColumnsByKey = new Map(playerPoolOptionalColumns(players, horizon, language, provider).map((column) => [column.key, column]));
+  const optionalColumnsByKey = new Map(playerPoolOptionalColumns(players, horizon, language, provider, fivePlus).map((column) => [column.key, column]));
   const selectedColumns = visibleColumnKeys
-    .map((key) => optionalColumnsByKey.get(key))
+    .map((key) => optionalColumnsByKey.get(squadResearchDisplayColumn(key, fivePlus)))
     .filter((column): column is PlayerPoolOptionalColumn => Boolean(column));
   const columns = [
     { key: "player", header: localizedText(language, "Player", "Игрок") },
     { key: "team", header: localizedText(language, "Team", "Команда") },
     { key: "position", header: localizedText(language, "Position", "Позиция") },
     { key: "price", header: localizedText(language, "Price", "Цена") },
-    ...selectedColumns.map((column) => ({ key: column.key, header: column.label }))
+    ...selectedColumns.map((column) => ({
+      key: column.key,
+      header: squadFivePlusColumnIndex(column.key) === undefined ? column.label : column.label + " 5+ (%)"
+    }))
   ];
   const response = await fetch("/api/machete/squads/export-table", {
     method: "POST",

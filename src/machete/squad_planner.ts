@@ -56,6 +56,7 @@ import { buildFantasyFixtureCalendar } from "./squad-fixture-calendar-builder";
 import { fixtureDifficultyFromSignal, parseFantasyFixtureCalendar, type FantasyFixtureCalendar } from "./squad-fixture-calendar";
 import { FANTASY_MODEL_VERSION } from "./foontasy_style_model";
 import { researchForecastableRounds, scoreSquadResearchRound } from "./squad-research-projection";
+import { prepareSquadFivePlus, scoreSquadFivePlusRound } from "./squad-research-five-plus";
 import {
   archivedExpectedMinutes,
   blendArchivedEventRate,
@@ -176,6 +177,7 @@ export type FantasyBookmakerFavorite = {
 
 type PlannerMatch = {
   id: string;
+  coreMatchId?: string;
   round: string | null;
   providerRoundId?: string | null;
   providerRoundLabel?: string | null;
@@ -1003,10 +1005,15 @@ export async function loadFantasySquadPlannerData(
         true,
         isFpl ? "FPL" : "GENERIC"
       );
+  const researchAsOf = new Date();
   const researchRounds = provider === "SPORTS_RU" && !options?.deferFormulaProjections
-    ? researchForecastableRounds(roundsAndFixtures, new Date())
+    ? researchForecastableRounds(roundsAndFixtures, researchAsOf)
     : [];
   const hasResearchRounds = researchRounds.some(Boolean);
+  const fivePlusFeatures = hasResearchRounds && typeof prisma.$queryRaw === "function"
+    ? await prepareSquadFivePlus(prisma, roundsAndFixtures, researchRounds, researchAsOf,
+        options?.playerIds ? new Set(rosterRows.map(({ teamId }) => String(teamId))) : undefined)
+    : null;
   const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const playerId = String(row.playerId);
     const teamId = String(row.teamId);
@@ -1132,6 +1139,13 @@ export async function loadFantasySquadPlannerData(
     const researchRoundPoints = hasResearchRounds
       ? teamFixturesByRound.map((fixtures, i) => scoreSquadResearchRound(
           researchRounds[i], fixtures, playerId, positionGroup, componentProjections, projected?.rawMetrics, recentFp
+        ))
+      : undefined;
+    const researchRoundFivePlus = fivePlusFeatures
+      ? teamFixturesByRound.map((fixtures, i) => scoreSquadFivePlusRound(
+          researchRounds[i], fixtures, playerId, positionGroup, componentProjections, fivePlusFeatures,
+          { age: row.age, price: price.price, confidence: projected?.forecastConfidence, starter: row.isStarter },
+          projected?.rawMetrics, recentFp
         ))
       : undefined;
     const legacyRoundPoints = teamFixturesByRound.map((fixtures) => {
@@ -1300,6 +1314,7 @@ export async function loadFantasySquadPlannerData(
         opponentAdjustedRoundPoints,
         alternativeOpponentAdjustedRoundPoints,
         researchRoundPoints,
+        researchRoundFivePlus,
         opponentAttackAdjustment,
         foontasyPoints: foontasy?.points ?? null,
         ownershipPercent: resolveFantasyPlannerOwnership(priceRow, foontasy),
@@ -3605,6 +3620,7 @@ async function loadProviderPlannerMatches(
     const postponed = fixture.match?.cancelled === true || ["CANCELLED", "POSTPONED"].includes(status);
     return [{
       id: `provider-fixture:${provider.toLocaleLowerCase("en-US")}:${fixture.providerFixtureId}`,
+      coreMatchId: fixture.matchId?.toString(),
       round: fixture.sourceRoundLabel,
       providerRoundId: fantasyProviderRoundKey(provider, fixture.round.ordinal, fixture.round.providerRoundId),
       providerRoundLabel: fixture.round.name,
@@ -3748,6 +3764,7 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
       if (match.homeTeamId) {
         addTeamFixture(fixturesByTeamRound, group.id, {
           id: match.id,
+          coreMatchId: match.coreMatchId,
           roundId: group.id,
           teamId: match.homeTeamId,
           teamName: match.homeTeamName ?? "Team",
@@ -3770,6 +3787,7 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
       if (match.awayTeamId) {
         addTeamFixture(fixturesByTeamRound, group.id, {
           id: match.id,
+          coreMatchId: match.coreMatchId,
           roundId: group.id,
           teamId: match.awayTeamId,
           teamName: match.awayTeamName ?? "Team",
