@@ -580,8 +580,8 @@ export function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horiz
     ] : []),
     column("alternativePerPrice", "Alt/price", "Альт/цена", `Alternative next-round expected fantasy points divided by the current ${priceProviderLabel} price. Higher means more Alt points per one price unit.`, `Альтернативные ожидаемые ФО на следующий тур, делённые на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.`, true, 82),
     column("alternativeHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of independently calculated personal Alt forecasts for the next ${horizon} rounds.`, `Сумма отдельно рассчитанных личных прогнозов Alt на следующие ${horizon} туров.`),
-    ...(provider === "SPORTS_RU" ? squadResearchForecasts.map(({ column: key, en, ru, descriptionEn, descriptionRu }) =>
-      column(key, en, ru, descriptionEn, descriptionRu, true, 82)
+    ...(provider === "SPORTS_RU" ? squadResearchForecasts.map(({ column: key, label, descriptionEn, descriptionRu }) =>
+      column(key, label, label, descriptionEn, descriptionRu, true, 82)
     ) : []),
     column("fixtures", "Fixtures", "Матчи", "The next opponents in the selected horizon. Chip colour represents fixture difficulty; hover a chip for the full opponent name and home/away context.", "Следующие соперники на выбранном горизонте. Цвет плашки показывает сложность матча; при наведении доступны полное имя соперника и поле дома/в гостях.", false, 230),
     column("age", "Age", "Возраст", "Player age from the current FotMob profile.", "Возраст игрока из текущего профиля FotMob."),

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.165 - 2026-11-13
+
+- Label the five Sports.ru Squad forecasts FIT, MIX, GAS, REF and TIK in the table and Excel export.
+
 ## 0.3.164 - 2026-11-13
 
 - Add five evaluated next-round Sports.ru forecasts to Squad, with the chronological replay and official-score benchmark documented.
