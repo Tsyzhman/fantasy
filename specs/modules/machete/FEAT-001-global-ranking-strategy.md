@@ -116,11 +116,35 @@ Sports.ru Squad uses the latest imported Sports.ru Foontasy batch for the tour i
 
 The saved roster and the player-pool detail batches read FFO from the imported forecasts at request time, including when the other projections come from a retained pool snapshot. The default open pool's existing visible-tab status check sends a compact FFO update when the import changes. An FFO-only update leaves the pool snapshot and the user's selections intact.
 
+<a name="research-forecasts"></a>
+
+### Forecasts selected by historical replay {#research-forecasts}
+
+Sports.ru Squad offers up to five separate forecast columns selected by a
+reproducible current-season comparison. These are additional expected-point
+estimates for the displayed provider round. Each fixture is scored once and a
+double round sums the unrounded fixture estimates before rounding to hundredths.
+Known blanks are zero and incomplete calendar or component inputs are unavailable.
+Default layouts expose the selected forecasts; existing saved layouts can enable
+them in Columns. The same numeric values drive desktop and touch sorting,
+filtering and export. The existing optimizer and personal Alt formula are unchanged.
+
+Use archived inputs recorded before each Sports.ru deadline and the provider's
+final match points; describe exclusions, the shared sample for each baseline and
+the chronological training, selection and holdout split. Do not assume FPL
+shares Sports.ru rules or that missing historical forecasts were zero. Keep
+published model parameters fixed and documented until another version is validated.
+
+Publish the compact round values in the existing Sports.ru player-pool revisions.
+Use the existing projection-version upgrade and retention path. There is no
+inference service, additional scheduler, request to an external data source on
+the live forecast path, or independent per-user model cache.
+
 <a name="retired-projections"></a>
 
 ### Retired forecasts {#retired-projections}
 
-Squad reads FFO, FO, and Alt. Older snapshot rows and table settings may carry
+Squad reads FFO, FO, Alt and the current comparisons. Older snapshot rows and table settings may carry
 Position-calibrated or Joint fields. Drop those fields at the existing read
 boundaries. Authenticated requests from an older tab to
 `/api/machete/squads/formula-adaptations` receive `410 FORMULA_RETIRED` with
@@ -242,6 +266,7 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 
 ## 12. Changelog {#changelog}
 
+- 2026-11-13: WI-104 — add five Sports.ru Squad forecast comparisons selected on archived pre-deadline inputs.
 - 2026-11-06: WI-103 — match Squad FFO to the displayed Sports.ru tour and read new imports independently of the pool calculation.
 - 2026-11-06: WI-101 and WI-102 — show hundredths in Sports.ru Squad and apply the historical opponent comparison to Alt.
 - 2026-11-06: WI-099 records the retired forecast compatibility contract and removes the unused tooltip and model implementation.

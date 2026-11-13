@@ -1,6 +1,12 @@
 # Production release history
 
-## Latest verified release 0.3.161 — 2026-11-07
+## Latest verified release 0.3.164 — 2026-11-13
+
+Production runs `20261113T162207Z-v0.3.164-f6c6d94`, commit `f6c6d94b8358d87cab2524978e3e4081a11486ac`, tree `84b84c4b34926a18a6965086f0e0b3ec455979b4`. [Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/43456272128) and [promotion](https://github.com/Tsyzhman/fantasy/actions/runs/43460643051) passed. After a direct HTTPS download failure, the promotion independently verified the current-run ZIP staged over SSH. Production retained 0.3.161 for rollback.
+
+Sports.ru Squad displays five forecast comparisons selected from ten on the current season. All 12 pools upgraded and published numeric next-round forecasts for 8,470 players, with zero duplicates, an empty queue, and three retained revisions per scope. The authenticated Premier League browser verified desktop and mobile scores, sorting, numeric filtering and the XLSX download. All 401 public health and previous-CSS probe pairs passed; Caddy and PostgreSQL retained their processes. [WI-104](../../specs/work/archive/2026/WI-104-squad-projection-research.md) · [Research](../research/SQUAD_FORECASTS_2026-11-13.md)
+
+## 0.3.161 — 2026-11-07
 
 Production runs `20261107T082446Z-v0.3.161-866b1aa`, commit `866b1aacc7a4f949c8d43ab511133914c12a094b`, tree `10ccc39cb6d95b6ffd0ddc061583cb413e30f39b`. The verified release extends the serving 0.3.159 revision. The workflow independently verified the current-run ZIP staged over the `deploy` SSH profile. [Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/42353897245) · [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/42354789557)
 

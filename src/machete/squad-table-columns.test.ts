@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { defaultSquadTableColumns, isSquadTableColumnsInput, isSquadTableColumnWidthsInput, isSquadTableFilterKey, moveSquadTableColumn, parseSquadTableColumns, parseSquadTableColumnWidths, squadTableColumnsPreference, squadTableValueFilterIsActive, squadTableValueMatchesFilter } from "./squad-table-columns";
+import { squadResearchColumnKeys } from "./squad-research-columns";
 import { retiredFantasyForecastKeys } from "./retired-fantasy-forecasts";
 
 test("squad table columns default excludes the invented Foontasy horizon", () => {
@@ -17,7 +18,7 @@ test("squad table columns default excludes the invented Foontasy horizon", () =>
       defaultSquadTableColumns.indexOf("alternativeHorizon") + 1,
       defaultSquadTableColumns.indexOf("fixtures")
     ),
-    []
+    squadResearchColumnKeys
   );
   assert.ok(!defaultSquadTableColumns.some((key) => key.toLowerCase().includes("foontasyhorizon")));
 });

@@ -1,0 +1,2778 @@
+{
+  "asOf": "2026-11-13T13:00:00Z",
+  "sha256": [
+    "023366b6dbf760a31c8ea298a2c0fe670902c1260b6691e33cbb22354d2132ec",
+    "10a2f0edf677e33658af943737705566bce76b6d767f43e41a6d2682de1ce821"
+  ],
+  "officialFixtures": 1032,
+  "coverage": {
+    "rounds": 101,
+    "discardedRounds": 4,
+    "snapshotRows": 65382,
+    "duplicatePlayers": 0,
+    "unverifiedTimestamp": 0,
+    "wrongIdentity": 863,
+    "otherClub": 89,
+    "wrongCalendar": 336,
+    "double": 582,
+    "blanks": 268,
+    "noComponent": 0,
+    "noFo": 0,
+    "rows": 59458,
+    "uniqueRounds": {
+      "train": 45,
+      "selection": 18,
+      "holdout": 34
+    }
+  },
+  "leagueRounds": {
+    "train": {
+      "42": [
+        1
+      ],
+      "47": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "48": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "53": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "54": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "55": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "57": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "61": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "63": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "71": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "73": [
+        1
+      ],
+      "87": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    "selection": {
+      "47": [
+        6,
+        7
+      ],
+      "48": [
+        9
+      ],
+      "53": [
+        6,
+        7
+      ],
+      "54": [
+        5,
+        6
+      ],
+      "55": [
+        6,
+        7
+      ],
+      "57": [
+        8,
+        9
+      ],
+      "61": [
+        8
+      ],
+      "63": [
+        10,
+        11
+      ],
+      "71": [
+        7,
+        8
+      ],
+      "73": [
+        2
+      ],
+      "87": [
+        8
+      ]
+    },
+    "holdout": {
+      "42": [
+        3
+      ],
+      "47": [
+        8,
+        9,
+        10
+      ],
+      "48": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "53": [
+        8,
+        9,
+        10
+      ],
+      "54": [
+        7,
+        8,
+        9
+      ],
+      "55": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "57": [
+        10,
+        11,
+        12
+      ],
+      "61": [
+        9,
+        10,
+        11
+      ],
+      "63": [
+        12,
+        13,
+        14
+      ],
+      "71": [
+        9,
+        10,
+        11
+      ],
+      "73": [
+        4
+      ],
+      "87": [
+        10,
+        11,
+        12
+      ]
+    }
+  },
+  "dateRanges": {
+    "train": [
+      "2026-08-28",
+      "2026-09-19"
+    ],
+    "selection": [
+      "2026-10-09",
+      "2026-10-17"
+    ],
+    "holdout": [
+      "2026-10-23",
+      "2026-11-06"
+    ]
+  },
+  "selected": [
+    "ridge",
+    "blendForm",
+    "shrunkXA",
+    "rules",
+    "minuteHistory"
+  ],
+  "ridge": {
+    "ALL": [
+      -0.22186958,
+      2.35212751,
+      0.02543145,
+      -0.70603973,
+      0.3484738,
+      0.85806048,
+      0.91545475,
+      0.89004032,
+      0.06640771,
+      -0.89039212,
+      0,
+      1.34467744,
+      0.67671138,
+      0.2110573
+    ],
+    "DEF": [
+      -0.21902846,
+      2.33235379,
+      -0.0108584,
+      -1.14986872,
+      0,
+      0.56479877,
+      0.76518147,
+      1.71013417,
+      0.07184684,
+      -0.92059659,
+      0,
+      1.36953519,
+      0.63690386,
+      0.43564119
+    ],
+    "FWD": [
+      -0.0491286,
+      2.04656711,
+      -0.00777732,
+      -0.46641787,
+      0.05725069,
+      1.220132,
+      0.45632818,
+      0,
+      -0.02176901,
+      0,
+      0,
+      1.18385139,
+      0.70129024,
+      0.2245682
+    ],
+    "MID": [
+      -0.17906418,
+      2.40010087,
+      -0.07818172,
+      -0.52177697,
+      0.2575906,
+      0.79057878,
+      1.13446701,
+      0.35652555,
+      0.05394841,
+      0,
+      0,
+      1.36979319,
+      0.66786873,
+      0.15903206
+    ],
+    "GK": [
+      -0.13180205,
+      1.30935223,
+      0.14689133,
+      0.40405091,
+      0,
+      0.08551217,
+      0.00093011,
+      1.09705042,
+      0.373997,
+      -0.18988792,
+      0,
+      0.37969608,
+      0.21952958,
+      0.37556949
+    ]
+  },
+  "results": {
+    "selection:all": {
+      "FO": {
+        "rows": 11087,
+        "rounds": 18,
+        "rmse": 2.14977,
+        "mae": 1.38505,
+        "bias": 0.29989,
+        "spearman": 0.64038,
+        "top15": 4.7963
+      },
+      "form": {
+        "rows": 11087,
+        "rounds": 18,
+        "rmse": 2.22992,
+        "mae": 1.61337,
+        "bias": 0.41467,
+        "spearman": 0.62249,
+        "top15": 4.51481
+      },
+      "rules": {
+        "rows": 11087,
+        "rounds": 18,
+        "rmse": 2.12731,
+        "mae": 1.34918,
+        "bias": 0.20166,
+        "spearman": 0.63841,
+        "top15": 4.82222
+      },
+      "minuteStates": {
+        "rows": 11087,
+        "rounds": 18,
+        "rmse": 2.18313,
+        "mae": 1.40568,
+        "bias": 0.30234,
+        "spearman": 0.62594,
+        "top15": 4.71481
+      },
+      "minuteHistory": {
+        "rows": 11087,
+        "rounds": 18,
+        "rmse": 2.13545,
+        "mae": 1.34552,
+        "bias": 0.19018,
+        "spearman": 0.63987,
+        "top15": 4.7037
+      },
+      "shrunkXA": {
+        "rows": 11087,
+        "rounds": 18,
+        "rmse": 2.11678,
+        "mae": 1.34176,
+        "bias": 0.19709,
+        "spearman": 0.64353,
+        "top15": 4.6963
+      },
+      "hybridRates": {
+        "rows": 11087,
+        "rounds": 18,
+        "rmse": 2.11724,
+        "mae": 1.34391,
+        "bias": 0.20656,
+        "spearman": 0.64382,
+        "top15": 4.74074
+      },
+      "blendForm": {
+        "rows": 11087,
+        "rounds": 18,
+        "rmse": 2.09243,
+        "mae": 1.40167,
+        "bias": 0.26237,
+        "spearman": 0.65383,
+        "top15": 4.81852
+      },
+      "blendMinutes": {
+        "rows": 11087,
+        "rounds": 18,
+        "rmse": 2.1208,
+        "mae": 1.34231,
+        "bias": 0.19835,
+        "spearman": 0.64311,
+        "top15": 4.79259
+      },
+      "ridge": {
+        "rows": 11087,
+        "rounds": 18,
+        "rmse": 2.04753,
+        "mae": 1.2717,
+        "bias": 0.025,
+        "spearman": 0.67423,
+        "top15": 4.7963
+      },
+      "ridgeGlobal": {
+        "rows": 11087,
+        "rounds": 18,
+        "rmse": 2.05023,
+        "mae": 1.27187,
+        "bias": 0.02734,
+        "spearman": 0.67531,
+        "top15": 4.78889
+      }
+    },
+    "selection:altPaired": {
+      "FO": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.8184,
+        "mae": 2.18644,
+        "bias": 0.14665,
+        "spearman": 0.29545,
+        "top15": 5.1
+      },
+      "form": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.94786,
+        "mae": 2.20895,
+        "bias": -0.2555,
+        "spearman": 0.23213,
+        "top15": 4.98519
+      },
+      "rules": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.81372,
+        "mae": 2.15524,
+        "bias": -0.01573,
+        "spearman": 0.28769,
+        "top15": 5.12222
+      },
+      "minuteStates": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.85075,
+        "mae": 2.20156,
+        "bias": 0.10257,
+        "spearman": 0.28317,
+        "top15": 4.98889
+      },
+      "minuteHistory": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.84753,
+        "mae": 2.1754,
+        "bias": -0.03115,
+        "spearman": 0.28283,
+        "top15": 4.94444
+      },
+      "shrunkXA": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.80342,
+        "mae": 2.14893,
+        "bias": -0.0085,
+        "spearman": 0.29188,
+        "top15": 4.94444
+      },
+      "hybridRates": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.80133,
+        "mae": 2.15116,
+        "bias": 0.012,
+        "spearman": 0.29312,
+        "top15": 5.05185
+      },
+      "blendForm": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.79027,
+        "mae": 2.1237,
+        "bias": -0.08249,
+        "spearman": 0.29819,
+        "top15": 5.0037
+      },
+      "blendMinutes": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.81773,
+        "mae": 2.15824,
+        "bias": -0.00941,
+        "spearman": 0.2889,
+        "top15": 4.98519
+      },
+      "ridge": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.78773,
+        "mae": 2.08629,
+        "bias": -0.29279,
+        "spearman": 0.30395,
+        "top15": 5.05185
+      },
+      "ridgeGlobal": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.79403,
+        "mae": 2.09518,
+        "bias": -0.2819,
+        "spearman": 0.29341,
+        "top15": 5.10741
+      },
+      "ALT": {
+        "rows": 3841,
+        "rounds": 18,
+        "rmse": 2.94191,
+        "mae": 2.39628,
+        "bias": 0.85033,
+        "spearman": 0.26041,
+        "top15": 4.91852
+      }
+    },
+    "holdout:all": {
+      "FO": {
+        "rows": 22157,
+        "rounds": 34,
+        "rmse": 2.11429,
+        "mae": 1.36518,
+        "bias": 0.31375,
+        "spearman": 0.66869,
+        "top15": 4.9902
+      },
+      "form": {
+        "rows": 22157,
+        "rounds": 34,
+        "rmse": 2.21839,
+        "mae": 1.61135,
+        "bias": 0.39949,
+        "spearman": 0.65642,
+        "top15": 4.68824
+      },
+      "rules": {
+        "rows": 22157,
+        "rounds": 34,
+        "rmse": 2.09208,
+        "mae": 1.32844,
+        "bias": 0.21293,
+        "spearman": 0.66674,
+        "top15": 4.98039
+      },
+      "minuteStates": {
+        "rows": 22157,
+        "rounds": 34,
+        "rmse": 2.1426,
+        "mae": 1.38528,
+        "bias": 0.31719,
+        "spearman": 0.65304,
+        "top15": 5.01176
+      },
+      "minuteHistory": {
+        "rows": 22157,
+        "rounds": 34,
+        "rmse": 2.08445,
+        "mae": 1.31541,
+        "bias": 0.18777,
+        "spearman": 0.67164,
+        "top15": 5.18627
+      },
+      "shrunkXA": {
+        "rows": 22157,
+        "rounds": 34,
+        "rmse": 2.08753,
+        "mae": 1.32504,
+        "bias": 0.2096,
+        "spearman": 0.67018,
+        "top15": 4.88039
+      },
+      "hybridRates": {
+        "rows": 22157,
+        "rounds": 34,
+        "rmse": 2.08758,
+        "mae": 1.32727,
+        "bias": 0.2192,
+        "spearman": 0.67066,
+        "top15": 4.93922
+      },
+      "blendForm": {
+        "rows": 22157,
+        "rounds": 34,
+        "rmse": 2.06722,
+        "mae": 1.39097,
+        "bias": 0.26652,
+        "spearman": 0.68307,
+        "top15": 4.98824
+      },
+      "blendMinutes": {
+        "rows": 22157,
+        "rounds": 34,
+        "rmse": 2.08039,
+        "mae": 1.3188,
+        "bias": 0.20342,
+        "spearman": 0.67261,
+        "top15": 4.97255
+      },
+      "ridge": {
+        "rows": 22157,
+        "rounds": 34,
+        "rmse": 2.03495,
+        "mae": 1.25749,
+        "bias": 0.0023,
+        "spearman": 0.70099,
+        "top15": 4.96275
+      },
+      "ridgeGlobal": {
+        "rows": 22157,
+        "rounds": 34,
+        "rmse": 2.03494,
+        "mae": 1.25525,
+        "bias": 0.00311,
+        "spearman": 0.70383,
+        "top15": 4.99608
+      }
+    },
+    "holdout:altPaired": {
+      "FO": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 2.82553,
+        "mae": 2.20323,
+        "bias": 0.06185,
+        "spearman": 0.31409,
+        "top15": 5.15882
+      },
+      "form": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 3.00467,
+        "mae": 2.25876,
+        "bias": -0.39393,
+        "spearman": 0.24346,
+        "top15": 4.89216
+      },
+      "rules": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 2.82328,
+        "mae": 2.17448,
+        "bias": -0.1038,
+        "spearman": 0.30931,
+        "top15": 5.11961
+      },
+      "minuteStates": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 2.84622,
+        "mae": 2.2118,
+        "bias": 0.01184,
+        "spearman": 0.30334,
+        "top15": 5.21765
+      },
+      "minuteHistory": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 2.84389,
+        "mae": 2.1823,
+        "bias": -0.14453,
+        "spearman": 0.30739,
+        "top15": 5.29608
+      },
+      "shrunkXA": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 2.82167,
+        "mae": 2.17384,
+        "bias": -0.09975,
+        "spearman": 0.31067,
+        "top15": 5.05686
+      },
+      "hybridRates": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 2.81835,
+        "mae": 2.1761,
+        "bias": -0.07826,
+        "spearman": 0.3133,
+        "top15": 5.09216
+      },
+      "blendForm": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 2.82044,
+        "mae": 2.1578,
+        "bias": -0.188,
+        "spearman": 0.31991,
+        "top15": 5.1098
+      },
+      "blendMinutes": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 2.82461,
+        "mae": 2.17394,
+        "bias": -0.11142,
+        "spearman": 0.31238,
+        "top15": 5.11961
+      },
+      "ridge": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 2.85724,
+        "mae": 2.14192,
+        "bias": -0.44423,
+        "spearman": 0.30497,
+        "top15": 5.09216
+      },
+      "ridgeGlobal": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 2.86055,
+        "mae": 2.14909,
+        "bias": -0.43611,
+        "spearman": 0.2989,
+        "top15": 5.09412
+      },
+      "ALT": {
+        "rows": 7516,
+        "rounds": 34,
+        "rmse": 2.92083,
+        "mae": 2.403,
+        "bias": 0.72514,
+        "spearman": 0.27753,
+        "top15": 5.08824
+      }
+    },
+    "holdout:league:63": {
+      "FO": {
+        "rows": 1494,
+        "rounds": 3,
+        "rmse": 2.10949,
+        "mae": 1.41286,
+        "bias": 0.40304,
+        "spearman": 0.65182,
+        "top15": 4.71111
+      },
+      "form": {
+        "rows": 1494,
+        "rounds": 3,
+        "rmse": 2.14828,
+        "mae": 1.48817,
+        "bias": 0.04377,
+        "spearman": 0.66021,
+        "top15": 5.31111
+      },
+      "rules": {
+        "rows": 1494,
+        "rounds": 3,
+        "rmse": 2.07776,
+        "mae": 1.36724,
+        "bias": 0.29902,
+        "spearman": 0.65066,
+        "top15": 4.64444
+      },
+      "minuteStates": {
+        "rows": 1494,
+        "rounds": 3,
+        "rmse": 2.12852,
+        "mae": 1.42355,
+        "bias": 0.40683,
+        "spearman": 0.63881,
+        "top15": 4.91111
+      },
+      "minuteHistory": {
+        "rows": 1494,
+        "rounds": 3,
+        "rmse": 2.0303,
+        "mae": 1.27048,
+        "bias": 0.09367,
+        "spearman": 0.65897,
+        "top15": 5.17778
+      },
+      "shrunkXA": {
+        "rows": 1494,
+        "rounds": 3,
+        "rmse": 2.07298,
+        "mae": 1.36499,
+        "bias": 0.30179,
+        "spearman": 0.6536,
+        "top15": 4.33333
+      },
+      "hybridRates": {
+        "rows": 1494,
+        "rounds": 3,
+        "rmse": 2.07491,
+        "mae": 1.36761,
+        "bias": 0.30736,
+        "spearman": 0.65359,
+        "top15": 4.62222
+      },
+      "blendForm": {
+        "rows": 1494,
+        "rounds": 3,
+        "rmse": 2.02934,
+        "mae": 1.36959,
+        "bias": 0.2244,
+        "spearman": 0.66651,
+        "top15": 4.84444
+      },
+      "blendMinutes": {
+        "rows": 1494,
+        "rounds": 3,
+        "rmse": 2.04546,
+        "mae": 1.31522,
+        "bias": 0.2004,
+        "spearman": 0.65774,
+        "top15": 4.71111
+      },
+      "ridge": {
+        "rows": 1494,
+        "rounds": 3,
+        "rmse": 2.01499,
+        "mae": 1.20326,
+        "bias": -0.18463,
+        "spearman": 0.68936,
+        "top15": 4.97778
+      },
+      "ridgeGlobal": {
+        "rows": 1494,
+        "rounds": 3,
+        "rmse": 2.01457,
+        "mae": 1.20144,
+        "bias": -0.18753,
+        "spearman": 0.69139,
+        "top15": 4.97778
+      }
+    },
+    "holdout:listed": {
+      "FO": {
+        "rows": 14513,
+        "rounds": 34,
+        "rmse": 2.41704,
+        "mae": 1.71502,
+        "bias": 0.1098,
+        "spearman": 0.60185,
+        "top15": 5.18824
+      },
+      "form": {
+        "rows": 14513,
+        "rounds": 34,
+        "rmse": 2.55015,
+        "mae": 1.81682,
+        "bias": -0.03331,
+        "spearman": 0.54964,
+        "top15": 4.90196
+      },
+      "rules": {
+        "rows": 14513,
+        "rounds": 34,
+        "rmse": 2.41031,
+        "mae": 1.68132,
+        "bias": -0.02172,
+        "spearman": 0.59931,
+        "top15": 5.15882
+      },
+      "minuteStates": {
+        "rows": 14513,
+        "rounds": 34,
+        "rmse": 2.44093,
+        "mae": 1.73579,
+        "bias": 0.10514,
+        "spearman": 0.58418,
+        "top15": 5.23725
+      },
+      "minuteHistory": {
+        "rows": 14513,
+        "rounds": 34,
+        "rmse": 2.41866,
+        "mae": 1.68374,
+        "bias": -0.03784,
+        "spearman": 0.59675,
+        "top15": 5.37451
+      },
+      "shrunkXA": {
+        "rows": 14513,
+        "rounds": 34,
+        "rmse": 2.40847,
+        "mae": 1.679,
+        "bias": -0.02394,
+        "spearman": 0.6024,
+        "top15": 5.06275
+      },
+      "hybridRates": {
+        "rows": 14513,
+        "rounds": 34,
+        "rmse": 2.40667,
+        "mae": 1.68098,
+        "bias": -0.0107,
+        "spearman": 0.60344,
+        "top15": 5.12745
+      },
+      "blendForm": {
+        "rows": 14513,
+        "rounds": 34,
+        "rmse": 2.39695,
+        "mae": 1.68989,
+        "bias": -0.0268,
+        "spearman": 0.6131,
+        "top15": 5.13137
+      },
+      "blendMinutes": {
+        "rows": 14513,
+        "rounds": 34,
+        "rmse": 2.40683,
+        "mae": 1.67855,
+        "bias": -0.0243,
+        "spearman": 0.60265,
+        "top15": 5.15686
+      },
+      "ridge": {
+        "rows": 14513,
+        "rounds": 34,
+        "rmse": 2.41307,
+        "mae": 1.61885,
+        "bias": -0.29272,
+        "spearman": 0.62414,
+        "top15": 5.08235
+      },
+      "ridgeGlobal": {
+        "rows": 14513,
+        "rounds": 34,
+        "rmse": 2.41471,
+        "mae": 1.62389,
+        "bias": -0.28776,
+        "spearman": 0.62295,
+        "top15": 5.1
+      }
+    },
+    "holdout:played": {
+      "FO": {
+        "rows": 10661,
+        "rounds": 34,
+        "rmse": 2.66872,
+        "mae": 1.96362,
+        "bias": -0.2216,
+        "spearman": 0.40902,
+        "top15": 5.24118
+      },
+      "form": {
+        "rows": 10661,
+        "rounds": 34,
+        "rmse": 2.83227,
+        "mae": 1.98627,
+        "bias": -0.53235,
+        "spearman": 0.34138,
+        "top15": 4.96078
+      },
+      "rules": {
+        "rows": 10661,
+        "rounds": 34,
+        "rmse": 2.67508,
+        "mae": 1.93764,
+        "bias": -0.38074,
+        "spearman": 0.40983,
+        "top15": 5.21373
+      },
+      "minuteStates": {
+        "rows": 10661,
+        "rounds": 34,
+        "rmse": 2.69218,
+        "mae": 1.98868,
+        "bias": -0.23116,
+        "spearman": 0.39093,
+        "top15": 5.31569
+      },
+      "minuteHistory": {
+        "rows": 10661,
+        "rounds": 34,
+        "rmse": 2.69404,
+        "mae": 1.95585,
+        "bias": -0.38777,
+        "spearman": 0.40061,
+        "top15": 5.43725
+      },
+      "shrunkXA": {
+        "rows": 10661,
+        "rounds": 34,
+        "rmse": 2.67278,
+        "mae": 1.9334,
+        "bias": -0.38484,
+        "spearman": 0.41356,
+        "top15": 5.11569
+      },
+      "hybridRates": {
+        "rows": 10661,
+        "rounds": 34,
+        "rmse": 2.66988,
+        "mae": 1.93542,
+        "bias": -0.36749,
+        "spearman": 0.41452,
+        "top15": 5.20196
+      },
+      "blendForm": {
+        "rows": 10661,
+        "rounds": 34,
+        "rmse": 2.66674,
+        "mae": 1.90784,
+        "bias": -0.42912,
+        "spearman": 0.41872,
+        "top15": 5.16863
+      },
+      "blendMinutes": {
+        "rows": 10661,
+        "rounds": 34,
+        "rmse": 2.67582,
+        "mae": 1.94048,
+        "bias": -0.37764,
+        "spearman": 0.41037,
+        "top15": 5.23922
+      },
+      "ridge": {
+        "rows": 10661,
+        "rounds": 34,
+        "rmse": 2.7208,
+        "mae": 1.8988,
+        "bias": -0.69995,
+        "spearman": 0.41866,
+        "top15": 5.19608
+      },
+      "ridgeGlobal": {
+        "rows": 10661,
+        "rounds": 34,
+        "rmse": 2.72367,
+        "mae": 1.90427,
+        "bias": -0.69809,
+        "spearman": 0.41502,
+        "top15": 5.14902
+      }
+    },
+    "holdout:likely": {
+      "FO": {
+        "rows": 8759,
+        "rounds": 34,
+        "rmse": 2.88032,
+        "mae": 2.29902,
+        "bias": 0.36875,
+        "spearman": 0.29437,
+        "top15": 4.9902
+      },
+      "form": {
+        "rows": 8759,
+        "rounds": 34,
+        "rmse": 2.94915,
+        "mae": 2.22733,
+        "bias": -0.19564,
+        "spearman": 0.30861,
+        "top15": 4.77843
+      },
+      "rules": {
+        "rows": 8759,
+        "rounds": 34,
+        "rmse": 2.85927,
+        "mae": 2.25682,
+        "bias": 0.20183,
+        "spearman": 0.29158,
+        "top15": 4.98039
+      },
+      "minuteStates": {
+        "rows": 8759,
+        "rounds": 34,
+        "rmse": 2.90353,
+        "mae": 2.31138,
+        "bias": 0.33205,
+        "spearman": 0.27405,
+        "top15": 5.01961
+      },
+      "minuteHistory": {
+        "rows": 8759,
+        "rounds": 34,
+        "rmse": 2.8547,
+        "mae": 2.23837,
+        "bias": 0.13664,
+        "spearman": 0.31092,
+        "top15": 5.2
+      },
+      "shrunkXA": {
+        "rows": 8759,
+        "rounds": 34,
+        "rmse": 2.85434,
+        "mae": 2.25393,
+        "bias": 0.20205,
+        "spearman": 0.29774,
+        "top15": 4.88039
+      },
+      "hybridRates": {
+        "rows": 8759,
+        "rounds": 34,
+        "rmse": 2.85333,
+        "mae": 2.25735,
+        "bias": 0.22273,
+        "spearman": 0.30046,
+        "top15": 4.93922
+      },
+      "blendForm": {
+        "rows": 8759,
+        "rounds": 34,
+        "rmse": 2.82191,
+        "mae": 2.20668,
+        "bias": 0.08273,
+        "spearman": 0.33616,
+        "top15": 4.98824
+      },
+      "blendMinutes": {
+        "rows": 8759,
+        "rounds": 34,
+        "rmse": 2.84713,
+        "mae": 2.24291,
+        "bias": 0.17966,
+        "spearman": 0.30907,
+        "top15": 4.98235
+      },
+      "ridge": {
+        "rows": 8759,
+        "rounds": 34,
+        "rmse": 2.81333,
+        "mae": 2.14104,
+        "bias": -0.21205,
+        "spearman": 0.36387,
+        "top15": 4.96275
+      },
+      "ridgeGlobal": {
+        "rows": 8759,
+        "rounds": 34,
+        "rmse": 2.81525,
+        "mae": 2.14735,
+        "bias": -0.2042,
+        "spearman": 0.36212,
+        "top15": 4.99608
+      }
+    },
+    "holdout:position:GK": {
+      "FO": {
+        "rows": 2648,
+        "rounds": 34,
+        "rmse": 1.52767,
+        "mae": 0.78353,
+        "bias": 0.14698,
+        "spearman": 0.7164,
+        "top15": 3.11569
+      },
+      "form": {
+        "rows": 2648,
+        "rounds": 34,
+        "rmse": 1.75242,
+        "mae": 1.32241,
+        "bias": 0.40921,
+        "spearman": 0.7491,
+        "top15": 2.98824
+      },
+      "rules": {
+        "rows": 2648,
+        "rounds": 34,
+        "rmse": 1.52705,
+        "mae": 0.78323,
+        "bias": 0.14684,
+        "spearman": 0.71572,
+        "top15": 3.13333
+      },
+      "minuteStates": {
+        "rows": 2648,
+        "rounds": 34,
+        "rmse": 1.53473,
+        "mae": 0.78932,
+        "bias": 0.15391,
+        "spearman": 0.71359,
+        "top15": 3.1098
+      },
+      "minuteHistory": {
+        "rows": 2648,
+        "rounds": 34,
+        "rmse": 1.50179,
+        "mae": 0.75086,
+        "bias": 0.07169,
+        "spearman": 0.71038,
+        "top15": 3.11961
+      },
+      "shrunkXA": {
+        "rows": 2648,
+        "rounds": 34,
+        "rmse": 1.52675,
+        "mae": 0.78321,
+        "bias": 0.14754,
+        "spearman": 0.71556,
+        "top15": 3.14118
+      },
+      "hybridRates": {
+        "rows": 2648,
+        "rounds": 34,
+        "rmse": 1.52666,
+        "mae": 0.78319,
+        "bias": 0.14765,
+        "spearman": 0.71557,
+        "top15": 3.15098
+      },
+      "blendForm": {
+        "rows": 2648,
+        "rounds": 34,
+        "rmse": 1.51799,
+        "mae": 0.92712,
+        "bias": 0.22603,
+        "spearman": 0.71268,
+        "top15": 3.12549
+      },
+      "blendMinutes": {
+        "rows": 2648,
+        "rounds": 34,
+        "rmse": 1.50995,
+        "mae": 0.76545,
+        "bias": 0.10958,
+        "spearman": 0.70873,
+        "top15": 3.09216
+      },
+      "ridge": {
+        "rows": 2648,
+        "rounds": 34,
+        "rmse": 1.47621,
+        "mae": 0.72295,
+        "bias": -0.03292,
+        "spearman": 0.72249,
+        "top15": 3.22157
+      },
+      "ridgeGlobal": {
+        "rows": 2648,
+        "rounds": 34,
+        "rmse": 1.46561,
+        "mae": 0.76189,
+        "bias": 0.03419,
+        "spearman": 0.72363,
+        "top15": 3.28039
+      }
+    },
+    "holdout:position:DEF": {
+      "FO": {
+        "rows": 7564,
+        "rounds": 34,
+        "rmse": 2.22662,
+        "mae": 1.48824,
+        "bias": 0.27498,
+        "spearman": 0.60093,
+        "top15": 4.26078
+      },
+      "form": {
+        "rows": 7564,
+        "rounds": 34,
+        "rmse": 2.33602,
+        "mae": 1.72081,
+        "bias": 0.3555,
+        "spearman": 0.59469,
+        "top15": 3.53137
+      },
+      "rules": {
+        "rows": 7564,
+        "rounds": 34,
+        "rmse": 2.22634,
+        "mae": 1.4885,
+        "bias": 0.27513,
+        "spearman": 0.60056,
+        "top15": 4.26471
+      },
+      "minuteStates": {
+        "rows": 7564,
+        "rounds": 34,
+        "rmse": 2.26622,
+        "mae": 1.5403,
+        "bias": 0.37924,
+        "spearman": 0.58976,
+        "top15": 4.11176
+      },
+      "minuteHistory": {
+        "rows": 7564,
+        "rounds": 34,
+        "rmse": 2.21104,
+        "mae": 1.46651,
+        "bias": 0.25306,
+        "spearman": 0.61081,
+        "top15": 4.20588
+      },
+      "shrunkXA": {
+        "rows": 7564,
+        "rounds": 34,
+        "rmse": 2.22204,
+        "mae": 1.48616,
+        "bias": 0.26988,
+        "spearman": 0.60368,
+        "top15": 4.25294
+      },
+      "hybridRates": {
+        "rows": 7564,
+        "rounds": 34,
+        "rmse": 2.22299,
+        "mae": 1.48824,
+        "bias": 0.27599,
+        "spearman": 0.60399,
+        "top15": 4.25882
+      },
+      "blendForm": {
+        "rows": 7564,
+        "rounds": 34,
+        "rmse": 2.20687,
+        "mae": 1.54093,
+        "bias": 0.29554,
+        "spearman": 0.61757,
+        "top15": 4.24118
+      },
+      "blendMinutes": {
+        "rows": 7564,
+        "rounds": 34,
+        "rmse": 2.21295,
+        "mae": 1.47602,
+        "bias": 0.26446,
+        "spearman": 0.60873,
+        "top15": 4.18824
+      },
+      "ridge": {
+        "rows": 7564,
+        "rounds": 34,
+        "rmse": 2.17196,
+        "mae": 1.36818,
+        "bias": -0.0558,
+        "spearman": 0.64386,
+        "top15": 4.08431
+      },
+      "ridgeGlobal": {
+        "rows": 7564,
+        "rounds": 34,
+        "rmse": 2.17711,
+        "mae": 1.38723,
+        "bias": -0.01033,
+        "spearman": 0.64264,
+        "top15": 3.96471
+      }
+    },
+    "holdout:position:MID": {
+      "FO": {
+        "rows": 9241,
+        "rounds": 34,
+        "rmse": 2.19794,
+        "mae": 1.45136,
+        "bias": 0.38924,
+        "spearman": 0.68058,
+        "top15": 4.85098
+      },
+      "form": {
+        "rows": 9241,
+        "rounds": 34,
+        "rmse": 2.27139,
+        "mae": 1.63407,
+        "bias": 0.3854,
+        "spearman": 0.67048,
+        "top15": 4.5
+      },
+      "rules": {
+        "rows": 9241,
+        "rounds": 34,
+        "rmse": 2.15513,
+        "mae": 1.37951,
+        "bias": 0.18878,
+        "spearman": 0.68073,
+        "top15": 4.83529
+      },
+      "minuteStates": {
+        "rows": 9241,
+        "rounds": 34,
+        "rmse": 2.22162,
+        "mae": 1.4526,
+        "bias": 0.3233,
+        "spearman": 0.66233,
+        "top15": 4.86863
+      },
+      "minuteHistory": {
+        "rows": 9241,
+        "rounds": 34,
+        "rmse": 2.15559,
+        "mae": 1.37696,
+        "bias": 0.17449,
+        "spearman": 0.68351,
+        "top15": 5
+      },
+      "shrunkXA": {
+        "rows": 9241,
+        "rounds": 34,
+        "rmse": 2.15134,
+        "mae": 1.37624,
+        "bias": 0.19076,
+        "spearman": 0.68419,
+        "top15": 4.80588
+      },
+      "hybridRates": {
+        "rows": 9241,
+        "rounds": 34,
+        "rmse": 2.151,
+        "mae": 1.3794,
+        "bias": 0.20351,
+        "spearman": 0.68476,
+        "top15": 4.8451
+      },
+      "blendForm": {
+        "rows": 9241,
+        "rounds": 34,
+        "rmse": 2.12439,
+        "mae": 1.42998,
+        "bias": 0.24908,
+        "spearman": 0.70034,
+        "top15": 4.8902
+      },
+      "blendMinutes": {
+        "rows": 9241,
+        "rounds": 34,
+        "rmse": 2.14634,
+        "mae": 1.37432,
+        "bias": 0.18893,
+        "spearman": 0.68616,
+        "top15": 4.96275
+      },
+      "ridge": {
+        "rows": 9241,
+        "rounds": 34,
+        "rmse": 2.09329,
+        "mae": 1.32721,
+        "bias": 0.01025,
+        "spearman": 0.71828,
+        "top15": 4.96471
+      },
+      "ridgeGlobal": {
+        "rows": 9241,
+        "rounds": 34,
+        "rmse": 2.09327,
+        "mae": 1.3107,
+        "bias": -0.02503,
+        "spearman": 0.71849,
+        "top15": 4.93333
+      }
+    },
+    "holdout:position:FWD": {
+      "FO": {
+        "rows": 2704,
+        "rounds": 34,
+        "rmse": 1.9914,
+        "mae": 1.29606,
+        "bias": 0.32756,
+        "spearman": 0.67217,
+        "top15": 3.82549
+      },
+      "form": {
+        "rows": 2704,
+        "rounds": 34,
+        "rmse": 2.10276,
+        "mae": 1.51042,
+        "bias": 0.5612,
+        "spearman": 0.6544,
+        "top15": 3.85882
+      },
+      "rules": {
+        "rows": 2704,
+        "rounds": 34,
+        "rmse": 1.9602,
+        "mae": 1.24004,
+        "bias": 0.18622,
+        "spearman": 0.67079,
+        "top15": 3.83333
+      },
+      "minuteStates": {
+        "rows": 2704,
+        "rounds": 34,
+        "rmse": 2.01905,
+        "mae": 1.30518,
+        "bias": 0.28264,
+        "spearman": 0.65361,
+        "top15": 3.73529
+      },
+      "minuteHistory": {
+        "rows": 2704,
+        "rounds": 34,
+        "rmse": 1.95944,
+        "mae": 1.2353,
+        "bias": 0.16415,
+        "spearman": 0.67672,
+        "top15": 3.85686
+      },
+      "shrunkXA": {
+        "rows": 2704,
+        "rounds": 34,
+        "rmse": 1.94847,
+        "mae": 1.22993,
+        "bias": 0.16613,
+        "spearman": 0.6794,
+        "top15": 3.86275
+      },
+      "hybridRates": {
+        "rows": 2704,
+        "rounds": 34,
+        "rmse": 1.9473,
+        "mae": 1.23163,
+        "bias": 0.18403,
+        "spearman": 0.68072,
+        "top15": 3.92549
+      },
+      "blendForm": {
+        "rows": 2704,
+        "rounds": 34,
+        "rmse": 1.92692,
+        "mae": 1.29238,
+        "bias": 0.28462,
+        "spearman": 0.69332,
+        "top15": 4.03529
+      },
+      "blendMinutes": {
+        "rows": 2704,
+        "rounds": 34,
+        "rmse": 1.94652,
+        "mae": 1.23115,
+        "bias": 0.1741,
+        "spearman": 0.68087,
+        "top15": 3.90392
+      },
+      "ridge": {
+        "rows": 2704,
+        "rounds": 34,
+        "rmse": 1.90441,
+        "mae": 1.23302,
+        "bias": 0.17213,
+        "spearman": 0.71077,
+        "top15": 4.09804
+      },
+      "ridgeGlobal": {
+        "rows": 2704,
+        "rounds": 34,
+        "rmse": 1.89596,
+        "mae": 1.17972,
+        "bias": 0.10645,
+        "spearman": 0.71039,
+        "top15": 4.10784
+      }
+    },
+    "holdout:league:71": {
+      "FO": {
+        "rows": 1689,
+        "rounds": 3,
+        "rmse": 2.16698,
+        "mae": 1.39124,
+        "bias": 0.26089,
+        "spearman": 0.67372,
+        "top15": 4.82222
+      },
+      "form": {
+        "rows": 1689,
+        "rounds": 3,
+        "rmse": 2.25331,
+        "mae": 1.6037,
+        "bias": 0.3503,
+        "spearman": 0.6589,
+        "top15": 4.55556
+      },
+      "rules": {
+        "rows": 1689,
+        "rounds": 3,
+        "rmse": 2.15018,
+        "mae": 1.3582,
+        "bias": 0.15969,
+        "spearman": 0.67135,
+        "top15": 4.93333
+      },
+      "minuteStates": {
+        "rows": 1689,
+        "rounds": 3,
+        "rmse": 2.18805,
+        "mae": 1.40102,
+        "bias": 0.26042,
+        "spearman": 0.66034,
+        "top15": 4.97778
+      },
+      "minuteHistory": {
+        "rows": 1689,
+        "rounds": 3,
+        "rmse": 2.15095,
+        "mae": 1.34911,
+        "bias": 0.16005,
+        "spearman": 0.67252,
+        "top15": 5.13333
+      },
+      "shrunkXA": {
+        "rows": 1689,
+        "rounds": 3,
+        "rmse": 2.14558,
+        "mae": 1.3554,
+        "bias": 0.15535,
+        "spearman": 0.67506,
+        "top15": 4.84444
+      },
+      "hybridRates": {
+        "rows": 1689,
+        "rounds": 3,
+        "rmse": 2.14477,
+        "mae": 1.3559,
+        "bias": 0.16324,
+        "spearman": 0.6756,
+        "top15": 4.95556
+      },
+      "blendForm": {
+        "rows": 1689,
+        "rounds": 3,
+        "rmse": 2.12575,
+        "mae": 1.41672,
+        "bias": 0.2138,
+        "spearman": 0.68515,
+        "top15": 5.08889
+      },
+      "blendMinutes": {
+        "rows": 1689,
+        "rounds": 3,
+        "rmse": 2.14278,
+        "mae": 1.35039,
+        "bias": 0.16184,
+        "spearman": 0.67487,
+        "top15": 5.04444
+      },
+      "ridge": {
+        "rows": 1689,
+        "rounds": 3,
+        "rmse": 2.1108,
+        "mae": 1.30761,
+        "bias": -0.01742,
+        "spearman": 0.69918,
+        "top15": 4.88889
+      },
+      "ridgeGlobal": {
+        "rows": 1689,
+        "rounds": 3,
+        "rmse": 2.11404,
+        "mae": 1.30626,
+        "bias": -0.02009,
+        "spearman": 0.70133,
+        "top15": 4.84444
+      }
+    },
+    "holdout:league:57": {
+      "FO": {
+        "rows": 1835,
+        "rounds": 3,
+        "rmse": 2.09227,
+        "mae": 1.27732,
+        "bias": 0.26825,
+        "spearman": 0.71385,
+        "top15": 6.08889
+      },
+      "form": {
+        "rows": 1835,
+        "rounds": 3,
+        "rmse": 2.22762,
+        "mae": 1.57015,
+        "bias": 0.52557,
+        "spearman": 0.71676,
+        "top15": 4.91111
+      },
+      "rules": {
+        "rows": 1835,
+        "rounds": 3,
+        "rmse": 2.08198,
+        "mae": 1.2473,
+        "bias": 0.17924,
+        "spearman": 0.71165,
+        "top15": 6.17778
+      },
+      "minuteStates": {
+        "rows": 1835,
+        "rounds": 3,
+        "rmse": 2.13767,
+        "mae": 1.31155,
+        "bias": 0.29004,
+        "spearman": 0.70042,
+        "top15": 6.11111
+      },
+      "minuteHistory": {
+        "rows": 1835,
+        "rounds": 3,
+        "rmse": 2.0895,
+        "mae": 1.24076,
+        "bias": 0.19477,
+        "spearman": 0.7176,
+        "top15": 6.44444
+      },
+      "shrunkXA": {
+        "rows": 1835,
+        "rounds": 3,
+        "rmse": 2.07708,
+        "mae": 1.23591,
+        "bias": 0.156,
+        "spearman": 0.71455,
+        "top15": 6.13333
+      },
+      "hybridRates": {
+        "rows": 1835,
+        "rounds": 3,
+        "rmse": 2.07504,
+        "mae": 1.23842,
+        "bias": 0.16889,
+        "spearman": 0.71528,
+        "top15": 6.13333
+      },
+      "blendForm": {
+        "rows": 1835,
+        "rounds": 3,
+        "rmse": 2.06184,
+        "mae": 1.3141,
+        "bias": 0.26675,
+        "spearman": 0.72765,
+        "top15": 5.93333
+      },
+      "blendMinutes": {
+        "rows": 1835,
+        "rounds": 3,
+        "rmse": 2.07651,
+        "mae": 1.23756,
+        "bias": 0.18157,
+        "spearman": 0.71863,
+        "top15": 6.13333
+      },
+      "ridge": {
+        "rows": 1835,
+        "rounds": 3,
+        "rmse": 2.03601,
+        "mae": 1.16605,
+        "bias": 0.00351,
+        "spearman": 0.73933,
+        "top15": 5.71111
+      },
+      "ridgeGlobal": {
+        "rows": 1835,
+        "rounds": 3,
+        "rmse": 2.03783,
+        "mae": 1.16635,
+        "bias": 0.01193,
+        "spearman": 0.74498,
+        "top15": 5.77778
+      }
+    },
+    "holdout:league:54": {
+      "FO": {
+        "rows": 1584,
+        "rounds": 3,
+        "rmse": 2.12455,
+        "mae": 1.45399,
+        "bias": 0.30003,
+        "spearman": 0.66198,
+        "top15": 4.55556
+      },
+      "form": {
+        "rows": 1584,
+        "rounds": 3,
+        "rmse": 2.20893,
+        "mae": 1.66818,
+        "bias": 0.35859,
+        "spearman": 0.66934,
+        "top15": 4.53333
+      },
+      "rules": {
+        "rows": 1584,
+        "rounds": 3,
+        "rmse": 2.10689,
+        "mae": 1.42123,
+        "bias": 0.19199,
+        "spearman": 0.65931,
+        "top15": 4.66667
+      },
+      "minuteStates": {
+        "rows": 1584,
+        "rounds": 3,
+        "rmse": 2.17128,
+        "mae": 1.48143,
+        "bias": 0.30686,
+        "spearman": 0.63817,
+        "top15": 4.91111
+      },
+      "minuteHistory": {
+        "rows": 1584,
+        "rounds": 3,
+        "rmse": 2.09774,
+        "mae": 1.40508,
+        "bias": 0.19141,
+        "spearman": 0.66418,
+        "top15": 4.88889
+      },
+      "shrunkXA": {
+        "rows": 1584,
+        "rounds": 3,
+        "rmse": 2.09655,
+        "mae": 1.41452,
+        "bias": 0.1821,
+        "spearman": 0.66527,
+        "top15": 4.62222
+      },
+      "hybridRates": {
+        "rows": 1584,
+        "rounds": 3,
+        "rmse": 2.09673,
+        "mae": 1.41724,
+        "bias": 0.19441,
+        "spearman": 0.66627,
+        "top15": 4.48889
+      },
+      "blendForm": {
+        "rows": 1584,
+        "rounds": 3,
+        "rmse": 2.06886,
+        "mae": 1.46872,
+        "bias": 0.23504,
+        "spearman": 0.68312,
+        "top15": 5.11111
+      },
+      "blendMinutes": {
+        "rows": 1584,
+        "rounds": 3,
+        "rmse": 2.09088,
+        "mae": 1.40915,
+        "bias": 0.19282,
+        "spearman": 0.667,
+        "top15": 4.68889
+      },
+      "ridge": {
+        "rows": 1584,
+        "rounds": 3,
+        "rmse": 2.01048,
+        "mae": 1.32395,
+        "bias": -0.0321,
+        "spearman": 0.71541,
+        "top15": 5.08889
+      },
+      "ridgeGlobal": {
+        "rows": 1584,
+        "rounds": 3,
+        "rmse": 2.01134,
+        "mae": 1.32492,
+        "bias": -0.02566,
+        "spearman": 0.71485,
+        "top15": 5
+      }
+    },
+    "holdout:league:53": {
+      "FO": {
+        "rows": 1576,
+        "rounds": 3,
+        "rmse": 2.19106,
+        "mae": 1.4307,
+        "bias": 0.27505,
+        "spearman": 0.66766,
+        "top15": 4.64444
+      },
+      "form": {
+        "rows": 1576,
+        "rounds": 3,
+        "rmse": 2.26328,
+        "mae": 1.61176,
+        "bias": 0.35696,
+        "spearman": 0.67015,
+        "top15": 4.91111
+      },
+      "rules": {
+        "rows": 1576,
+        "rounds": 3,
+        "rmse": 2.16462,
+        "mae": 1.39286,
+        "bias": 0.16747,
+        "spearman": 0.66729,
+        "top15": 5
+      },
+      "minuteStates": {
+        "rows": 1576,
+        "rounds": 3,
+        "rmse": 2.22271,
+        "mae": 1.4629,
+        "bias": 0.29408,
+        "spearman": 0.6485,
+        "top15": 4.77778
+      },
+      "minuteHistory": {
+        "rows": 1576,
+        "rounds": 3,
+        "rmse": 2.17004,
+        "mae": 1.39754,
+        "bias": 0.18544,
+        "spearman": 0.66916,
+        "top15": 4.8
+      },
+      "shrunkXA": {
+        "rows": 1576,
+        "rounds": 3,
+        "rmse": 2.15567,
+        "mae": 1.38333,
+        "bias": 0.15346,
+        "spearman": 0.67394,
+        "top15": 4.44444
+      },
+      "hybridRates": {
+        "rows": 1576,
+        "rounds": 3,
+        "rmse": 2.15515,
+        "mae": 1.38466,
+        "bias": 0.1631,
+        "spearman": 0.67419,
+        "top15": 4.57778
+      },
+      "blendForm": {
+        "rows": 1576,
+        "rounds": 3,
+        "rmse": 2.13312,
+        "mae": 1.42743,
+        "bias": 0.21447,
+        "spearman": 0.68994,
+        "top15": 4.71111
+      },
+      "blendMinutes": {
+        "rows": 1576,
+        "rounds": 3,
+        "rmse": 2.15605,
+        "mae": 1.38885,
+        "bias": 0.17428,
+        "spearman": 0.6742,
+        "top15": 4.55556
+      },
+      "ridge": {
+        "rows": 1576,
+        "rounds": 3,
+        "rmse": 2.10479,
+        "mae": 1.29563,
+        "bias": -0.05431,
+        "spearman": 0.70971,
+        "top15": 4.6
+      },
+      "ridgeGlobal": {
+        "rows": 1576,
+        "rounds": 3,
+        "rmse": 2.10209,
+        "mae": 1.2907,
+        "bias": -0.05524,
+        "spearman": 0.7116,
+        "top15": 4.93333
+      }
+    },
+    "holdout:league:55": {
+      "FO": {
+        "rows": 2544,
+        "rounds": 4,
+        "rmse": 2.25084,
+        "mae": 1.48711,
+        "bias": 0.36182,
+        "spearman": 0.61181,
+        "top15": 4.76667
+      },
+      "form": {
+        "rows": 2544,
+        "rounds": 4,
+        "rmse": 2.29968,
+        "mae": 1.67115,
+        "bias": 0.47148,
+        "spearman": 0.63177,
+        "top15": 4.45
+      },
+      "rules": {
+        "rows": 2544,
+        "rounds": 4,
+        "rmse": 2.23604,
+        "mae": 1.45223,
+        "bias": 0.26191,
+        "spearman": 0.60699,
+        "top15": 4.43333
+      },
+      "minuteStates": {
+        "rows": 2544,
+        "rounds": 4,
+        "rmse": 2.29271,
+        "mae": 1.51318,
+        "bias": 0.36504,
+        "spearman": 0.59086,
+        "top15": 4.43333
+      },
+      "minuteHistory": {
+        "rows": 2544,
+        "rounds": 4,
+        "rmse": 2.22121,
+        "mae": 1.43412,
+        "bias": 0.24019,
+        "spearman": 0.62175,
+        "top15": 4.5
+      },
+      "shrunkXA": {
+        "rows": 2544,
+        "rounds": 4,
+        "rmse": 2.23232,
+        "mae": 1.4514,
+        "bias": 0.25982,
+        "spearman": 0.61145,
+        "top15": 4.45
+      },
+      "hybridRates": {
+        "rows": 2544,
+        "rounds": 4,
+        "rmse": 2.23301,
+        "mae": 1.45472,
+        "bias": 0.27142,
+        "spearman": 0.61197,
+        "top15": 4.48333
+      },
+      "blendForm": {
+        "rows": 2544,
+        "rounds": 4,
+        "rmse": 2.19607,
+        "mae": 1.49906,
+        "bias": 0.32321,
+        "spearman": 0.63479,
+        "top15": 4.43333
+      },
+      "blendMinutes": {
+        "rows": 2544,
+        "rounds": 4,
+        "rmse": 2.22177,
+        "mae": 1.44074,
+        "bias": 0.25572,
+        "spearman": 0.6193,
+        "top15": 4.48333
+      },
+      "ridge": {
+        "rows": 2544,
+        "rounds": 4,
+        "rmse": 2.13342,
+        "mae": 1.35478,
+        "bias": 0.07188,
+        "spearman": 0.66626,
+        "top15": 4.7
+      },
+      "ridgeGlobal": {
+        "rows": 2544,
+        "rounds": 4,
+        "rmse": 2.13847,
+        "mae": 1.35639,
+        "bias": 0.0764,
+        "spearman": 0.66683,
+        "top15": 4.58333
+      }
+    },
+    "holdout:league:47": {
+      "FO": {
+        "rows": 1997,
+        "rounds": 3,
+        "rmse": 1.9418,
+        "mae": 1.25427,
+        "bias": 0.34725,
+        "spearman": 0.69858,
+        "top15": 5.33333
+      },
+      "form": {
+        "rows": 1997,
+        "rounds": 3,
+        "rmse": 2.17102,
+        "mae": 1.64918,
+        "bias": 0.52149,
+        "spearman": 0.6145,
+        "top15": 4.28889
+      },
+      "rules": {
+        "rows": 1997,
+        "rounds": 3,
+        "rmse": 1.90859,
+        "mae": 1.21393,
+        "bias": 0.24605,
+        "spearman": 0.69877,
+        "top15": 5.33333
+      },
+      "minuteStates": {
+        "rows": 1997,
+        "rounds": 3,
+        "rmse": 1.96282,
+        "mae": 1.2733,
+        "bias": 0.35178,
+        "spearman": 0.68675,
+        "top15": 5.57778
+      },
+      "minuteHistory": {
+        "rows": 1997,
+        "rounds": 3,
+        "rmse": 1.90743,
+        "mae": 1.25239,
+        "bias": 0.26894,
+        "spearman": 0.698,
+        "top15": 5.46667
+      },
+      "shrunkXA": {
+        "rows": 1997,
+        "rounds": 3,
+        "rmse": 1.90472,
+        "mae": 1.21065,
+        "bias": 0.24429,
+        "spearman": 0.70025,
+        "top15": 5.2
+      },
+      "hybridRates": {
+        "rows": 1997,
+        "rounds": 3,
+        "rmse": 1.90717,
+        "mae": 1.21334,
+        "bias": 0.25272,
+        "spearman": 0.70043,
+        "top15": 4.97778
+      },
+      "blendForm": {
+        "rows": 1997,
+        "rounds": 3,
+        "rmse": 1.90366,
+        "mae": 1.3191,
+        "bias": 0.32745,
+        "spearman": 0.70623,
+        "top15": 5.17778
+      },
+      "blendMinutes": {
+        "rows": 1997,
+        "rounds": 3,
+        "rmse": 1.89936,
+        "mae": 1.23029,
+        "bias": 0.26072,
+        "spearman": 0.69957,
+        "top15": 5.51111
+      },
+      "ridge": {
+        "rows": 1997,
+        "rounds": 3,
+        "rmse": 1.8964,
+        "mae": 1.23353,
+        "bias": 0.10359,
+        "spearman": 0.70939,
+        "top15": 5.13333
+      },
+      "ridgeGlobal": {
+        "rows": 1997,
+        "rounds": 3,
+        "rmse": 1.89304,
+        "mae": 1.22944,
+        "bias": 0.10606,
+        "spearman": 0.71319,
+        "top15": 5.11111
+      }
+    },
+    "holdout:league:48": {
+      "FO": {
+        "rows": 3136,
+        "rounds": 4,
+        "rmse": 2.17507,
+        "mae": 1.40599,
+        "bias": 0.35528,
+        "spearman": 0.66128,
+        "top15": 5.43333
+      },
+      "form": {
+        "rows": 3136,
+        "rounds": 4,
+        "rmse": 2.24124,
+        "mae": 1.6015,
+        "bias": 0.41055,
+        "spearman": 0.66477,
+        "top15": 4.75
+      },
+      "rules": {
+        "rows": 3136,
+        "rounds": 4,
+        "rmse": 2.14981,
+        "mae": 1.36355,
+        "bias": 0.25121,
+        "spearman": 0.65982,
+        "top15": 5.41667
+      },
+      "minuteStates": {
+        "rows": 3136,
+        "rounds": 4,
+        "rmse": 2.19649,
+        "mae": 1.42135,
+        "bias": 0.35836,
+        "spearman": 0.64851,
+        "top15": 5.33333
+      },
+      "minuteHistory": {
+        "rows": 3136,
+        "rounds": 4,
+        "rmse": 2.14454,
+        "mae": 1.34041,
+        "bias": 0.22754,
+        "spearman": 0.66702,
+        "top15": 5.4
+      },
+      "shrunkXA": {
+        "rows": 3136,
+        "rounds": 4,
+        "rmse": 2.15016,
+        "mae": 1.36424,
+        "bias": 0.25506,
+        "spearman": 0.66114,
+        "top15": 5.2
+      },
+      "hybridRates": {
+        "rows": 3136,
+        "rounds": 4,
+        "rmse": 2.15025,
+        "mae": 1.36629,
+        "bias": 0.26327,
+        "spearman": 0.66203,
+        "top15": 5.23333
+      },
+      "blendForm": {
+        "rows": 3136,
+        "rounds": 4,
+        "rmse": 2.13071,
+        "mae": 1.42095,
+        "bias": 0.30162,
+        "spearman": 0.67485,
+        "top15": 5.01667
+      },
+      "blendMinutes": {
+        "rows": 3136,
+        "rounds": 4,
+        "rmse": 2.14331,
+        "mae": 1.3515,
+        "bias": 0.24542,
+        "spearman": 0.66552,
+        "top15": 5.25
+      },
+      "ridge": {
+        "rows": 3136,
+        "rounds": 4,
+        "rmse": 2.08268,
+        "mae": 1.26617,
+        "bias": 0.03469,
+        "spearman": 0.69485,
+        "top15": 4.95
+      },
+      "ridgeGlobal": {
+        "rows": 3136,
+        "rounds": 4,
+        "rmse": 2.08061,
+        "mae": 1.26278,
+        "bias": 0.03554,
+        "spearman": 0.69873,
+        "top15": 5.06667
+      }
+    },
+    "holdout:league:87": {
+      "FO": {
+        "rows": 2202,
+        "rounds": 3,
+        "rmse": 1.96412,
+        "mae": 1.20616,
+        "bias": 0.27003,
+        "spearman": 0.70326,
+        "top15": 4.71111
+      },
+      "form": {
+        "rows": 2202,
+        "rounds": 3,
+        "rmse": 2.19906,
+        "mae": 1.64414,
+        "bias": 0.53774,
+        "spearman": 0.62671,
+        "top15": 4.42222
+      },
+      "rules": {
+        "rows": 2202,
+        "rounds": 3,
+        "rmse": 1.93983,
+        "mae": 1.1718,
+        "bias": 0.17481,
+        "spearman": 0.70146,
+        "top15": 4.51111
+      },
+      "minuteStates": {
+        "rows": 2202,
+        "rounds": 3,
+        "rmse": 1.98741,
+        "mae": 1.22617,
+        "bias": 0.26151,
+        "spearman": 0.68628,
+        "top15": 4.11111
+      },
+      "minuteHistory": {
+        "rows": 2202,
+        "rounds": 3,
+        "rmse": 1.94411,
+        "mae": 1.19171,
+        "bias": 0.17626,
+        "spearman": 0.69643,
+        "top15": 4.82222
+      },
+      "shrunkXA": {
+        "rows": 2202,
+        "rounds": 3,
+        "rmse": 1.94111,
+        "mae": 1.17152,
+        "bias": 0.17798,
+        "spearman": 0.70381,
+        "top15": 4.4
+      },
+      "hybridRates": {
+        "rows": 2202,
+        "rounds": 3,
+        "rmse": 1.94041,
+        "mae": 1.17361,
+        "bias": 0.18682,
+        "spearman": 0.70413,
+        "top15": 4.71111
+      },
+      "blendForm": {
+        "rows": 2202,
+        "rounds": 3,
+        "rmse": 1.94708,
+        "mae": 1.29265,
+        "bias": 0.28592,
+        "spearman": 0.70911,
+        "top15": 4.77778
+      },
+      "blendMinutes": {
+        "rows": 2202,
+        "rounds": 3,
+        "rmse": 1.93668,
+        "mae": 1.1802,
+        "bias": 0.18139,
+        "spearman": 0.70119,
+        "top15": 4.44444
+      },
+      "ridge": {
+        "rows": 2202,
+        "rounds": 3,
+        "rmse": 1.92493,
+        "mae": 1.18006,
+        "bias": 0.07437,
+        "spearman": 0.71602,
+        "top15": 4.6
+      },
+      "ridgeGlobal": {
+        "rows": 2202,
+        "rounds": 3,
+        "rmse": 1.92389,
+        "mae": 1.17446,
+        "bias": 0.07265,
+        "spearman": 0.72088,
+        "top15": 4.62222
+      }
+    },
+    "holdout:league:61": {
+      "FO": {
+        "rows": 1809,
+        "rounds": 3,
+        "rmse": 1.87353,
+        "mae": 1.20146,
+        "bias": 0.33908,
+        "spearman": 0.69063,
+        "top15": 4.73333
+      },
+      "form": {
+        "rows": 1809,
+        "rounds": 3,
+        "rmse": 1.95507,
+        "mae": 1.42308,
+        "bias": 0.26852,
+        "spearman": 0.69027,
+        "top15": 4.71111
+      },
+      "rules": {
+        "rows": 1809,
+        "rounds": 3,
+        "rmse": 1.84499,
+        "mae": 1.16439,
+        "bias": 0.24579,
+        "spearman": 0.68926,
+        "top15": 4.93333
+      },
+      "minuteStates": {
+        "rows": 1809,
+        "rounds": 3,
+        "rmse": 1.90028,
+        "mae": 1.2159,
+        "bias": 0.34066,
+        "spearman": 0.68039,
+        "top15": 5.13333
+      },
+      "minuteHistory": {
+        "rows": 1809,
+        "rounds": 3,
+        "rmse": 1.81377,
+        "mae": 1.12088,
+        "bias": 0.16098,
+        "spearman": 0.6979,
+        "top15": 5.28889
+      },
+      "shrunkXA": {
+        "rows": 1809,
+        "rounds": 3,
+        "rmse": 1.83924,
+        "mae": 1.16327,
+        "bias": 0.24379,
+        "spearman": 0.69142,
+        "top15": 5.13333
+      },
+      "hybridRates": {
+        "rows": 1809,
+        "rounds": 3,
+        "rmse": 1.84023,
+        "mae": 1.16441,
+        "bias": 0.24975,
+        "spearman": 0.69195,
+        "top15": 5.13333
+      },
+      "blendForm": {
+        "rows": 1809,
+        "rounds": 3,
+        "rmse": 1.81213,
+        "mae": 1.22144,
+        "bias": 0.25122,
+        "spearman": 0.70325,
+        "top15": 5
+      },
+      "blendMinutes": {
+        "rows": 1809,
+        "rounds": 3,
+        "rmse": 1.82128,
+        "mae": 1.14023,
+        "bias": 0.20522,
+        "spearman": 0.69602,
+        "top15": 4.95556
+      },
+      "ridge": {
+        "rows": 1809,
+        "rounds": 3,
+        "rmse": 1.78612,
+        "mae": 1.07446,
+        "bias": -0.06171,
+        "spearman": 0.71538,
+        "top15": 5.08889
+      },
+      "ridgeGlobal": {
+        "rows": 1809,
+        "rounds": 3,
+        "rmse": 1.78694,
+        "mae": 1.06928,
+        "bias": -0.07056,
+        "spearman": 0.72261,
+        "top15": 5.13333
+      }
+    },
+    "holdout:league:42": {
+      "FO": {
+        "rows": 1157,
+        "rounds": 1,
+        "rmse": 2.30051,
+        "mae": 1.45298,
+        "bias": 0.17519,
+        "spearman": 0.64543,
+        "top15": 5.53333
+      },
+      "form": {
+        "rows": 1157,
+        "rounds": 1,
+        "rmse": 2.40159,
+        "mae": 1.74545,
+        "bias": 0.38799,
+        "spearman": 0.61925,
+        "top15": 6.26667
+      },
+      "rules": {
+        "rows": 1157,
+        "rounds": 1,
+        "rmse": 2.28834,
+        "mae": 1.42433,
+        "bias": 0.07531,
+        "spearman": 0.63985,
+        "top15": 5.53333
+      },
+      "minuteStates": {
+        "rows": 1157,
+        "rounds": 1,
+        "rmse": 2.32453,
+        "mae": 1.47512,
+        "bias": 0.17615,
+        "spearman": 0.6258,
+        "top15": 5.6
+      },
+      "minuteHistory": {
+        "rows": 1157,
+        "rounds": 1,
+        "rmse": 2.29463,
+        "mae": 1.42088,
+        "bias": 0.05179,
+        "spearman": 0.63688,
+        "top15": 5.86667
+      },
+      "shrunkXA": {
+        "rows": 1157,
+        "rounds": 1,
+        "rmse": 2.28207,
+        "mae": 1.41926,
+        "bias": 0.07141,
+        "spearman": 0.64463,
+        "top15": 5.93333
+      },
+      "hybridRates": {
+        "rows": 1157,
+        "rounds": 1,
+        "rmse": 2.27702,
+        "mae": 1.42073,
+        "bias": 0.08672,
+        "spearman": 0.64499,
+        "top15": 5.93333
+      },
+      "blendForm": {
+        "rows": 1157,
+        "rounds": 1,
+        "rmse": 2.26276,
+        "mae": 1.50121,
+        "bias": 0.16622,
+        "spearman": 0.64595,
+        "top15": 5.86667
+      },
+      "blendMinutes": {
+        "rows": 1157,
+        "rounds": 1,
+        "rmse": 2.2821,
+        "mae": 1.41914,
+        "bias": 0.06925,
+        "spearman": 0.64162,
+        "top15": 5.93333
+      },
+      "ridge": {
+        "rows": 1157,
+        "rounds": 1,
+        "rmse": 2.25335,
+        "mae": 1.37646,
+        "bias": -0.09166,
+        "spearman": 0.66677,
+        "top15": 6.2
+      },
+      "ridgeGlobal": {
+        "rows": 1157,
+        "rounds": 1,
+        "rmse": 2.25444,
+        "mae": 1.37863,
+        "bias": -0.08933,
+        "spearman": 0.66139,
+        "top15": 6
+      }
+    },
+    "holdout:league:73": {
+      "FO": {
+        "rows": 1134,
+        "rounds": 1,
+        "rmse": 2.20158,
+        "mae": 1.47998,
+        "bias": 0.32566,
+        "spearman": 0.61298,
+        "top15": 4.53333
+      },
+      "form": {
+        "rows": 1134,
+        "rounds": 1,
+        "rmse": 2.26291,
+        "mae": 1.69799,
+        "bias": 0.39892,
+        "spearman": 0.59249,
+        "top15": 3.4
+      },
+      "rules": {
+        "rows": 1134,
+        "rounds": 1,
+        "rmse": 2.17372,
+        "mae": 1.43996,
+        "bias": 0.21371,
+        "spearman": 0.61288,
+        "top15": 3.8
+      },
+      "minuteStates": {
+        "rows": 1134,
+        "rounds": 1,
+        "rmse": 2.21126,
+        "mae": 1.48653,
+        "bias": 0.30657,
+        "spearman": 0.60099,
+        "top15": 4.2
+      },
+      "minuteHistory": {
+        "rows": 1134,
+        "rounds": 1,
+        "rmse": 2.15968,
+        "mae": 1.42434,
+        "bias": 0.17307,
+        "spearman": 0.61967,
+        "top15": 4.8
+      },
+      "shrunkXA": {
+        "rows": 1134,
+        "rounds": 1,
+        "rmse": 2.16072,
+        "mae": 1.43499,
+        "bias": 0.22049,
+        "spearman": 0.61752,
+        "top15": 4.06667
+      },
+      "hybridRates": {
+        "rows": 1134,
+        "rounds": 1,
+        "rmse": 2.16377,
+        "mae": 1.43938,
+        "bias": 0.23171,
+        "spearman": 0.61706,
+        "top15": 4.33333
+      },
+      "blendForm": {
+        "rows": 1134,
+        "rounds": 1,
+        "rmse": 2.13994,
+        "mae": 1.49593,
+        "bias": 0.27407,
+        "spearman": 0.62699,
+        "top15": 4
+      },
+      "blendMinutes": {
+        "rows": 1134,
+        "rounds": 1,
+        "rmse": 2.15636,
+        "mae": 1.42794,
+        "bias": 0.2024,
+        "spearman": 0.62004,
+        "top15": 4.06667
+      },
+      "ridge": {
+        "rows": 1134,
+        "rounds": 1,
+        "rmse": 2.10017,
+        "mae": 1.37719,
+        "bias": 0.03666,
+        "spearman": 0.64125,
+        "top15": 3.66667
+      },
+      "ridgeGlobal": {
+        "rows": 1134,
+        "rounds": 1,
+        "rmse": 2.09447,
+        "mae": 1.37285,
+        "bias": 0.03719,
+        "spearman": 0.64399,
+        "top15": 4.06667
+      }
+    },
+    "holdout:oppPaired": {
+      "FO": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.66582,
+        "mae": 2.10692,
+        "bias": 0.19954,
+        "spearman": 0.31685,
+        "top15": 5.24667
+      },
+      "form": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.90012,
+        "mae": 2.19179,
+        "bias": -0.3347,
+        "spearman": 0.21731,
+        "top15": 4.77333
+      },
+      "rules": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.66044,
+        "mae": 2.07365,
+        "bias": 0.02822,
+        "spearman": 0.30926,
+        "top15": 5.30667
+      },
+      "minuteStates": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.69097,
+        "mae": 2.11831,
+        "bias": 0.16732,
+        "spearman": 0.29623,
+        "top15": 5.46667
+      },
+      "minuteHistory": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.6842,
+        "mae": 2.08236,
+        "bias": -0.00841,
+        "spearman": 0.29995,
+        "top15": 5.30667
+      },
+      "shrunkXA": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.66652,
+        "mae": 2.07784,
+        "bias": 0.02204,
+        "spearman": 0.30938,
+        "top15": 5.19333
+      },
+      "hybridRates": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.66429,
+        "mae": 2.08013,
+        "bias": 0.04351,
+        "spearman": 0.31195,
+        "top15": 5.19333
+      },
+      "blendForm": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.67432,
+        "mae": 2.06175,
+        "bias": -0.08494,
+        "spearman": 0.31235,
+        "top15": 5.11333
+      },
+      "blendMinutes": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.66737,
+        "mae": 2.07574,
+        "bias": 0.01763,
+        "spearman": 0.30817,
+        "top15": 5.26
+      },
+      "ridge": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.71371,
+        "mae": 2.0348,
+        "bias": -0.43067,
+        "spearman": 0.30714,
+        "top15": 5.08667
+      },
+      "ridgeGlobal": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.71828,
+        "mae": 2.04054,
+        "bias": -0.42373,
+        "spearman": 0.30395,
+        "top15": 5.08667
+      },
+      "ALT": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.78108,
+        "mae": 2.30108,
+        "bias": 0.76061,
+        "spearman": 0.2787,
+        "top15": 4.95333
+      },
+      "FO_OPP": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.66566,
+        "mae": 2.10745,
+        "bias": 0.20281,
+        "spearman": 0.31724,
+        "top15": 5.28
+      },
+      "ALT_OPP": {
+        "rows": 1952,
+        "rounds": 10,
+        "rmse": 2.78237,
+        "mae": 2.30213,
+        "bias": 0.76527,
+        "spearman": 0.27781,
+        "top15": 4.88667
+      }
+    }
+  },
+  "maxRssMiB": 224
+}

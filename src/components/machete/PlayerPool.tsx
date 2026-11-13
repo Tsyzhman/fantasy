@@ -19,6 +19,7 @@ import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { fantasyPlayerMatchesNameQuery } from "@/machete/player-identity";
 import { compareFantasyPositions, isFantasyPositionSortKey } from "@/lib/players/fantasy-position-order";
+import { squadResearchColumnIndex, squadResearchColumnKeys, squadResearchForecasts } from "@/machete/squad-research-columns";
 import { nextAlternativeFantasyPoints, nextFantasyPoints, playerAlternativeHorizonPoints, playerHorizonPoints, sumCompleteRoundForecasts, type FantasyPlannerPlayer, type FantasyPositionGroup, type FantasySquadSelection } from "@/machete/squad_logic";
 import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
 import type { SquadFilterPreset } from "@/machete/squad-filter-presets";
@@ -52,7 +53,7 @@ const opponentForecastColumnKeys = new Set([
   "opponentAdjustedFp", "opponentAdjustedHorizon", "alternativeOpponentAdjustedFp", "alternativeOpponentAdjustedHorizon"
 ]);
 const forecastScoreColumnKeys = new Set([
-  "nextFp", "horizonFp", "alternative", "alternativeHorizon", "foontasy", "modelHorizon", ...opponentForecastColumnKeys
+  "nextFp", "horizonFp", "alternative", "alternativeHorizon", "foontasy", "modelHorizon", ...opponentForecastColumnKeys, ...squadResearchColumnKeys
 ]);
 
 export const playerPoolFixedColumnWidths = {
@@ -551,6 +552,7 @@ export function CustomPlayerPoolRow({ player, columns, horizon, language, provid
 
 /**
  * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#research-forecasts
  * @spec spec://modules/machete/FEAT-004-rotation-risk#scenarios
  */
 export function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage, provider = "SPORTS_RU"): PlayerPoolOptionalColumn[] {
@@ -578,6 +580,9 @@ export function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horiz
     ] : []),
     column("alternativePerPrice", "Alt/price", "Альт/цена", `Alternative next-round expected fantasy points divided by the current ${priceProviderLabel} price. Higher means more Alt points per one price unit.`, `Альтернативные ожидаемые ФО на следующий тур, делённые на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.`, true, 82),
     column("alternativeHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of independently calculated personal Alt forecasts for the next ${horizon} rounds.`, `Сумма отдельно рассчитанных личных прогнозов Alt на следующие ${horizon} туров.`),
+    ...(provider === "SPORTS_RU" ? squadResearchForecasts.map(({ column: key, en, ru, descriptionEn, descriptionRu }) =>
+      column(key, en, ru, descriptionEn, descriptionRu, true, 82)
+    ) : []),
     column("fixtures", "Fixtures", "Матчи", "The next opponents in the selected horizon. Chip colour represents fixture difficulty; hover a chip for the full opponent name and home/away context.", "Следующие соперники на выбранном горизонте. Цвет плашки показывает сложность матча; при наведении доступны полное имя соперника и поле дома/в гостях.", false, 230),
     column("age", "Age", "Возраст", "Player age from the current FotMob profile.", "Возраст игрока из текущего профиля FotMob."),
     column("nationality", "Nationality", "Гражданство", "Player nationality from FotMob metadata.", "Гражданство игрока из метаданных FotMob.", false, 120),
@@ -1026,6 +1031,8 @@ export function useFixedVirtualRows<T>(
 
 export function customPlayerPoolColumnValue(key: string, player: FantasyPlannerPlayer, horizon: number): string | number | null {
   const projected = player.projectedFixtureComponents ?? player.projectionListMetrics;
+  const researchIndex = squadResearchColumnIndex(key);
+  if (researchIndex !== undefined) return player.researchRoundPoints?.[0]?.[researchIndex] ?? null;
   if (key.startsWith("stat:")) return player.historicalStats?.[key.slice(5)] ?? null;
   switch (key) {
     case "nextFp": return nextFantasyPoints(player);
@@ -1354,7 +1361,9 @@ export function PlayerPoolMobileList({
   const [visibleCount, setVisibleCount] = useState(pageSize);
   const visiblePlayers = players.slice(0, visibleCount);
   const metricColumns = columns ?? playerPoolOptionalColumns(players, horizon, language, provider);
-  const opponentNextColumns = metricColumns.filter(({ key }) => key === "opponentAdjustedFp" || key === "alternativeOpponentAdjustedFp");
+  const comparisonColumns = metricColumns.filter(({ key }) =>
+    key === "opponentAdjustedFp" || key === "alternativeOpponentAdjustedFp" || squadResearchColumnIndex(key) !== undefined
+  );
   const formatPoints = provider === "SPORTS_RU" ? formatForecastScore : formatScore;
 
   return (
@@ -1444,9 +1453,9 @@ export function PlayerPoolMobileList({
               </div>
             </dl>
 
-            {opponentNextColumns.length > 0 ? (
+            {comparisonColumns.length > 0 ? (
               <dl className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
-                {opponentNextColumns.map(({ key, label }) => (
+                {comparisonColumns.map(({ key, label }) => (
                   <div key={key} className="flex gap-1">
                     <dt className="text-slate-500">{label}</dt>
                     <dd data-column-key={key} className="font-semibold text-ink num-tabular">
