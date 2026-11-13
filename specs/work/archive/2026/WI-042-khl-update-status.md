@@ -11,7 +11,7 @@ KHL visitors can see when server data was refreshed and whether the latest attem
 
 - Governing: `spec://modules/khl/INFRA-001-khl-data-ingestion#sync-status`
 - Governing: `spec://modules/khl/INFRA-002-khl-storage-and-api#api`
-- Governing: `spec://modules/khl/FEAT-002-khl-squad#layout`
+- Governing: `spec://modules/khl/FEAT-012-khl-squad#layout`
 - Constraint: `spec://modules/khl/INFRA-001-khl-data-ingestion#operations`
 
 ## Scope

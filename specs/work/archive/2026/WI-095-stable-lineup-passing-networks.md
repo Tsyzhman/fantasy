@@ -9,9 +9,9 @@ MiXerr builds two directed passing networks for a completed match from a StatsBo
 
 ## Specs
 
-- Governing: `spec://modules/mixerr/FEAT-001-passing-networks#root`
+- Governing: `spec://modules/mixerr/FEAT-014-passing-networks#root`
 - Constraint: `spec://common/PROP-002-editorial-sport-design#contracts`
-- Affected: `spec://modules/mixerr/FEAT-001-passing-networks#root`
+- Affected: `spec://modules/mixerr/FEAT-014-passing-networks#root`
 
 ## Scope
 

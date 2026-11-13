@@ -4,7 +4,7 @@ status: active
 
 <a name="root"></a>
 
-# FEAT-003: Player card on the Squad {#root} field
+# FEAT-003: Player card on the Squad field {#root}
 
 <a name="plain-language"></a>
 

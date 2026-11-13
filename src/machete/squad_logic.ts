@@ -1,5 +1,4 @@
 import { fantasyPositionRank } from "@/lib/players/fantasy-position-order";
-/** @spec spec://modules/machete/FEAT-004-rotation-risk#contracts */
 import { currentRotationRisk, type RotationRisk } from "./rotation-risk";
 import { optimizeGlobalSquad, buildGlobalTransferSuggestions } from "./global-strategy-planner";
 import type { GlobalStrategyRequestContext } from "./global-strategy";
@@ -1182,6 +1181,7 @@ function sampleRoundScores(player: FantasyPlannerPlayer, horizon: number) {
   return primary.length > 0 ? primary : [finiteScore(nextFantasyPoints(player))];
 }
 
+/** @spec spec://modules/machete/FEAT-004-rotation-risk#contracts */
 export function fantasySquadStrategyPlayerScore(
   player: FantasyPlannerPlayer,
   horizon: number,

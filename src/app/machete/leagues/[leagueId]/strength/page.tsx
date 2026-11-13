@@ -1,4 +1,4 @@
-/** @spec spec://modules/machete/FEAT-009-league-strength#view */
+/** @spec spec://modules/machete/FEAT-015-league-strength#view */
 
 import Link from "next/link";
 import { notFound } from "next/navigation";

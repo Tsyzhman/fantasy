@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta */
+/** @spec spec://modules/khl/FEAT-013-khl-projections-and-optimizer#rolling-beta */
 import { noVig, type HockeyMarket } from '@/providers/fonbet/hockey-markets';
 import type { KhlMatchExpectation } from './contracts';
 export function opponentAdjustment(input: { markets?: HockeyMarket[]; home: boolean; startsAt: Date; observedAt?: Date; asOf: Date; source?: string; snapshotIds?: string[] }): KhlMatchExpectation['adjustment'] {

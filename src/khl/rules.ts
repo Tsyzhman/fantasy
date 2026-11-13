@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-001-khl-module-and-rules#rules */
+/** @spec spec://modules/khl/FEAT-011-khl-module-and-rules#rules */
 import type { KhlPlayer, KhlPosition, KhlWeek } from "./contracts";
 export const KHL_RULES = { size: 17, positions: { G: 2, D: 6, F: 9 }, initialBudget: 20000, clubLimit: 3, weeklyTransfers: 5 } as const;
 export function validateRoster(players: KhlPlayer[], capital: number | null, complete = true): string[] {

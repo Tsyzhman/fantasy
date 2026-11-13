@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-002-khl-squad#sports-import */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#sports-import */
 import { parse } from "node-html-parser";
 import type { KhlPosition } from "@/khl/contracts";
 

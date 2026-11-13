@@ -11,8 +11,8 @@ The complete Production Browser Smoke passes on the current production interface
 
 - Governing: `spec://modules/betting/FEAT-001-virtual-league#algorithms`
 - Governing: `spec://modules/betting/FEAT-001-virtual-league#ui`
-- Governing: `spec://modules/khl/FEAT-002-khl-squad#table`
-- Governing: `spec://modules/khl/FEAT-002-khl-squad#cards`
+- Governing: `spec://modules/khl/FEAT-012-khl-squad#table`
+- Governing: `spec://modules/khl/FEAT-012-khl-squad#cards`
 - Governing: `spec://modules/machete/FEAT-003-squad-player-card#root`
 
 ## Scope

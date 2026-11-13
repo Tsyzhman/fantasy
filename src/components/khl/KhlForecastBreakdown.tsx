@@ -1,5 +1,5 @@
-/** @spec spec://modules/khl/FEAT-002-khl-squad#cards
- * @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#cards
+ * @spec spec://modules/khl/FEAT-013-khl-projections-and-optimizer#rolling-beta */
 import { expectedStatKeys, formatKhlNumber as n, type KhlPlayer } from '@/khl/contracts';
 import { expectedStatLabels, expectedTotals, forecastFixtures, goalCalculation, rateCalculation } from '@/khl/forecast-explanation';
 

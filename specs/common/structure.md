@@ -3,7 +3,7 @@
 # Technical map {#root}
 
 ## Betting league
-`src/betting/`, `src/app/betting/`, `src/app/api/betting/` - line, algorithms and accounting of the virtual league. Namespace: `spec://modules/betting/FEAT-001-virtual-league#root`. The worker cycle is connected via instrumentation; tables have the betting_ prefix.
+`src/betting/`, `src/app/betting/`, `src/app/api/betting/` - line, algorithms and accounting of the virtual league. FEAT-016 retains the document address `spec://modules/betting/FEAT-001-virtual-league#root` for references in applied migrations. The worker cycle is connected via instrumentation; tables have the betting_ prefix.
 
 ## Franchise analytics
 `src/franchises/`, `src/server/franchises/`, `src/app/franchises/`, `src/app/api/franchises/`, `scripts/franchise-analytics/` — подготовка снимка, алгоритмическая агрегация по дистанции, общий UI и xФО. Namespace: `spec://modules/franchises/FEAT-005-franchise-analytics#root`. Независим от ограничений франшизы Machete; использует общий session auth и статистику core_data.
@@ -47,13 +47,13 @@ Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, th
 
 | Area | Responsibility | Primary code |
 |---|---|---|
-| League strength | `spec://modules/machete/FEAT-009-league-strength#root`: bounded season reader and Massey rating view | `src/machete/league-strength*.ts`, `src/app/machete/leagues/[leagueId]/strength/` |
-| MiXerr passing networks | `spec://modules/mixerr/FEAT-001-passing-networks#root`: event file validation, starting lineup windows and pitch graphs | `src/mixerr/passing-network.ts`, `src/components/mixerr/PassingNetworks.tsx`, `src/app/mixerr/passing-networks/` |
+| League strength | `spec://modules/machete/FEAT-015-league-strength#root`: bounded season reader and Massey rating view | `src/machete/league-strength*.ts`, `src/app/machete/leagues/[leagueId]/strength/` |
+| MiXerr passing networks | `spec://modules/mixerr/FEAT-014-passing-networks#root`: event file validation, starting lineup windows and pitch graphs | `src/mixerr/passing-network.ts`, `src/components/mixerr/PassingNetworks.tsx`, `src/app/mixerr/passing-networks/` |
 | Spec workflow tooling | PROP-001: explicit standalone/managed mode validation, mirrored client skills and contract fixtures | `.agents/skills/spec-driven-work/scripts/check-workflow.mjs`, `.claude/skills/spec-driven-work/scripts/check-workflow.mjs`, `src/lib/workflow-validator.test.ts` |
 | Machete UI | League, player, model, squad, and sync screens | `src/app/machete` |
 | Squad player card | FEAT-003: contact-sheet pitch/bench card and themed styles | `src/components/machete/FantasySquadPlanner.tsx`, `src/app/globals.css` |
 | Machete domain | Read models, scoring, Sports.ru mapping, squad planning | `src/machete` |
-| Squad pool and explanations | FEAT-001: virtual desktop pool, paginated touch cards, selected metrics, accessible widths and forecast explanations | `src/components/machete/PlayerPool.tsx`, `ColumnResizeHandle.tsx`, `planner-explanations.tsx` |
+| Squad pool and explanations | FEAT-001: virtual desktop pool, paginated touch cards, selected metrics, accessible widths and forecast explanations. FEAT-004: rotation-risk column and tooltip | `src/components/machete/PlayerPool.tsx`, `ColumnResizeHandle.tsx`, `planner-explanations.tsx` |
 | Squad commands, data and drafts | FEAT-001/INFRA-006: captain/selection/round transitions, bounded saved-view and export requests, tab draft lifecycle | `src/components/machete/planner-squad-commands.ts`, `planner-data.ts`, `planner-draft.ts`, `use-planner-draft.ts` |
 | Squad projection and team strength | FEAT-001: pure forecast arithmetic and normalized team-strength inputs; public planner exports remain compatible | `src/machete/squad-projection.ts`, `src/machete/squad-team-strength.ts` |
 | Current Squad FFO | FEAT-001: exact Sports.ru tour, latest imported batch and compact status update | `src/machete/squad-foontasy.ts`, `src/app/api/machete/squads/snapshot/route.ts` |
@@ -91,9 +91,9 @@ Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, th
 
 ## KHL
 
-Isolated `src/khl/`, `src/server/khl/`, `src/components/khl/`, `src/app/machete/khl/`, `src/app/api/machete/khl/` and tables `khl_*`. Adapters: `src/providers/sports-ru-hockey/`, `khl-mobile/`, `khl-xg/`, `fonbet/hockey-*`. Contracts in `specs/modules/khl/` (FEAT-001/002/003, INFRA-001/002/003). Football core_data and scoring remain independent. KHL flags are turned off until production readiness.
+Isolated `src/khl/`, `src/server/khl/`, `src/components/khl/`, `src/app/machete/khl/`, `src/app/api/machete/khl/` and tables `khl_*`. Adapters: `src/providers/sports-ru-hockey/`, `khl-mobile/`, `khl-xg/`, `fonbet/hockey-*`. Contracts in `specs/modules/khl/` (FEAT-011/012/013, INFRA-001/002/003). Football core_data and scoring remain independent. KHL flags are turned off until production readiness.
 
-Матчевые протоколы КХЛ: одноразовый HTTP `scripts/khl-protocol-http.py` (зависимости `khl-http-requirements.txt`, без браузера), серверный таймер `ops/fantasy-khl-statistics.*` → `src/providers/khl-mobile/protocol*.ts` → `src/server/khl/protocol-import.ts`/`protocol-scheduler.ts` → агрегаты в `read-model.ts`. Базовый семидневный EP: `rolling-forecast.ts`; owning contracts INFRA-001#protocols, INFRA-002#protocol-aggregates, FEAT-003#rolling-beta.
+Матчевые протоколы КХЛ: одноразовый HTTP `scripts/khl-protocol-http.py` (зависимости `khl-http-requirements.txt`, без браузера), серверный таймер `ops/fantasy-khl-statistics.*` → `src/providers/khl-mobile/protocol*.ts` → `src/server/khl/protocol-import.ts`/`protocol-scheduler.ts` → агрегаты в `read-model.ts`. Базовый семидневный EP: `rolling-forecast.ts`; owning contracts INFRA-001#protocols, INFRA-002#protocol-aggregates, FEAT-013#rolling-beta.
 
 Sports fantasy weeks: `src/khl/fantasy-calendar.ts` resolves agreeing club observations; `src/server/khl/fantasy-calendar.ts` fetches bounded club calendars and atomically corrects assignments in the existing hourly cycle. Ownership: INFRA-001#fantasy-weeks; verified boundaries and readiness gates remain independent.
 

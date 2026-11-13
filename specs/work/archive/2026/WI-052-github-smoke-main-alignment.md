@@ -10,9 +10,9 @@ The default branch passes GitHub Check and the production browser smoke with pat
 ## Specs
 
 - Governing: `spec://modules/khl/INFRA-001-khl-data-ingestion#sync-status`
-- Governing: `spec://modules/khl/FEAT-002-khl-squad#table`
-- Governing: `spec://modules/khl/FEAT-002-khl-squad#cards`
-- Constraint: `spec://modules/khl/FEAT-002-khl-squad#layout`
+- Governing: `spec://modules/khl/FEAT-012-khl-squad#table`
+- Governing: `spec://modules/khl/FEAT-012-khl-squad#cards`
+- Constraint: `spec://modules/khl/FEAT-012-khl-squad#layout`
 - Constraint: `spec://common/structure#root`
 
 ## Scope

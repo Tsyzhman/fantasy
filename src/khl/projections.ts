@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#forecast */
+/** @spec spec://modules/khl/FEAT-013-khl-projections-and-optimizer#forecast */
 export function expectedSavePoints(distribution: { saves: number; probability: number }[]) {
   if (!distribution.length || distribution.some(x => !Number.isInteger(x.saves) || x.saves < 0 || !Number.isFinite(x.probability) || x.probability < 0) || Math.abs(distribution.reduce((n, x) => n + x.probability, 0) - 1) > 1e-6) return null;
   return distribution.reduce((sum, x) => sum + Math.floor(x.saves / 2) * x.probability, 0);

@@ -11,7 +11,7 @@ The default branch and production release agree on the current navigation contra
 
 - Governing: `spec://common/PROP-002-editorial-sport-design#contracts`
 - Governing: `spec://modules/khl/INFRA-001-khl-data-ingestion#sync-status`
-- Governing: `spec://modules/khl/FEAT-002-khl-squad#table`
+- Governing: `spec://modules/khl/FEAT-012-khl-squad#table`
 - Constraint: `spec://common/INFRA-006-continuous-deployment#runtime`
 - Constraint: `spec://common/INFRA-006-continuous-deployment#observability`
 - Constraint: `spec://common/FEAT-009-session-authentication#sessions`

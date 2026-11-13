@@ -174,7 +174,7 @@ The initial loading is continued by the same fenced coordinator: `node scripts/k
 
 ## Related specifications {#relationships}
 
-`spec://modules/khl/INFRA-002-khl-storage-and-api#schema`, `spec://modules/khl/INFRA-003-khl-fonbet-odds#root`, `spec://modules/khl/FEAT-003-khl-projections-and-optimizer#inputs`.
+`spec://modules/khl/INFRA-002-khl-storage-and-api#schema`, `spec://modules/khl/INFRA-003-khl-fonbet-odds#root`, `spec://modules/khl/FEAT-013-khl-projections-and-optimizer#inputs`.
 
 <a name="changelog"></a>
 

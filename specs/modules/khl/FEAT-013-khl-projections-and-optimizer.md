@@ -4,7 +4,7 @@ status: active
 
 <a name="root"></a>
 
-# FEAT-003: hockey score forecast and optimizer {#root}
+# FEAT-013: hockey score forecast and optimizer {#root}
 
 <a name="plain-language"></a>
 
@@ -112,11 +112,13 @@ Proposed forecast release gate: MAE is not worse than the baseline in general an
 
 ## Related specifications {#relationships}
 
-`spec://modules/khl/INFRA-001-khl-data-ingestion#xg-gate`, `spec://modules/khl/INFRA-003-khl-fonbet-odds#markets`, `spec://modules/khl/FEAT-001-khl-module-and-rules#scoring`, `spec://modules/khl/FEAT-002-khl-squad#cards`.
+`spec://modules/khl/INFRA-001-khl-data-ingestion#xg-gate`, `spec://modules/khl/INFRA-003-khl-fonbet-odds#markets`, `spec://modules/khl/FEAT-011-khl-module-and-rules#scoring`, `spec://modules/khl/FEAT-012-khl-squad#cards`.
 
 <a name="changelog"></a>
 
 ## История {#changelog}
+
+- 2026-11-13: Для устранения конфликта идентификаторов номер спецификации изменён с FEAT-003 на FEAT-013.
 
 - 2026-09-20: WI-026 — KHL-only архив даёт известные событийные суммы, но без полного знаменателя участия не влияет на историческую вероятность выхода; официальные FP не выводятся из протокола.
 

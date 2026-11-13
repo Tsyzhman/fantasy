@@ -13,7 +13,7 @@ Each Squad league shows the most frequently added and removed players in saved p
 - Governing: `spec://modules/machete/FEAT-008-platform-transfer-trends#root`
 - Affected: `spec://modules/machete/FEAT-008-platform-transfer-trends#root`
 - Constraint: `spec://modules/machete/FEAT-006-sports-popularity#sources`
-- Constraint: `spec://modules/khl/FEAT-002-khl-squad#scope`
+- Constraint: `spec://modules/khl/FEAT-012-khl-squad#scope`
 
 ## Scope
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.163 - 2026-11-13
+
+- Resolve Prist specification diagnostics by giving each specification a unique ID and repairing section anchors and ownership links.
+
 ## 0.3.162 - 2026-11-13
 
 - Include the complete Git tree in GitHub source archives for Prist imports. Keep production deploy and price-sync archives compact.

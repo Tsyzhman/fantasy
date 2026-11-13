@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-002-khl-squad#sports-import */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#sports-import */
 import { createHash } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { apiError } from "@/lib/api-handler";

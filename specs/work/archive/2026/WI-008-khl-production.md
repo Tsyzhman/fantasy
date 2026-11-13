@@ -12,7 +12,7 @@ Production shows the real KHL catalog, saves and restores rosters; Betting uses 
 
 - Governing: `spec://modules/betting/FEAT-001-virtual-league#feed`.
 - Governing: `spec://modules/betting/FEAT-001-virtual-league#algorithms`.
-- Governing: `spec://modules/khl/FEAT-002-khl-squad#root`.
+- Governing: `spec://modules/khl/FEAT-012-khl-squad#root`.
 
 ## Scope
 - In: directory/worker/KHL restoration; Squad leagues in Betting, tips inside the match, history of the Champions League/UEFA + championships, hiding manual settlement UI; one-time rate reset by direct order; production acceptance.

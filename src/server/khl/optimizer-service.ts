@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#optimizer */
+/** @spec spec://modules/khl/FEAT-013-khl-projections-and-optimizer#optimizer */
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { apiError } from "@/lib/api-handler";
 import { hydratePlayers } from "./read-model";

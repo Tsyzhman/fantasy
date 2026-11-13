@@ -1,5 +1,5 @@
 "use client";
-/** @spec spec://modules/khl/FEAT-002-khl-squad#layout
+/** @spec spec://modules/khl/FEAT-012-khl-squad#layout
  * @spec spec://modules/khl/INFRA-001-khl-data-ingestion#sync-status
  */
 import React, { useEffect, useState } from "react";

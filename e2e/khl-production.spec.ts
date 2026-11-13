@@ -100,7 +100,7 @@ test("production KHL catalog and local planning are available", async ({ page })
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
-/** @spec spec://modules/khl/FEAT-002-khl-squad#cards */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#cards */
 test('production KHL player history contains imported facts', async ({page})=>{
  test.skip(process.env.KHL_PRODUCTION_SMOKE !== 'true', 'Explicit production statistics check');
  await page.goto('/machete/khl/players');

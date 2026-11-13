@@ -35,6 +35,8 @@ Removing or simplifying user capabilities requires a direct user request.
 
 ## Production availability
 
+<!-- @spec spec://common/INFRA-006-continuous-deployment#root -->
+
 Never stop or replace the serving production web version to build, back up,
 rehearse migrations or start a release. First start a second version on the
 alternate loopback port, verify its exact revision and health, then gracefully

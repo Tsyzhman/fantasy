@@ -9,7 +9,7 @@ Available actual KHL statistics are loaded onto the server and read in the colle
 ## Specs
 - Governing: spec://modules/khl/INFRA-001-khl-data-ingestion#providers
 - Governing: spec://modules/khl/INFRA-002-khl-storage-and-api#schema
-- Constraint: spec://modules/khl/FEAT-002-khl-squad#cards
+- Constraint: spec://modules/khl/FEAT-012-khl-squad#cards
 
 ## Scope
 In: checking sources, calendar/FP history/protocols in available coverage, accurate mappings, limited imports, reloading, production and UI checking.

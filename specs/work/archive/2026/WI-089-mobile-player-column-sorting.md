@@ -11,7 +11,7 @@ Users can choose a player metric and reverse its sort direction on a phone witho
 
 - Governing: `spec://modules/machete/FEAT-001-global-ranking-strategy#contracts`
 - Constraint: `spec://common/PROP-002-editorial-sport-design#contracts`
-- Related: `spec://modules/khl/FEAT-002-khl-squad#table`
+- Related: `spec://modules/khl/FEAT-012-khl-squad#table`
 - Constraint: `spec://common/INFRA-006-continuous-deployment#root`
 
 ## Scope

@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-002-khl-squad#layout */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#layout */
 import { formatToi, formatKhlNumber, type KhlPlayer } from "@/khl/contracts";
 import styles from "./KhlSquadPlanner.module.css";
 

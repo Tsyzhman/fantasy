@@ -9,8 +9,8 @@ Statistics are collected from individual protocols, including time in attack; se
 ## Specs
 - Governing: spec://modules/khl/INFRA-001-khl-data-ingestion#providers
 - Governing: spec://modules/khl/INFRA-002-khl-storage-and-api#schema
-- Governing: spec://modules/khl/FEAT-003-khl-projections-and-optimizer#forecast
-- Affected: spec://modules/khl/FEAT-002-khl-squad#cards
+- Governing: spec://modules/khl/FEAT-013-khl-projections-and-optimizer#forecast
+- Affected: spec://modules/khl/FEAT-012-khl-squad#cards
 
 ## Scope
 In: protocols, player identification, idempotent facts and aggregates, EP/xG, local checks, Git and production.

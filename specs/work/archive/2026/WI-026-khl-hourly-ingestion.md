@@ -10,7 +10,7 @@ Canon action: direct-edit
 - Governing: spec://modules/khl/INFRA-001-khl-data-ingestion#runtime
 - Governing: spec://modules/khl/INFRA-001-khl-data-ingestion#protocols
 - Governing: spec://modules/khl/INFRA-002-khl-storage-and-api#schema
-- Affected: spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta
+- Affected: spec://modules/khl/FEAT-013-khl-projections-and-optimizer#rolling-beta
 
 ## Scope
 In: проверенный HTTP-транспорт, комбинирование доступных источников, инкрементальные загрузки, расписание, ресурсные ограничения, проверки и production.

@@ -14,8 +14,6 @@ import { GlobalStrategyPanel } from "./GlobalStrategyPanel";
 import { draftPrefix } from "./planner-draft";
 import { usePlannerDraft } from "./use-planner-draft";
 import { ColumnResizeHandle } from "./ColumnResizeHandle";
-/** @spec spec://modules/machete/FEAT-004-rotation-risk#scenarios */
-import { currentRotationRisk, rotationRiskDescription } from "@/machete/rotation-risk";
 import type { GlobalStrategyAnalysis, GlobalSquadResult } from "@/machete/global-strategy-planner";
 import { globalStrategyPoolEvaluation, isGlobalRecommendationCurrent } from "@/machete/global-strategy-planner";
 import type { GlobalStrategyRequestContext } from "@/machete/global-strategy";

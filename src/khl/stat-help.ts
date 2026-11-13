@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-002-khl-squad#table */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#table */
 import {expectedTooltip} from './forecast-explanation';
 import {formatKhlNumber,formatToi,type KhlPlayer,type Observation} from './contracts';
 export const khlStatHelp = {

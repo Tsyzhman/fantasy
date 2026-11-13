@@ -5,7 +5,7 @@ import ExcelJS from 'exceljs';
 import {readFile} from 'node:fs/promises';
 
 /** @spec spec://modules/khl/INFRA-001-khl-data-ingestion#sync-status
- * @spec spec://modules/khl/FEAT-002-khl-squad#layout
+ * @spec spec://modules/khl/FEAT-012-khl-squad#layout
  */
 test('KHL visible statistics include refresh status on every view and preserve it on polling failure', async ({page}, testInfo) => {
  test.skip(process.env.KHL_PRODUCTION_SMOKE !== 'true', 'Explicit production status check');
@@ -40,8 +40,8 @@ test('KHL visible statistics include refresh status on every view and preserve i
  expect(await panel.locator('time').first().getAttribute('datetime')).toBe(catalogTime);
 });
 
-/** @spec spec://modules/khl/FEAT-002-khl-squad#cards
- * @spec spec://modules/khl/FEAT-002-khl-squad#table
+/** @spec spec://modules/khl/FEAT-012-khl-squad#cards
+ * @spec spec://modules/khl/FEAT-012-khl-squad#table
  */
 test('KHL visible statistics survive partial matches and history switches',async({page},testInfo)=>{
  test.skip(process.env.KHL_PRODUCTION_SMOKE!=='true','Explicit production statistics check');

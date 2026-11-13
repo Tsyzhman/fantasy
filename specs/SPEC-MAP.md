@@ -6,8 +6,8 @@ Canon for Fantasy Scout. Work status lives in `BOARD.md`; this file is the catal
 
 | Document | Responsibility |
 |---|---|
-| [FEAT-009-league-strength.md](modules/machete/FEAT-009-league-strength.md) | Active: league-season Massey team strength, xG coverage and played schedule difficulty |
-| [FEAT-001-passing-networks.md](modules/mixerr/FEAT-001-passing-networks.md) | Active: browser-local passing networks with independent starting lineup cutoffs |
+| [FEAT-015-league-strength.md](modules/machete/FEAT-015-league-strength.md) | Active: league-season Massey team strength, xG coverage and played schedule difficulty |
+| [FEAT-014-passing-networks.md](modules/mixerr/FEAT-014-passing-networks.md) | Active: browser-local passing networks with independent starting lineup cutoffs |
 | [PROP-002-editorial-sport-design.md](common/PROP-002-editorial-sport-design.md) | Active: Midnight Scout / Pressbox, shared UI and independent theme/density preferences |
 | [specs/common/INFRA-006-continuous-deployment.md](common/INFRA-006-continuous-deployment.md) | Active: verified second web version, graceful traffic switch, compatible online migrations, one rollback and one verified full backup |
 | [specs/common/PROP-001-workflow-validation.md](common/PROP-001-workflow-validation.md) | Active: explicit workflow modes, local validator contracts and mirrored-client parity |
@@ -17,7 +17,7 @@ Canon for Fantasy Scout. Work status lives in `BOARD.md`; this file is the catal
 | [specs/modules/telegram/FEAT-007-deadline-assistant.md](modules/telegram/FEAT-007-deadline-assistant.md) | Active: Telegram linking, subscriptions and deadline reports |
 | [specs/modules/telegram/INFRA-005-deadline-pipeline.md](modules/telegram/INFRA-005-deadline-pipeline.md) | Active: deadline campaigns, freshness and delivery |
 | [specs/modules/machete/INFRA-004-sorareinside-starters.md](modules/machete/INFRA-004-sorareinside-starters.md) | Active: SorareInside starters, nearest future match, exact-UUID sparse schedule hydration, hourly refresh at :05 |
-| [specs/modules/betting/FEAT-001-virtual-league.md](modules/betting/FEAT-001-virtual-league.md) | Active: virtual league, line, coins, algorithms and calculation |
+| [FEAT-016: Virtual Fantasy League](modules/betting/FEAT-001-virtual-league.md) | Active: virtual league, line, coins, algorithms and calculation |
 | [specs/common/main.md](common/main.md) | Product purpose, audience, modes, and boundaries |
 | [specs/common/FEAT-009-session-authentication.md](common/FEAT-009-session-authentication.md) | Active: atomic sign-in limits, one-time setup, internal redirects and session retention |
 | [specs/common/structure.md](common/structure.md) | Runtime, modules, namespaces, code ownership, and bounded release transport |
@@ -55,9 +55,9 @@ Register a PROP, FEAT, or INFRA only when a change needs an independently owned 
 
 ## KHL (isolated beta module)
 
-- [FEAT-001-khl-module-and-rules.md](modules/khl/FEAT-001-khl-module-and-rules.md)
-- [FEAT-002-khl-squad.md](modules/khl/FEAT-002-khl-squad.md) - active; separate readiness gates are preserved
-- [FEAT-003-khl-projections-and-optimizer.md](modules/khl/FEAT-003-khl-projections-and-optimizer.md) - active; separate readiness gates are preserved
+- [FEAT-011-khl-module-and-rules.md](modules/khl/FEAT-011-khl-module-and-rules.md)
+- [FEAT-012-khl-squad.md](modules/khl/FEAT-012-khl-squad.md) - active; separate readiness gates are preserved
+- [FEAT-013-khl-projections-and-optimizer.md](modules/khl/FEAT-013-khl-projections-and-optimizer.md) - active; separate readiness gates are preserved
 - [INFRA-001-khl-data-ingestion.md](modules/khl/INFRA-001-khl-data-ingestion.md) - active; separate readiness gates are preserved
 - [INFRA-002-khl-storage-and-api.md](modules/khl/INFRA-002-khl-storage-and-api.md) - active; separate readiness gates are preserved
 - [INFRA-003-khl-fonbet-odds.md](modules/khl/INFRA-003-khl-fonbet-odds.md)

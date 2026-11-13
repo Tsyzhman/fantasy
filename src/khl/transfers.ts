@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-002-khl-squad#transfers */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#transfers */
 import type { KhlPlayer } from "./contracts";
 import { transferAvailability, validateRoster } from "./rules";
 export interface TransferStep { out: string; in: string }

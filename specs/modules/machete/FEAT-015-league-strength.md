@@ -2,7 +2,7 @@
 status: active
 ---
 
-# FEAT-009: League strength by Massey {#root}
+# FEAT-015: League strength by Massey {#root}
 
 ## In simple words {#plain-language}
 
@@ -67,5 +67,7 @@ Verify unequal opponents at equal raw performance, venue adjustment, duplicate f
 Fantasy player projections remain governed by `spec://modules/machete/FEAT-001-global-ranking-strategy#root`. The team rating follows the least-squares family described by Kenneth Massey. [Massey Ratings Description](https://masseyratings.com/theory/ls.htm)
 
 ## Change history {#changelog}
+
+- 2026-11-13: Renumbered FEAT-009 to FEAT-015 to make the specification ID unique.
 
 - 2026-11-05. Introduced the league-season rating and schedule comparison in WI-094.

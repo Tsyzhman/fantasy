@@ -17,7 +17,7 @@ Expose actual changes in platform plans with an explicit baseline and sample siz
 ## Governing specifications {#governing-specs}
 
 - `spec://common/main#root` — product boundaries.
-- `spec://modules/khl/FEAT-002-khl-squad#scope` — KHL squad isolation and 17 players.
+- `spec://modules/khl/FEAT-012-khl-squad#scope` — KHL squad isolation and 17 players.
 
 ## Scope {#scope}
 
@@ -80,7 +80,7 @@ Ownership markers belong on the pure counting module, server readers, aggregate 
 ## Relationships {#relationships}
 
 - `spec://modules/machete/FEAT-006-sports-popularity#sources` — external Sports popularity remains separate.
-- `spec://modules/khl/FEAT-002-khl-squad#sports-import` — trusted KHL baseline import.
+- `spec://modules/khl/FEAT-012-khl-squad#sports-import` — trusted KHL baseline import.
 
 ## Changelog {#changelog}
 

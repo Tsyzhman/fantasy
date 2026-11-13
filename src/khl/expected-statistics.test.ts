@@ -1,4 +1,4 @@
-/** @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta */
+/** @spec spec://modules/khl/FEAT-013-khl-projections-and-optimizer#rolling-beta */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { projectHistory, summarizeHockeyHistory } from './history-projection';

@@ -70,7 +70,7 @@ NO_KNOWN_LINEUPS, UNKNOWN_REST and NO_FUTURE_FIXTURE result in null. SHORT_HISTO
 <a name="traceability"></a>
 
 ## Implementation traceability {#traceability}
-`src/machete/rotation-risk.ts`, `src/server/rotation-risk.ts`, `src/machete/squad_logic.ts`, `src/machete/squad_planner.ts`, `src/machete/fantasy-player-pool-snapshots.ts`, `src/components/machete/FantasySquadPlanner.tsx`.
+`src/machete/rotation-risk.ts`, `src/server/rotation-risk.ts`, `src/machete/squad_logic.ts`, `src/machete/squad_planner.ts`, `src/machete/fantasy-player-pool-snapshots.ts`, `src/components/machete/PlayerPool.tsx`.
 
 <a name="acceptance"></a>
 

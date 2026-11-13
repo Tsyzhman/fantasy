@@ -1,5 +1,5 @@
 "use client";
-/** @spec spec://modules/khl/FEAT-002-khl-squad#layout */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#layout */
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { compareNullable, formatToi, formatKhlNumber, historicalTableStats, playerStatFields, unknown, type KhlPlayer, type KhlPosition, type KhlWeek, type KhlSquad, type Observation } from "@/khl/contracts";
@@ -17,7 +17,7 @@ import styles from "./KhlSquadPlanner.module.css";
 import { KhlSquadCard } from "./KhlSquadCard";
 import { PlatformTransferTrendsPanel } from "@/components/machete/PlatformTransferTrendsPanel";
 const control = styles.control;
-/** @spec spec://modules/khl/FEAT-002-khl-squad#cards */
+/** @spec spec://modules/khl/FEAT-012-khl-squad#cards */
 function KhlTimeStat({ value, games }: { value: Observation<number> | undefined; games: number }) {
   return <><span>{formatToi(value?.value ?? null)}</span><small className={styles.coverage} title="Матчи с известным значением / сыгранные матчи">{value?.knownGames ?? 0}/{value?.totalGames ?? games} матчей</small></>;
 }
