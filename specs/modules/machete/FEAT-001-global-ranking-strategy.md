@@ -129,6 +129,11 @@ Default layouts expose the selected forecasts; existing saved layouts can enable
 them in Columns. The same numeric values drive desktop and touch sorting,
 filtering and export. The existing optimizer and personal Alt formula are unchanged.
 
+The models use the same three-letter labels in both languages and in XLSX.
+FIT is the Ridge model, MIX blends form and projected events, GAS smooths xG and
+xA, REF follows the scoring thresholds, and TIK averages playing-time scenarios.
+Column IDs remain stable for saved table settings and filters.
+
 Use archived inputs recorded before each Sports.ru deadline and the provider's
 final match points; describe exclusions, the shared sample for each baseline and
 the chronological training, selection and holdout split. Do not assume FPL
@@ -266,6 +271,7 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 
 ## 12. Changelog {#changelog}
 
+- 2026-11-13: Name the five Squad forecast columns FIT, MIX, GAS, REF and TIK.
 - 2026-11-13: WI-104 — add five Sports.ru Squad forecast comparisons selected on archived pre-deadline inputs.
 - 2026-11-06: WI-103 — match Squad FFO to the displayed Sports.ru tour and read new imports independently of the pool calculation.
 - 2026-11-06: WI-101 and WI-102 — show hundredths in Sports.ru Squad and apply the historical opponent comparison to Alt.
