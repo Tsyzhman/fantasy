@@ -2,6 +2,12 @@
 import { createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
 import { createHash } from "node:crypto";
+import { once } from "node:events";
+import { createWriteStream } from "node:fs";
+import { fivePlusFixtureFeatures, fivePlusPlayerFeatures } from "../../src/machete/squad-research-five-plus-features";
+import { SquadFivePlusHistory, type FivePlusHistoryRow, type FivePlusOddsRow } from "../../src/machete/squad-research-five-plus-history";
+import { sportsRuResearchRidge } from "../../src/machete/squad-research-ridge";
+import { squadResearchForecasts } from "../../src/machete/squad-research-columns";
 import {
   researchFixtureInput, researchFixturePoints, researchRidgeFeatures, researchStudyCandidates,
   type ResearchFixtureInput, type ResearchRidge, type ResearchStudyCandidate
@@ -48,6 +54,16 @@ const [roundPath, scorePath, cutoffArg] = process.argv.slice(2);
 if (!roundPath || !scorePath || !cutoffArg || !Number.isFinite(Date.parse(cutoffArg))) {
   throw new Error("Usage: tsx scripts/research/backtest-squad-research.ts ROUNDS.jsonl SCORES.jsonl AS_OF_ISO");
 }
+const [historyPath, trainingPath] = process.argv.slice(5);
+if (Boolean(historyPath) !== Boolean(trainingPath)) {
+  throw new Error("Provide both the match-history JSONL input and the five-plus training JSONL output.");
+}
+const historyRows: Array<FivePlusHistoryRow | FivePlusOddsRow> = [];
+if (historyPath) await readLines<FivePlusHistoryRow | FivePlusOddsRow>(historyPath, (row) => { historyRows.push(row); });
+const fivePlusHistory = historyPath ? new SquadFivePlusHistory(historyRows) : null;
+historyRows.length = 0;
+const fivePlusTraining = trainingPath ? createWriteStream(trainingPath, { flags: "wx" }) : null;
+if (fivePlusTraining) await once(fivePlusTraining, "open");
 
 const day = 24 * 60 * 60 * 1000;
 const selectionStart = Date.parse("2026-10-09T00:00:00Z");
@@ -67,6 +83,10 @@ type Player = {
   fixtureCount?: number;
   expectedMinutes?: number;
   startProbability?: number;
+  isStarter?: boolean;
+  price?: number;
+  age?: number;
+  confidence?: number;
   component?: Record<string, unknown>;
   stats?: Record<string, number | null>;
   recentFp?: number[];
@@ -104,6 +124,7 @@ type Row = {
   alt: number | null;
   opp: number | null;
   altOpp: number | null;
+  player: Player;
 };
 
 const identities = new Map<string, { provider: Map<string, string | null>; internal: Map<string, string | null> }>();
@@ -142,7 +163,7 @@ const roundScore = (value: number) => Math.round(value * 100) / 100;
 let ridge: ResearchRidge | undefined;
 let lastDeadline = -Infinity;
 
-await readLines<Round | IdentityFile>(roundPath, (data) => {
+await readLines<Round | IdentityFile>(roundPath, async (data) => {
   if (data.kind !== "round") return;
   const deadline = timeOf(data.deadline);
   if (deadline < lastDeadline) throw new Error("Round export must be chronological");
@@ -169,6 +190,24 @@ await readLines<Round | IdentityFile>(roundPath, (data) => {
   const perLeague = (leagueRounds[phase] ??= {});
   (perLeague[data.league] ??= []).push(data.round);
   coverage.rows += rows.length;
+  if (fivePlusTraining && fivePlusHistory) {
+    const fixtures = new Map<string, ReturnType<typeof fivePlusFixtureFeatures>>();
+    for (const [, home, away, kickoff, status, , , matchId] of data.fixtures) {
+      if (status !== "CLOSED") continue;
+      for (const [teamId, opponentTeamId, side] of [[home, away, "H"], [away, home, "A"]] as const) {
+        fixtures.set(teamId, fivePlusFixtureFeatures({ teamId, opponentTeamId, side, matchId, kickoffAt: new Date(timeOf(kickoff)) }, captured, fivePlusHistory));
+      }
+    }
+    for (const { player, input, target, alt, fo } of rows) {
+      const fixture = fixtures.get(player.teamId);
+      if (!fixture) throw new Error("No archived fixture for a training row");
+      const old = squadResearchForecasts.map(({ id }) => researchFixturePoints(id, input, sportsRuResearchRidge)!);
+      const line = JSON.stringify([phase, data.league + ":" + data.round, target, fo, alt, old,
+        fivePlusPlayerFeatures(input, { age: player.age, price: player.price, confidence: player.confidence, starter: player.isStarter }),
+        fixture.player(player.playerId), fixture.team, fixture.opponent, deadline, finished]) + "\n";
+      if (!fivePlusTraining.write(line)) await once(fivePlusTraining, "drain");
+    }
+  }
   if (phase === "train") {
     for (const row of rows) {
       const features = researchRidgeFeatures(row.input);
@@ -179,6 +218,10 @@ await readLines<Round | IdentityFile>(roundPath, (data) => {
   ridge ??= fitRidge();
   scoreRound(phase, data.league, rows, ridge);
 });
+if (fivePlusTraining) {
+  fivePlusTraining.end();
+  await once(fivePlusTraining, "finish");
+}
 
 if (!ridge || phases.some((phase) => dates[phase].length === 0)) throw new Error("Insufficient chronological coverage");
 const results = Object.fromEntries([...groups].map(([key, values]) => [
@@ -256,7 +299,7 @@ function roundRows(data: Round, deadline: number): Row[] {
       input, target: fact?.[1] ?? 0, minutes: fact?.[2] ?? 0, goals: fact?.[3] ?? 0,
       assists: fact?.[4] ?? 0, listed: !!fact, fo,
       alt: finite(p.alternativeRoundPoints) ? p.alternativeRoundPoints : null,
-      opp: p.opp ?? null, altOpp: p.altOpp ?? null
+      opp: p.opp ?? null, altOpp: p.altOpp ?? null, player: p
     });
   }
   return rows;
@@ -341,9 +384,9 @@ function fitRidge(): ResearchRidge {
   return fit;
 }
 
-async function readLines<T>(path: string, visit: (data: T) => void) {
+async function readLines<T>(path: string, visit: (data: T) => void | Promise<void>) {
   const source = createInterface({ input: createReadStream(path, { encoding: "utf8" }), crlfDelay: Infinity });
-  for await (const line of source) if (line.trim()) visit(JSON.parse(line) as T);
+  for await (const line of source) if (line.trim()) await visit(JSON.parse(line) as T);
 }
 
 async function fileHash(path: string) {

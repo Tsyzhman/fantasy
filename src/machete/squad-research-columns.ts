@@ -33,7 +33,23 @@ export type SquadResearchRounds = Array<SquadResearchRound | null>;
 
 export const squadResearchColumnKeys = squadResearchForecasts.map(({ column }) => column);
 const indexByColumn = new Map<string, number>(squadResearchColumnKeys.map((key, index) => [key, index]));
+export const squadFivePlusColumnKeys = squadResearchColumnKeys.map((key) => key + "FivePlus");
+const fivePlusIndexByColumn = new Map(squadFivePlusColumnKeys.map((key, index) => [key, index]));
 
 export function squadResearchColumnIndex(key: string) {
   return indexByColumn.get(key);
+}
+
+export function squadFivePlusColumnIndex(key: string) {
+  return fivePlusIndexByColumn.get(key);
+}
+
+export function squadResearchDisplayColumn(key: string, fivePlus: boolean) {
+  const index = squadResearchColumnIndex(key);
+  return fivePlus && index !== undefined ? squadFivePlusColumnKeys[index] : key;
+}
+
+export function squadResearchPreferenceColumn(key: string) {
+  const index = squadFivePlusColumnIndex(key);
+  return index === undefined ? key : squadResearchColumnKeys[index];
 }

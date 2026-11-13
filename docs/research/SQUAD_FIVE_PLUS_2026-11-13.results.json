@@ -1,0 +1,1102 @@
+{
+  "featureCount": 392,
+  "versions": {
+    "numpy": "2.4.3",
+    "scikitLearn": "1.8.0"
+  },
+  "samples": {
+    "train": {
+      "rows": 26214,
+      "rounds": 45,
+      "actualFivePlus": 3288
+    },
+    "calibration": {
+      "rows": 5418,
+      "rounds": 9,
+      "actualFivePlus": 658
+    },
+    "selection": {
+      "rows": 4004,
+      "rounds": 7,
+      "actualFivePlus": 510
+    },
+    "holdout": {
+      "rows": 22157,
+      "rounds": 34,
+      "actualFivePlus": 2783
+    },
+    "paired": {
+      "rows": 7516,
+      "rounds": 34,
+      "actualFivePlus": 2281
+    }
+  },
+  "baselines": {
+    "FO": {
+      "holdout": {
+        "rows": 22157,
+        "actual": 2783,
+        "flagged": 982,
+        "tp": 447,
+        "fp": 535,
+        "fn": 2336,
+        "tn": 18839,
+        "precision": 0.45519348268839105,
+        "recall": 0.1606180380883938,
+        "f1": 0.23745019920318725,
+        "averagePrecision": 0.3547826497487613
+      },
+      "paired": {
+        "rows": 7516,
+        "actual": 2281,
+        "flagged": 919,
+        "tp": 439,
+        "fp": 480,
+        "fn": 1842,
+        "tn": 4755,
+        "precision": 0.4776931447225245,
+        "recall": 0.19245944761069705,
+        "f1": 0.274375,
+        "averagePrecision": 0.41065011173106725
+      }
+    },
+    "ALT": {
+      "paired": {
+        "rows": 7516,
+        "actual": 2281,
+        "flagged": 1566,
+        "tp": 699,
+        "fp": 867,
+        "fn": 1582,
+        "tn": 4368,
+        "precision": 0.446360153256705,
+        "recall": 0.30644454186760195,
+        "f1": 0.3634000519885625,
+        "averagePrecision": 0.4085124161965896
+      }
+    }
+  },
+  "models": {
+    "FIT": {
+      "model": "ridge",
+      "threshold": 41,
+      "baseFamily": "player",
+      "contextWeight": 0.22,
+      "selection": {
+        "rows": 4004,
+        "actual": 510,
+        "flagged": 182,
+        "tp": 101,
+        "fp": 81,
+        "fn": 409,
+        "tn": 3413,
+        "precision": 0.554945054945055,
+        "recall": 0.1980392156862745,
+        "f1": 0.29190751445086704
+      },
+      "combinedCalibrationAndSelection": {
+        "rows": 9422,
+        "actual": 1168,
+        "flagged": 470,
+        "tp": 233,
+        "fp": 237,
+        "fn": 935,
+        "tn": 8017,
+        "precision": 0.4957446808510638,
+        "recall": 0.199486301369863,
+        "f1": 0.2844932844932845
+      },
+      "holdout": {
+        "before": {
+          "rows": 22157,
+          "actual": 2783,
+          "flagged": 199,
+          "tp": 93,
+          "fp": 106,
+          "fn": 2690,
+          "tn": 19268,
+          "precision": 0.46733668341708545,
+          "recall": 0.033417175709665826,
+          "f1": 0.06237424547283702,
+          "averagePrecision": 0.3549051877856833
+        },
+        "after": {
+          "rows": 22157,
+          "actual": 2783,
+          "flagged": 914,
+          "tp": 450,
+          "fp": 464,
+          "fn": 2333,
+          "tn": 18910,
+          "precision": 0.4923413566739606,
+          "recall": 0.16169601149838303,
+          "f1": 0.24344062753583987,
+          "averagePrecision": 0.40049200204772756,
+          "brier": 0.08876244725066738,
+          "meanProbability": 0.12092250546539732
+        }
+      },
+      "paired": {
+        "before": {
+          "rows": 7516,
+          "actual": 2281,
+          "flagged": 191,
+          "tp": 92,
+          "fp": 99,
+          "fn": 2189,
+          "tn": 5136,
+          "precision": 0.4816753926701571,
+          "recall": 0.040333187198597104,
+          "f1": 0.0744336569579288,
+          "averagePrecision": 0.3947266152867103
+        },
+        "after": {
+          "rows": 7516,
+          "actual": 2281,
+          "flagged": 912,
+          "tp": 449,
+          "fp": 463,
+          "fn": 1832,
+          "tn": 4772,
+          "precision": 0.4923245614035088,
+          "recall": 0.1968434896975011,
+          "f1": 0.2812402129658628,
+          "averagePrecision": 0.4343581809432905,
+          "brier": 0.20022470393776085,
+          "meanProbability": 0.27196816503820215
+        }
+      },
+      "validationCandidates": [
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 163,
+            "tp": 93,
+            "fp": 70,
+            "fn": 417,
+            "tn": 3424,
+            "precision": 0.5705521472392638,
+            "recall": 0.18235294117647058,
+            "f1": 0.2763744427934621
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 420,
+            "tp": 211,
+            "fp": 209,
+            "fn": 957,
+            "tn": 8045,
+            "precision": 0.5023809523809524,
+            "recall": 0.18065068493150685,
+            "f1": 0.26574307304785894
+          },
+          "contextWeight": 0.08
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 161,
+            "tp": 91,
+            "fp": 70,
+            "fn": 419,
+            "tn": 3424,
+            "precision": 0.5652173913043478,
+            "recall": 0.1784313725490196,
+            "f1": 0.27123695976154993
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 419,
+            "tp": 209,
+            "fp": 210,
+            "fn": 959,
+            "tn": 8044,
+            "precision": 0.4988066825775656,
+            "recall": 0.17893835616438356,
+            "f1": 0.26339004410838057
+          },
+          "contextWeight": 0.12
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 160,
+            "tp": 90,
+            "fp": 70,
+            "fn": 420,
+            "tn": 3424,
+            "precision": 0.5625,
+            "recall": 0.17647058823529413,
+            "f1": 0.26865671641791045
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 418,
+            "tp": 207,
+            "fp": 211,
+            "fn": 961,
+            "tn": 8043,
+            "precision": 0.49521531100478466,
+            "recall": 0.17722602739726026,
+            "f1": 0.2610340479192938
+          },
+          "contextWeight": 0.16
+        },
+        {
+          "threshold": 41,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 182,
+            "tp": 101,
+            "fp": 81,
+            "fn": 409,
+            "tn": 3413,
+            "precision": 0.554945054945055,
+            "recall": 0.1980392156862745,
+            "f1": 0.29190751445086704
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 470,
+            "tp": 233,
+            "fp": 237,
+            "fn": 935,
+            "tn": 8017,
+            "precision": 0.4957446808510638,
+            "recall": 0.199486301369863,
+            "f1": 0.2844932844932845
+          },
+          "contextWeight": 0.22
+        }
+      ]
+    },
+    "MIX": {
+      "model": "blendForm",
+      "threshold": 40,
+      "baseFamily": "archive",
+      "contextWeight": 0.08,
+      "selection": {
+        "rows": 4004,
+        "actual": 510,
+        "flagged": 225,
+        "tp": 121,
+        "fp": 104,
+        "fn": 389,
+        "tn": 3390,
+        "precision": 0.5377777777777778,
+        "recall": 0.2372549019607843,
+        "f1": 0.3292517006802721
+      },
+      "combinedCalibrationAndSelection": {
+        "rows": 9422,
+        "actual": 1168,
+        "flagged": 537,
+        "tp": 267,
+        "fp": 270,
+        "fn": 901,
+        "tn": 7984,
+        "precision": 0.4972067039106145,
+        "recall": 0.2285958904109589,
+        "f1": 0.3131964809384164
+      },
+      "holdout": {
+        "before": {
+          "rows": 22157,
+          "actual": 2783,
+          "flagged": 553,
+          "tp": 251,
+          "fp": 302,
+          "fn": 2532,
+          "tn": 19072,
+          "precision": 0.4538878842676311,
+          "recall": 0.09019044196909809,
+          "f1": 0.15047961630695444,
+          "averagePrecision": 0.3594743293898733
+        },
+        "after": {
+          "rows": 22157,
+          "actual": 2783,
+          "flagged": 1217,
+          "tp": 588,
+          "fp": 629,
+          "fn": 2195,
+          "tn": 18745,
+          "precision": 0.48315529991783074,
+          "recall": 0.21128278835788716,
+          "f1": 0.294,
+          "averagePrecision": 0.4024635147416454,
+          "brier": 0.08862985630434057,
+          "meanProbability": 0.11985778282880141
+        }
+      },
+      "paired": {
+        "before": {
+          "rows": 7516,
+          "actual": 2281,
+          "flagged": 534,
+          "tp": 250,
+          "fp": 284,
+          "fn": 2031,
+          "tn": 4951,
+          "precision": 0.4681647940074906,
+          "recall": 0.10960105217010083,
+          "f1": 0.17761989342806395,
+          "averagePrecision": 0.40639221936106573
+        },
+        "after": {
+          "rows": 7516,
+          "actual": 2281,
+          "flagged": 1216,
+          "tp": 587,
+          "fp": 629,
+          "fn": 1694,
+          "tn": 4606,
+          "precision": 0.48273026315789475,
+          "recall": 0.25734327049539674,
+          "f1": 0.33571632828138404,
+          "averagePrecision": 0.436870164138988,
+          "brier": 0.19984912887332995,
+          "meanProbability": 0.2739377286925991
+        }
+      },
+      "validationCandidates": [
+        {
+          "threshold": 40,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 225,
+            "tp": 121,
+            "fp": 104,
+            "fn": 389,
+            "tn": 3390,
+            "precision": 0.5377777777777778,
+            "recall": 0.2372549019607843,
+            "f1": 0.3292517006802721
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 537,
+            "tp": 267,
+            "fp": 270,
+            "fn": 901,
+            "tn": 7984,
+            "precision": 0.4972067039106145,
+            "recall": 0.2285958904109589,
+            "f1": 0.3131964809384164
+          },
+          "contextWeight": 0.08
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 188,
+            "tp": 99,
+            "fp": 89,
+            "fn": 411,
+            "tn": 3405,
+            "precision": 0.526595744680851,
+            "recall": 0.19411764705882353,
+            "f1": 0.2836676217765043
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 461,
+            "tp": 229,
+            "fp": 232,
+            "fn": 939,
+            "tn": 8022,
+            "precision": 0.4967462039045553,
+            "recall": 0.19606164383561644,
+            "f1": 0.28115408225905464
+          },
+          "contextWeight": 0.12
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 189,
+            "tp": 100,
+            "fp": 89,
+            "fn": 410,
+            "tn": 3405,
+            "precision": 0.5291005291005291,
+            "recall": 0.19607843137254902,
+            "f1": 0.2861230329041488
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 465,
+            "tp": 232,
+            "fp": 233,
+            "fn": 936,
+            "tn": 8021,
+            "precision": 0.4989247311827957,
+            "recall": 0.19863013698630136,
+            "f1": 0.28413962033067974
+          },
+          "contextWeight": 0.16
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 186,
+            "tp": 99,
+            "fp": 87,
+            "fn": 411,
+            "tn": 3407,
+            "precision": 0.532258064516129,
+            "recall": 0.19411764705882353,
+            "f1": 0.28448275862068967
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 464,
+            "tp": 231,
+            "fp": 233,
+            "fn": 937,
+            "tn": 8021,
+            "precision": 0.4978448275862069,
+            "recall": 0.19777397260273974,
+            "f1": 0.28308823529411764
+          },
+          "contextWeight": 0.22
+        }
+      ]
+    },
+    "GAS": {
+      "model": "shrunkXA",
+      "threshold": 42,
+      "baseFamily": "player",
+      "contextWeight": 0.16,
+      "selection": {
+        "rows": 4004,
+        "actual": 510,
+        "flagged": 208,
+        "tp": 117,
+        "fp": 91,
+        "fn": 393,
+        "tn": 3403,
+        "precision": 0.5625,
+        "recall": 0.22941176470588234,
+        "f1": 0.32590529247910865
+      },
+      "combinedCalibrationAndSelection": {
+        "rows": 9422,
+        "actual": 1168,
+        "flagged": 496,
+        "tp": 254,
+        "fp": 242,
+        "fn": 914,
+        "tn": 8012,
+        "precision": 0.5120967741935484,
+        "recall": 0.21746575342465754,
+        "f1": 0.30528846153846156
+      },
+      "holdout": {
+        "before": {
+          "rows": 22157,
+          "actual": 2783,
+          "flagged": 594,
+          "tp": 275,
+          "fp": 319,
+          "fn": 2508,
+          "tn": 19055,
+          "precision": 0.46296296296296297,
+          "recall": 0.09881422924901186,
+          "f1": 0.16286644951140064,
+          "averagePrecision": 0.35897065776108605
+        },
+        "after": {
+          "rows": 22157,
+          "actual": 2783,
+          "flagged": 1001,
+          "tp": 501,
+          "fp": 500,
+          "fn": 2282,
+          "tn": 18874,
+          "precision": 0.5004995004995005,
+          "recall": 0.18002155946819978,
+          "f1": 0.26479915433403806,
+          "averagePrecision": 0.39843033252524307,
+          "brier": 0.08894198245640117,
+          "meanProbability": 0.12231162334136363
+        }
+      },
+      "paired": {
+        "before": {
+          "rows": 7516,
+          "actual": 2281,
+          "flagged": 570,
+          "tp": 272,
+          "fp": 298,
+          "fn": 2009,
+          "tn": 4937,
+          "precision": 0.47719298245614034,
+          "recall": 0.1192459447610697,
+          "f1": 0.19081024202034375,
+          "averagePrecision": 0.41169283010061736
+        },
+        "after": {
+          "rows": 7516,
+          "actual": 2281,
+          "flagged": 998,
+          "tp": 501,
+          "fp": 497,
+          "fn": 1780,
+          "tn": 4738,
+          "precision": 0.5020040080160321,
+          "recall": 0.21964050854888206,
+          "f1": 0.30558096980786825,
+          "averagePrecision": 0.43375194802642114,
+          "brier": 0.2003521674009309,
+          "meanProbability": 0.27202052386963793
+        }
+      },
+      "validationCandidates": [
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 206,
+            "tp": 115,
+            "fp": 91,
+            "fn": 395,
+            "tn": 3403,
+            "precision": 0.558252427184466,
+            "recall": 0.22549019607843138,
+            "f1": 0.32122905027932963
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 495,
+            "tp": 252,
+            "fp": 243,
+            "fn": 916,
+            "tn": 8011,
+            "precision": 0.509090909090909,
+            "recall": 0.21575342465753425,
+            "f1": 0.30306674684305474
+          },
+          "contextWeight": 0.08
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 206,
+            "tp": 116,
+            "fp": 90,
+            "fn": 394,
+            "tn": 3404,
+            "precision": 0.5631067961165048,
+            "recall": 0.22745098039215686,
+            "f1": 0.3240223463687151
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 496,
+            "tp": 253,
+            "fp": 243,
+            "fn": 915,
+            "tn": 8011,
+            "precision": 0.5100806451612904,
+            "recall": 0.2166095890410959,
+            "f1": 0.30408653846153844
+          },
+          "contextWeight": 0.12
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 208,
+            "tp": 117,
+            "fp": 91,
+            "fn": 393,
+            "tn": 3403,
+            "precision": 0.5625,
+            "recall": 0.22941176470588234,
+            "f1": 0.32590529247910865
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 496,
+            "tp": 254,
+            "fp": 242,
+            "fn": 914,
+            "tn": 8012,
+            "precision": 0.5120967741935484,
+            "recall": 0.21746575342465754,
+            "f1": 0.30528846153846156
+          },
+          "contextWeight": 0.16
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 206,
+            "tp": 115,
+            "fp": 91,
+            "fn": 395,
+            "tn": 3403,
+            "precision": 0.558252427184466,
+            "recall": 0.22549019607843138,
+            "f1": 0.32122905027932963
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 492,
+            "tp": 251,
+            "fp": 241,
+            "fn": 917,
+            "tn": 8013,
+            "precision": 0.5101626016260162,
+            "recall": 0.2148972602739726,
+            "f1": 0.3024096385542169
+          },
+          "contextWeight": 0.22
+        }
+      ]
+    },
+    "REF": {
+      "model": "rules",
+      "threshold": 42,
+      "baseFamily": "archive",
+      "contextWeight": 0.16,
+      "selection": {
+        "rows": 4004,
+        "actual": 510,
+        "flagged": 222,
+        "tp": 121,
+        "fp": 101,
+        "fn": 389,
+        "tn": 3393,
+        "precision": 0.545045045045045,
+        "recall": 0.2372549019607843,
+        "f1": 0.33060109289617484
+      },
+      "combinedCalibrationAndSelection": {
+        "rows": 9422,
+        "actual": 1168,
+        "flagged": 499,
+        "tp": 251,
+        "fp": 248,
+        "fn": 917,
+        "tn": 8006,
+        "precision": 0.503006012024048,
+        "recall": 0.2148972602739726,
+        "f1": 0.3011397720455909
+      },
+      "holdout": {
+        "before": {
+          "rows": 22157,
+          "actual": 2783,
+          "flagged": 672,
+          "tp": 320,
+          "fp": 352,
+          "fn": 2463,
+          "tn": 19022,
+          "precision": 0.47619047619047616,
+          "recall": 0.11498383039885016,
+          "f1": 0.18523878437047755,
+          "averagePrecision": 0.3598195067132848
+        },
+        "after": {
+          "rows": 22157,
+          "actual": 2783,
+          "flagged": 1070,
+          "tp": 528,
+          "fp": 542,
+          "fn": 2255,
+          "tn": 18832,
+          "precision": 0.4934579439252336,
+          "recall": 0.18972332015810275,
+          "f1": 0.27407215157020504,
+          "averagePrecision": 0.3964989555260115,
+          "brier": 0.08916499678667011,
+          "meanProbability": 0.12026112019097511
+        }
+      },
+      "paired": {
+        "before": {
+          "rows": 7516,
+          "actual": 2281,
+          "flagged": 637,
+          "tp": 316,
+          "fp": 321,
+          "fn": 1965,
+          "tn": 4914,
+          "precision": 0.49607535321821034,
+          "recall": 0.13853572994300745,
+          "f1": 0.2165867032213845,
+          "averagePrecision": 0.41461234048387285
+        },
+        "after": {
+          "rows": 7516,
+          "actual": 2281,
+          "flagged": 1068,
+          "tp": 528,
+          "fp": 540,
+          "fn": 1753,
+          "tn": 4695,
+          "precision": 0.4943820224719101,
+          "recall": 0.23147742218325296,
+          "f1": 0.31531800537473875,
+          "averagePrecision": 0.43156939388524784,
+          "brier": 0.2009192353452861,
+          "meanProbability": 0.2719214644718638
+        }
+      },
+      "validationCandidates": [
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 223,
+            "tp": 120,
+            "fp": 103,
+            "fn": 390,
+            "tn": 3391,
+            "precision": 0.5381165919282511,
+            "recall": 0.23529411764705882,
+            "f1": 0.3274215552523875
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 500,
+            "tp": 251,
+            "fp": 249,
+            "fn": 917,
+            "tn": 8005,
+            "precision": 0.502,
+            "recall": 0.2148972602739726,
+            "f1": 0.3009592326139089
+          },
+          "contextWeight": 0.08
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 223,
+            "tp": 121,
+            "fp": 102,
+            "fn": 389,
+            "tn": 3392,
+            "precision": 0.5426008968609866,
+            "recall": 0.2372549019607843,
+            "f1": 0.330150068212824
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 500,
+            "tp": 251,
+            "fp": 249,
+            "fn": 917,
+            "tn": 8005,
+            "precision": 0.502,
+            "recall": 0.2148972602739726,
+            "f1": 0.3009592326139089
+          },
+          "contextWeight": 0.12
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 222,
+            "tp": 121,
+            "fp": 101,
+            "fn": 389,
+            "tn": 3393,
+            "precision": 0.545045045045045,
+            "recall": 0.2372549019607843,
+            "f1": 0.33060109289617484
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 499,
+            "tp": 251,
+            "fp": 248,
+            "fn": 917,
+            "tn": 8006,
+            "precision": 0.503006012024048,
+            "recall": 0.2148972602739726,
+            "f1": 0.3011397720455909
+          },
+          "contextWeight": 0.16
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 223,
+            "tp": 121,
+            "fp": 102,
+            "fn": 389,
+            "tn": 3392,
+            "precision": 0.5426008968609866,
+            "recall": 0.2372549019607843,
+            "f1": 0.330150068212824
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 499,
+            "tp": 250,
+            "fp": 249,
+            "fn": 918,
+            "tn": 8005,
+            "precision": 0.501002004008016,
+            "recall": 0.21404109589041095,
+            "f1": 0.29994001199760045
+          },
+          "contextWeight": 0.22
+        }
+      ]
+    },
+    "TIK": {
+      "model": "minuteHistory",
+      "threshold": 42,
+      "baseFamily": "archive",
+      "contextWeight": 0.08,
+      "selection": {
+        "rows": 4004,
+        "actual": 510,
+        "flagged": 217,
+        "tp": 117,
+        "fp": 100,
+        "fn": 393,
+        "tn": 3394,
+        "precision": 0.5391705069124424,
+        "recall": 0.22941176470588234,
+        "f1": 0.3218707015130674
+      },
+      "combinedCalibrationAndSelection": {
+        "rows": 9422,
+        "actual": 1168,
+        "flagged": 497,
+        "tp": 251,
+        "fp": 246,
+        "fn": 917,
+        "tn": 8008,
+        "precision": 0.5050301810865191,
+        "recall": 0.2148972602739726,
+        "f1": 0.3015015015015015
+      },
+      "holdout": {
+        "before": {
+          "rows": 22157,
+          "actual": 2783,
+          "flagged": 839,
+          "tp": 404,
+          "fp": 435,
+          "fn": 2379,
+          "tn": 18939,
+          "precision": 0.48152562574493446,
+          "recall": 0.14516708587854832,
+          "f1": 0.22308117062396465,
+          "averagePrecision": 0.3603112997614656
+        },
+        "after": {
+          "rows": 22157,
+          "actual": 2783,
+          "flagged": 1043,
+          "tp": 520,
+          "fp": 523,
+          "fn": 2263,
+          "tn": 18851,
+          "precision": 0.49856184084372,
+          "recall": 0.18684872439813152,
+          "f1": 0.2718243596445374,
+          "averagePrecision": 0.4025227649453587,
+          "brier": 0.088730593192462,
+          "meanProbability": 0.12003270408475356
+        }
+      },
+      "paired": {
+        "before": {
+          "rows": 7516,
+          "actual": 2281,
+          "flagged": 801,
+          "tp": 397,
+          "fp": 404,
+          "fn": 1884,
+          "tn": 4831,
+          "precision": 0.49563046192259674,
+          "recall": 0.17404647084612013,
+          "f1": 0.25762491888384165,
+          "averagePrecision": 0.4113447127353146
+        },
+        "after": {
+          "rows": 7516,
+          "actual": 2281,
+          "flagged": 1043,
+          "tp": 520,
+          "fp": 523,
+          "fn": 1761,
+          "tn": 4712,
+          "precision": 0.49856184084372,
+          "recall": 0.22797018851380974,
+          "f1": 0.3128760529482551,
+          "averagePrecision": 0.4370760728210738,
+          "brier": 0.20007281612291444,
+          "meanProbability": 0.27360991247726896
+        }
+      },
+      "validationCandidates": [
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 217,
+            "tp": 117,
+            "fp": 100,
+            "fn": 393,
+            "tn": 3394,
+            "precision": 0.5391705069124424,
+            "recall": 0.22941176470588234,
+            "f1": 0.3218707015130674
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 497,
+            "tp": 251,
+            "fp": 246,
+            "fn": 917,
+            "tn": 8008,
+            "precision": 0.5050301810865191,
+            "recall": 0.2148972602739726,
+            "f1": 0.3015015015015015
+          },
+          "contextWeight": 0.08
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 216,
+            "tp": 116,
+            "fp": 100,
+            "fn": 394,
+            "tn": 3394,
+            "precision": 0.5370370370370371,
+            "recall": 0.22745098039215686,
+            "f1": 0.31955922865013775
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 500,
+            "tp": 250,
+            "fp": 250,
+            "fn": 918,
+            "tn": 8004,
+            "precision": 0.5,
+            "recall": 0.21404109589041095,
+            "f1": 0.2997601918465228
+          },
+          "contextWeight": 0.12
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 217,
+            "tp": 116,
+            "fp": 101,
+            "fn": 394,
+            "tn": 3393,
+            "precision": 0.5345622119815668,
+            "recall": 0.22745098039215686,
+            "f1": 0.31911966987620355
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 502,
+            "tp": 250,
+            "fp": 252,
+            "fn": 918,
+            "tn": 8002,
+            "precision": 0.49800796812749004,
+            "recall": 0.21404109589041095,
+            "f1": 0.2994011976047904
+          },
+          "contextWeight": 0.16
+        },
+        {
+          "threshold": 42,
+          "selection": {
+            "rows": 4004,
+            "actual": 510,
+            "flagged": 214,
+            "tp": 114,
+            "fp": 100,
+            "fn": 396,
+            "tn": 3394,
+            "precision": 0.5327102803738317,
+            "recall": 0.2235294117647059,
+            "f1": 0.3149171270718232
+          },
+          "combined": {
+            "rows": 9422,
+            "actual": 1168,
+            "flagged": 497,
+            "tp": 248,
+            "fp": 249,
+            "fn": 920,
+            "tn": 8005,
+            "precision": 0.49899396378269617,
+            "recall": 0.21232876712328766,
+            "f1": 0.2978978978978979
+          },
+          "contextWeight": 0.22
+        }
+      ]
+    }
+  },
+  "sha256TrainingRows": "4dd12f853d5692c4b811c9c5f0b9b13255bbf874c001961fc0d316cc83b7fb6a"
+}

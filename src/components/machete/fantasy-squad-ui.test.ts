@@ -680,9 +680,9 @@ test("player pool exposes team, price, local match-scope and typed XLSX export c
 test("player-pool XLSX follows the selected optional-column order", () => {
   assert.match(squadPlannerSource, /const \[exportColumnKeys, setExportColumnKeys\] = useState\(initialVisiblePlayerPoolColumns\)/);
   assert.match(squadPlannerSource, /onVisibleColumnsChange=\{setExportColumnKeys\}/);
-  assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(exportPlayers, tableHorizon, language, leagueId, season, exportColumnKeys, provider\)/);
-  assert.match(squadPlannerSource, /visibleColumnKeys[\s\S]*optionalColumnsByKey\.get\(key\)/);
-  assert.match(squadPlannerSource, /\.\.\.selectedColumns\.map\(\(column\) => \(\{ key: column\.key, header: column\.label \}\)\)/);
+  assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(exportPlayers, tableHorizon, language, leagueId, season, exportColumnKeys, provider, showFivePlus\)/);
+  assert.match(squadPlannerSource, /visibleColumnKeys[\s\S]*optionalColumnsByKey\.get\(squadResearchDisplayColumn\(key, fivePlus\)\)/);
+  assert.match(squadPlannerSource, /header: squadFivePlusColumnIndex\(column\.key\) === undefined \? column\.label : column\.label \+ " 5\+ \(%\)"/);
   assert.match(squadPlannerSource, /Object\.fromEntries\(selectedColumns\.map/);
   assert.match(playerTableExportRouteSource, /fixedColumnKeys = \["player", "team", "position", "price"\]/);
   assert.match(playerTableExportRouteSource, /isSquadTableColumnsInput\(columns\.slice/);
