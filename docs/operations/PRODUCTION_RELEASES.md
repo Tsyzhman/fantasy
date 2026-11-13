@@ -1,6 +1,14 @@
 # Production release history
 
-## Latest verified release 0.3.164 — 2026-11-13
+## Latest verified release 0.3.165 — 2026-11-13
+
+Production runs `20261113T182937Z-v0.3.165-cee8c08`, commit `cee8c08eefccea624606b3aea0ba844caa3963ef`, tree `696c6b5dad844ee4e615bfdd5b7d9beb883da3f3`. The [dry run](https://github.com/Tsyzhman/fantasy/actions/runs/43479926848) and [promotion](https://github.com/Tsyzhman/fantasy/actions/runs/43482049874) passed. The promoter verified and consumed the ZIP staged over SSH and retained 0.3.164 for rollback.
+
+The authenticated Premier League Squad showed FIT, MIX, GAS, REF and TIK on desktop and mobile. The downloaded Excel workbook contained each heading once and matched the displayed scores. All 8,470 current player rows across 12 pools had five numeric forecasts. The refresh queue and duplicate count were zero, and each scope retained at most three revisions.
+
+All 337 public health and previous-CSS probe pairs passed, including 12 on the new revision. The previous stylesheet checksum matched, Caddy and PostgreSQL retained their processes, and the web and worker were healthy with zero restarts or OOM. The host build cache remained at 443.2 MB.
+
+## 0.3.164 — 2026-11-13
 
 Production runs `20261113T162207Z-v0.3.164-f6c6d94`, commit `f6c6d94b8358d87cab2524978e3e4081a11486ac`, tree `84b84c4b34926a18a6965086f0e0b3ec455979b4`. [Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/43456272128) and [promotion](https://github.com/Tsyzhman/fantasy/actions/runs/43460643051) passed. After a direct HTTPS download failure, the promotion independently verified the current-run ZIP staged over SSH. Production retained 0.3.161 for rollback.
 
