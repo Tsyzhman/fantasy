@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.167 - 2026-11-16
+
+- Prevent duplicate primary key errors when concurrent sign-in or Telegram requests create a rate-limit counter.
+
 ## 0.3.166 - 2026-11-13
 
 - Show the calibrated chance of 5+ points for FIT, MIX, GAS, REF and TIK in Sports.ru Squad. Keep their expected points available in the same columns.
