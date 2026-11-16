@@ -1,4 +1,4 @@
-import { squadResearchColumnKeys } from "./squad-research-columns";
+import { squadFivePlusColumnKeys, squadResearchColumnKeys, squadResearchPreferenceColumn } from "./squad-research-columns";
 
 export const defaultSquadTableColumns = [
   "rotationRisk",
@@ -55,6 +55,7 @@ export function squadTableValueFilterIsActive(filter: SquadTableValueFilter, num
 
 export const staticSquadTableColumnKeys = new Set([
   ...defaultSquadTableColumns,
+  ...squadFivePlusColumnKeys,
   "opponentAdjustedHorizon",
   "alternativeOpponentAdjustedHorizon",
   "age",
@@ -117,7 +118,7 @@ function parseSquadTableColumnList(value: unknown): string[] {
   const columns: string[] = [];
   for (const item of value) {
     if (typeof item !== "string") continue;
-    const key = legacySquadTableColumnKey(item);
+    const key = squadResearchPreferenceColumn(legacySquadTableColumnKey(item));
     if (!staticSquadTableColumnKeys.has(key) && !dynamicStatColumnPattern.test(key)) continue;
     if (!columns.includes(key)) columns.push(key);
     if (columns.length >= maximumColumns) break;
@@ -162,7 +163,7 @@ export function parseSquadTableColumnWidths(value: unknown): Record<string, numb
   const widths: Record<string, number> = {};
   for (const [key, rawWidth] of Object.entries(value)) {
     if (!isResizableColumnKey(key) || typeof rawWidth !== "number" || !Number.isFinite(rawWidth)) continue;
-    widths[legacySquadTableColumnKey(key)] = Math.round(Math.min(maximumColumnWidth, Math.max(minimumColumnWidth, rawWidth)));
+    widths[squadResearchPreferenceColumn(legacySquadTableColumnKey(key))] = Math.round(Math.min(maximumColumnWidth, Math.max(minimumColumnWidth, rawWidth)));
     if (Object.keys(widths).length >= maximumColumns + resizableFixedColumnKeys.size) break;
   }
   return widths;

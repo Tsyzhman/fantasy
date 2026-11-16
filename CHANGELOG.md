@@ -4,6 +4,10 @@
 
 - Prevent duplicate primary key errors when concurrent sign-in or Telegram requests create a rate-limit counter.
 
+## 0.3.166 - 2026-11-13
+
+- Show the calibrated chance of 5+ points for FIT, MIX, GAS, REF and TIK in Sports.ru Squad. Keep their expected points available in the same columns.
+
 ## 0.3.165 - 2026-11-13
 
 - Label the five Sports.ru Squad forecasts FIT, MIX, GAS, REF and TIK in the table and Excel export.

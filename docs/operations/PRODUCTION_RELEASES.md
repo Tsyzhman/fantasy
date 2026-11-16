@@ -1,6 +1,14 @@
 # Production release history
 
-## Latest verified release 0.3.165 — 2026-11-13
+## Latest verified release 0.3.166 — 2026-11-13
+
+Production runs `20261113T201552Z-v0.3.166-88b0c55`, commit `88b0c55db48955250e68dbb257c496ec1150db66`, tree `88edd01514b2ac78b4551215eb67db2ca246879a`. The [dry run](https://github.com/Tsyzhman/fantasy/actions/runs/43497118839) and [promotion](https://github.com/Tsyzhman/fantasy/actions/runs/43498843211) passed. Production retains 0.3.165 for rollback.
+
+Sports.ru Squad defaults to the chance of scoring 5+ for FIT, MIX, GAS, REF and TIK. The authenticated Premier League browser verified the points switch, sorting, numeric filtering, mobile cards and the downloaded workbook. The worker published 8,470 players with five numeric chances across all 12 pools, with zero duplicates, an empty queue and three retained revisions per scope. [Replay](../research/SQUAD_FIVE_PLUS_2026-11-13.md) · [WI-105](../../specs/work/archive/2026/WI-105-squad-five-plus.md)
+
+All 192 public health and prior-CSS probe pairs passed. Caddy and PostgreSQL retained their processes. Worker memory sampled during the full refresh peaked at 2.742 GiB of 4 GiB with no restart or OOM. The transfer inbox and host build cache are empty.
+
+## 0.3.165 — 2026-11-13
 
 Production runs `20261113T182937Z-v0.3.165-cee8c08`, commit `cee8c08eefccea624606b3aea0ba844caa3963ef`, tree `696c6b5dad844ee4e615bfdd5b7d9beb883da3f3`. The [dry run](https://github.com/Tsyzhman/fantasy/actions/runs/43479926848) and [promotion](https://github.com/Tsyzhman/fantasy/actions/runs/43482049874) passed. The promoter verified and consumed the ZIP staged over SSH and retained 0.3.164 for rollback.
 

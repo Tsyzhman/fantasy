@@ -19,7 +19,8 @@ import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { fantasyPlayerMatchesNameQuery } from "@/machete/player-identity";
 import { compareFantasyPositions, isFantasyPositionSortKey } from "@/lib/players/fantasy-position-order";
-import { squadResearchColumnIndex, squadResearchColumnKeys, squadResearchForecasts } from "@/machete/squad-research-columns";
+import { squadFivePlusColumnIndex, squadFivePlusColumnKeys, squadResearchColumnIndex, squadResearchColumnKeys, squadResearchForecasts, squadResearchPreferenceColumn } from "@/machete/squad-research-columns";
+import { squadFivePlusThresholds } from "@/machete/squad-research-five-plus-thresholds";
 import { nextAlternativeFantasyPoints, nextFantasyPoints, playerAlternativeHorizonPoints, playerHorizonPoints, sumCompleteRoundForecasts, type FantasyPlannerPlayer, type FantasyPositionGroup, type FantasySquadSelection } from "@/machete/squad_logic";
 import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
 import type { SquadFilterPreset } from "@/machete/squad-filter-presets";
@@ -227,13 +228,13 @@ export function CustomizablePlayerPoolTable({
   const [requestedSort, setPlayerSort] = useState<{ key: string; direction: SortDirection } | null>(null);
   const preferencesMounted = useRef(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const columnsByKey = useMemo(() => new Map(columns.map((column) => [column.key, column])), [columns]);
+  const columnsByKey = useMemo(() => new Map(columns.map((column) => [squadResearchPreferenceColumn(column.key), column])), [columns]);
   const visibleColumns = visibleColumnKeys
     .map((key) => columnsByKey.get(key))
     .filter((column): column is PlayerPoolOptionalColumn => Boolean(column));
   const playerSort = supportedPlayerPoolSort(requestedSort, visibleColumns);
   const fixedColumnTitles = playerPoolFixedColumnTitles(language, props.provider);
-  const widthFor = (key: string, fallback: number) => columnWidths[key] ?? fallback;
+  const widthFor = (key: string, fallback: number) => columnWidths[squadResearchPreferenceColumn(key)] ?? fallback;
   const tableWidth = widthFor("action", playerPoolFixedColumnWidths.action)
     + widthFor("player", playerPoolFixedColumnWidths.player)
     + widthFor("team", playerPoolFixedColumnWidths.team)
@@ -283,16 +284,19 @@ export function CustomizablePlayerPoolTable({
   }, [columnWidths, visibleColumnKeys]);
 
   function toggleColumn(key: string) {
-    changeVisibleColumns(visibleColumnKeys.includes(key) ? visibleColumnKeys.filter((item) => item !== key) : [...visibleColumnKeys, key]);
+    const preferenceKey = squadResearchPreferenceColumn(key);
+    changeVisibleColumns(visibleColumnKeys.includes(preferenceKey)
+      ? visibleColumnKeys.filter((item) => item !== preferenceKey)
+      : [...visibleColumnKeys, preferenceKey]);
   }
 
   function changeVisibleColumns(next: string[]) {
     setVisibleColumnKeys(next);
-    if (requestedSort && !["player", "team", "position", "price", ...next].includes(requestedSort.key)) setPlayerSort(null);
+    if (requestedSort && !["player", "team", "position", "price", ...next].includes(squadResearchPreferenceColumn(requestedSort.key))) setPlayerSort(null);
   }
 
   function moveVisibleColumn(key: string, direction: -1 | 1) {
-    setVisibleColumnKeys((current) => moveSquadTableColumn(current, key, direction));
+    setVisibleColumnKeys((current) => moveSquadTableColumn(current, squadResearchPreferenceColumn(key), direction));
   }
 
   function startColumnResize(event: ReactPointerEvent<HTMLElement>, key: string, fallbackWidth: number) {
@@ -335,7 +339,7 @@ export function CustomizablePlayerPoolTable({
       document.body.style.cursor = previousCursor;
       document.body.style.userSelect = previousSelection;
       if (latestWidth !== startWidth) {
-        setColumnWidths((current) => current[key] === latestWidth ? current : { ...current, [key]: latestWidth });
+        setSavedColumnWidth(key, latestWidth);
       }
     };
     window.addEventListener("pointermove", move);
@@ -344,12 +348,18 @@ export function CustomizablePlayerPoolTable({
   }
 
   function resetColumnWidth(key: string) {
+    const preferenceKey = squadResearchPreferenceColumn(key);
     setColumnWidths((current) => {
-      if (!(key in current)) return current;
+      if (!(preferenceKey in current)) return current;
       const next = { ...current };
-      delete next[key];
+      delete next[preferenceKey];
       return next;
     });
+  }
+
+  function setSavedColumnWidth(key: string, width: number) {
+    const preferenceKey = squadResearchPreferenceColumn(key);
+    setColumnWidths((current) => current[preferenceKey] === width ? current : { ...current, [preferenceKey]: width });
   }
 
   return (
@@ -390,7 +400,7 @@ export function CustomizablePlayerPoolTable({
               }}><I18nText en="Close" ru="Закрыть" /></button>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={() => changeVisibleColumns(columns.map((column) => column.key))} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Select all" ru="Выбрать все" /></button>
+              <button type="button" onClick={() => changeVisibleColumns(columns.map((column) => squadResearchPreferenceColumn(column.key)))} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Select all" ru="Выбрать все" /></button>
               <button type="button" onClick={() => changeVisibleColumns([...defaultSquadTableColumns])} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Reset" ru="Сбросить" /></button>
               <button type="button" onClick={() => setColumnWidths({})} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Reset widths" ru="Сбросить ширину" /></button>
               <button type="button" onClick={() => changeVisibleColumns([])} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Hide optional" ru="Скрыть дополнительные" /></button>
@@ -413,7 +423,7 @@ export function CustomizablePlayerPoolTable({
             <div className="mt-3 grid max-h-[55vh] grid-cols-1 gap-1 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
               {columns.map((column) => (
                 <label key={column.key} className="flex items-start gap-2 rounded px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50" title={column.title}>
-                  <input type="checkbox" checked={visibleColumnKeys.includes(column.key)} onChange={() => toggleColumn(column.key)} className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300" />
+                  <input type="checkbox" checked={visibleColumnKeys.includes(squadResearchPreferenceColumn(column.key))} onChange={() => toggleColumn(column.key)} className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300" />
                   <span>{column.label}</span>
                 </label>
               ))}
@@ -434,7 +444,7 @@ export function CustomizablePlayerPoolTable({
       {compactViewport === false ? <div className="col-span-full min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white" data-testid="player-pool-table">
         <div ref={tableContainerRef} className="relative max-h-[720px] w-full max-w-full overflow-auto [scrollbar-gutter:stable] 2xl:max-h-[min(78vh,880px)] 3xl:max-h-[min(84vh,1040px)]">
           <SortableTable
-            sortRefreshKey={`${horizon}:${visibleColumnKeys.join(",")}`}
+            sortRefreshKey={`${horizon}:${visibleColumns.map(({ key }) => key).join(",")}`}
             managedClientSort
             clientSort={playerSort}
             onClientSortChange={setPlayerSort}
@@ -457,7 +467,7 @@ export function CustomizablePlayerPoolTable({
                 <th data-sort-key="price" data-sort-default-direction="desc" data-column-key="price" aria-label={localizedText(language, "Price", "Цена")} className="relative overflow-hidden px-1 py-2 text-right" title={fixedColumnTitles.price} style={{ width: widthFor("price", playerPoolFixedColumnWidths.price) }}><PlayerPoolHeaderLabel label={responsivePriceHeaderLabel(widthFor("price", playerPoolFixedColumnWidths.price), language)} numeric priceLabel fullLabel={localizedText(language, "Price", "Цена")} /><ColumnResizeHandle label={localizedText(language, "price", "цены")} language={language} width={widthFor("price", playerPoolFixedColumnWidths.price)} onWidthChange={(width) => setColumnWidths(current => ({ ...current, ["price"]: width }))} onPointerDown={(event) => startColumnResize(event, "price", playerPoolFixedColumnWidths.price)} onDoubleClick={() => resetColumnWidth("price")} /></th>
                 <th data-sort-disabled="true" className="relative overflow-hidden px-1 py-2 text-center" style={{ width: widthFor("action", playerPoolFixedColumnWidths.action) }} title={localizedText(language, "Add the player to the squad or remove a selected player. Disabled means a budget, position, or club limit would be exceeded.", "Добавить игрока в состав или убрать выбранного. Неактивная кнопка означает превышение бюджета, лимита позиции или клуба.")}><span aria-hidden="true">+</span><span className="sr-only"><I18nText en="Add or remove" ru="Добавить или убрать" /></span><ColumnResizeHandle label={localizedText(language, "squad action", "кнопки состава")} language={language} width={widthFor("action", playerPoolFixedColumnWidths.action)} onWidthChange={(width) => setColumnWidths(current => ({ ...current, ["action"]: width }))} onPointerDown={(event) => startColumnResize(event, "action", playerPoolFixedColumnWidths.action)} onDoubleClick={() => resetColumnWidth("action")} /></th>
                 {visibleColumns.map((column) => (
-                  <th key={column.key} data-sort-key={column.key} data-sort-default-direction={column.numeric ? "desc" : "asc"} data-sort-disabled={column.key === "fixtures" ? "true" : undefined} className={cn("relative overflow-hidden px-1 py-2", column.numeric && "text-center")} title={column.title} style={{ width: widthFor(column.key, column.width) }}><PlayerPoolHeaderLabel label={column.label} numeric={column.numeric} /><ColumnResizeHandle label={column.label} language={language} width={widthFor(column.key, column.width)} onWidthChange={(width) => setColumnWidths(current => ({ ...current, [column.key]: width }))} onPointerDown={(event) => startColumnResize(event, column.key, column.width)} onDoubleClick={() => resetColumnWidth(column.key)} /></th>
+                  <th key={column.key} data-column-key={column.key} data-sort-key={column.key} data-sort-default-direction={column.numeric ? "desc" : "asc"} data-sort-disabled={column.key === "fixtures" ? "true" : undefined} className={cn("relative overflow-hidden px-1 py-2", column.numeric && "text-center")} title={column.title} style={{ width: widthFor(column.key, column.width) }}><PlayerPoolHeaderLabel label={column.label} numeric={column.numeric} /><ColumnResizeHandle label={column.label} language={language} width={widthFor(column.key, column.width)} onWidthChange={(width) => setSavedColumnWidth(column.key, width)} onPointerDown={(event) => startColumnResize(event, column.key, column.width)} onDoubleClick={() => resetColumnWidth(column.key)} /></th>
                 ))}
               </tr>
             </thead>
@@ -555,7 +565,7 @@ export function CustomPlayerPoolRow({ player, columns, horizon, language, provid
  * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#research-forecasts
  * @spec spec://modules/machete/FEAT-004-rotation-risk#scenarios
  */
-export function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage, provider = "SPORTS_RU"): PlayerPoolOptionalColumn[] {
+export function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage, provider = "SPORTS_RU", fivePlus = false): PlayerPoolOptionalColumn[] {
   const priceProviderLabel = provider === "FPL" ? "FPL" : "Sports.ru";
   const column = (key: string, en: string, ru: string, titleEn = en, titleRu = ru, numeric = true, width = 72): PlayerPoolOptionalColumn => ({
     key,
@@ -580,9 +590,13 @@ export function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horiz
     ] : []),
     column("alternativePerPrice", "Alt/price", "Альт/цена", `Alternative next-round expected fantasy points divided by the current ${priceProviderLabel} price. Higher means more Alt points per one price unit.`, `Альтернативные ожидаемые ФО на следующий тур, делённые на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.`, true, 82),
     column("alternativeHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of independently calculated personal Alt forecasts for the next ${horizon} rounds.`, `Сумма отдельно рассчитанных личных прогнозов Alt на следующие ${horizon} туров.`),
-    ...(provider === "SPORTS_RU" ? squadResearchForecasts.map(({ column: key, label, descriptionEn, descriptionRu }) =>
-      column(key, label, label, descriptionEn, descriptionRu, true, 82)
-    ) : []),
+    ...(provider === "SPORTS_RU" ? squadResearchForecasts.map(({ id, column: key, label, descriptionEn, descriptionRu }, index) => {
+      if (!fivePlus) return column(key, label, label, descriptionEn, descriptionRu, true, 82);
+      const threshold = squadFivePlusThresholds[id];
+      return column(squadFivePlusColumnKeys[index], label, label,
+        `Estimated chance of scoring 5+ official points this round. Highlighted at ${threshold}% or above.`,
+        `Вероятность набрать 5+ официальных очков за тур. От ${threshold}% ячейка подсвечивается.`, true, 82);
+    }) : []),
     column("fixtures", "Fixtures", "Матчи", "The next opponents in the selected horizon. Chip colour represents fixture difficulty; hover a chip for the full opponent name and home/away context.", "Следующие соперники на выбранном горизонте. Цвет плашки показывает сложность матча; при наведении доступны полное имя соперника и поле дома/в гостях.", false, 230),
     column("age", "Age", "Возраст", "Player age from the current FotMob profile.", "Возраст игрока из текущего профиля FotMob."),
     column("nationality", "Nationality", "Гражданство", "Player nationality from FotMob metadata.", "Гражданство игрока из метаданных FotMob.", false, 120),
@@ -678,6 +692,7 @@ export function customPlayerPoolCell(
 
   const rawValue = customPlayerPoolColumnValue(column.key, player, horizon);
   const display = customPlayerPoolColumnDisplay(column.key, rawValue, language, provider);
+  const fivePlus = isFivePlusPick(column.key, rawValue);
   const tone = column.key === "nextFp" || column.key === "nextFpPerPrice" ? "text-emerald-700"
     : column.key === "horizonFp" ? "text-sky-700"
       : column.key === "foontasy" || column.key === "foontasyPerPrice" ? "text-cyan-700"
@@ -688,7 +703,7 @@ export function customPlayerPoolCell(
     ? "primary"
     : column.key === "alternative" ? "alternative" : null;
   return (
-    <td key={column.key} data-column-key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={projectionKind ? undefined : cellTitle}>
+    <td key={column.key} data-column-key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", fivePlus ? "bg-emerald-50 font-semibold text-emerald-800" : muted ? "text-slate-500" : tone)} title={projectionKind ? undefined : cellTitle}>
       {projectionKind ? (
         <ProjectionFormulaHoverCard
           playerId={player.playerId}
@@ -1031,6 +1046,8 @@ export function useFixedVirtualRows<T>(
 
 export function customPlayerPoolColumnValue(key: string, player: FantasyPlannerPlayer, horizon: number): string | number | null {
   const projected = player.projectedFixtureComponents ?? player.projectionListMetrics;
+  const chanceIndex = squadFivePlusColumnIndex(key);
+  if (chanceIndex !== undefined) return player.researchRoundFivePlus?.[0]?.[chanceIndex] ?? null;
   const researchIndex = squadResearchColumnIndex(key);
   if (researchIndex !== undefined) return player.researchRoundPoints?.[0]?.[researchIndex] ?? null;
   if (key.startsWith("stat:")) return player.historicalStats?.[key.slice(5)] ?? null;
@@ -1079,6 +1096,7 @@ export function customPlayerPoolColumnValue(key: string, player: FantasyPlannerP
 export function customPlayerPoolColumnDisplay(key: string, value: string | number | null, language: UiLanguage, provider = "SPORTS_RU") {
   if (value === null || value === undefined) return "—";
   if (typeof value === "string") return value;
+  if (squadFivePlusColumnIndex(key) !== undefined) return `${formatNumber(value, 1)}%`;
   if (provider === "SPORTS_RU" && forecastScoreColumnKeys.has(key)) return formatForecastScore(value);
   if (key.endsWith("PerPrice")) return formatNumber(value, 3);
   if (key === "rosterStarter") return value ? localizedText(language, "Yes", "Да") : localizedText(language, "No", "Нет");
@@ -1087,6 +1105,11 @@ export function customPlayerPoolColumnDisplay(key: string, value: string | numbe
   }
   if (key === "age" || key === "expectedMinutes" || key === "baltikaMatches" || /^stat:(?:matches|minutes|appearances|full_matches|goals|assists|shots|saves|cards)/.test(key)) return formatNumber(value, 0);
   return formatNumber(value, 2);
+}
+
+function isFivePlusPick(key: string, value: string | number | null) {
+  const index = squadFivePlusColumnIndex(key);
+  return index !== undefined && typeof value === "number" && value >= squadFivePlusThresholds[squadResearchForecasts[index].id];
 }
 
 export function historicalStatLabel(key: string, language: UiLanguage) {
@@ -1362,7 +1385,8 @@ export function PlayerPoolMobileList({
   const visiblePlayers = players.slice(0, visibleCount);
   const metricColumns = columns ?? playerPoolOptionalColumns(players, horizon, language, provider);
   const comparisonColumns = metricColumns.filter(({ key }) =>
-    key === "opponentAdjustedFp" || key === "alternativeOpponentAdjustedFp" || squadResearchColumnIndex(key) !== undefined
+    key === "opponentAdjustedFp" || key === "alternativeOpponentAdjustedFp" ||
+    squadResearchColumnIndex(squadResearchPreferenceColumn(key)) !== undefined
   );
   const formatPoints = provider === "SPORTS_RU" ? formatForecastScore : formatScore;
 
@@ -1455,14 +1479,15 @@ export function PlayerPoolMobileList({
 
             {comparisonColumns.length > 0 ? (
               <dl className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
-                {comparisonColumns.map(({ key, label }) => (
-                  <div key={key} className="flex gap-1">
+                {comparisonColumns.map(({ key, label, title }) => {
+                  const value = customPlayerPoolColumnValue(key, player, horizon);
+                  return <div key={key} className="flex gap-1" title={title}>
                     <dt className="text-slate-500">{label}</dt>
-                    <dd data-column-key={key} className="font-semibold text-ink num-tabular">
-                      {customPlayerPoolColumnDisplay(key, customPlayerPoolColumnValue(key, player, horizon), language, provider)}
+                    <dd data-column-key={key} className={cn("font-semibold num-tabular", isFivePlusPick(key, value) ? "text-emerald-800" : "text-ink")}>
+                      {customPlayerPoolColumnDisplay(key, value, language, provider)}
                     </dd>
-                  </div>
-                ))}
+                  </div>;
+                })}
               </dl>
             ) : null}
 

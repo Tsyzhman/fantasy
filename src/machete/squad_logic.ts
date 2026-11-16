@@ -214,6 +214,7 @@ export type FantasyPlannerPlayer = {
   opponentAdjustedRoundPoints?: Array<number | null>;
   alternativeOpponentAdjustedRoundPoints?: Array<number | null>;
   researchRoundPoints?: SquadResearchRounds;
+  researchRoundFivePlus?: SquadResearchRounds;
   opponentAttackAdjustment?: OpponentAttackAdjustment;
   foontasyPoints?: number | null;
   foontasyHorizonPoints?: number | null;

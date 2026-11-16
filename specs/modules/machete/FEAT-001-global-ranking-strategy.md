@@ -134,6 +134,19 @@ FIT is the Ridge model, MIX blends form and projected events, GAS smooths xG and
 xA, REF follows the scoring thresholds, and TIK averages playing-time scenarios.
 Column IDs remain stable for saved table settings and filters.
 
+The same five columns can show the estimated chance of at least five official
+Sports.ru points in the selected round. The player pool switches between points
+and chance. Chance filters use 0–100, and Excel exports numeric percentages
+with distinct headers. Each model exposes its replay-selected threshold for
+flagging a player. Points filters and chance filters keep separate keys.
+
+Use timestamped player history, club and opponent statistics, venue, playing
+time, days of rest, match load and available pre-match odds. Fit and calibrate
+with earlier results, select thresholds on a later block, and report precision
+and recall on the final replay. Show zero for a scheduled blank. For doubles or
+missing inputs, show the chance as unavailable until that scenario has a
+validated model.
+
 Use archived inputs recorded before each Sports.ru deadline and the provider's
 final match points; describe exclusions, the shared sample for each baseline and
 the chronological training, selection and holdout split. Do not assume FPL
@@ -272,6 +285,7 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 ## 12. Changelog {#changelog}
 
 - 2026-11-13: Name the five Squad forecast columns FIT, MIX, GAS, REF and TIK.
+- 2026-11-13: Add a calibrated chance of 5+ to the five Squad models, with separate filters and model-specific thresholds.
 - 2026-11-13: WI-104 — add five Sports.ru Squad forecast comparisons selected on archived pre-deadline inputs.
 - 2026-11-06: WI-103 — match Squad FFO to the displayed Sports.ru tour and read new imports independently of the pool calculation.
 - 2026-11-06: WI-101 and WI-102 — show hundredths in Sports.ru Squad and apply the historical opponent comparison to Alt.

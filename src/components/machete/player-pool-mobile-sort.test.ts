@@ -93,6 +93,27 @@ test("research forecasts keep numeric round values in the compact table, filters
   assert.deepEqual(sortPlayerPoolRows([old, latest], { key, direction: "asc" }, 3).map(({ playerId }) => playerId), ["latest", "old"]);
 });
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#research-forecasts */
+test("5+ mode keeps five separate percentage filters and round values in compact rows", () => {
+  const columns = playerPoolOptionalColumns([], 3, "ru", "SPORTS_RU", true).filter(({ key }) => key.startsWith("research"));
+  assert.deepEqual(columns.map(({ label }) => label), ["FIT", "MIX", "GAS", "REF", "TIK"]);
+  assert.deepEqual(columns.map(({ key }) => key), squadResearchColumnKeys.map((key) => key + "FivePlus"));
+  assert.ok(playerPoolOptionalColumns([], 3, "en", "FPL", true).every(({ key }) => !key.startsWith("research")));
+  const fit = columns[0];
+  const latest = toFantasyPlayerPoolListItem(player("latest", {
+    researchRoundPoints: [[4.23, 3.99, 4.01, 3.75, 4.18]],
+    researchRoundFivePlus: [[48.1, 45, 44, 39, 42], [0, 0, 0, 0, 0], null]
+  }));
+  const old = player("old");
+  assert.equal(customPlayerPoolColumnValue("researchRidge", latest, 3), 4.23);
+  assert.equal(customPlayerPoolColumnDisplay(fit.key, customPlayerPoolColumnValue(fit.key, latest, 3), "ru"), "48.1%");
+  assert.equal(playerPoolExportCellValue(fit.key, latest, 3), 48.1);
+  assert.ok(squadTableValueMatchesFilter(playerPoolExportCellValue(fit.key, latest, 3), { minimum: "48", maximum: "49", query: "" }, true));
+  assert.equal(customPlayerPoolColumnValue(fit.key, fantasyPlayerAtRoundOffset(latest, 1), 3), 0);
+  assert.equal(customPlayerPoolColumnValue(fit.key, fantasyPlayerAtRoundOffset(latest, 2), 3), null);
+  assert.deepEqual(sortPlayerPoolRows([old, latest], { key: fit.key, direction: "asc" }, 3).map(({ playerId }) => playerId), ["latest", "old"]);
+});
+
 for (const language of ["en", "ru"] as const) {
   test(`mobile choices include fixed and selected metrics, excluding fixtures/actions: ${language}`, () => {
     const options = playerPoolSortOptions([column("foontasy"), column("stat:shots"), column("fixtures"), column("action")], rows, 3, language);

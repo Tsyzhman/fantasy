@@ -5,6 +5,7 @@
 
 export type PlannerFixture = {
   id: string;
+  coreMatchId?: string;
   roundId: string;
   teamId: string;
   teamName?: string;
