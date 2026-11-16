@@ -30,6 +30,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-105](work/archive/2026/WI-105-squad-five-plus.md) | Повысить точность и охват прогноза 5+ в Squad | @tsyzhman | 2026-11-13 |
 | [WI-104](work/archive/2026/WI-104-squad-projection-research.md) | Проверить и добавить модели прогнозов в Squad | @tsyzhman | 2026-11-13 |
 | [WI-096](work/archive/2026/WI-096-release-league-analytics.md) | Release league strength and passing networks | @tsyzhman | 2026-11-07 |
 | [WI-102](work/archive/2026/WI-102-alt-opponent-forecast.md) | Compare Alt with a historical opponent adjustment | @tsyzhman | 2026-11-06 |

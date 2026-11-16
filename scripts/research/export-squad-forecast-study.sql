@@ -37,11 +37,8 @@ CROSS JOIN LATERAL (
     'alternativeRoundPoints',x->'alternativeRoundPoints'->0,'alternativePredictedFp',x->'alternativePredictedFp',
     'opp',x->'opponentAdjustedRoundPoints'->0,'altOpp',x->'alternativeOpponentAdjustedRoundPoints'->0,
     'fixtureCount',x->'roundFixtureCounts'->0,'recentFp',x->'recentFp', 'calculated',x->'forecastCalculatedAt','dataUpdated',x->'forecastDataUpdatedAt',
-    'component',x->'projectionListMetrics','stats', (x->'historicalStats')
-      - ARRAY['average_rating','average_rating_10_sample_size','aerials_won','duels_won','fouls_won',
-          'tackles','tackles_won','interceptions','clearances','previous_club_fallback_matches',
-          'previous_club_penalty_factor','xgot','touches_in_opposition_box','chances_created','shots_on_target',
-          'conceded_goals','clean_sheet','possession_recoveries','observed_rounds','penalties_won']::text[]
+    'price',x->'price','age',x->'age','confidence',x->'forecastConfidence',
+    'component',x->'projectionListMetrics','stats',x->'historicalStats'
   )) ORDER BY x->>'playerId') AS players
   FROM jsonb_array_elements(e.players) x
 ) p
