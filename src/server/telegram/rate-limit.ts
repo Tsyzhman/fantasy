@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 /**
@@ -36,9 +36,10 @@ export async function consumeTelegramRateLimit(prisma: PrismaClient, input: Tele
   return prisma.$transaction(async (tx) => {
     // A SELECT cannot lock a bucket that does not exist yet. Materialize it with
     // the unique constraint first; concurrent first attempts then share its lock.
+    // Separate primary keys keep simultaneous inserts on that conflict target.
     await tx.$executeRaw`
       INSERT INTO "telegram_rate_limits" ("id", "action", "subject_hash", "failed_count", "window_started_at", "created_at", "updated_at")
-      VALUES (${`${input.action}:${subjectHash}`}, ${input.action}, ${subjectHash}, 0, ${now}, ${now}, ${now})
+      VALUES (${randomUUID()}, ${input.action}, ${subjectHash}, 0, ${now}, ${now}, ${now})
       ON CONFLICT ("action", "subject_hash") DO NOTHING
     `;
     const rows = await tx.$queryRaw<TelegramRateLimitRow[]>`
@@ -90,7 +91,7 @@ async function upsertRow(
 ): Promise<void> {
   await tx.$executeRaw`
     INSERT INTO "telegram_rate_limits" ("id", "action", "subject_hash", "failed_count", "window_started_at", "locked_until", "created_at", "updated_at")
-    VALUES (${`${action}:${subjectHash}`}, ${action}, ${subjectHash}, ${count}, ${windowStartedAt}, ${lockedUntil}, ${now}, ${now})
+    VALUES (${randomUUID()}, ${action}, ${subjectHash}, ${count}, ${windowStartedAt}, ${lockedUntil}, ${now}, ${now})
     ON CONFLICT ("action", "subject_hash")
     DO UPDATE SET
       "failed_count" = ${count},

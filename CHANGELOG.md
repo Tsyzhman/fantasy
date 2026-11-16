@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.167 - 2026-11-16
+
+- Prevent duplicate primary key errors when concurrent sign-in or Telegram requests create a rate-limit counter.
+
 ## 0.3.165 - 2026-11-13
 
 - Label the five Sports.ru Squad forecasts FIT, MIX, GAS, REF and TIK in the table and Excel export.

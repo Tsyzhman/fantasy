@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import { Prisma, type PrismaClient } from "@prisma/client";
 
@@ -76,12 +76,12 @@ export async function recordFailedAuthAttempt(
   for (const bucket of buckets) {
     const cutoff = new Date(now.getTime() - windowMs);
     const lockedUntil = maxFailures <= 1 ? new Date(now.getTime() + lockMs) : null;
-    const id = bucketId(bucket);
     const subjectHash = hashSubject(bucket.subject);
 
+    // Concurrent inserts must conflict only on the bucket's unique key.
     await prisma.$executeRaw`
       INSERT INTO "AuthRateLimit" ("id", "action", "subjectHash", "failedCount", "lastFailedAt", "lockedUntil", "createdAt", "updatedAt")
-      VALUES (${id}, ${bucket.action}, ${subjectHash}, 1, ${now}, ${lockedUntil}, ${now}, ${now})
+      VALUES (${randomUUID()}, ${bucket.action}, ${subjectHash}, 1, ${now}, ${lockedUntil}, ${now}, ${now})
       ON CONFLICT ("action", "subjectHash")
       DO UPDATE SET
         "failedCount" = CASE WHEN "AuthRateLimit"."lastFailedAt" >= ${cutoff}
