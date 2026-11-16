@@ -11,11 +11,18 @@ prices, squad planning, and shot-map analysis.
 
 ## Current Product Reality
 
-Fantasy Scout has two football scouting workspaces.
+Fantasy Scout's football scouting workflows are available in Machete and MiXerr.
 
-- Machete: shared FotMob data, player projections, Sports.ru prices, squad
-  planning, and sync operations.
-- MiXerr: shot maps, xG overlays, and team/player shot comparisons.
+- **Machete** includes shared FotMob data, player forecasts, league strength,
+  and squad planning with Sports.ru and official FPL contest data where available.
+- **MiXerr** includes shot maps, xG overlays, and passing networks built from a
+  completed StatsBomb match event file in the browser.
+
+Other product areas cover the [KHL fantasy beta](../guides/KHL_IMPLEMENTATION_STATUS.md),
+[Franchises analytics](../../specs/modules/franchises/FEAT-005-franchise-analytics.md),
+[Telegram deadline reports](../../specs/modules/telegram/FEAT-007-deadline-assistant.md),
+and [Fantasy Arena](../guides/BETTING_ARENA.md), a virtual-coin league.
+The [project history](CHANGE_HISTORY.md) records how these areas developed.
 
 ## Problem
 
@@ -80,7 +87,9 @@ Needs to:
 - Machete FotMob ingestion and shared normalized core tables.
 - Sports.ru fantasy price imports and player mapping.
 - Machete player explorer and squad planner.
-- MiXerr shot maps and comparison APIs.
+- MiXerr shot maps, comparison APIs, and browser-local passing networks.
+- Isolated KHL fantasy beta, franchise reports, opt-in Telegram deadline
+  messages, and virtual-coin Arena.
 - Saved views, watchlists, and squad export.
 - Continuous Docker deployment and CI checks.
 

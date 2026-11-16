@@ -8,8 +8,8 @@ spreadsheet imports, and shot-map analysis in one application.
 
 | Area | Main workflow |
 |---|---|
-| **Machete** | Explore FotMob leagues, fixtures and player statistics; combine fantasy prices and projections; build and save legal squads. |
-| **MiXerr** | Inspect player and team shot maps, xG overlays, and comparison views on normalized match data. |
+| **Machete** | Explore fixtures, player statistics and league strength. Compare Sports.ru and FPL contest data where available, then build, save and export squads under the selected contest rules. |
+| **MiXerr** | Inspect shot maps and xG overlays, or build two passing networks from a completed StatsBomb match file. |
 | **KHL beta** | Use an isolated hockey player pool, fantasy rules, statistics imports, and squad planning. Coverage and readiness are documented separately. |
 | **Franchises** | Compare prepared histories, performance and forecast metrics across participant teams. |
 | **Telegram assistant** | Link an account, choose contests, and receive deadline reports when enabled. |
@@ -23,6 +23,7 @@ English.
 ## Start here
 
 - [Documentation index](docs/README.md) — all guides, references, research, and historical plans.
+- [Project history since September 2026](docs/product/CHANGE_HISTORY.md) — changes by period with links to contracts, pull requests, and release evidence.
 - [Product brief](docs/product/PRODUCT_BRIEF.md) — audience, workflows, and scope.
 - [Architecture](docs/reference/ARCHITECTURE.md) — modules, data flows, and runtime decisions.
 - [Data model](docs/reference/DATA_MODEL.md) and [API routes](docs/reference/API_ROUTES.md) — storage and HTTP contracts.
@@ -77,10 +78,10 @@ types, and builds the production application. Browser checks use
 test database setup.
 
 The [GitHub Check workflow](.github/workflows/check.yml) also audits production
-dependencies and validates migration drift. It runs every tracked database test
-in disposable common, Arena, or KHL databases that match the existing safety
-guards. CI test files run serially to keep timing assertions independent of
-competing test processes.
+dependencies, checks migration drift, and runs isolated browser and release
+regressions. It runs tracked database tests in disposable common,
+authentication, Arena, and KHL databases. The Node test runner uses one worker
+in CI so tests with timing assertions do not compete for CPU and memory.
 
 ## Data jobs and operations
 
@@ -106,7 +107,8 @@ Hockey is an isolated beta with explicit
 virtual coins; payments, deposits, and withdrawals are outside its scope.
 Research reports record observations for their stated dates and datasets.
 Historical plans describe proposals and may differ from the current application.
-The [work board](specs/BOARD.md) records unfinished work and external blockers.
+The [agent guide](docs/development/AGENT_GUIDE.md) explains how to find current
+work and its verification in the configured repository workflow.
 
 ## Repository layout
 

@@ -1,6 +1,8 @@
 # Specification map
 
-Canon for Fantasy Scout. Work status lives in `BOARD.md`; this file is the catalog of specifications. The repository is standalone: agents follow `AGENTS.md` and do not wait for a Prist connection.
+This catalog lists the specifications that govern Fantasy Scout. Follow
+[`AGENTS.md`](../AGENTS.md) and the [agent guide](../docs/development/AGENT_GUIDE.md)
+to find work status in the workflow configured for the checkout.
 
 ## Current canon
 
@@ -16,12 +18,12 @@ Canon for Fantasy Scout. Work status lives in `BOARD.md`; this file is the catal
 | [specs/modules/machete/FEAT-006-sports-popularity.md](modules/machete/FEAT-006-sports-popularity.md) | Active: Sports popularity ratings, ownership and transfers |
 | [specs/modules/telegram/FEAT-007-deadline-assistant.md](modules/telegram/FEAT-007-deadline-assistant.md) | Active: Telegram linking, subscriptions and deadline reports |
 | [specs/modules/telegram/INFRA-005-deadline-pipeline.md](modules/telegram/INFRA-005-deadline-pipeline.md) | Active: deadline campaigns, freshness and delivery |
-| [specs/modules/machete/INFRA-004-sorareinside-starters.md](modules/machete/INFRA-004-sorareinside-starters.md) | Active: SorareInside starters, nearest future match, exact-UUID sparse schedule hydration, hourly refresh at :05 |
+| [specs/modules/machete/INFRA-004-sorareinside-starters.md](modules/machete/INFRA-004-sorareinside-starters.md) | Active: hourly SorareInside refresh, nearest future match, scoped identity matching and complete last-played XI fallback |
 | [FEAT-016: Virtual Fantasy League](modules/betting/FEAT-001-virtual-league.md) | Active: virtual league, line, coins, algorithms and calculation |
 | [specs/common/main.md](common/main.md) | Product purpose, audience, modes, and boundaries |
 | [specs/common/FEAT-009-session-authentication.md](common/FEAT-009-session-authentication.md) | Active: atomic sign-in limits, one-time setup, internal redirects and session retention |
 | [specs/common/structure.md](common/structure.md) | Runtime, modules, namespaces, code ownership, and bounded release transport |
-| [specs/modules/machete/FEAT-001-global-ranking-strategy.md](modules/machete/FEAT-001-global-ranking-strategy.md) | Active: global-ranking mode in the squad planner |
+| [specs/modules/machete/FEAT-001-global-ranking-strategy.md](modules/machete/FEAT-001-global-ranking-strategy.md) | Active: Squad global ranking, contest rules, player identity and displayed forecast comparisons |
 | [specs/modules/machete/FEAT-002-global-strategy-formula.md](modules/machete/FEAT-002-global-strategy-formula.md) | Active: formula K and strategyScore |
 | [specs/modules/machete/FEAT-003-squad-player-card.md](modules/machete/FEAT-003-squad-player-card.md) | Active: Squad field card “Contact sheet”, actions and themes |
 | [specs/modules/machete/FEAT-004-rotation-risk.md](modules/machete/FEAT-004-rotation-risk.md) | Active: RR on the history of starts and rests, reliable selection |
@@ -51,7 +53,7 @@ These files stay as authored project documentation. They are not typed Prist spe
 
 ## Next typed specs
 
-Register a PROP, FEAT, or INFRA only when a change needs an independently owned contract. Likely first areas: Machete squad planning, FotMob ingestion, Sports.ru price mapping, MiXerr shot maps, and auth/session access.
+Register a PROP, FEAT, or INFRA when a change needs an independently owned contract.
 
 ## KHL (isolated beta module)
 

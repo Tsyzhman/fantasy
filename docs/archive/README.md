@@ -19,8 +19,9 @@ contracts are indexed in the [specification map](../../specs/SPEC-MAP.md).
 - [KHL implementation plan](planning/KHL_IMPLEMENTATION_PLAN.md)
 
 The global-strategy documents are retained as inputs to the corresponding
-canonical feature specifications. Work progress belongs in the work board and
-work-item archive.
+canonical feature specifications. See the [agent guide](../development/AGENT_GUIDE.md#track-the-appropriate-scope)
+for current work tracking and the [work-item archive](../../specs/work/archive/2026)
+for earlier verification records.
 
 ## Superseded guides and reports
 
@@ -28,6 +29,9 @@ work-item archive.
 - [Initial Codex prompt](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/docs/archive/prompts/CODEX_START_PROMPT.md)
 - [Follow-up Codex prompt](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/docs/archive/prompts/CODEX_FOLLOWUP_PROMPT.md)
 - [Wyscout source workbook columns](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/docs/reference/SOURCE_TABLE_COLUMNS.md)
+- [Legacy Wyscout workbook import workflow](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/docs/integrations/WYSCOUT_EXCEL_IMPORT.md)
+- [Original administrator UX guide](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/docs/product/ADMIN_UX.md)
+- [Original beta acceptance criteria](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/docs/testing/ACCEPTANCE_CRITERIA.md)
 - [July 2026 beta readiness audit](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/docs/testing/BETA_READINESS_AUDIT.md)
 - [September 2026 Telegram rollout plan](https://github.com/Tsyzhman/fantasy/blob/bd493e0f61f64843f169821e2de9272ee018d561/docs/TELEGRAM_DEADLINE_PLAN.md)
 

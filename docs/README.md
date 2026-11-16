@@ -11,8 +11,9 @@ retain their original language so they can be compared with the application.
 ## Product and feature guides
 
 - [Product brief](product/PRODUCT_BRIEF.md)
+- [Project history from September through November 2026](product/CHANGE_HISTORY.md)
 - [Fantasy Arena](guides/BETTING_ARENA.md)
-- [KHL implementation status and readiness gates](guides/KHL_IMPLEMENTATION_STATUS.md)
+- [KHL beta status, readiness gates, and historical verification](guides/KHL_IMPLEMENTATION_STATUS.md)
 
 ## Development
 
@@ -40,7 +41,7 @@ retain their original language so they can be compared with the application.
 - [Deployment](operations/DEPLOYMENT.md)
 - [Docker production](operations/DOCKER_PRODUCTION.md)
 - [Production monitoring](operations/PRODUCTION_MONITORING.md)
-- [Production release procedure](operations/PRODUCTION_RELEASES.md)
+- [Verified production release history](operations/PRODUCTION_RELEASES.md)
 - [Beta launch runbook](operations/BETA_LAUNCH_RUNBOOK.md)
 
 ## Testing and validation
@@ -62,6 +63,8 @@ later revision has passed the same checks.
 - [KHL feasibility, 6 September 2026](research/KHL_FANTASY_FEASIBILITY_2026-09-06.md)
 - [KHL source evidence, 7 September 2026](research/KHL_SOURCE_EVIDENCE_2026-09-07.md)
 - [KHL player and protocol audit, 20 September 2026](research/KHL_PLAYER_AUDIT_2026-09-20.md)
+- [Sports.ru Squad next-round forecast replay, 13 November 2026](research/SQUAD_FORECASTS_2026-11-13.md)
+- [Sports.ru Squad 5+ probability replay, 13 November 2026](research/SQUAD_FIVE_PLUS_2026-11-13.md)
 
 ## Design and historical planning
 
@@ -74,8 +77,9 @@ later revision has passed the same checks.
 - [Specification map](../specs/SPEC-MAP.md)
 - [Product purpose and boundaries](../specs/common/main.md)
 - [Technical ownership and repository structure](../specs/common/structure.md)
-- [Work board](../specs/BOARD.md)
-- [Work-item format](../specs/protocols/WORK-ITEM-PROTOCOL.md)
+- [Workflow and work tracking](development/AGENT_GUIDE.md#track-the-appropriate-scope)
+- [Git work board for standalone checkouts](../specs/BOARD.md)
+- [Standalone work-item format](../specs/protocols/WORK-ITEM-PROTOCOL.md)
 - [Archived work items](../specs/work/archive/2026)
 - [Verification evidence](../specs/work/evidence)
 - [Changelog](../CHANGELOG.md)

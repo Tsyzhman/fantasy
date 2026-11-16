@@ -17,8 +17,11 @@ The app uses Next.js route handlers under `src/app/api`.
 
 ### `GET /api/health`
 
-Returns database configuration and connectivity status for deployment checks.
-When `DATABASE_URL` is missing it returns `503 DATABASE_NOT_CONFIGURED`.
+Returns `status`, `uptimeSeconds`, and the serving `release` identity for
+deployment checks. The release includes its version and commit when available.
+Missing database configuration or a failed connectivity check returns HTTP
+503 with `status: "error"`.
+[Route handler](../../src/app/api/health/route.ts)
 
 ### `POST /api/client-errors`
 
@@ -48,6 +51,13 @@ scopes. It returns `200` only when every scope has a recent snapshot, at least
 the configured minimum player count, and the configured player-mapping
 percentage. Missing, stale, sparse, weakly mapped, invalidly configured, or
 unqueryable data returns `503`. Defaults are 7 hours, 100 players, and 98%.
+
+### `GET /api/health/fpl`
+
+Reports the official FPL contest snapshot age, player-mapping coverage, and
+official score coverage when scores are available. An explicitly disabled FPL
+provider returns `status: "disabled"`. A missing or unhealthy enabled contest
+returns HTTP 503. [Route handler](../../src/app/api/health/fpl/route.ts)
 
 ## Auth
 
@@ -254,6 +264,15 @@ squadId (optional; defaults to the most recently updated variant)
 format=csv|xlsx
 ```
 
+### `POST /api/machete/squads/export-table`
+
+Creates an XLSX workbook from the signed-in user's player table. The request
+supplies up to 5,000 typed rows and an ordered column list. The fixed columns
+are `player`, `team`, `position`, and `price`, followed by the selected
+optional columns. The workbook preserves their order and the active forecast
+values supplied by the table.
+[Route handler](../../src/app/api/machete/squads/export-table/route.ts)
+
 ### `PATCH /api/machete/team-player-seasons/starter`
 
 Updates a team-player-season starter flag. Admin only.
@@ -269,6 +288,30 @@ JSON body:
   isStarter: boolean;
 }
 ```
+
+## Franchises and Telegram
+
+`GET /api/franchises` requires a signed-in user and reads the published
+analytics snapshot using the requested date and league filters. It returns
+HTTP 400 for invalid filters and 503 when the snapshot or report is
+unavailable. Report responses use `Cache-Control: private, no-store`.
+[Route handler](../../src/app/api/franchises/route.ts)
+
+| Method and route | Purpose |
+|---|---|
+| `GET /api/profile/telegram` | Read linking and subscription status. |
+| `POST /api/profile/telegram/link-session` | Open a short-lived linking session. |
+| `POST /api/profile/telegram/link-code` | Issue the current short-lived challenge. |
+| `POST /api/profile/telegram/confirm` | Confirm the pending Telegram link in the site session. |
+| `PUT /api/profile/telegram/subscriptions` | Replace the account's contest subscriptions. |
+| `PATCH /api/profile/telegram` | Pause or resume the link with the `paused` boolean. |
+| `DELETE /api/profile/telegram` | Unlink the Telegram account. |
+| `POST /api/telegram/webhook` | Accept an authenticated Telegram update when webhook intake is configured. |
+
+Profile routes require the site's user session. The webhook validates the
+configured Telegram secret and bounds the request body before processing.
+[Linking and subscriptions](../../specs/modules/telegram/FEAT-007-deadline-assistant.md) ·
+[Webhook handler](../../src/app/api/telegram/webhook/route.ts)
 
 ## User Preferences
 
