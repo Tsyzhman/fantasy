@@ -1,5 +1,12 @@
 # Production release history
 
+The public health endpoint exposes the serving commit and version in
+`release`. Check this identity when comparing a deployed release with
+GitHub. On 16 November 2026 the endpoint reported 0.3.166 at `88b0c55`.
+GitHub verified the two rate-limiter corrections in repository version
+0.3.167. [Application health](https://fantasy.tsyzhman.ru/api/health) ·
+[Check for 0.3.167](https://github.com/Tsyzhman/fantasy/actions/runs/43830802801)
+
 ## Latest verified release 0.3.166 — 2026-11-13
 
 Production runs `20261113T201552Z-v0.3.166-88b0c55`, commit `88b0c55db48955250e68dbb257c496ec1150db66`, tree `88edd01514b2ac78b4551215eb67db2ca246879a`. The [dry run](https://github.com/Tsyzhman/fantasy/actions/runs/43497118839) and [promotion](https://github.com/Tsyzhman/fantasy/actions/runs/43498843211) passed. Production retains 0.3.165 for rollback.

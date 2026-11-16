@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.168 - 2026-11-16
+
+- Restore the September–November project history and align the public guides with the current application, operations, and repository workflow.
+
 ## 0.3.167 - 2026-11-16
 
 - Prevent duplicate primary key errors when concurrent sign-in or Telegram requests create a rate-limit counter.

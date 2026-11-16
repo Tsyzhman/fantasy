@@ -10,6 +10,7 @@ map of the current model groups, not a full Prisma schema copy.
   views, watchlist rows, and fantasy squads.
 - `UserSession`: hashed cookie-session token with expiry.
 - `AuthRateLimit`: persisted login/setup rate-limit buckets.
+- `AuthBootstrapState`: durable completion of one-time administrator setup.
 - `UserSavedView`: saved Machete explorer URLs, player table preferences, and Squad presets per user.
 - `UserWatchlistPlayer`: watched player keys per user and source.
 
@@ -86,6 +87,14 @@ The player explorer reads the shared FotMob core and Machete read models.
   Sports.ru and FPL contests can coexist over CoreLeague 47.
 - `FantasyPlayerPrice`: provider price rows scoped by contest and optional
   mapping to normalized FotMob players and teams.
+- `FantasyPlayerPriceSnapshot`: revision and observation metadata for a
+  provider price publication.
+- `FantasyPlayerPoolSnapshot` and `FantasyPlayerPoolSnapshotPlayer`: published
+  `CURRENT_XI` revisions and their player rows for a contest. The publisher
+  retains three READY revisions.
+- `FantasyPlayerPoolRefreshRequest`: coalesced, team-scoped refresh requests.
+  The event token allows a newer lineup change to survive an older job's
+  acknowledgment.
 - `UserFantasySquad`: a provider/contest-scoped named saved squad variant. A
   user can keep multiple variants for the same contest and select them by id.
 - `UserFantasySquadPlayer`: selected squad players with starter, lock, captain,
@@ -106,12 +115,18 @@ roster shape, team limits, and captain/vice-captain roles before persistence.
 - `BettingAccount`, `BettingEvent`, `BettingBet` and `BettingLedger`
   hold virtual accounts, published events, bets and append-only movements.
   [Fantasy Arena](../../specs/modules/betting/FEAT-001-virtual-league.md)
-- `FranchiseH2hSquad`, `FranchiseH2hRound` and `FranchiseAnalyticsSnapshot`
-  hold participant histories and prepared franchise analytics.
+- `FranchiseH2hSquad`, `FranchiseH2hRound`, `FranchiseH2hState`, and
+  `FranchiseAnalyticsSnapshot` hold participant histories, source state, and
+  published franchise analytics.
   [Franchises](../../specs/modules/franchises/FEAT-005-franchise-analytics.md)
-- `TelegramLink`, `TelegramSubscription` and `TelegramInbox` hold linked
-  accounts, consent and received updates. Deadline campaign, report and
-  delivery records hold preparation and delivery state.
+- `TelegramLink`, `TelegramLinkSession`, `TelegramLinkChallenge`, and
+  `TelegramSubscription` track account linking, short-lived challenges,
+  and per-contest consent. `TelegramInbox` tracks received updates, and
+  `TelegramRateLimit` persists linking rate limits.
+- `DeadlineCampaign`, `DeadlineStageJob`, `DeadlineDataSnapshot`, and
+  `DeadlineUserReport` track the provider-round campaign from preparation to a
+  versioned report. `TelegramOutbox` stores the delivery state and attempt
+  count for each report part.
   [Deadline pipeline](../../specs/modules/telegram/INFRA-005-deadline-pipeline.md)
 
 ## Moderated Beta Measurement

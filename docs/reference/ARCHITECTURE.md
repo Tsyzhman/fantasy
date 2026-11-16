@@ -9,9 +9,9 @@ architecture.
 
 | Area | Entry | Implementation |
 |---|---|---|
-| Machete football | `/machete/leagues`, `/machete/players`, `/machete/squad` | `src/app/machete`, `src/machete` |
-| MiXerr | `/mixerr` | `src/app/mixerr`, `src/mixer` |
-| KHL beta | `/machete/khl/squad` | `src/khl`, `src/server/khl` |
+| Machete football | `/machete/leagues`, `/machete/players`, `/machete/squad`, `/machete/leagues/:leagueId/strength` | `src/app/machete`, `src/machete` |
+| MiXerr | `/mixerr`, `/mixerr/passing-networks` | `src/app/mixerr`, `src/mixer` |
+| KHL beta | `/machete/khl/squad`, `/machete/khl/players`, `/machete/khl/calendar` | `src/khl`, `src/server/khl` |
 | Fantasy Arena | `/betting` | `src/app/betting`, `src/betting` |
 | Franchises | `/franchises` | `src/franchises`, `src/server/franchises`, `scripts/franchise-analytics` |
 | Telegram and deadline reports | Profile settings | `src/server/telegram`, `src/server/deadline-reports` |
@@ -29,7 +29,9 @@ remaining modules and their contract owners. [Technical map](../../specs/common/
 - Tailwind CSS and server-rendered application pages.
 - Node's built-in test runner through `tsx --test`.
 - Cron-style API routes protected by `CRON_SECRET`.
-- In-process ingestion worker loop when the production app container is running.
+- Production Caddy routes to the serving web container. A dedicated worker
+  runs background ingestion and publishes player-pool revisions. Franchise
+  collection and calculation run in a bounded one-off container. [Deployment](../operations/DEPLOYMENT.md)
 
 ## Module Map
 
@@ -38,7 +40,7 @@ src/app/machete
   league setup, league detail, player explorer, models, squad planner, sync jobs
 
 src/app/mixerr
-  shot-map explorer and comparison UI
+  shot-map explorer, comparison UI, and StatsBomb passing-network view
 
 src/app/admin
   admin shell, user management, ingestion controls, global Machete model settings
@@ -74,7 +76,7 @@ Admin or cron queues ingestion
 -> squad planner combines projections with Sports.ru prices and saved squads
 ```
 
-### Sports.ru fantasy prices
+### Football contest data
 
 ```text
 Scheduled or manual Sports.ru GraphQL sync (with workbook fallback)
@@ -83,10 +85,28 @@ Scheduled or manual Sports.ru GraphQL sync (with workbook fallback)
 -> automatic and manual mappings connect prices to FotMob players
 -> mapped Sports.ru team, position, and price override a lagging FotMob roster
 -> FotMob match history still supplies minutes, form, and event rates
--> worker publishes a CURRENT_XI forecast snapshot at 10:00..23:00 Europe/Moscow
+-> worker publishes a versioned CURRENT_XI forecast snapshot
 -> saved squad and forecasts render from the DB; remaining complete players arrive in 10% batches
 -> squad planner uses the same assignment for forecasts and transactional save validation
 ```
+
+FPL and Sports.ru can share a FotMob league while retaining separate contests,
+prices, rosters, rules, and official scores. FPL validates active membership
+independently of the reported position. Sports.ru club limits and transfer
+rules are tied to the target contest and provider round.
+[Squad contract](../../specs/modules/machete/FEAT-001-global-ranking-strategy.md) ·
+[FPL roster verification](../../specs/work/archive/2026/WI-044-fpl-active-roster-import.md)
+
+### Sports.ru Squad forecasts
+
+Squad shows FO and Alt with the corresponding opponent-adjusted comparisons
+`FO Opp.` and `Alt Opp.`. It sums fixture forecasts before rounding a round
+total to hundredths. The FIT, MIX, GAS, REF, and TIK comparison columns show
+the calibrated chance of scoring at least five points by default. The display
+also offers expected points. Sorting, filters, and the player-table XLSX use
+the active metric and selected columns.
+[Forecast contract](../../specs/modules/machete/FEAT-001-global-ranking-strategy.md) ·
+[Chronological evaluation](../research/SQUAD_FIVE_PLUS_2026-11-13.md)
 
 ### Rotating squad player-pool snapshots
 
@@ -118,6 +138,20 @@ revision privately. Only a complete download is merged into player data; user
 draft state stays in the session. Nondefault history and personal alternative
 formulas retain the dynamic calculation fallback.
 
+The SorareInside worker chooses the nearest future match across competitions
+for each club. A complete last-played XI can fill a missing or incomplete
+forecast once all 11 players are matched to the active pool. If neither source
+can resolve all 11, the affected scope keeps its prior flags.
+[Starting XI integration](../integrations/SORAREINSIDE_STARTERS.md)
+
+### League strength
+
+Machete's league-season strength view fits a Massey ranking on eligible played
+matches. It reports raw xG with its coverage and schedule difficulty from
+opponents already played. A team without an eligible result has no fitted
+rating.
+[Massey contract](../../specs/modules/machete/FEAT-015-league-strength.md)
+
 ### MiXerr shot maps
 
 ```text
@@ -126,6 +160,30 @@ FotMob match data is normalized
 -> shot-map API routes apply player/team/match-window filters
 -> UI renders attacking, conceded, and comparison layers
 ```
+
+### MiXerr passing networks
+
+The browser reads a completed StatsBomb event file and builds one graph per
+starting XI from successful passes. Each team's cutoff is its first
+substitution or a starter's dismissal, whichever comes first. The browser
+keeps the two derived graphs in page state.
+[Passing networks contract](../../specs/modules/mixerr/FEAT-014-passing-networks.md)
+
+### Franchises and Telegram
+
+Franchises imports participant and source-duel records, calculates a prepared
+analytics revision, and serves the latest published snapshot. One XI per
+football round enters the franchise population if it was active in any duel.
+Personal histories and per-duel freezes are retained. The report cache keys
+by revision and normalized date and league filters.
+[Franchise analytics contract](../../specs/modules/franchises/FEAT-005-franchise-analytics.md)
+
+Telegram linking starts in the signed-in site's profile and completes after a
+bot interaction and site confirmation. The deadline pipeline uses the
+provider's round identity, the latest available published squad or a saved
+Scout squad, prepared data snapshots, and a durable inbox and outbox. The worker
+rechecks consent before sending. [Linking](../../specs/modules/telegram/FEAT-007-deadline-assistant.md) ·
+[Delivery and freshness](../../specs/modules/telegram/INFRA-005-deadline-pipeline.md)
 
 ## Database Policy
 

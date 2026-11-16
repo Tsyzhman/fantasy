@@ -39,14 +39,15 @@ and run only the corresponding files with `tsx --test --test-concurrency=1`.
 
 | Group | CI database | Tests |
 |---|---|---|
-| Common | `fantasy_scout_test_ci` | `*.db-test.ts` under `src/` outside Arena and KHL |
+| Common | `fantasy_scout_test_ci` | `*.db-test.ts` under `src/` outside the groups below |
+| Authentication | `fantasy_auth_test_ci` | `src/lib/auth-concurrency.db-test.ts` |
 | Arena | `fantasy_betting_test_ci` | `src/betting/*.db-test.ts` |
 | KHL | `khl_test_ci` | `*.db-test.ts` under `src/khl` and `src/server/khl` |
 
 Use loopback port `55439` and set the PostgreSQL session timezone to `UTC`
-as in CI. Set `CI=true` and set `KHL_TEST_DATABASE=true`
-only for the KHL group. Some tests check the exact host, port and database
-name. For migration drift use a separate disposable shadow schema with
+as in CI. Set `CI=true` for CI-style runs. Enable `KHL_TEST_DATABASE=true` for
+the KHL group only. Some tests check the exact host, port and database name.
+For migration drift use a separate disposable shadow schema with
 `SHADOW_DATABASE_URL`. [CI check workflow](../../.github/workflows/check.yml)
 
 `npm run test:e2e -- --list` lists browser scenarios. For authenticated smoke

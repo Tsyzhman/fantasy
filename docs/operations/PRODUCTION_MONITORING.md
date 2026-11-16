@@ -2,6 +2,18 @@
 
 The scheduled monitor checks public application health/login, client critical errors, data-quality, Sports price and FPL health. Source checks share active scopes with synchronization; archives retain integrity/count diagnostics without an ongoing freshness SLA. Reviewed exclusions include reasons; unresolved mappings and real freshness/coverage failures remain warnings. Application unavailability stays critical. GitHub API operations retain bounded retries and existing issue deduplication.
 
+## GitHub workflows
+
+| Workflow | What to inspect |
+|---|---|
+| [Check](../../.github/workflows/check.yml) | Validates the repository revision for a pull request, a push to `main`, or a deployment candidate. |
+| [Production Browser Smoke](../../.github/workflows/production-browser-smoke.yml) | Runs authenticated desktop, tablet, and mobile scenarios against the serving site on the daily schedule or by manual dispatch. The manual KHL scope narrows the run to visible statistics. |
+| [Production Monitor](../../.github/workflows/production-monitor.yml) | Probes availability and source health. Unresolved warning-level checks keep the deduplicated alert issue open. Critical failures cause a failed workflow run. |
+
+For a source alert, open the run's JSON report and inspect the affected scopes,
+their snapshot age, coverage, and reviewed exclusions. A provider warning can
+coexist with a successful monitor run. [Monitor implementation](../../scripts/production-monitor.mjs)
+
 ## Error windows
 
 The host access-audit timer produces an hourly snapshot and `rolling-slo-audit.json` for the preceding 24 hours, with the existing <1% eligible 5xx threshold and minimum 20 requests. The 24-hour check also requires an exact 1440-minute window, fresh generation, retained start and recent coverage end. Truncated/missing log history cannot pass. Synthetic monitor/browser-canary traffic and expected source-health failures stay excluded from user-traffic metrics.
