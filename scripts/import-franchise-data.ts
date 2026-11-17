@@ -19,16 +19,25 @@ async function main() {
   for (const file of [".env.local", ".env"])
     if (existsSync(file)) process.loadEnvFile(file);
   const root = resolve(process.env.FRANCHISE_DATA_DIR ?? "storage/franchises");
-  const db = new PrismaClient();
   await mkdir(resolve(root, "source/squads"), { recursive: true });
   const lock = resolve(root, ".sync.lock");
-  const handle = await open(lock, "wx").catch(() => {
-    throw new Error(
-      "Franchise sync is already locked. Verify the previous process before removing .sync.lock.",
-    );
-  });
-  await handle.writeFile(String(process.pid));
-  await handle.close();
+  // flock(2) is attached to the open file description shared with fd 3.
+  // Killing the owner releases the lock without unlinking a contended inode.
+  const linux = process.platform === "linux";
+  if (linux && existsSync(lock)) throw new Error("Legacy .sync.lock requires owner verification.");
+  const handle = await open(linux ? resolve(root, ".sync.flock") : lock, linux ? "a" : "wx");
+  if (linux) {
+    const acquire = spawnSync("flock", ["--nonblock", "--conflict-exit-code", "75", "3"], {
+      stdio: ["ignore", "inherit", "inherit", handle.fd],
+    });
+    if (acquire.status !== 0) {
+      await handle.close();
+      throw acquire.error ?? new Error(acquire.status === 75 ? "Another franchise import is active." : "Failed to acquire franchise import lock.");
+    }
+  } else {
+    await handle.writeFile(String(process.pid));
+  }
+  const db = new PrismaClient();
   const json = async (name: string) =>
     JSON.parse(await readFile(resolve(root, name), "utf8"));
   try {
@@ -45,7 +54,7 @@ async function main() {
         python,
         [resolve("scripts/franchise-analytics/sync.py")],
         {
-          stdio: "inherit",
+          stdio: linux ? ["inherit", "inherit", "inherit", handle.fd] : "inherit",
           env: { ...process.env, FRANCHISE_DATA_DIR: root },
           timeout: 1000 * 60 * 90,
         },
@@ -173,7 +182,8 @@ async function main() {
     );
   } finally {
     await db.$disconnect();
-    await unlink(lock);
+    await handle.close();
+    if (!linux) await unlink(lock);
   }
 }
 main().catch((e) => {

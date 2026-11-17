@@ -574,7 +574,9 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
   );
   const [openingFreeTransfers, setOpeningFreeTransfers] = useState<number | null>(initialSquad.openingFreeTransfers ?? null);
   const draftKey = `${draftPrefix}${userId}:${provider}:${leagueId}:${season}:${initialSquad.id ?? "new"}`;
-  usePlannerDraft({ draftKey, language, savedRoundPlans, roundPlans, horizon, activeRoundOffset, transferBaselinePlayerIds, openingFreeTransfers,
+  const [publicationId, setPublicationId] = useState(initialSquad.sportsPublicationId ?? null);
+  const draftRoundIds = useMemo(() => rounds.map(round => round.id), [rounds]);
+  usePlannerDraft({ draftKey, roundIds: draftRoundIds, previousRoundIds: initialSquad.sportsPreviousRoundIds, publicationId, language, savedRoundPlans, roundPlans, horizon, activeRoundOffset, transferBaselinePlayerIds, openingFreeTransfers,
     setRoundPlans, setHorizon, setActiveRoundOffset, setTransferBaselinePlayerIds, setOpeningFreeTransfers, setMessage });
   const transferBaselineSelections = useMemo(
     () => transferBaselinePlayerIds.map((playerId) => ({ playerId })),
@@ -1767,6 +1769,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
             leagueId,
             season,
             squadId: activeSquadId,
+            sportsPublicationId: publicationId,
             horizonRounds: horizon,
             historyScope: appliedHistorySettings.scope,
             historyWindow: appliedHistorySettings.window,
@@ -1848,6 +1851,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
           horizonRounds?: number;
           selections?: FantasySquadSelection[];
           roundPlans?: FantasySquadRoundPlan[];
+          sportsPublicationId?: string;
           importedPlayers?: FantasyPlannerPlayer[];
           placeholderPlayers?: FantasyPlannerPlayer[];
         };
@@ -1902,6 +1906,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
       setSourcePlayers(importedPlayerPool);
       setRoundPlans(importedRoundPlans);
       setSavedRoundPlans(cloneFantasyRoundPlans(importedRoundPlans));
+      setPublicationId(payload.squad?.sportsPublicationId ?? null);
       setTransferBaselinePlayerIds(importedSelections.map((selection) => selection.playerId));
       setActiveSquadId(savedSquadId);
       setHorizon(importedHorizon);
@@ -2794,8 +2799,8 @@ function sportsRuSquadButtonTitle(language: UiLanguage, status: SportsRuSquadSna
   }
   return localizedText(
     language,
-    "Check for the squad now. Automatic loading starts 30 minutes after the first match.",
-    "Проверить состав сейчас. Автоматическая загрузка начинается через 30 минут после первого матча."
+    "Check for the squad now. Automatic loading starts after the first match.",
+    "Проверить состав сейчас. Автоматическая загрузка начинается после первого матча."
   );
 }
 
@@ -2813,8 +2818,8 @@ function localizedSportsRuPendingStatus(
   if (status?.status === "WAITING_FOR_FIRST_MATCH") {
     return localizedText(
       language,
-      "The first match has not started yet. The squad becomes public after the deadline; the first automatic request will run 30 minutes after kickoff.",
-      "Первый матч ещё не начался. Состав станет публичным после дедлайна; первая автоматическая загрузка запустится через 30 минут после стартового свистка."
+      "The first match has not started yet. The squad becomes public after the deadline; the first automatic request will run after kickoff.",
+      "Первый матч ещё не начался. Состав станет публичным после дедлайна; первая автоматическая загрузка запустится после стартового свистка."
     );
   }
   if (status?.status === "MAPPING_INCOMPLETE") {
@@ -2829,8 +2834,8 @@ function localizedSportsRuPendingStatus(
     const formatted = localizedClientDateTime(language, availableAfter);
     return localizedText(
       language,
-      `The squad is not public yet. The first automatic request is scheduled for ${formatted}, 30 minutes after the first match starts.`,
-      `Состав ещё не открыт. Первая автоматическая загрузка запланирована на ${formatted} — через 30 минут после начала первого матча.`
+      `The squad is not public yet. The first automatic request is scheduled for ${formatted}, after the first match starts.`,
+      `Состав ещё не открыт. Первая автоматическая загрузка запланирована на ${formatted} — после начала первого матча.`
     );
   }
   if (status?.status === "RETRY") {
@@ -2851,8 +2856,8 @@ function localizedSportsRuPendingStatus(
   if (status?.status === "UNAVAILABLE") {
     return localizedText(
       language,
-      "Sports.ru still does not expose this tour squad. Press the button later to start a fresh check.",
-      "Sports.ru всё ещё не отдаёт состав этого тура. Нажмите кнопку позже — она запустит новую проверку."
+      "Sports.ru has not published the full team yet. We will check again automatically.",
+      "Sports.ru пока не опубликовал полный состав тура. Сервер повторит проверку автоматически."
     );
   }
   return localizedText(
@@ -2869,8 +2874,8 @@ function localizedSportsRuImportError(language: UiLanguage, code: string, fallba
   if (code === "SPORTS_SNAPSHOT_PENDING") {
     return localizedText(
       language,
-      "The current Sports.ru squad has not been stored yet. The background loader starts 30 minutes after the first match.",
-      "Текущий состав Sports ещё не сохранён. Фоновая загрузка запускается через 30 минут после начала первого матча."
+      "The current Sports.ru squad has not been stored yet. The background loader starts after the first match.",
+      "Текущий состав Sports ещё не сохранён. Фоновая загрузка запускается после начала первого матча."
     );
   }
   if (code === "SPORTS_TOURNAMENT_NOT_CONFIGURED") {

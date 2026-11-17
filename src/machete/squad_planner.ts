@@ -119,6 +119,8 @@ export type SavedFantasySquad = {
   horizonRounds: number;
   selections: FantasySquadSelection[];
   roundPlans: FantasySquadRoundPlan[];
+  sportsPublicationId?: string | null;
+  sportsPreviousRoundIds?: string[];
   transferBaselinePlayerIds?: string[] | null;
   openingFreeTransfers?: number | null;
 };
@@ -339,7 +341,7 @@ export type FantasySquadPlayerPoolLoadPlan = {
  */
 export async function loadFantasySquadPlayerPoolLoadPlan(
   prisma: PrismaClient,
-  league: Pick<SharedLeagueSeasonOption, "leagueId" | "season">,
+  league: Pick<SharedLeagueSeasonOption, "leagueId" | "season"> & Partial<SharedLeagueSeasonOption>,
   contestId: string,
   currentSquadPlayerIds: readonly string[],
   additionalPlayerIds: readonly string[] = []
@@ -1536,7 +1538,10 @@ export async function loadSportsRuFantasySquadPlannerShellData(
   ]);
 
   const savedSquad = (squadId ? savedSquads.find((squad) => squad.id === squadId) : null) ?? savedSquads[0] ?? null;
-  const selectedPlayerIds = savedSquad?.players.map((player) => String(player.playerId)) ?? [];
+  const selectedPlayerIds = [...new Set([
+    ...(savedSquad?.players.map((player) => String(player.playerId)) ?? []),
+    ...fantasySquadRoundPlansFromFilters(savedSquad?.filters, []).flatMap(plan => plan.selections.map(player => player.playerId))
+  ])];
   const [basePlayers, loadPlan] = await Promise.all([
     contest
       ? loadFantasySquadPlayerPoolBaseBatch(prisma, league, contest.id, selectedPlayerIds)
@@ -1683,7 +1688,10 @@ async function loadSportsRuFantasySquadSnapshotShellData(
     orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }]
   });
   const savedSquad = (squadId ? savedSquads.find((squad) => squad.id === squadId) : null) ?? savedSquads[0] ?? null;
-  const selectedPlayerIds = savedSquad?.players.map((player) => String(player.playerId)) ?? [];
+  const selectedPlayerIds = [...new Set([
+    ...(savedSquad?.players.map((player) => String(player.playerId)) ?? []),
+    ...fantasySquadRoundPlansFromFilters(savedSquad?.filters, []).flatMap(plan => plan.selections.map(player => player.playerId))
+  ])];
   const snapshotRows = selectedPlayerIds.length > 0
     ? await prisma.fantasyPlayerPoolSnapshotPlayer.findMany({
         where: { snapshotId: snapshot.id, playerId: { in: selectedPlayerIds } },
@@ -2219,6 +2227,9 @@ export async function saveFantasySquad(
     contestId?: string | null;
     providerPlaceholders?: FantasyProviderPlaceholder[];
     resetTransferBaseline?: boolean;
+    expectedSportsPublicationId?: string | null;
+    importedPublication?: { id: string; firstMatchAt: Date };
+    publication?: { id: string; firstMatchAt: Date; baseline: string[]; expectedUpdatedAt: Date; profileId: string };
     providerSquadId?: string;
     strategy?: import("./squad_logic").FantasySquadStrategy;
   }
@@ -2380,10 +2391,15 @@ export async function saveFantasySquad(
           leagueId: input.leagueId,
           season: input.season
         },
-        select: { id: true, filters: true, players: { select: { playerId: true } } }
+        select: { id: true, updatedAt: true, filters: true, players: { select: { playerId: true } } }
       });
       if (!ownedSquad) throw new Error("Fantasy squad does not belong to the selected user, league, and season.");
-      const transferBaselinePlayerIds = resolveFantasySquadTransferBaseline({
+      const publication = input.publication;
+      if (input.expectedSportsPublicationId !== undefined &&
+          input.expectedSportsPublicationId !== sportsPublicationId(ownedSquad.filters)) {
+        throw new Error("SPORTS_PUBLICATION_CHANGED");
+      }
+      const transferBaselinePlayerIds = input.publication?.baseline ?? resolveFantasySquadTransferBaseline({
         stored: fantasySquadTransferBaselineFromFilters(ownedSquad.filters),
         previousPlayerIds: (ownedSquad.players ?? []).map((player) => String(player.playerId)),
         nextPlayerIds: input.selections.map((selection) => selection.playerId),
@@ -2391,7 +2407,10 @@ export async function saveFantasySquad(
         reset: input.resetTransferBaseline === true
       });
       squad = await tx.userFantasySquad.update({
-        where: { id: ownedSquad.id },
+        where: {
+          id: ownedSquad.id, updatedAt: publication?.expectedUpdatedAt ?? ownedSquad.updatedAt,
+          ...(publication ? { user: { externalProfiles: { some: { provider: "SPORTS_RU", providerUserId: publication.profileId } } } } : {})
+        },
         data: {
           name,
           budgetLimit: input.rules.budgetLimit,
@@ -2399,6 +2418,9 @@ export async function saveFantasySquad(
           horizonRounds,
           filters: fantasySquadFiltersPayload({
             previousFilters: ownedSquad.filters,
+            sportsPublicationId: (publication ?? input.importedPublication)?.id,
+            sportsPreviousRoundIds: publication ? fantasySquadRoundIdsFromFilters(ownedSquad.filters) : undefined,
+            sportsPublicationAt: (publication ?? input.importedPublication)?.firstMatchAt.toISOString(),
             providerSquadId: input.providerSquadId,
             strategy: input.strategy,
             roundPlans,
@@ -2429,6 +2451,8 @@ export async function saveFantasySquad(
           bank,
           horizonRounds,
           filters: fantasySquadFiltersPayload({
+            sportsPublicationId: input.importedPublication?.id,
+            sportsPublicationAt: input.importedPublication?.firstMatchAt.toISOString(),
             strategy: input.strategy,
             providerSquadId: input.providerSquadId,
             roundPlans,
@@ -2554,6 +2578,9 @@ function uniquePlayerIds(values: string[]) {
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data */
 export function fantasySquadFiltersPayload(input: {
+  sportsPublicationId?: string;
+  sportsPublicationAt?: string;
+  sportsPreviousRoundIds?: string[];
   providerSquadId?: string;
   previousFilters?: unknown;
   strategy?: import("./squad_logic").FantasySquadStrategy;
@@ -2567,6 +2594,8 @@ export function fantasySquadFiltersPayload(input: {
   delete previousFilters.transferBaselinePlayerIds;
   return {
     ...previousFilters,
+    ...(input.sportsPublicationId ? { sportsPublicationId: input.sportsPublicationId, sportsPublicationAt: input.sportsPublicationAt } : {}),
+    ...(input.sportsPreviousRoundIds ? { sportsPreviousRoundIds: input.sportsPreviousRoundIds } : {}),
     ...(input.strategy ? { strategy: input.strategy } : {}),
     ...(input.providerSquadId ? { globalStrategyBinding: { providerSquadId: input.providerSquadId } } : {}),
     roundPlans: input.roundPlans,
@@ -2576,11 +2605,18 @@ export function fantasySquadFiltersPayload(input: {
   };
 }
 
+export function sportsPublicationId(filters: unknown) {
+  const id = (filters as { sportsPublicationId?: unknown } | null)?.sportsPublicationId;
+  return typeof id === "string" ? id : null;
+}
+
 function savedFantasySquadTransferState(filters: unknown, openingFreeTransfers: number | null) {
   const value = filters && typeof filters === "object" ? (filters as { strategy?: unknown }).strategy : null;
   const strategy: import("./squad_logic").FantasySquadStrategy = value === "GLOBAL_AUTO" || value === "reliable" || value === "upside" ? value : "balanced";
   return {
     strategy,
+    sportsPublicationId: sportsPublicationId(filters),
+    sportsPreviousRoundIds: normalizeFantasySquadRoundIds((filters as { sportsPreviousRoundIds?: unknown } | null)?.sportsPreviousRoundIds),
     transferBaselinePlayerIds: fantasySquadTransferBaselineFromFilters(filters),
     openingFreeTransfers
   };
@@ -2729,7 +2765,7 @@ export function uniqueFantasySquadName(existingNames: Iterable<string>, requeste
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
 export function fantasyRulesForLeague(
-  league: SharedLeagueSeasonOption,
+  league: Pick<SharedLeagueSeasonOption, "leagueId" | "season"> & Partial<SharedLeagueSeasonOption>,
   contest: {
     budgetLimit: number;
     squadSize: number;
@@ -3646,7 +3682,7 @@ async function loadProviderPlannerMatches(
 
 async function fantasyContestCacheMetadata(
   prisma: PrismaClient,
-  league: Pick<SharedLeagueSeasonOption, "leagueId" | "season">,
+  league: Pick<SharedLeagueSeasonOption, "leagueId" | "season"> & Partial<SharedLeagueSeasonOption>,
   provider: string,
   contestId?: string | null
 ) {

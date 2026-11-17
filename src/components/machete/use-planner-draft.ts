@@ -5,9 +5,9 @@ import type { FantasySquadRoundPlan } from "@/machete/squad_logic";
 import { localizedText } from "@/components/localized-option";
 import { parsePlannerDraft, writePlannerDraft } from "./planner-draft";
 import { fantasyRoundPlansFingerprint } from "./planner-squad-commands";
-export function usePlannerDraft({ draftKey, language, savedRoundPlans, roundPlans, horizon, activeRoundOffset, transferBaselinePlayerIds, openingFreeTransfers,
+export function usePlannerDraft({ draftKey, roundIds, previousRoundIds, publicationId, language, savedRoundPlans, roundPlans, horizon, activeRoundOffset, transferBaselinePlayerIds, openingFreeTransfers,
   setRoundPlans, setHorizon, setActiveRoundOffset, setTransferBaselinePlayerIds, setOpeningFreeTransfers, setMessage }: {
-  draftKey: string; language: "en" | "ru"; savedRoundPlans: FantasySquadRoundPlan[]; roundPlans: FantasySquadRoundPlan[];
+  draftKey: string; roundIds: string[]; previousRoundIds?: string[]; publicationId: string | null; language: "en" | "ru"; savedRoundPlans: FantasySquadRoundPlan[]; roundPlans: FantasySquadRoundPlan[];
   horizon: number; activeRoundOffset: number; transferBaselinePlayerIds: string[]; openingFreeTransfers: number | null;
   setRoundPlans: Dispatch<SetStateAction<FantasySquadRoundPlan[]>>; setHorizon: Dispatch<SetStateAction<number>>;
   setActiveRoundOffset: Dispatch<SetStateAction<number>>; setTransferBaselinePlayerIds: Dispatch<SetStateAction<string[]>>;
@@ -22,28 +22,31 @@ export function usePlannerDraft({ draftKey, language, savedRoundPlans, roundPlan
       if (cancelled) return;
       draftRestored.current = draftKey;
       try {
-        const draft = parsePlannerDraft(sessionStorage.getItem(draftKey), fantasyRoundPlansFingerprint(savedRoundPlans));
+        const draft = parsePlannerDraft(sessionStorage.getItem(draftKey), fantasyRoundPlansFingerprint(savedRoundPlans), Date.now(),
+          publicationId ? { id: publicationId, roundIds, previousRoundIds, saved: savedRoundPlans } : undefined);
         if (draft) {
           setRoundPlans(draft.roundPlans); setHorizon(draft.horizon); setActiveRoundOffset(draft.activeRoundOffset);
-          setTransferBaselinePlayerIds(draft.transferBaselinePlayerIds); setOpeningFreeTransfers(draft.openingFreeTransfers);
+          if (!publicationId) {
+            setTransferBaselinePlayerIds(draft.transferBaselinePlayerIds); setOpeningFreeTransfers(draft.openingFreeTransfers);
+          }
           setMessage(localizedText(language, "Unsaved squad draft restored.", "Восстановлен несохранённый черновик состава."));
         }
       } catch { /* Restricted storage keeps the in-memory editor usable. */ }
       setDraftReady(draftKey);
     });
     return () => { cancelled = true; };
-  }, [draftKey, language, savedRoundPlans, setRoundPlans, setHorizon, setActiveRoundOffset, setTransferBaselinePlayerIds, setOpeningFreeTransfers, setMessage]);
+  }, [draftKey, roundIds, previousRoundIds, publicationId, language, savedRoundPlans, setRoundPlans, setHorizon, setActiveRoundOffset, setTransferBaselinePlayerIds, setOpeningFreeTransfers, setMessage]);
   useEffect(() => {
     if (draftReady !== draftKey) return;
     const persist = () => {
       try {
         const baseline = fantasyRoundPlansFingerprint(savedRoundPlans);
         writePlannerDraft(sessionStorage, draftKey, fantasyRoundPlansFingerprint(roundPlans) === baseline ? null : {
-          version: 1, updatedAt: Date.now(), baseline, roundPlans, horizon, activeRoundOffset, transferBaselinePlayerIds, openingFreeTransfers,
+          version: 1, roundIds, publicationId, updatedAt: Date.now(), baseline, roundPlans, horizon, activeRoundOffset, transferBaselinePlayerIds, openingFreeTransfers,
         });
       } catch { /* Quota errors must not interrupt editing. */ }
     };
     persist(); window.addEventListener("pagehide", persist);
     return () => window.removeEventListener("pagehide", persist);
-  }, [draftReady, draftKey, savedRoundPlans, roundPlans, horizon, activeRoundOffset, transferBaselinePlayerIds, openingFreeTransfers]);
+  }, [draftReady, draftKey, roundIds, publicationId, savedRoundPlans, roundPlans, horizon, activeRoundOffset, transferBaselinePlayerIds, openingFreeTransfers]);
 }
