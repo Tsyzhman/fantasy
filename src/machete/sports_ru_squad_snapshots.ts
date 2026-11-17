@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient } from "@prisma/client";
+import { Prisma, type FantasyContest, type PrismaClient } from "@prisma/client";
 
 import {
   fetchSportsRuLatestPublishedSquad,
@@ -16,11 +16,13 @@ import {
 import {
   isFantasySquadPlayerId,
   parseFantasyProviderPlaceholders,
+  createFantasySquadRoundPlans,
+  fantasyProviderPlaceholdersFromFilters,
+  type FantasySquadRoundPlan,
   type FantasySquadSelection
 } from "./squad_logic";
-import { fantasyProviderRoundKey, sportsRuSeasonAliases } from "./squad_planner";
+import { fantasyProviderRoundKey, fantasyRulesForLeague, fantasySquadRoundIdsFromFilters, fantasySquadRoundPlansFromFilters, saveFantasySquad, sportsPublicationId, sportsRuSeasonAliases } from "./squad_planner";
 
-export const SPORTS_RU_SQUAD_PUBLICATION_DELAY_MS = 30 * 60 * 1_000;
 const SPORTS_RU_SQUAD_RETRY_DELAY_MS = 15 * 60 * 1_000;
 const SPORTS_RU_SQUAD_LEASE_MS = 10 * 60 * 1_000;
 const SPORTS_RU_SQUAD_MAX_PUBLICATION_ATTEMPTS = 8;
@@ -37,6 +39,7 @@ export type SportsRuSquadRoundSchedule = {
   roundKey: string;
   roundLabel: string;
   providerTourId: string | null;
+  nextRoundKeys?: string[];
   firstMatchAt: Date;
   availableAfter: Date;
 };
@@ -96,7 +99,7 @@ export function latestStartedSportsRuSquadRound(
     roundLabel: latest[1].label,
     providerTourId: null,
     firstMatchAt: latest[1].firstMatchAt,
-    availableAfter: new Date(latest[1].firstMatchAt.getTime() + SPORTS_RU_SQUAD_PUBLICATION_DELAY_MS)
+    availableAfter: latest[1].firstMatchAt
   };
 }
 
@@ -110,7 +113,7 @@ export function latestStartedSportsRuProviderRound(
   }>,
   now: Date
 ): SportsRuSquadRoundSchedule | null {
-  return rounds.flatMap((round): SportsRuSquadRoundSchedule[] => {
+  const started = rounds.flatMap((round): SportsRuSquadRoundSchedule[] => {
     const firstMatchAt = round.fixtures
       .filter((fixture) => !["CANCELLED", "POSTPONED"].includes(fixture.status?.toUpperCase() ?? ""))
       .map((fixture) => fixture.kickoffAt)
@@ -122,9 +125,14 @@ export function latestStartedSportsRuProviderRound(
       roundLabel: round.name,
       providerTourId: round.providerRoundId,
       firstMatchAt,
-      availableAfter: new Date(firstMatchAt.getTime() + SPORTS_RU_SQUAD_PUBLICATION_DELAY_MS)
+      availableAfter: firstMatchAt
     }];
-  }).sort((left, right) => right.firstMatchAt.getTime() - left.firstMatchAt.getTime())[0] ?? null;
+  }).sort((left, right) => right.firstMatchAt.getTime() - left.firstMatchAt.getTime())[0];
+  if (!started) return null;
+  const ordinal = rounds.find(round => round.providerRoundId === started.providerTourId)!.ordinal;
+  return { ...started, nextRoundKeys: rounds.filter(round => round.ordinal > ordinal)
+    .sort((left, right) => left.ordinal - right.ordinal).slice(0, 5)
+    .map(round => fantasyProviderRoundKey("SPORTS_RU", round.ordinal, round.providerRoundId)) };
 }
 
 async function loadLatestSportsRuSquadRoundSchedule(
@@ -222,6 +230,7 @@ export async function syncSportsRuSquadSnapshots(
       for (const profile of profiles) {
         try {
           const snapshot = await prisma.sportsRuSquadSnapshot.upsert({
+            select: { id: true, status: true, providerSquadId: true },
             where: {
               userId_providerProfileId_leagueId_season_roundKey: {
                 userId: profile.userId,
@@ -260,6 +269,12 @@ export async function syncSportsRuSquadSnapshots(
             fetchPublishedSquad
           });
           result[outcome] += 1;
+          if (outcome === "stored" || snapshot.status === "COMPLETE") {
+            const receipt = outcome === "stored" ? await prisma.sportsRuSquadSnapshot.findUniqueOrThrow({
+              where: { id: snapshot.id }, select: { id: true, providerSquadId: true }
+            }) : snapshot;
+            await applyPublishedSportsSquads(prisma, contest, receipt, profile.userId, schedule);
+          }
         } catch {
           result.failed += 1;
         }
@@ -273,7 +288,7 @@ export async function syncSportsRuSquadSnapshots(
 
 /**
  * Creates the current-round snapshot immediately for one linked user and,
- * once the 30-minute publication delay has elapsed, tries to fill it during
+ * once the first match has started, tries to fill it during
  * the button request. A manual request can revive an exhausted snapshot, but
  * the one-minute cooldown and the database lease prevent click-spam and
  * duplicate cross-process Sports.ru requests. A legacy MAPPING_INCOMPLETE
@@ -399,11 +414,7 @@ async function syncOneSportsRuSquadSnapshot(
   const claimed = await prisma.sportsRuSquadSnapshot.updateMany({
     where: {
       id: snapshotId,
-      status: {
-        in: input.manualRetry
-          ? ["PENDING", "RETRY", "MAPPING_INCOMPLETE", "UNAVAILABLE"]
-          : ["PENDING", "RETRY", "MAPPING_INCOMPLETE"]
-      },
+      status: { in: ["PENDING", "RETRY", "MAPPING_INCOMPLETE", "UNAVAILABLE"] },
       availableAfter: { lte: input.now },
       AND: [
         retryEligibility,
@@ -460,6 +471,7 @@ async function syncOneSportsRuSquadSnapshot(
       leagueId: snapshot.leagueId,
       season: snapshot.season,
       status: "COMPLETE",
+      providerProfileId: input.profileId,
       providerTourId: published.tourId
     },
     select: { id: true }
@@ -482,7 +494,7 @@ async function syncOneSportsRuSquadSnapshot(
     return markPublicationRetry(prisma, snapshot, input.now, errorMessage(error, "Sports.ru squad mapping failed."));
   }
   await prisma.sportsRuSquadSnapshot.update({
-    where: { id: snapshot.id },
+    where: { id: snapshot.id, lastAttemptAt: input.now, status: { not: "COMPLETE" } },
     data: {
       status: "COMPLETE",
       providerSquadId: preview.providerSquadId,
@@ -516,15 +528,88 @@ async function markPublicationRetry(
 ): Promise<"retried" | "unavailable"> {
   const unavailable = snapshot.attemptCount >= SPORTS_RU_SQUAD_MAX_PUBLICATION_ATTEMPTS;
   await prisma.sportsRuSquadSnapshot.update({
-    where: { id: snapshot.id },
+    where: { id: snapshot.id, lastAttemptAt: now, status: { not: "COMPLETE" } },
     data: {
       status: unavailable ? "UNAVAILABLE" : "RETRY",
-      nextAttemptAt: unavailable ? null : new Date(now.getTime() + SPORTS_RU_SQUAD_RETRY_DELAY_MS),
+      nextAttemptAt: new Date(now.getTime() + (unavailable ? 60 * 60_000 : SPORTS_RU_SQUAD_RETRY_DELAY_MS)),
       syncLeaseUntil: null,
       lastError: message.slice(0, 500)
     }
   });
   return unavailable ? "unavailable" : "retried";
+}
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data */
+export function publishedSportsRoundPlans(input: {
+  published: FantasySquadSelection[]; roundKey: string; nextRoundKeys: string[]; savedRoundIds: string[];
+  savedPlans: FantasySquadRoundPlan[]; editedAfterKickoff: boolean;
+}) {
+  const startsInNextWindow = input.nextRoundKeys.includes(input.savedRoundIds[0]);
+  const roundIds = (startsInNextWindow ? input.nextRoundKeys.slice(input.nextRoundKeys.indexOf(input.savedRoundIds[0]))
+    : [input.roundKey, ...input.nextRoundKeys]).slice(0, 5);
+  const plans = createFantasySquadRoundPlans(input.published);
+  let inherited = input.published;
+  for (const plan of plans) {
+    const key = roundIds[plan.roundOffset];
+    const oldIndex = input.savedRoundIds.indexOf(key);
+    const saved = input.savedPlans[oldIndex];
+    const preserveEdit = saved && (!saved.linkedToPrevious || oldIndex === 0)
+      && (key !== input.roundKey || (input.editedAfterKickoff && oldIndex === 0));
+    if (preserveEdit && saved.selections.length) {
+      inherited = saved.selections;
+      plan.linkedToPrevious = false;
+    }
+    plan.selections = inherited.map(selection => ({ ...selection }));
+  }
+  return { plans, roundIds };
+}
+
+async function applyPublishedSportsSquads(
+  db: PrismaClient, contest: FantasyContest, receipt: { id: string; providerSquadId: string | null },
+  userId: string, schedule: SportsRuSquadRoundSchedule
+) {
+  if (!schedule.providerTourId || !receipt.providerSquadId) return;
+  const squads = await db.userFantasySquad.findMany({
+    where: { userId, contestId: contest.id, provider: "SPORTS_RU", leagueId: contest.leagueId, season: contest.season,
+      filters: { path: ["globalStrategyBinding", "providerSquadId"], equals: receipt.providerSquadId } },
+    select: { id: true, filters: true, updatedAt: true, name: true, horizonRounds: true }
+  });
+  const pending = squads.filter(squad => sportsPublicationId(squad.filters) !== receipt.id);
+  if (!pending.length) return;
+  const snapshot = await db.sportsRuSquadSnapshot.findUniqueOrThrow({ where: { id: receipt.id } });
+  if (snapshot.status !== "COMPLETE" || snapshot.roundKey !== schedule.roundKey || snapshot.providerTourId !== schedule.providerTourId
+      || snapshot.providerSquadId !== receipt.providerSquadId || snapshot.playersCount !== contest.squadSize) return;
+  const payload = parseStoredPublishedSquad(snapshot.providerPayload);
+  if (!payload || payload.tourId !== schedule.providerTourId || payload.seasonId !== snapshot.providerSeasonId ||
+      payload.providerSquadId !== snapshot.providerSquadId || payload.players.length !== contest.squadSize) return;
+  const published = parseStoredSelections(snapshot.selections);
+  if (published.length !== contest.squadSize || new Set(published.map(p => p.playerId)).size !== contest.squadSize) return;
+  const playerIds = published.filter(p => /^\d+$/.test(p.playerId)).map(p => BigInt(p.playerId));
+  const [roster, prices] = await Promise.all([
+    db.teamPlayerSeason.findMany({ where: { leagueId: contest.leagueId, season: contest.season, active: true, playerId: { in: playerIds } }, select: { playerId: true } }),
+    db.fantasyPlayerPrice.findMany({ where: { contestId: contest.id, provider: "SPORTS_RU", playerId: { in: playerIds },
+      team: { leagueSeasonTeams: { some: { leagueId: contest.leagueId, season: contest.season, active: true } } } }, select: { playerId: true } })
+  ]);
+  const preview = reconcileSportsRuSquadAvailability({
+    preview: { profileId: snapshot.providerProfileId, providerSquadId: receipt.providerSquadId, squadName: payload.squadName,
+      tournamentName: payload.tournamentName, tourId: payload.tourId, tourName: payload.tourName, selections: published,
+      unmapped: parseStoredUnmappedPlayers(snapshot.unmappedPlayers) },
+    published: payload, availablePlayerIds: [...roster, ...prices].map(p => String(p.playerId))
+  });
+  for (const squad of pending) {
+    const previousAt = isRecord(squad.filters) ? squad.filters.sportsPublicationAt : null;
+    if (typeof previousAt === "string" && Date.parse(previousAt) >= schedule.firstMatchAt.getTime()) continue;
+    const { roundIds, plans: roundPlans } = publishedSportsRoundPlans({ published: preview.selections, roundKey: schedule.roundKey,
+      nextRoundKeys: schedule.nextRoundKeys ?? [], savedRoundIds: fantasySquadRoundIdsFromFilters(squad.filters),
+      savedPlans: fantasySquadRoundPlansFromFilters(squad.filters, []), editedAfterKickoff: squad.updatedAt >= schedule.firstMatchAt });
+    await saveFantasySquad(db, {
+      userId: snapshot.userId, squadId: squad.id, contestId: contest.id, leagueId: snapshot.leagueId, season: snapshot.season,
+      name: squad.name, horizonRounds: squad.horizonRounds, rules: fantasyRulesForLeague(snapshot, contest),
+      selections: roundPlans[0].selections, roundPlans, roundPlanRoundIds: roundIds,
+      providerPlaceholders: [...preview.unmapped, ...fantasyProviderPlaceholdersFromFilters(squad.filters, "SPORTS_RU")],
+      publication: { tourName: payload.tourName || snapshot.roundLabel || schedule.roundKey, id: snapshot.id, firstMatchAt: schedule.firstMatchAt, expectedUpdatedAt: squad.updatedAt, profileId: snapshot.providerProfileId, baseline: preview.selections.map(p => p.playerId) }
+    });
+  }
 }
 
 export async function loadStoredSportsRuSquadImportPreview(
@@ -561,7 +646,7 @@ export async function loadStoredSportsRuSquadImportPreview(
       "SPORTS_SNAPSHOT_PENDING",
       snapshot?.lastError
         ? `The current Sports.ru squad is not stored yet: ${snapshot.lastError}`
-        : "The current Sports.ru squad is not stored yet. It is fetched automatically 30 minutes after the first match starts."
+        : "The current Sports.ru squad is not stored yet. It is fetched automatically after the first match starts."
     );
   }
   const selections = parseStoredSelections(snapshot.selections);
@@ -572,6 +657,7 @@ export async function loadStoredSportsRuSquadImportPreview(
     );
   }
   const preview: SportsRuSquadImportPreview = {
+    publication: { tourName: snapshot.tourName || snapshot.roundLabel || snapshot.roundKey, id: snapshot.id, firstMatchAt: snapshot.firstMatchAt },
     profileId: profile.providerUserId,
     providerSquadId: snapshot.providerSquadId ?? "",
     squadName: snapshot.squadName ?? "Sports.ru squad",
@@ -607,6 +693,7 @@ export async function loadSportsRuSquadSnapshotStatus(
       select: {
         status: true,
         tourName: true,
+        roundLabel: true,
         fetchedAt: true,
         availableAfter: true,
         nextAttemptAt: true,
@@ -622,7 +709,7 @@ export async function loadSportsRuSquadSnapshotStatus(
     linked: Boolean(profile),
     available: snapshot?.status === "COMPLETE",
     status: snapshot?.status ?? null,
-    tourName: snapshot?.tourName ?? null,
+    tourName: snapshot?.tourName ?? snapshot?.roundLabel ?? null,
     fetchedAt: snapshot?.fetchedAt?.toISOString() ?? null,
     availableAfter: snapshot?.availableAfter.toISOString() ?? null,
     nextAttemptAt: snapshot?.nextAttemptAt?.toISOString() ?? null,

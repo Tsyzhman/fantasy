@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { draftPrefix, parsePlannerDraft, writePlannerDraft, type PlannerDraft } from "./planner-draft";
+import { fantasyRoundPlansFingerprint } from "./planner-squad-commands";
 import { keyboardColumnWidth } from "./ColumnResizeHandle";
 class MemoryStorage implements Storage {
   values = new Map<string, string>();
@@ -46,4 +47,35 @@ test("keyboard resize honors bounds and accelerated steps without handling unrel
   assert.equal(keyboardColumnWidth(100, "Home"), 40);
   assert.equal(keyboardColumnWidth(100, "End"), 640);
   assert.equal(keyboardColumnWidth(100, "Tab"), null);
+});
+
+// @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data
+test("late Sports publication restores the draft edit by tour ID after the window advances", () => {
+  const value = draft();
+  const original = value.roundPlans[0];
+  const second = { ...original, roundOffset: 1, selections: [{ ...original.selections[0], playerId: "previous" }] };
+  value.roundIds = ["tour1", "tour2"];
+  value.baseline = fantasyRoundPlansFingerprint([original, second]);
+  value.roundPlans = [original, { ...second, selections: [{ ...second.selections[0], playerId: "planned" }] }];
+  value.activeRoundOffset = 1;
+  const current = [{ ...original, selections: [{ ...original.selections[0], playerId: "published" }] }];
+  const restored = parsePlannerDraft(JSON.stringify(value), fantasyRoundPlansFingerprint(current), Date.now(), { id: "s2", roundIds: ["tour2"], saved: current });
+  assert.equal(restored?.activeRoundOffset, 0);
+  assert.equal(restored?.roundPlans[0].selections[0].playerId, "planned");
+});
+
+test("same publication with a rolling calendar keeps a lock edit and the newly published teammate", () => {
+  const value = draft();
+  const original = value.roundPlans[0];
+  const one = original.selections[0];
+  const two = { ...one, playerId: "old-teammate", slotIndex: 2 };
+  const future = { ...original, roundOffset: 1, selections: [one, two] };
+  value.publicationId = "publication";
+  value.roundIds = ["old", "next"];
+  value.baseline = fantasyRoundPlansFingerprint([original, future]);
+  value.roundPlans = [original, { ...future, selections: [{ ...one, isLocked: false }, two] }];
+  const current = [{ ...original, selections: [one, { ...two, playerId: "published-teammate" }] }];
+  const restored = parsePlannerDraft(JSON.stringify(value), fantasyRoundPlansFingerprint(current), Date.now(),
+    { id: "publication", roundIds: ["next"], saved: current });
+  assert.deepEqual(restored?.roundPlans[0].selections.map(s => [s.playerId, s.isLocked]), [[one.playerId, false], ["published-teammate", true]]);
 });

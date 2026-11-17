@@ -148,7 +148,7 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
           ) : null}
           <FantasySquadPlanner
             userId={user.id}
-            key={`${provider}:${selectedLeague.leagueId}:${selectedLeague.season}:${data.squad.id ?? "new-squad"}:${fantasyHistorySettingsKey(historySettings)}`}
+            key={`${provider}:${selectedLeague.leagueId}:${selectedLeague.season}:${data.squad.id ?? "new-squad"}:${data.squad.sportsPublicationId ?? ""}:${fantasyHistorySettingsKey(historySettings)}`}
             leagueId={String(selectedLeague.leagueId)}
             season={selectedLeague.season}
             rules={data.rules}

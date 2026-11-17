@@ -471,3 +471,29 @@ test("mobile column sort follows changed definitions and survives empty filters"
   await expect(cards.first()).toHaveAttribute("data-player-id", "sort-47");
   await expect(sort.getByRole("button")).toBeEnabled();
 });
+
+test("Sports publication and transfer usage survive round navigation and reopening", async ({ page }) => {
+  await page.goto(fixture.url + "/?sportsRound");
+  const status = page.locator("[data-sports-round-status]");
+  await expect(status).toContainText("Tour 6");
+  await expect(status).toContainText(/not been received|пока не получен/);
+  await expect(status).toContainText(/Round 1.*(?:Transfers used|Использовано трансферов)/);
+  const next = page.locator('button[title="Round 2"]').first();
+  await next.focus();
+  await next.press("Enter");
+  await expect(next).toHaveAttribute("aria-pressed", "true");
+  await expect(status).toContainText("Round 2");
+  await page.addInitScript(() => {
+    const old = { playerId: "stale-player", slotIndex: 0, isLocked: false, isStarter: true, isCaptain: false, isViceCaptain: false };
+    const plan = { roundOffset: 0, linkedToPrevious: false, selections: [old] };
+    sessionStorage.setItem("fantasy-planner-draft:fixture-user:SPORTS_RU:fixture-league:2026/27:bound", JSON.stringify({
+      version: 1, publicationId: "published-5", roundIds: ["0"], updatedAt: Date.now(),
+      baseline: JSON.stringify([{ ...plan, selections: [[old.playerId, true, false, false, 0]] }]),
+      roundPlans: [plan], horizon: 3, activeRoundOffset: 0, transferBaselinePlayerIds: ["stale-player"], openingFreeTransfers: 1
+    }));
+  });
+  await page.reload();
+  await expect(status).toContainText("Tour 6");
+  await expect(status).toContainText(/Round 1.*(?:Transfers used 0 of|Использовано трансферов 0 из)/);
+  await expect(page.locator('[data-player-id="stale-player"]')).toHaveCount(0);
+});

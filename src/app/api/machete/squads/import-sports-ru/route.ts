@@ -143,6 +143,7 @@ export const POST = withApiHandler(async (request: Request) => {
     roundPlanRoundIds: plannerData.rounds.map((round) => round.id),
     rules: plannerData.rules,
     providerPlaceholders,
+    importedPublication: preview.publication,
     resetTransferBaseline: true
   });
   await prisma.userExternalProfile.update({
@@ -163,6 +164,8 @@ export const POST = withApiHandler(async (request: Request) => {
     squad: {
       id: saved.id,
       name: saved.name,
+      sportsPublicationId: preview.publication?.id,
+      sportsPublicationTour: preview.publication?.tourName,
       savedPlayers: validation.selections.length,
       horizonRounds: plannerData.squad.horizonRounds,
       selections: validation.selections,

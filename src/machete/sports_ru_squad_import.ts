@@ -20,6 +20,7 @@ import {
 import { sportsRuSeasonAliases } from "./squad_planner";
 
 export type SportsRuSquadImportPreview = {
+  publication?: { tourName?: string; id: string; firstMatchAt: Date };
   profileId: string;
   providerSquadId: string;
   squadName: string;

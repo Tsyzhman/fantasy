@@ -58,6 +58,8 @@ The user enables the mode instead of balanced/reliable/upside. The UI shows the 
 
 ## 6. Data and state {#data}
 
+For a saved Sports.ru squad bound to the linked profile’s provider squad, the complete publication for the latest started provider tour becomes the next transfer baseline exactly once. Keep explicit future-round edits and the contest quota. A missing, duplicate, previous-tour or partial roster cannot reset the baseline. Begin checking at kickoff, retry during the first day and continue at a reduced cadence while this is the current tour. Browser drafts restore edits against the published baseline using provider round IDs.
+
 Sports price synchronization, provider snapshots and data-quality audits share the active source registry. Active scope follows the current season and explicit tournament calendar, not metadata updatedAt or stale environment scope lists. Retained finished tournaments remain visible as archives with integrity/count diagnostics and no ongoing freshness SLA. Only existing explicitly reviewed identity exclusions affect the eligible price-mapping denominator; unresolved players remain failures under unchanged thresholds. The home page uses active/user-selected leagues and separate successful price, statistics, lineup-change and forecast-calculation timestamps; missing/stale facts remain visible.
 
 Context: N, rank, team and leader points, T/R, ER for no more than 6 completed rounds, ownership of the same provider/tournament/season. GlobalContestStrategyState, UserGlobalStrategyState and GlobalStrategyRecommendation models. The setting is GLOBAL_AUTO in existing JSON filters.
@@ -546,5 +548,7 @@ Implementation procedure:
 4. UI/API/saving, explanation of the actual price of the strategy.
 5. Local check, performance profile, duplicate/memory check; Existing mandatory repository checks on affected layers.
 6. Experimental opt-in separately per provider/tournament. Expand inclusion after accumulating data, do not claim proven rank gains without relevant history.
+
+The Sports.ru planner shows the last applied tour, the selected round’s used and available transfers, and publication or retry status while waiting. The same information is visible on narrow and wide screens. Round buttons expose the selected state to keyboard users. After reopening, restore edits by provider round ID against the latest saved team and retain the latest transfer baseline.
 
 First version completion criterion: user with associated command and valid data receives reproducible global K and valid squad with explicit EP comparison; If there are problems with the source, it continues to use the usual selection. There is no work with mini-leagues or manual entry of rating numbers.

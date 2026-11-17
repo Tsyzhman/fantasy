@@ -154,8 +154,9 @@ function sortTableBody(table: HTMLTableElement, header: HTMLTableCellElement, fo
 
   const columnIndex = header.cellIndex;
   const currentDirection = readSortDirection(header.dataset.sortDirection);
-  const defaultDirection = defaultDirectionForColumn(table, columnIndex, header);
-  const nextDirection = forcedDirection ?? (currentDirection ? reverseDirection(currentDirection) : defaultDirection);
+  const nextDirection = forcedDirection ?? (currentDirection
+    ? reverseDirection(currentDirection)
+    : defaultDirectionForColumn(table, columnIndex, header));
   const rows = Array.from(body.rows);
   const rowGroups = groupTableRows(rows);
   const sortableRows = rowGroups
@@ -294,7 +295,15 @@ export function compareSortableValues(left: ComparableValue, right: ComparableVa
   return direction === "asc" ? result : -result;
 }
 
-function parseDateValue(text: string) {
+export function parseDateValue(text: string) {
+  const dottedDate = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(text);
+  if (dottedDate) {
+    const [, day, month, year] = dottedDate.map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+      ? date.getTime()
+      : null;
+  }
   if (!/^(?:\d{4}-\d{2}-\d{2}|[A-Z][a-z]{2,8}\s+\d{1,2},\s+\d{4}|\d{1,2}[./-]\d{1,2}[./-]\d{2,4})$/.test(text)) return null;
 
   const timestamp = Date.parse(text);
@@ -324,9 +333,16 @@ function defaultDirectionForColumn(table: HTMLTableElement, columnIndex: number,
   const explicitDirection = readSortDirection(header.dataset.sortDefaultDirection);
   if (explicitDirection) return explicitDirection;
 
-  const rows = Array.from(table.tBodies[0]?.rows ?? []).filter((row) => rowCanSort(row, columnIndex)).slice(0, 12);
-  const values = rows.map((row) => comparableValue(cellSortValue(row.cells[columnIndex]))).filter((value) => value.kind !== "empty");
-  return values.some((value) => value.kind === "number" || value.kind === "date") ? "desc" : "asc";
+  const body = table.tBodies[0];
+  if (!body) return "asc";
+  let sampled = 0;
+  for (const row of body.rows) {
+    if (!rowCanSort(row, columnIndex)) continue;
+    const value = comparableValue(cellSortValue(row.cells[columnIndex]));
+    if (value.kind === "number" || value.kind === "date") return "desc";
+    if (++sampled === 12) break;
+  }
+  return "asc";
 }
 
 function parseSortValue(value: string) {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.170 - 2026-11-17
+
+- Apply the published Sports.ru team as the transfer baseline and retain next-round draft edits.
+- Release Linux franchise collection and import locks after process termination.
+- Sort Russian calendar dates across months and bound the rows sampled when choosing the initial sort direction.
+
 ## 0.3.169 - 2026-11-17
 
 - Update Next.js and development tooling, route production warnings to the responsible maintainer, and restore-test daily PostgreSQL backups.

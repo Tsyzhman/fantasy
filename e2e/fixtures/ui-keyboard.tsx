@@ -67,6 +67,7 @@ function TableFixture() {
 }
 
 function Fixture() {
+  const sportsRound = new URLSearchParams(location.search).has("sportsRound");
   return <AppRouterContext.Provider value={router}><main style={{ padding: 16 }}>
     <header style={{ display: "flex", gap: 16, alignItems: "center" }}><h1>Isolated keyboard fixture</h1><CommandPalette showAdmin /></header>
     <input aria-label="Outside input" /><output id="navigation-result" />
@@ -76,9 +77,9 @@ function Fixture() {
     <FantasySquadPlanner userId="fixture-user" leagueId="fixture-league" season="2026/27" provider="SPORTS_RU"
       playerPoolHref={new URLSearchParams(location.search).has("pendingPool") ? "/api/fixture-pool" : undefined}
       rules={rules} players={players} rounds={Array.from({ length: 5 }, (_, index) => ({ id: String(index), label: `Round ${index + 1}`, startsAt: null, fixtureCount: 9 }))}
-      bookmakerFavorites={[]} initialSquad={{ id: null, name: "Fixture squad", leagueId: "fixture-league", season: "2026/27", horizonRounds: 3, selections, roundPlans: createFantasySquadRoundPlans(selections) }}
+      bookmakerFavorites={[]} initialSquad={{ id: sportsRound ? "bound" : null, sportsPublicationId: sportsRound ? "published-6" : null, sportsPublicationTour: sportsRound ? "Tour 6" : undefined, transferBaselinePlayerIds: sportsRound ? selections.map(s => s.playerId) : undefined, name: "Fixture squad", leagueId: "fixture-league", season: "2026/27", horizonRounds: 3, selections, roundPlans: createFantasySquadRoundPlans(selections) }}
       readiness={{ leagueId: "fixture-league", season: "2026/27", ready: false, reasons: ["NO_INCREMENTAL_INGESTION"], activePlayers: 18, upcomingFixtures: 9, maximumAgeHours: 24, audit: null, ingestion: null }}
-      sportsRuSquadStatus={null} historySettings={defaultFantasyHistorySettings} initialVisiblePlayerPoolColumns={[]} initialPlayerPoolColumnWidths={{}} />
+      sportsRuSquadStatus={sportsRound ? { linked: true, available: false, status: "RETRY", tourName: null, fetchedAt: null, availableAfter: null, nextAttemptAt: null, inProgress: false, attemptCount: 2, playersCount: 0, mappedPlayersCount: 0, lastError: null } : null} historySettings={defaultFantasyHistorySettings} initialVisiblePlayerPoolColumns={[]} initialPlayerPoolColumnWidths={{}} />
   </main></AppRouterContext.Provider>;
 }
 
