@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { compareSortableValues } from "./sortable-table";
+import { compareSortableValues, parseDateValue } from "./sortable-table";
+
+/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
+test("Russian table dates use calendar order across months and validate leap days", () => {
+  assert.equal(parseDateValue("03.11.2026"), Date.UTC(2026, 10, 3));
+  assert.equal(parseDateValue("17.11.2026"), Date.UTC(2026, 10, 17));
+  assert.equal(parseDateValue("29.02.2024"), Date.UTC(2024, 1, 29));
+  assert.equal(parseDateValue("29.02.2026"), null);
+  assert.ok(parseDateValue("31.10.2026")! < parseDateValue("01.11.2026")!);
+});
 
 const empty = { kind: "empty", text: "" } as const;
 const zero = { kind: "number", number: 0, text: "0" } as const;
