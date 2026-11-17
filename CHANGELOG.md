@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.169 - 2026-11-17
+
+- Release Linux franchise collection and import locks after process termination.
+
 ## 0.3.168 - 2026-11-16
 
 - Restore the September–November project history and align the public guides with the current application, operations, and repository workflow.
