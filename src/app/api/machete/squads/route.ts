@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { jsonError, withApiHandler } from "@/lib/api-handler";
+import { apiError, jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isFantasySquadLeague, macheteLeagueDisplayName } from "@/lib/leagues/display";
@@ -353,6 +353,10 @@ export const POST = withApiHandler(async (request: Request) => {
     return jsonError("NOT_FOUND", "Squad not found for this league and season.", 404);
   }
   const targetSquadId = squadId ?? plannerData.squad.id;
+  const currentPublication = plannerData.squad.sportsPublicationId ?? null;
+  if (targetSquadId && provider === "SPORTS_RU" && (body.sportsPublicationId ?? null) !== currentPublication) {
+    return jsonError("SPORTS_PUBLICATION_CHANGED", "Sports.ru published a new squad. Reload to apply it to your draft.", 409);
+  }
   const rules = plannerData.rules;
   const horizonRounds = normalizeFantasyHorizon(body.horizonRounds, rules.horizonOptions);
   const requestedSelections = parseSelections(body.selections);
@@ -414,6 +418,7 @@ export const POST = withApiHandler(async (request: Request) => {
       );
   const squad = await saveFantasySquad(prisma, {
     strategy,
+    expectedSportsPublicationId: provider === "SPORTS_RU" ? currentPublication : undefined,
     userId,
     leagueId,
     season,
@@ -427,6 +432,11 @@ export const POST = withApiHandler(async (request: Request) => {
     provider,
     contestId: plannerData.contestId,
     providerPlaceholders: providerPlaceholdersForPlans(plannerData.players, safeRoundPlans, provider)
+  }).catch(error => {
+    if (error.message === "SPORTS_PUBLICATION_CHANGED" || error.code === "P2025") {
+      throw apiError("SQUAD_CHANGED", "The saved squad changed. Reload to apply your draft.", 409);
+    }
+    throw error;
   });
 
   return NextResponse.json({

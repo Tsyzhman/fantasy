@@ -58,6 +58,8 @@ The user enables the mode instead of balanced/reliable/upside. The UI shows the 
 
 ## 6. Data and state {#data}
 
+For a saved Sports.ru squad bound to the linked profile’s provider squad, the complete publication for the latest started provider tour becomes the next transfer baseline exactly once. Keep explicit future-round edits and the contest quota. A missing, duplicate, previous-tour or partial roster cannot reset the baseline. Begin checking at kickoff, retry during the first day and continue at a reduced cadence while this is the current tour. Browser drafts restore edits against the published baseline using provider round IDs.
+
 Sports price synchronization, provider snapshots and data-quality audits share the active source registry. Active scope follows the current season and explicit tournament calendar, not metadata updatedAt or stale environment scope lists. Retained finished tournaments remain visible as archives with integrity/count diagnostics and no ongoing freshness SLA. Only existing explicitly reviewed identity exclusions affect the eligible price-mapping denominator; unresolved players remain failures under unchanged thresholds. The home page uses active/user-selected leagues and separate successful price, statistics, lineup-change and forecast-calculation timestamps; missing/stale facts remain visible.
 
 Context: N, rank, team and leader points, T/R, ER for no more than 6 completed rounds, ownership of the same provider/tournament/season. GlobalContestStrategyState, UserGlobalStrategyState and GlobalStrategyRecommendation models. The setting is GLOBAL_AUTO in existing JSON filters.

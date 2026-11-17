@@ -2234,12 +2234,13 @@ test("squad save persists a Sports.ru placeholder in filters and never inserts a
 
 test("squad planner updates only the requested owned variant", async () => {
   const updates: Array<{ where: { id: string }; data: { name: string } }> = [];
+  const updatedAt = new Date();
   let insideTransaction = false;
   const prisma = {
     teamPlayerSeason: { findMany: async () => [] },
     fantasyPlayerPrice: { findMany: async () => [] },
     userFantasySquad: {
-      findFirst: async () => ({ id: "squad-2" }),
+      findFirst: async () => ({ id: "squad-2", updatedAt }),
       update: async (args: { where: { id: string }; data: { name: string } }) => {
         assert.equal(insideTransaction, true, "parent squad update must run inside the save transaction");
         updates.push(args);
@@ -2275,7 +2276,7 @@ test("squad planner updates only the requested owned variant", async () => {
   });
 
   assert.equal(saved.id, "squad-2");
-  assert.deepEqual(updates[0]?.where, { id: "squad-2" });
+  assert.deepEqual(updates[0]?.where, { id: "squad-2", updatedAt });
   assert.equal(updates[0]?.data.name, "Long horizon");
 });
 

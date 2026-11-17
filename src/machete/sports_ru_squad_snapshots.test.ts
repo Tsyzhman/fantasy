@@ -4,17 +4,17 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 
 import {
+  publishedSportsRoundPlans,
   latestStartedSportsRuSquadRound,
   latestStartedSportsRuProviderRound,
   loadStoredSportsRuSquadImportPreview,
-  SPORTS_RU_SQUAD_PUBLICATION_DELAY_MS,
   syncSportsRuSquadSnapshotOnDemand
 } from "./sports_ru_squad_snapshots";
 
 const importRouteSource = readFileSync(new URL("../app/api/machete/squads/import-sports-ru/route.ts", import.meta.url), "utf8");
 const snapshotSource = readFileSync(new URL("./sports_ru_squad_snapshots.ts", import.meta.url), "utf8");
 
-test("Sports.ru squad publication is scheduled 30 minutes after the first match of the latest started round", () => {
+test("Sports.ru squad publication is eligible at the first match of the latest started round", () => {
   const now = new Date("2026-07-30T17:00:00.000Z");
   const schedule = latestStartedSportsRuSquadRound([
     match(1n, "1", "2026-07-20T12:00:00.000Z"),
@@ -27,8 +27,8 @@ test("Sports.ru squad publication is scheduled 30 minutes after the first match 
   assert.ok(schedule);
   assert.equal(schedule.roundKey, "round:2");
   assert.equal(schedule.firstMatchAt.toISOString(), "2026-07-30T15:00:00.000Z");
-  assert.equal(schedule.availableAfter.getTime() - schedule.firstMatchAt.getTime(), SPORTS_RU_SQUAD_PUBLICATION_DELAY_MS);
-  assert.equal(schedule.availableAfter.toISOString(), "2026-07-30T15:30:00.000Z");
+  assert.equal(schedule.availableAfter.getTime() - schedule.firstMatchAt.getTime(), 0);
+  assert.equal(schedule.availableAfter.toISOString(), "2026-07-30T15:00:00.000Z");
 });
 
 test("Sports.ru squad schedule ignores cancelled, future, and roundless fixtures", () => {
@@ -284,3 +284,17 @@ test("a button request revives an exhausted snapshot without waiting for the bac
 function match(id: bigint, round: string | null, matchDate: string) {
   return { id, round, matchDate: new Date(matchDate), cancelled: false };
 }
+
+// @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data
+test("published tour replaces the expired selection and carries the user's next round edits", () => {
+  const player = (playerId: string) => ({ playerId, isStarter: true, slotIndex: 0, isCaptain: false, isViceCaptain: false, isLocked: false, purchasePrice: 5 });
+  const input = { published: [player("3")], roundKey: "tour2", nextRoundKeys: ["tour3", "tour4"],
+    savedRoundIds: ["tour1", "tour2", "tour3"], editedAfterKickoff: false,
+    savedPlans: ["1", "2", "4"].map((id, roundOffset) => ({ roundOffset, linkedToPrevious: false, selections: [player(id)] })) };
+  const next = publishedSportsRoundPlans(input);
+  assert.deepEqual(next.roundIds, ["tour2", "tour3", "tour4"]);
+  assert.deepEqual(next.plans.map(p => p.selections[0].playerId), ["3", "4", "4", "4", "4"]);
+  const future = publishedSportsRoundPlans({ ...input, savedRoundIds: ["tour3"], savedPlans: [input.savedPlans[2]] });
+  assert.equal(future.plans[0].selections[0].playerId, "4");
+  assert.equal(future.roundIds[0], "tour3");
+});

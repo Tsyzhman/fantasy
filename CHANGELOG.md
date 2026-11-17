@@ -2,6 +2,7 @@
 
 ## 0.3.169 - 2026-11-17
 
+- Apply the published Sports.ru team as the transfer baseline and retain next-round draft edits.
 - Release Linux franchise collection and import locks after process termination.
 
 ## 0.3.168 - 2026-11-16
