@@ -10,6 +10,8 @@ The scheduled monitor checks public application health/login, client critical er
 | [Production Browser Smoke](../../.github/workflows/production-browser-smoke.yml) | Runs authenticated desktop, tablet, and mobile scenarios against the serving site on the daily schedule or by manual dispatch. The manual KHL scope narrows the run to visible statistics. |
 | [Production Monitor](../../.github/workflows/production-monitor.yml) | Probes availability and source health. Unresolved warning-level checks keep the deduplicated alert issue open. Critical failures cause a failed workflow run. |
 
+Production updates issue #1 in place and assigns the configured `MONITOR_ALERT_ASSIGNEE` (the repository owner by default). Each failing warning probe also adds an Actions warning annotation. Recovery closes the same issue.
+
 For a source alert, open the run's JSON report and inspect the affected scopes,
 their snapshot age, coverage, and reviewed exclusions. A provider warning can
 coexist with a successful monitor run. [Monitor implementation](../../scripts/production-monitor.mjs)

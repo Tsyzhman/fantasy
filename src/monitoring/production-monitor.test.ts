@@ -1,3 +1,4 @@
+// @spec spec://common/INFRA-006-continuous-deployment#contracts
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
@@ -22,6 +23,29 @@ test("production monitor opens a warning issue for a failed data-update gate wit
     assert.ok(createIssue);
     assert.match(String(createIssue.body?.body), /Data update gate/);
     assert.match(String(createIssue.body?.body), /warnings: \*\*1\*\*/);
+  } finally {
+    server.close();
+  }
+});
+
+test("a source 503 assigns the existing alert once and recovery closes it", async () => {
+  const requests: CapturedRequest[] = [];
+  const issue = { number: 1, title: "[production-monitor] Fantasy Scout alert", state: "open", body: "", assignees: [] as { login: string }[] };
+  const state = { dataHealthy: false, appHealthy: true, requests, issue };
+  const server = createMonitorServer(state);
+  const origin = await listen(server);
+  const env = { MONITOR_ISSUE_NUMBER: "1", MONITOR_ALERT_ASSIGNEE: "owner", GITHUB_ACTIONS: "true" };
+  try {
+    const first = await runMonitor(origin, env);
+    assert.equal(first.code, 0, first.stderr);
+    assert.match(first.stderr, /::warning::Data update gate \(HTTP 503\)/);
+    assert.deepEqual(issue.assignees, [{ login: "owner" }]);
+    assert.equal((await runMonitor(origin, env)).code, 0);
+    assert.equal(requests.filter((r) => r.method === "PATCH").length, 1);
+    state.dataHealthy = true;
+    assert.equal((await runMonitor(origin, env)).code, 0);
+    assert.equal(issue.state, "closed");
+    assert.equal(requests.filter((r) => r.method === "POST").length, 0);
   } finally {
     server.close();
   }
@@ -160,6 +184,7 @@ function createMonitorServer(input: {
   dataHealthy: boolean;
   appHealthy: boolean;
   requests: CapturedRequest[];
+  issue?: { number: number; title: string; state: string; body: string; assignees: { login: string }[] };
   githubIssueListFailures?: number;
   fixedAuditStatus?: "ok" | "insufficient_data" | "breach";
   rollingRetentionCoversStart?: boolean;
@@ -229,6 +254,14 @@ function createMonitorServer(input: {
         observedSpanMinutes: input.fixedObservedSpanMinutes ?? 1_440,
         durationMs: { p75: 100, p95: 200 }
       });
+    }
+    if (path === "/repos/owner/repo/issues/1" && input.issue) {
+      if (request.method === "PATCH" && body) {
+        input.issue.state = String(body.state);
+        input.issue.body = String(body.body);
+        if (Array.isArray(body.assignees)) input.issue.assignees = body.assignees.map((login) => ({ login }));
+      }
+      return json(response, 200, input.issue);
     }
     if (path === "/repos/owner/repo/issues" && request.method === "GET") {
       if (githubIssueListFailures > 0) {

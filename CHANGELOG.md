@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.169 - 2026-11-17
+
+- Update Next.js and development tooling, route production warnings to the responsible maintainer, and restore-test daily PostgreSQL backups.
+
 ## 0.3.168 - 2026-11-16
 
 - Restore the September–November project history and align the public guides with the current application, operations, and repository workflow.
