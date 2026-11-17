@@ -146,7 +146,8 @@ export function fantasyRoundPlansFingerprint(plans: FantasySquadRoundPlan[]) {
       selection.isStarter,
       selection.isCaptain,
       selection.isViceCaptain,
-      selection.slotIndex
+      selection.slotIndex,
+      selection.isLocked
     ])
   })));
 }

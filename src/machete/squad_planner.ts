@@ -121,6 +121,7 @@ export type SavedFantasySquad = {
   roundPlans: FantasySquadRoundPlan[];
   sportsPublicationId?: string | null;
   sportsPreviousRoundIds?: string[];
+  sportsPublicationTour?: string;
   transferBaselinePlayerIds?: string[] | null;
   openingFreeTransfers?: number | null;
 };
@@ -2228,8 +2229,8 @@ export async function saveFantasySquad(
     providerPlaceholders?: FantasyProviderPlaceholder[];
     resetTransferBaseline?: boolean;
     expectedSportsPublicationId?: string | null;
-    importedPublication?: { id: string; firstMatchAt: Date };
-    publication?: { id: string; firstMatchAt: Date; baseline: string[]; expectedUpdatedAt: Date; profileId: string };
+    importedPublication?: { tourName?: string; id: string; firstMatchAt: Date };
+    publication?: { tourName?: string; id: string; firstMatchAt: Date; baseline: string[]; expectedUpdatedAt: Date; profileId: string };
     providerSquadId?: string;
     strategy?: import("./squad_logic").FantasySquadStrategy;
   }
@@ -2419,6 +2420,7 @@ export async function saveFantasySquad(
           filters: fantasySquadFiltersPayload({
             previousFilters: ownedSquad.filters,
             sportsPublicationId: (publication ?? input.importedPublication)?.id,
+            sportsPublicationTour: (publication ?? input.importedPublication)?.tourName,
             sportsPreviousRoundIds: publication ? fantasySquadRoundIdsFromFilters(ownedSquad.filters) : undefined,
             sportsPublicationAt: (publication ?? input.importedPublication)?.firstMatchAt.toISOString(),
             providerSquadId: input.providerSquadId,
@@ -2452,6 +2454,7 @@ export async function saveFantasySquad(
           horizonRounds,
           filters: fantasySquadFiltersPayload({
             sportsPublicationId: input.importedPublication?.id,
+            sportsPublicationTour: input.importedPublication?.tourName,
             sportsPublicationAt: input.importedPublication?.firstMatchAt.toISOString(),
             strategy: input.strategy,
             providerSquadId: input.providerSquadId,
@@ -2581,6 +2584,7 @@ export function fantasySquadFiltersPayload(input: {
   sportsPublicationId?: string;
   sportsPublicationAt?: string;
   sportsPreviousRoundIds?: string[];
+  sportsPublicationTour?: string;
   providerSquadId?: string;
   previousFilters?: unknown;
   strategy?: import("./squad_logic").FantasySquadStrategy;
@@ -2594,7 +2598,7 @@ export function fantasySquadFiltersPayload(input: {
   delete previousFilters.transferBaselinePlayerIds;
   return {
     ...previousFilters,
-    ...(input.sportsPublicationId ? { sportsPublicationId: input.sportsPublicationId, sportsPublicationAt: input.sportsPublicationAt } : {}),
+    ...(input.sportsPublicationId ? { sportsPublicationId: input.sportsPublicationId, sportsPublicationAt: input.sportsPublicationAt, sportsPublicationTour: input.sportsPublicationTour } : {}),
     ...(input.sportsPreviousRoundIds ? { sportsPreviousRoundIds: input.sportsPreviousRoundIds } : {}),
     ...(input.strategy ? { strategy: input.strategy } : {}),
     ...(input.providerSquadId ? { globalStrategyBinding: { providerSquadId: input.providerSquadId } } : {}),
@@ -2616,6 +2620,7 @@ function savedFantasySquadTransferState(filters: unknown, openingFreeTransfers: 
   return {
     strategy,
     sportsPublicationId: sportsPublicationId(filters),
+    sportsPublicationTour: typeof (filters as { sportsPublicationTour?: unknown } | null)?.sportsPublicationTour === "string" ? (filters as { sportsPublicationTour: string }).sportsPublicationTour : undefined,
     sportsPreviousRoundIds: normalizeFantasySquadRoundIds((filters as { sportsPreviousRoundIds?: unknown } | null)?.sportsPreviousRoundIds),
     transferBaselinePlayerIds: fantasySquadTransferBaselineFromFilters(filters),
     openingFreeTransfers

@@ -43,6 +43,7 @@ test("late complete Sports tour advances only its bound variant and repeated che
     assert.equal(result.stored, 1);
     const saved = await db.userFantasySquad.findUniqueOrThrow({ where: { id: bound.id } });
     assert.ok(sportsPublicationId(saved.filters));
+    assert.equal((saved.filters as { sportsPublicationTour: string }).sportsPublicationTour, published.tourName);
     assert.equal(fantasySquadTransferBaselineFromFilters(saved.filters)?.length, 15);
     assert.equal((await run(new Date(+now+45*60000), published)).stored, 0);
     assert.deepEqual(await db.userFantasySquad.findUniqueOrThrow({ where: { id: bound.id } }), saved);
