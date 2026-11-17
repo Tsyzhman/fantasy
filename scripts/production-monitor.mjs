@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+// @spec spec://common/INFRA-006-continuous-deployment#contracts
 import { createHash } from "node:crypto";
 import { appendFile } from "node:fs/promises";
 
@@ -175,6 +176,9 @@ if (!dryRun) {
   await synchronizeAlertIssue({ alertRequired, fingerprint, report });
 }
 
+if (process.env.GITHUB_ACTIONS === "true") {
+  for (const check of warnings) console.log(`::warning::${check.name} (HTTP ${check.httpStatus ?? "unavailable"})`);
+}
 if (criticalFailures.length > 0) process.exitCode = 1;
 
 async function checkJsonEndpoint(input) {
@@ -238,32 +242,40 @@ function buildReport({ checks: rows, criticalFailures: critical, warnings: warni
   return `## Production monitor\n\n` +
     `Checked: \`${checkedAt}\`  \n` +
     `Critical failures: **${critical.length}** · warnings: **${warningRows.length}**  \n` +
-    `Prices are intentionally excluded from this monitor until the official feed exists.\n\n` +
     `| State | Check | HTTP | ms | Detail |\n` +
     `|---|---|---:|---:|---|\n${table}\n\n` +
     `<!-- monitor-fingerprint:${reportFingerprint} -->`;
 }
 
 async function synchronizeAlertIssue({ alertRequired: shouldAlert, fingerprint: currentFingerprint, report: issueBody }) {
-  const issues = await githubRequest(`/repos/${repository}/issues?state=all&per_page=100`);
-  const issue = Array.isArray(issues)
-    ? issues.find((candidate) => !candidate.pull_request && candidate.title === alertTitle)
-    : null;
+  const number = process.env.MONITOR_ISSUE_NUMBER;
+  let issue;
+  if (number) {
+    if (!/^[1-9]\d*$/.test(number)) throw new Error("Invalid monitor issue number");
+    issue = await githubRequest(`/repos/${repository}/issues/${number}`);
+    if (issue.pull_request || issue.title !== alertTitle) throw new Error("Configured alert issue does not match");
+  } else {
+    const issues = await githubRequest(`/repos/${repository}/issues?state=all&per_page=100`);
+    issue = issues.find((candidate) => !candidate.pull_request && candidate.title === alertTitle);
+  }
+  const owner = process.env.MONITOR_ALERT_ASSIGNEE;
+  const missingOwner = owner && !issue?.assignees?.some((user) => user.login.toLowerCase() === owner.toLowerCase());
+  const assignment = missingOwner ? { assignees: [...(issue?.assignees ?? []).map((user) => user.login), owner] } : {};
 
   if (shouldAlert) {
     if (!issue) {
       await githubRequest(`/repos/${repository}/issues`, {
         method: "POST",
-        body: JSON.stringify({ title: alertTitle, body: issueBody })
+        body: JSON.stringify({ title: alertTitle, body: issueBody, ...assignment })
       });
       return;
     }
 
     const previousFingerprint = monitorFingerprint(issue.body);
-    if (issue.state !== "open" || previousFingerprint !== currentFingerprint) {
+    if (issue.state !== "open" || previousFingerprint !== currentFingerprint || missingOwner) {
       await githubRequest(`/repos/${repository}/issues/${issue.number}`, {
         method: "PATCH",
-        body: JSON.stringify({ state: "open", body: issueBody })
+        body: JSON.stringify({ state: "open", body: issueBody, ...assignment })
       });
     }
     return;
