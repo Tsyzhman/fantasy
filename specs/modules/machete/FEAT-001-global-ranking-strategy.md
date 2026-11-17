@@ -549,4 +549,6 @@ Implementation procedure:
 5. Local check, performance profile, duplicate/memory check; Existing mandatory repository checks on affected layers.
 6. Experimental opt-in separately per provider/tournament. Expand inclusion after accumulating data, do not claim proven rank gains without relevant history.
 
+The Sports.ru planner shows the last applied tour, the selected round’s used and available transfers, and publication or retry status while waiting. The same information is visible on narrow and wide screens. Round buttons expose the selected state to keyboard users. After reopening, restore edits by provider round ID against the latest saved team and retain the latest transfer baseline.
+
 First version completion criterion: user with associated command and valid data receives reproducible global K and valid squad with explicit EP comparison; If there are problems with the source, it continues to use the usual selection. There is no work with mini-leagues or manual entry of rating numbers.

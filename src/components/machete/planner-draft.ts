@@ -19,9 +19,17 @@ export function parsePlannerDraft(raw: string | null, baseline: string, now = Da
     }
     if (value.roundIds !== undefined && (!Array.isArray(value.roundIds) || value.roundIds.length > 20 ||
         value.roundIds.some(id => typeof id !== "string" || id.length > 200))) return null;
-    const crossedPublication = publication && value.publicationId !== publication.id;
+    const crossedPublication = publication && (value.publicationId !== publication.id ||
+      Boolean(value.roundIds && JSON.stringify(value.roundIds) !== JSON.stringify(publication.roundIds)));
     const draftRounds = value.roundIds ?? publication?.previousRoundIds;
-    if (!crossedPublication || !draftRounds?.length) return value.baseline === baseline ? value : null;
+    if (!crossedPublication) {
+      if (value.baseline === baseline) return value;
+      // Drafts written before lock state was included used five fields per selection.
+      const legacy = JSON.parse(baseline) as { selections: unknown[][] }[];
+      for (const plan of legacy) plan.selections = plan.selections.map(row => row.slice(0, 5));
+      return JSON.stringify(legacy) === value.baseline ? value : null;
+    }
+    if (!draftRounds?.length) return null;
     const previous = JSON.parse(value.baseline);
     if (!Array.isArray(previous)) return null;
     const plans = publication.saved.map((plan, index) => {
@@ -29,9 +37,21 @@ export function parsePlannerDraft(raw: string | null, baseline: string, now = Da
       const edited = value.roundPlans[old];
       if (!edited || !previous[old]) return plan;
       const saved = previous[old];
-      const signature = edited.selections.map(s => [s.playerId, s.isStarter, s.isCaptain, s.isViceCaptain, s.slotIndex]);
-      if (JSON.stringify(saved.selections) === JSON.stringify(signature) && saved.linkedToPrevious === edited.linkedToPrevious) return plan;
-      return { ...edited, roundOffset: index, linkedToPrevious: index > 0 && edited.linkedToPrevious };
+      if (!Array.isArray(saved.selections)) return plan;
+      const baseBySlot = new Map<number, unknown[]>(saved.selections.map((row: unknown[]) => [Number(row[4]), row]));
+      const changed = edited.selections.filter(s => {
+        const oldRow = baseBySlot.get(s.slotIndex);
+        const signature = [s.playerId, s.isStarter, s.isCaptain, s.isViceCaptain, s.slotIndex, s.isLocked];
+        return !oldRow || JSON.stringify(signature.slice(0, oldRow.length)) !== JSON.stringify(oldRow);
+      });
+      const editedSlots = new Set(edited.selections.map(s => s.slotIndex));
+      const removed = [...baseBySlot.keys()].filter(slot => !editedSlots.has(slot));
+      if (!changed.length && !removed.length && saved.linkedToPrevious === edited.linkedToPrevious) return plan;
+      const replaced = new Set([...removed, ...changed.map(s => s.slotIndex)]);
+      const changedIds = new Set(changed.map(s => s.playerId));
+      const selections = [...plan.selections.filter(s => !replaced.has(s.slotIndex) && !changedIds.has(s.playerId)), ...changed]
+        .sort((left, right) => left.slotIndex - right.slotIndex);
+      return { ...plan, selections, linkedToPrevious: index > 0 && edited.linkedToPrevious };
     });
     const activeRoundOffset = Math.max(0, publication.roundIds.indexOf(draftRounds[value.activeRoundOffset]));
     return { ...value, roundPlans: plans, activeRoundOffset, baseline, roundIds: publication.roundIds, publicationId: publication.id };

@@ -574,6 +574,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
   );
   const [openingFreeTransfers, setOpeningFreeTransfers] = useState<number | null>(initialSquad.openingFreeTransfers ?? null);
   const draftKey = `${draftPrefix}${userId}:${provider}:${leagueId}:${season}:${initialSquad.id ?? "new"}`;
+  const [publicationTour, setPublicationTour] = useState(initialSquad.sportsPublicationTour);
   const [publicationId, setPublicationId] = useState(initialSquad.sportsPublicationId ?? null);
   const draftRoundIds = useMemo(() => rounds.map(round => round.id), [rounds]);
   usePlannerDraft({ draftKey, roundIds: draftRoundIds, previousRoundIds: initialSquad.sportsPreviousRoundIds, publicationId, language, savedRoundPlans, roundPlans, horizon, activeRoundOffset, transferBaselinePlayerIds, openingFreeTransfers,
@@ -1789,6 +1790,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         void recordBetaClientError("SQUAD_SAVE_FAILED");
+        if (response.status === 409 && payload?.error?.code === "SPORTS_PUBLICATION_CHANGED") router.refresh();
         const serverMessage = typeof payload?.error?.message === "string" ? payload.error.message : null;
         setMessage(
           serverMessage
@@ -1852,6 +1854,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
           selections?: FantasySquadSelection[];
           roundPlans?: FantasySquadRoundPlan[];
           sportsPublicationId?: string;
+          sportsPublicationTour?: string;
           importedPlayers?: FantasyPlannerPlayer[];
           placeholderPlayers?: FantasyPlannerPlayer[];
         };
@@ -1906,6 +1909,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
       setSourcePlayers(importedPlayerPool);
       setRoundPlans(importedRoundPlans);
       setSavedRoundPlans(cloneFantasyRoundPlans(importedRoundPlans));
+      setPublicationTour(payload.squad?.sportsPublicationTour);
       setPublicationId(payload.squad?.sportsPublicationId ?? null);
       setTransferBaselinePlayerIds(importedSelections.map((selection) => selection.playerId));
       setActiveSquadId(savedSquadId);
@@ -2025,6 +2029,13 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
       <div ref={plannerTabsRef} className="sticky top-[60px] z-30 order-1 -mx-1 rounded border border-slate-200 bg-white p-1 shadow-sm xl:hidden">
         <SegmentedControl value={mobileTab} onChange={setMobileTab} options={mobileTabs} className="w-full justify-between border-0 bg-transparent p-0 [&>button]:min-h-12 [&>button]:flex-1" size="sm" />
       </div>
+      {provider === "SPORTS_RU" && sportsSnapshotStatus?.linked ? (
+        <div role="status" aria-live="polite" data-sports-round-status className="order-1 space-y-1 rounded border border-slate-200 bg-white px-3 py-2 text-sm">
+          {publicationTour ? <p><I18nText en={`Applied Sports.ru round · ${publicationTour}`} ru={`Применённый тур Sports.ru · ${publicationTour}`} /></p> : null}
+          {!sportsSnapshotStatus.available ? <p>{localizedSportsRuPendingStatus(language, sportsSnapshotStatus)}</p> : null}
+          {transferLimitIsActive ? <p><I18nText en={`${rounds[activeRoundOffset]?.label ?? "Round"} · Transfers used ${plannedTransferCount} of ${transferLimit}`} ru={`${rounds[activeRoundOffset]?.label ?? "Тур"} · Использовано трансферов ${plannedTransferCount} из ${transferLimit}`} /></p> : null}
+        </div>
+      ) : null}
       <section className="contents">
         <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block", "order-2 ui-card p-4")}>
           <div className="space-y-3">
@@ -2038,6 +2049,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
                     <button
                       key={plan.roundOffset}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => selectActiveRoundOffset(plan.roundOffset)}
                       title={round?.label ?? localizedText(language, `Round +${plan.roundOffset}`, `Тур +${plan.roundOffset}`)}
                       className={cn(
@@ -2811,8 +2823,8 @@ function localizedSportsRuPendingStatus(
   if (status?.inProgress) {
     return localizedText(
       language,
-      "The server is already downloading this squad. Wait a few seconds and press the button again.",
-      "Сервер уже скачивает этот состав. Подождите несколько секунд и нажмите кнопку ещё раз."
+      "The server is downloading the published squad.",
+      "Сервер загружает опубликованный состав."
     );
   }
   if (status?.status === "WAITING_FOR_FIRST_MATCH") {

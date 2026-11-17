@@ -607,7 +607,7 @@ async function applyPublishedSportsSquads(
       name: squad.name, horizonRounds: squad.horizonRounds, rules: fantasyRulesForLeague(snapshot, contest),
       selections: roundPlans[0].selections, roundPlans, roundPlanRoundIds: roundIds,
       providerPlaceholders: [...preview.unmapped, ...fantasyProviderPlaceholdersFromFilters(squad.filters, "SPORTS_RU")],
-      publication: { id: snapshot.id, firstMatchAt: schedule.firstMatchAt, expectedUpdatedAt: squad.updatedAt, profileId: snapshot.providerProfileId, baseline: preview.selections.map(p => p.playerId) }
+      publication: { tourName: payload.tourName || snapshot.roundLabel || schedule.roundKey, id: snapshot.id, firstMatchAt: schedule.firstMatchAt, expectedUpdatedAt: squad.updatedAt, profileId: snapshot.providerProfileId, baseline: preview.selections.map(p => p.playerId) }
     });
   }
 }
@@ -657,7 +657,7 @@ export async function loadStoredSportsRuSquadImportPreview(
     );
   }
   const preview: SportsRuSquadImportPreview = {
-    publication: { id: snapshot.id, firstMatchAt: snapshot.firstMatchAt },
+    publication: { tourName: snapshot.tourName || snapshot.roundLabel || snapshot.roundKey, id: snapshot.id, firstMatchAt: snapshot.firstMatchAt },
     profileId: profile.providerUserId,
     providerSquadId: snapshot.providerSquadId ?? "",
     squadName: snapshot.squadName ?? "Sports.ru squad",
@@ -693,6 +693,7 @@ export async function loadSportsRuSquadSnapshotStatus(
       select: {
         status: true,
         tourName: true,
+        roundLabel: true,
         fetchedAt: true,
         availableAfter: true,
         nextAttemptAt: true,
@@ -708,7 +709,7 @@ export async function loadSportsRuSquadSnapshotStatus(
     linked: Boolean(profile),
     available: snapshot?.status === "COMPLETE",
     status: snapshot?.status ?? null,
-    tourName: snapshot?.tourName ?? null,
+    tourName: snapshot?.tourName ?? snapshot?.roundLabel ?? null,
     fetchedAt: snapshot?.fetchedAt?.toISOString() ?? null,
     availableAfter: snapshot?.availableAfter.toISOString() ?? null,
     nextAttemptAt: snapshot?.nextAttemptAt?.toISOString() ?? null,

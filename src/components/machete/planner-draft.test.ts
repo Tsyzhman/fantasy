@@ -63,3 +63,19 @@ test("late Sports publication restores the draft edit by tour ID after the windo
   assert.equal(restored?.activeRoundOffset, 0);
   assert.equal(restored?.roundPlans[0].selections[0].playerId, "planned");
 });
+
+test("same publication with a rolling calendar keeps a lock edit and the newly published teammate", () => {
+  const value = draft();
+  const original = value.roundPlans[0];
+  const one = original.selections[0];
+  const two = { ...one, playerId: "old-teammate", slotIndex: 2 };
+  const future = { ...original, roundOffset: 1, selections: [one, two] };
+  value.publicationId = "publication";
+  value.roundIds = ["old", "next"];
+  value.baseline = fantasyRoundPlansFingerprint([original, future]);
+  value.roundPlans = [original, { ...future, selections: [{ ...one, isLocked: false }, two] }];
+  const current = [{ ...original, selections: [one, { ...two, playerId: "published-teammate" }] }];
+  const restored = parsePlannerDraft(JSON.stringify(value), fantasyRoundPlansFingerprint(current), Date.now(),
+    { id: "publication", roundIds: ["next"], saved: current });
+  assert.deepEqual(restored?.roundPlans[0].selections.map(s => [s.playerId, s.isLocked]), [[one.playerId, false], ["published-teammate", true]]);
+});

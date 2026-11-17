@@ -165,6 +165,7 @@ export const POST = withApiHandler(async (request: Request) => {
       id: saved.id,
       name: saved.name,
       sportsPublicationId: preview.publication?.id,
+      sportsPublicationTour: preview.publication?.tourName,
       savedPlayers: validation.selections.length,
       horizonRounds: plannerData.squad.horizonRounds,
       selections: validation.selections,
