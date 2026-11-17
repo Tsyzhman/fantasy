@@ -38,7 +38,7 @@ test("a source 503 assigns the existing alert once and recovery closes it", asyn
   try {
     const first = await runMonitor(origin, env);
     assert.equal(first.code, 0, first.stderr);
-    assert.match(first.stdout, /::warning::Data update gate \(HTTP 503\)/);
+    assert.match(first.stderr, /::warning::Data update gate \(HTTP 503\)/);
     assert.deepEqual(issue.assignees, [{ login: "owner" }]);
     assert.equal((await runMonitor(origin, env)).code, 0);
     assert.equal(requests.filter((r) => r.method === "PATCH").length, 1);

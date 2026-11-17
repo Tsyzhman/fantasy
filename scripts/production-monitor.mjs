@@ -177,7 +177,7 @@ if (!dryRun) {
 }
 
 if (process.env.GITHUB_ACTIONS === "true") {
-  for (const check of warnings) console.log(`::warning::${check.name} (HTTP ${check.httpStatus ?? "unavailable"})`);
+  for (const check of warnings) console.warn(`::warning::${check.name} (HTTP ${check.httpStatus ?? "unavailable"})`);
 }
 if (criticalFailures.length > 0) process.exitCode = 1;
 
