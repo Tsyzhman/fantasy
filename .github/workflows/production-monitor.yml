@@ -31,6 +31,8 @@ jobs:
       - name: Check production and synchronize alert issue
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MONITOR_ALERT_ASSIGNEE: ${{ vars.MONITOR_ALERT_ASSIGNEE || github.repository_owner }}
+          MONITOR_ISSUE_NUMBER: "1"
           MONITOR_BASE_URL: https://fantasy.tsyzhman.ru
           MONITOR_FIXED_WINDOW_EXPECTED_START: ${{ vars.MONITOR_FIXED_WINDOW_EXPECTED_START }}
           MONITOR_FIXED_WINDOW_ENABLED: ${{ vars.MONITOR_FIXED_WINDOW_ENABLED || 'false' }}
