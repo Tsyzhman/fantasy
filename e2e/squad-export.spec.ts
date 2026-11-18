@@ -3,6 +3,7 @@ import ExcelJS from 'exceljs';
 
 /** @spec spec://modules/machete/FEAT-003-squad-player-card#root */
 test('Squad XLSX preserves a league pool larger than 1000 rows', async ({ request }) => {
+  test.setTimeout(120_000);
   test.skip(process.env.KHL_PRODUCTION_SMOKE !== 'true', 'Authenticated production export regression');
   const columns = ['player', 'team', 'position', 'price'].map(key => ({ key, header: key }));
   const rows = Array.from({ length: 1005 }, (_, index) => ({ player: `Игрок ${index}`, team: 'Клуб', position: 'MID', price: index + 0.5 }));

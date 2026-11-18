@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.171 - 2026-11-18
+
+- Allow two minutes for the production smoke test that validates XLSX export and the row limit.
+
 ## 0.3.170 - 2026-11-17
 
 - Apply the published Sports.ru team as the transfer baseline and retain next-round draft edits.
