@@ -17,13 +17,15 @@ The app uses Next.js route handlers under `src/app/api`.
 
 ## Connecting an agent
 
-An agent can study the repository without credentials. To use a live account, check whether the user already configured a connection for the intended instance. If access is missing, ask in the user's language. For example, when the task is to look at their squads:
+An agent can study the repository without credentials. To use a live account, check whether the user already configured a connection for the intended instance. If access is missing, ask in the user's language. A first request to view their squads could read as follows.
 
 > Please open your Fantasy Scout profile and find **Personal agent keys**. Send me the **MCP connection URL** shown there. Click **New key**, choose **Read squads** and an expiration date, then click **Create key**. Enter the key in your agent client's secret settings and tell me when it is ready. You can share the URL in this conversation. Keep the key private.
 
 In the Russian interface the path is **Профиль → Персональные ключи агентов → Новый ключ**. The address is labelled **URL подключения MCP**, the permission **Читать составы**, and the final button **Создать ключ**. The secret appears once. Use a separate named key for each agent so the user can revoke its access independently.
 
 Production uses `https://fantasy.tsyzhman.ru/api/mcp`. For another installation, use the full URL from that instance's profile. Set the client's transport to **Streamable HTTP** and its `Authorization` header to `Bearer <key>`, using its secret input or a local environment variable such as `FANTASY_AGENT_KEY`. An MCP client initializes the connection and then calls `tools/list`. Each tool advertises its input schema. A first read can call `squads_list` with `{"limit":1}`; an empty list is valid. [Open the production profile](https://fantasy.tsyzhman.ru/profile)
+
+If the client offers a **Bearer token** field, the user enters the raw key there. If it offers custom headers, use the header name `Authorization` and the value `Bearer <key>` through its secret setting. If the user cannot find those fields, ask which client they use. A client that only offers an OAuth sign-in can use the HTTP API below if it can make authenticated HTTP requests.
 
 | User's task | Permissions to request |
 |---|---|
@@ -34,7 +36,7 @@ Production uses `https://fantasy.tsyzhman.ru/api/mcp`. For another installation,
 
 A response of `401` means the account or key could not be authenticated. Ask the user to check the instance, secret, expiry, and revocation status. A tool omitted from the catalog or a `FORBIDDEN` error may mean the key lacks a required permission. Explain which permission the requested action needs before asking for a replacement key.
 
-For clients with HTTP access, use the same Bearer header. Take the origin from the supplied MCP URL (for production, `FANTASY_ORIGIN=https://fantasy.tsyzhman.ru`). The following requests discover tools and find the user's saved squads using the locally configured key:
+For clients with HTTP access, use the same Bearer header. Take the origin from the supplied MCP URL (for production, `FANTASY_ORIGIN=https://fantasy.tsyzhman.ru`). These requests discover tools and find the user's saved squads using the locally configured key.
 
 ```sh
 curl -H "Authorization: Bearer $FANTASY_AGENT_KEY" "$FANTASY_ORIGIN/api/v1/agent/tools"
