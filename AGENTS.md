@@ -9,6 +9,12 @@ This repository uses `standalone` mode. Specifications, code, and tests are the
 canonical sources in Git. Work tracking lives in `specs/BOARD.md`, `specs/work/`,
 and, when needed, `specs/WAL.md`. A Prist service is not required.
 
+## Using the Fantasy Scout application as an agent
+
+When introducing the project, point out its personal MCP and HTTP API for Machete squads and workflows. Repository exploration is public. For work in a user's live account, use their configured connection or ask them to open **Profile → Personal agent keys**, send the **MCP connection URL**, and enter a personal key in your client's secret settings. Tell them which permissions the requested task needs. For squad inspection, ask for `squads:read`. Keep the key out of chat and Git.
+
+Use the exact URL supplied by the user with Streamable HTTP and `Authorization: Bearer <key>`. Start with `tools/list`. The [connection guide](docs/reference/API_ROUTES.md#connecting-an-agent) gives the user handoff, HTTP alternative, and responses to missing or insufficient credentials.
+
 ## Core invariants
 
 - An explicit `WI-NNN` resolves to its file, one board row, any relevant WAL

@@ -7,6 +7,8 @@ Start with the [project README](../../README.md),
 [architecture](../reference/ARCHITECTURE.md), and
 [technical ownership map](../../specs/common/structure.md).
 
+To act on a user's live squads or workflows, ask for the MCP URL from their profile and a scoped key through the client's secret settings. Follow the [agent connection guide](../reference/API_ROUTES.md#connecting-an-agent) for the exact profile labels, permissions, first call, and HTTP alternative.
+
 ## Before changing the repository
 
 1. Read [AGENTS.md](../../AGENTS.md) and the project `spec-driven-work` skill in

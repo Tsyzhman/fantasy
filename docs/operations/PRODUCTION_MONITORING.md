@@ -7,7 +7,7 @@ The scheduled monitor checks public application health/login, client critical er
 | Workflow | What to inspect |
 |---|---|
 | [Check](../../.github/workflows/check.yml) | Validates the repository revision for a pull request, a push to `main`, or a deployment candidate. |
-| [Production Browser Smoke](../../.github/workflows/production-browser-smoke.yml) | Runs authenticated desktop, tablet, and mobile scenarios against the serving site on the daily schedule or by manual dispatch. The manual KHL scope narrows the run to visible statistics. |
+| [Production Browser Smoke](../../.github/workflows/production-browser-smoke.yml) | Runs authenticated desktop, tablet, and mobile scenarios against the serving site. The manual `khl-statistics` scope checks visible statistics. The manual `agent-api` scope reads the profile's MCP URL, issues a five-minute read-only key for the dedicated QA account, compares HTTP and MCP discovery, reads a squad list, revokes the key and checks for HTTP 401. |
 | [Production Monitor](../../.github/workflows/production-monitor.yml) | Probes availability and source health. Unresolved warning-level checks keep the deduplicated alert issue open. Critical failures cause a failed workflow run. |
 
 Production updates issue #1 in place and assigns the configured `MONITOR_ALERT_ASSIGNEE` (the repository owner by default). Each failing warning probe also adds an Actions warning annotation. Recovery closes the same issue.
