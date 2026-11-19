@@ -1114,6 +1114,43 @@ export function validateFantasySquadForSave(input: {
   return { ok: true, selections: canonicalSelections, summary };
 }
 
+/** @spec spec://modules/agents/FEAT-017-squad-workflows#squads */
+type FantasyPlanTransferScope = {
+  rules: FantasySquadRules;
+  storedBaseline?: string[] | null;
+  previousSelections: FantasySquadSelection[];
+  openingAvailable?: number | null;
+};
+
+export function fantasyPlanTransferRows(scope: FantasyPlanTransferScope, plans: Array<{ selections: FantasySquadSelection[] }>) {
+  const baseline = scope.storedBaseline?.length === scope.rules.squadSize
+    ? scope.storedBaseline.map(playerId => ({ playerId }))
+    : scope.previousSelections;
+  return baseline.length === scope.rules.squadSize
+    ? availableTransfersByRound({
+        roundPlans: plans, baselineSelections: baseline, budget: fantasyTransferBudget(scope.rules), openingAvailable: scope.openingAvailable
+      })
+    : [];
+}
+
+export function validateFantasyRoundPlansForSave(input: FantasyPlanTransferScope & { pool: FantasyPlannerPlayer[]; plans: FantasySquadRoundPlan[] }) {
+  const roundPlans: FantasySquadRoundPlan[] = [];
+  for (const plan of input.plans) {
+    const validation = validateFantasySquadForSave({ pool: input.pool, rules: input.rules, selections: plan.selections, horizon: 1 });
+    if (!validation.ok) {
+      return { ok: false, code: "INVALID_SQUAD", message: `Round +${plan.roundOffset}: ${validation.error}` } as const;
+    }
+    roundPlans.push({ ...plan, selections: validation.selections });
+  }
+  const transferRows = fantasyPlanTransferRows(input, roundPlans);
+  const offset = transferRows.findIndex(row => row.used > row.available);
+  if (offset >= 0) {
+    const { used, available } = transferRows[offset];
+    return { ok: false, code: "TRANSFER_LIMIT", message: `Round +${offset}: ${used} transfers planned; ${available} available.` } as const;
+  }
+  return { ok: true, roundPlans, transferRows } as const;
+}
+
 /**
  * Weights for blending independent point forecasts. The user's alternative
  * formula carries the most signal, the external Foontasy number is an
@@ -1898,6 +1935,7 @@ export function buildTransferPlanSuggestions(input: {
   forecastSource?: TransferSuggestionForecastSource;
   transferCount: number;
   maximumPlans?: number;
+  acceptSelections?: (selections: FantasySquadSelection[]) => boolean;
   freeTransfers?: number | null;
   paidTransferPointCost?: number | null;
 }): TransferPlanSuggestion[] {
@@ -1909,7 +1947,8 @@ export function buildTransferPlanSuggestions(input: {
   if (maximumMoves === 0 || selections.length === 0) return [];
 
   const currentSummary = summarizeFantasySquad(pool, selections, rules, horizon);
-  const currentPlayers = selectedPlannerPlayers(pool, selections);
+  const playersById = new Map(pool.map(player => [player.playerId, player]));
+  const currentPlayers = selectedPlannerPlayers(playersById, selections);
   const currentLineup = lineupForecastBreakdown(currentPlayers, rules, forecastSource, horizon);
   const validationContext: TransferPlanValidationContext | null =
     currentSummary.violations.length === 0
@@ -1920,7 +1959,6 @@ export function buildTransferPlanSuggestions(input: {
       : null;
 
   const selectedIds = new Set(selections.map((selection) => selection.playerId));
-  const playersById = new Map(pool.map((player) => [player.playerId, player]));
   const outgoing = selections
     .filter((selection) => !selection.isLocked)
     .map((selection) => {
@@ -1962,6 +2000,8 @@ export function buildTransferPlanSuggestions(input: {
         evaluated += 1;
         const plan = evaluateTransferPlan({
           pool,
+          playersById,
+          acceptSelections: input.acceptSelections,
           selections,
           rules,
           horizon,
@@ -2013,6 +2053,8 @@ type LineupForecastBreakdown = {
 
 function evaluateTransferPlan(input: {
   pool: FantasyPlannerPlayer[];
+  playersById: ReadonlyMap<string, FantasyPlannerPlayer>;
+  acceptSelections?: (selections: FantasySquadSelection[]) => boolean;
   selections: FantasySquadSelection[];
   rules: FantasySquadRules;
   horizon: number;
@@ -2049,7 +2091,7 @@ function evaluateTransferPlan(input: {
   if (squadCostAfter > input.rules.budgetLimit) return null;
   const bankAfter = roundFantasyValue(input.rules.budgetLimit - squadCostAfter);
 
-  const nextPlayers = selectedPlannerPlayers(input.pool, nextSelections);
+  const nextPlayers = selectedPlannerPlayers(input.playersById, nextSelections);
   const nextLineup = lineupForecastBreakdown(nextPlayers, input.rules, input.forecastSource, input.horizon);
   const round1Delta = lineupBreakdownDelta(nextLineup.round1, input.currentLineup.round1);
   if (round1Delta === null) return null;
@@ -2057,6 +2099,7 @@ function evaluateTransferPlan(input: {
   const round5Delta = lineupBreakdownDelta(nextLineup.round5, input.currentLineup.round5);
   const horizonDelta = lineupBreakdownDelta(nextLineup.horizon, input.currentLineup.horizon);
   if (horizonDelta === null || (horizonDelta <= 0 && round1Delta <= 0 && (round3Delta ?? 0) <= 0 && (round5Delta ?? 0) <= 0)) return null;
+  if (input.acceptSelections && !input.acceptSelections(nextSelections)) return null;
 
   const moves: TransferPlanMove[] = [];
   for (const [index, pair] of input.outgoing.entries()) {
@@ -2164,8 +2207,7 @@ function isPriorityTransferReplacement(
     && transferSuggestionForecastNextPoints(pair.player, forecastSource) === 0;
 }
 
-function selectedPlannerPlayers(pool: FantasyPlannerPlayer[], selections: FantasySquadSelection[]) {
-  const playersById = new Map(pool.map((player) => [player.playerId, player]));
+function selectedPlannerPlayers(playersById: ReadonlyMap<string, FantasyPlannerPlayer>, selections: FantasySquadSelection[]) {
   return selections
     .map((selection) => playersById.get(selection.playerId))
     .filter((player): player is FantasyPlannerPlayer => Boolean(player));

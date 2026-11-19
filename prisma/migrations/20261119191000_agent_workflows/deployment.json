@@ -1,0 +1,5 @@
+{
+  "mode": "online",
+  "sqlSha256": "874e6712d50a888e6ca2b9207b631824187645768838deb6ff638977acdc67a0",
+  "compatibility": "Creates empty workflow, version and run tables and their indexes. User references use existing IDs. Existing squad rows and the previous runtime's read and write contracts remain compatible."
+}

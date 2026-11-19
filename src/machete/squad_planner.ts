@@ -2211,6 +2211,7 @@ async function loadBaltikaPlayerMetricsByName(prisma: PrismaClient, seasonNames:
   return unique;
 }
 
+/** @spec spec://modules/agents/FEAT-017-squad-workflows#squads */
 export async function saveFantasySquad(
   prisma: PrismaClient,
   input: {
@@ -2228,16 +2229,18 @@ export async function saveFantasySquad(
     contestId?: string | null;
     providerPlaceholders?: FantasyProviderPlaceholder[];
     resetTransferBaseline?: boolean;
+    expectedUpdatedAt?: Date;
     expectedSportsPublicationId?: string | null;
     importedPublication?: { tourName?: string; id: string; firstMatchAt: Date };
     publication?: { tourName?: string; id: string; firstMatchAt: Date; baseline: string[]; expectedUpdatedAt: Date; profileId: string };
     providerSquadId?: string;
     strategy?: import("./squad_logic").FantasySquadStrategy;
-  }
+  },
+  transaction?: Prisma.TransactionClient
 ) {
   const horizonRounds = normalizeFantasyHorizon(input.horizonRounds, input.rules.horizonOptions);
   const name = normalizeFantasySquadName(input.name);
-  return prisma.$transaction(async (tx) => {
+  const save = async (tx: Prisma.TransactionClient) => {
     const provider = input.provider ?? "SPORTS_RU";
     const providerPlaceholders = parseFantasyProviderPlaceholders(input.providerPlaceholders, provider);
     const placeholdersById = new Map(providerPlaceholders.map((placeholder) => [placeholder.playerId, placeholder]));
@@ -2409,7 +2412,7 @@ export async function saveFantasySquad(
       });
       squad = await tx.userFantasySquad.update({
         where: {
-          id: ownedSquad.id, updatedAt: publication?.expectedUpdatedAt ?? ownedSquad.updatedAt,
+          id: ownedSquad.id, updatedAt: publication?.expectedUpdatedAt ?? input.expectedUpdatedAt ?? ownedSquad.updatedAt,
           ...(publication ? { user: { externalProfiles: { some: { provider: "SPORTS_RU", providerUserId: publication.profileId } } } } : {})
         },
         data: {
@@ -2488,7 +2491,8 @@ export async function saveFantasySquad(
     });
 
     return squad;
-  });
+  };
+  return transaction ? save(transaction) : prisma.$transaction(save);
 }
 
 export function authoritativeFantasyRosterByPlayerId<T extends {
@@ -2627,8 +2631,8 @@ function savedFantasySquadTransferState(filters: unknown, openingFreeTransfers: 
   };
 }
 
-async function loadOpeningFreeTransfers(
-  prisma: PrismaClient,
+export async function loadOpeningFreeTransfers(
+  prisma: Pick<Prisma.TransactionClient, "fantasyUserGameweekState">,
   input: { userId: string; provider: string; contestId: string | null }
 ) {
   if (input.provider !== FPL_PROVIDER || !input.contestId) return null;
@@ -3501,7 +3505,7 @@ function standardDeviation(values: number[], mean: number) {
   return values.length > 0 ? Math.sqrt(average(values.map((value) => (value - mean) ** 2))) : 0;
 }
 
-async function loadUpcomingRoundFixtures(
+export async function loadUpcomingRoundFixtures(
   prisma: PrismaClient,
   league: SharedLeagueSeasonOption,
   provider = "SPORTS_RU",

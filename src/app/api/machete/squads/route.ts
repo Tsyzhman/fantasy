@@ -21,14 +21,12 @@ import {
   uniqueFantasySquadName
 } from "@/machete/squad_planner";
 import {
-  availableTransfersByRound,
   fantasyProviderPlaceholderPlannerPlayer,
   fantasyProviderPlaceholdersFromFilters,
-  fantasyTransferBudget,
   isFantasySquadPlayerId,
   normalizeFantasyHorizon,
   fantasySquadPlanningRounds,
-  validateFantasySquadForSave,
+  validateFantasyRoundPlansForSave,
   type FantasySquadSelection,
   type FantasySquadRoundPlan,
   type FantasyProviderPlaceholder,
@@ -370,45 +368,16 @@ export const POST = withApiHandler(async (request: Request) => {
     pool: plannerData.players,
     rules
   });
-  const safeRoundPlans: FantasySquadRoundPlan[] = [];
-  for (const plan of plansForCurrentRound) {
-    const planValidation = validateFantasySquadForSave({
-      pool: plannerData.players,
-      selections: plan.selections,
-      rules,
-      horizon: 1
-    });
-    if (!planValidation.ok) {
-      return jsonError("BAD_REQUEST", `Round +${plan.roundOffset}: ${planValidation.error}`, 400);
-    }
-    safeRoundPlans.push({ ...plan, selections: planValidation.selections });
-  }
+  // @spec spec://modules/agents/FEAT-017-squad-workflows#squads
+  const validation = validateFantasyRoundPlansForSave({
+    pool: plannerData.players, rules, plans: plansForCurrentRound,
+    storedBaseline: plannerData.squad.transferBaselinePlayerIds,
+    previousSelections: targetSquadId ? plannerData.squad.selections : [],
+    openingAvailable: plannerData.squad.openingFreeTransfers
+  });
+  if (!validation.ok) return jsonError("BAD_REQUEST", validation.message, 400);
+  const safeRoundPlans = validation.roundPlans;
   const safeSelections = safeRoundPlans[0]?.selections ?? [];
-  const budget = fantasyTransferBudget(rules);
-  const storedBaseline = plannerData.squad.transferBaselinePlayerIds ?? [];
-  const previousSaved = targetSquadId ? plannerData.squad.selections : [];
-  const transferBaseline = storedBaseline.length === rules.squadSize
-    ? storedBaseline.map((playerId) => ({ playerId }))
-    : previousSaved.length === rules.squadSize
-      ? previousSaved
-      : [];
-  if (transferBaseline.length === rules.squadSize) {
-    const transferRows = availableTransfersByRound({
-      roundPlans: safeRoundPlans,
-      baselineSelections: transferBaseline,
-      budget,
-      openingAvailable: plannerData.squad.openingFreeTransfers
-    });
-    const exceeded = transferRows.find((row) => row.used > row.available);
-    if (exceeded) {
-      const roundOffset = transferRows.indexOf(exceeded);
-      return jsonError(
-        "BAD_REQUEST",
-        `Round +${roundOffset}: ${exceeded.used} transfers planned; ${exceeded.available} available.`,
-        400
-      );
-    }
-  }
 
   const name = targetSquadId
     ? plannerData.squad.name
@@ -416,8 +385,10 @@ export const POST = withApiHandler(async (request: Request) => {
         plannerData.squads.map((option) => option.name),
         defaultFantasySquadNameForUser(auth.user)
       );
+  const previousSquad = plannerData.squads.find(option => option.id === targetSquadId);
   const squad = await saveFantasySquad(prisma, {
     strategy,
+    expectedUpdatedAt: previousSquad ? new Date(previousSquad.updatedAt) : undefined,
     expectedSportsPublicationId: provider === "SPORTS_RU" ? currentPublication : undefined,
     userId,
     leagueId,

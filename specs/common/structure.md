@@ -72,6 +72,8 @@ Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, th
 | HTTP API | Auth, imports, ingestion, squads, shot maps, cron | `src/app/api` |
 | Auth and shared lib | Sessions, Prisma client, request parsing, helpers | `src/lib` |
 | Session authentication | FEAT-009: atomic login, durable bootstrap, trusted returns and bounded expired-session cleanup | `src/lib/auth*.ts`, `src/app/login/`, `src/app/setup/`, `scripts/recover-admin.ts` |
+| Personal agent access | FEAT-016: profile keys, effective permissions, audit and shared HTTP/MCP tool dispatch | `src/server/agent-api/`, `src/app/profile/`, `src/app/api/profile/`, `src/app/api/mcp/`, `src/app/api/v1/agent/` |
+| Personal squad workflows | FEAT-017: owned squad transfer previews, editable workflow versions and repeatable runs | `src/server/agent-workflows/`, `src/machete/`, `prisma/` |
 | Ingestion jobs | Backfill, incremental update, worker loop | `scripts/ingestion-runner.ts`, `src/app/api/admin/ingestion` |
 | SorareInside starters | INFRA-004: ближайший матч, UUID-маппинг, последний сыгранный XI и hourly :05 | `src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/machete/sorareinside-last-played.ts`, `src/server/sorareinside-scheduler.ts`, `scripts/sync-sorareinside.ts` |
 | Sports trends | FEAT-006: лента/статьи Sports, до 15 игроков, ownership и дельта | `src/providers/sports-ru-trends/`, `src/server/sports-trends/`, `src/machete/sports-trends.ts` |

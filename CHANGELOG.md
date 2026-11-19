@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0 - 2026-11-19
+
+- Add scoped personal agent keys in Profile and a shared catalog of HTTP and MCP tools.
+- Add direct squad saves and personal, versioned workflows with transfer previews, publication and idempotent runs.
+
 ## 0.3.171 - 2026-11-18
 
 - Allow two minutes for the production smoke test that validates XLSX export and the row limit.
