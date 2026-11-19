@@ -16,6 +16,7 @@ import {
 import { loadSportsRuSquadSnapshotStatus } from "@/machete/sports_ru_squad_snapshots";
 import { parseSquadTableColumns, parseSquadTableColumnWidths } from "@/machete/squad-table-columns";
 import { loadFantasyPlayerPoolDataFreshness } from "@/machete/fantasy-player-pool-snapshots";
+import { withSquadSorareStartChances } from "@/machete/sorareinside-start-chances";
 import { canSwitchFranchise, resolveVisibleFranchise } from "@/machete/franchise-access";
 import { loadPlannerReadinessByScope, plannerReadinessBlocksTransferSuggestions, plannerReadinessKey, type PlannerReadiness } from "@/machete/planner_readiness";
 import {
@@ -90,6 +91,9 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
       })
     : null;
   const transferSuggestionsBlockedByReadiness = data ? plannerReadinessBlocksTransferSuggestions(data.readiness) : true;
+  // @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances
+  const selectedPlayers = selectedLeague && data ? await withSquadSorareStartChances(prisma, selectedLeague,
+    initialSquadPlayers(data.players, data.squad.roundPlans.flatMap(plan => plan.selections))) : [];
   const leagueHistoryParams = new URLSearchParams();
   applyFantasyHistorySearchParams(leagueHistoryParams, historySettings);
 
@@ -155,7 +159,7 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
             rounds={data.rounds}
             bookmakerFavorites={data.bookmakerFavorites}
             initialFixtureCalendar={data.fixtureCalendar ?? null}
-            players={initialSquadPlayers(data.players, data.squad.roundPlans.flatMap((plan) => plan.selections))}
+            players={selectedPlayers}
             playerPoolHref={squadPlayerPoolHref(
               selectedLeague,
               historySettings,

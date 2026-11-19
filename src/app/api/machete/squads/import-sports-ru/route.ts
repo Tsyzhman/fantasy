@@ -21,6 +21,7 @@ import {
   type FantasyProviderPlaceholder
 } from "@/machete/squad_logic";
 import { toFantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
+import { withSquadSorareStartChances } from "@/machete/sorareinside-start-chances";
 import { defaultFantasySquadNameForUser, loadFantasySquadPlannerData, saveFantasySquad, uniqueFantasySquadName } from "@/machete/squad_planner";
 
 export const runtime = "nodejs";
@@ -119,10 +120,12 @@ export const POST = withApiHandler(async (request: Request) => {
     rules: plannerData.rules
   });
   const importedPlayersById = new Map(importPool.map((player) => [player.playerId, player]));
+  // @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances
   const importedPlayers = validation.selections.flatMap((selection) => {
     const player = importedPlayersById.get(selection.playerId);
-    return player ? [toFantasyPlayerPoolListItem(player)] : [];
+    return player ? [player] : [];
   });
+  const currentImportedPlayers = (await withSquadSorareStartChances(prisma, league, importedPlayers)).map(toFantasyPlayerPoolListItem);
   const name = plannerData.squad.id
     ? plannerData.squad.name
     : uniqueFantasySquadName(
@@ -170,7 +173,7 @@ export const POST = withApiHandler(async (request: Request) => {
       horizonRounds: plannerData.squad.horizonRounds,
       selections: validation.selections,
       roundPlans,
-      importedPlayers,
+      importedPlayers: currentImportedPlayers,
       placeholderPlayers,
       updatedAt: new Date().toISOString()
     },

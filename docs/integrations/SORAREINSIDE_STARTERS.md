@@ -15,6 +15,14 @@ do not add extra starters. All eleven must map uniquely into the active roster.
 The same club forecast applies to that club's current fantasy league pools,
 including its Champions League pool. National-team contests are excluded.
 
+The player picker shows the roster marker and SorareInside's chance of starting
+the club's next match. Percentages for distinct positions are added up to a
+maximum of 100%. Bench and DNP players keep their published values, including
+zero. A dash means the source has no current percentage for that player.
+The worker stores the verified percentages in the team's existing lineup
+metadata. Changes to percentages alone are visible on the next page or pool
+read without a forecast rebuild.
+
 ## Operation
 
 ```sh

@@ -58,6 +58,7 @@ import type {
 import { formatCompactScore, formatDate, formatDateTime, formatForecastScore, formatNumber, formatScore } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
+import { ClubStartIndicator } from "./ClubStartIndicator";
 import { fantasyPlayerMatchesNameQuery } from "@/machete/player-identity";
 import { compareFantasyPositions, fantasyPositionOrder, fantasyPositionRank, isFantasyPositionSortKey } from "@/lib/players/fantasy-position-order";
 import {
@@ -2968,6 +2969,7 @@ function readDraggedPlayerId(event: DragEvent<HTMLElement>) {
 }
 
 /** @spec spec://common/PROP-002-editorial-sport-design#contracts */
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances */
 function SquadTouchRoster({
   summary,
   selectionsByPlayerId,
@@ -3063,6 +3065,7 @@ function SquadTouchRoster({
               <div className="min-w-0 flex-1">
                 <h4 id="touch-player-actions-title" className="truncate text-base font-bold text-ink">{actionPlayer.name}</h4>
                 <p className="truncate text-sm text-slate-500">{fantasyPlayerTeamDisplayName(actionPlayer)} · {actionPlayer.positionGroup}</p>
+                <ClubStartIndicator isStarter={actionPlayer.isStarter} chance={actionPlayer.sorareStartChance} language={language} showFixture />
               </div>
               <button type="button" onClick={() => setActionPlayerId(null)} aria-label={localizedText(language, "Close player actions", "Закрыть действия игрока")} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700">
                 <X className="h-5 w-5" />
@@ -3122,6 +3125,7 @@ function SquadTouchRoster({
               <button key={player.playerId} type="button" onClick={() => onSelectLineupReplacement(player.playerId)} className="min-h-14 min-w-0 rounded border border-sky-200 bg-white px-3 py-2 text-left shadow-sm">
                 <span className="block truncate text-sm font-bold text-ink">{compactPlayerDisplayName(player.name)}</span>
                 <span className="mt-0.5 block truncate text-xs text-slate-500">{player.positionGroup} · {fantasyPlayerTeamDisplayName(player)}</span>
+                <ClubStartIndicator isStarter={player.isStarter} chance={player.sorareStartChance} language={language} />
               </button>
             ))}
           </div>

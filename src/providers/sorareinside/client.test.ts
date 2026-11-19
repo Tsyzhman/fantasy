@@ -1,7 +1,7 @@
 /** @spec spec://modules/machete/INFRA-004-sorareinside-starters#source */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { nearestTeamGames, parseLineup, parseGames, SorareInsideClient, sourceId, type SourceGame, type SourceTeam } from "./client";
+import { IncompleteSorareInsideLineupError, nearestTeamGames, parseLineup, parseGames, SorareInsideClient, sourceId, type SourceGame, type SourceTeam } from "./client";
 const id=(n:number)=>`00000000-0000-0000-0000-${String(n).padStart(12,"0")}`;
 const team=(n:number):SourceTeam=>({id:id(n),name:`Team ${n}`,slug:`team-${n}`,country:"gb-eng",national:false});
 const now=new Date("2026-09-11T12:00:00Z");
@@ -29,6 +29,7 @@ test("only eleven starters belonging to selected fixture are accepted, alternati
   const data={id:g.homeLineup,game_id:g.id,team:{id:id(1)},is_published:true,updated_at:now.toISOString(),formation:"4-4-2",lineup_players:{starting_players:[...players].reverse(),alternate_players:[{id:"invalid"}]}};
   assert.equal(parseLineup(data,selected).players[0].index,0);
   assert.throws(()=>parseLineup({...data,game_id:id(999)},selected),/fixture/);
+  assert.throws(()=>parseLineup({...data,is_published:false},selected),IncompleteSorareInsideLineupError);
   assert.throws(()=>parseLineup({...data,is_published:false},selected),/unpublished/);
   assert.throws(()=>parseLineup({...data,lineup_players:{starting_players:players.slice(0,10)}},selected),/11/);
   assert.throws(()=>parseLineup({...data,lineup_players:{starting_players:[players[0],...players.slice(0,10)]}},selected),/11/);
@@ -37,6 +38,31 @@ test("invalid payloads and malformed IDs cannot create requests or clear flags",
   assert.throws(()=>parseGames({error:"Forbidden"}));
   assert.throws(()=>sourceId("../../other"));
   assert.equal(sourceId(`Player:${id(7)}`),id(7));
+});
+
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances */
+test("published chances aggregate distinct positions per UUID; optional or missing chances never alter the XI", () => {
+  const selected = nearestTeamGames([game(3, "2026-09-12T12:00:00.000Z")], now).get(id(1))!;
+  const slot = (n: number, index: number, percent?: number | null) => ({
+    id: id(200 + n), display_name: `Player ${n}`, slug: `player-${n}`, position: n === 0 ? "Goalkeeper" : "Midfielder",
+    lineup_position_index: index, confidence_percentage: percent
+  });
+  const starters = Array.from({length: 11}, (_, i) => slot(i, i, i < 2 ? [100, 80][i] : undefined));
+  const lineup = parseLineup({
+    id: selected.lineupId, game_id: selected.game.id, team: {id: selected.team.id}, is_published: true,
+    updated_at: now.toISOString(), formation: "4-4-2",
+    lineup_players: {
+      starting_players: starters,
+      alternate_players: [null, [slot(1, 8, 30), slot(12, 1, 20), slot(12, 1, 20)], [slot(12, 5, 10), slot(13, 2, 110)],
+        [slot(14, 3, 20), slot(14, 3, 30)], [slot(2, 4, 40)], [{id: "bad-id"}]],
+      bench_players: [null, slot(15, -1, 10)], dnp_players: [slot(16, -1, 0), slot(17, -1, null)]
+    }
+  }, selected);
+  assert.equal(lineup.players.length, 11);
+  assert.equal(lineup.players.some(p => p.id === id(212)), false);
+  assert.deepEqual(Object.fromEntries(lineup.startChances.map(({player, percent}) => [player.name, percent])), {
+    "Player 0": 100, "Player 1": 100, "Player 12": 30, "Player 15": 10, "Player 16": 0
+  });
 });
 test("HTTP errors do not leak response secrets and sessions reuse cookies",async()=> {
   let logins=0;let gets=0;

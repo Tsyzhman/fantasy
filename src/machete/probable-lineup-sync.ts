@@ -154,6 +154,7 @@ export type ProbableLineupTeamPlan = {
   startersToClear: number;
   problems: string[];
   lastPlayedMatch?: { id: bigint; date: Date };
+  startPercentByPlayerId?: Record<string, number>;
 };
 
 export type ProbableLineupSyncPlan = {
@@ -665,7 +666,7 @@ export async function applyProbableLineupTeamPlan(
         previousLineup.fingerprint === lineupFingerprint(plan.sourceLineup);
       if (plan.source === "SORAREINSIDE" || (lastPlayed && !samePlayedMatch)) await tx.leagueSeasonTeam.update({
         where: { leagueId_season_teamId: { leagueId: plan.leagueId, season: plan.season, teamId } },
-        data: { ...playedMatchFields, metadata: probableLineupMetadata(seasonTeam.metadata, plan, appliedAt) }
+        data: { ...playedMatchFields, metadata: probableLineupMetadata(seasonTeam.metadata, plan, appliedAt, activePlayerIds) }
       });
       return unchanged();
     }
@@ -724,7 +725,7 @@ export async function applyProbableLineupTeamPlan(
       data: {
         startingXiChangedAt: appliedAt,
         ...playedMatchFields,
-        metadata: probableLineupMetadata(seasonTeam.metadata, plan, appliedAt)
+        metadata: probableLineupMetadata(seasonTeam.metadata, plan, appliedAt, activePlayerIds)
       }
     });
     if (otherFlaggedTeams.length > 0) {
@@ -1015,7 +1016,8 @@ async function loadFplProviderCodeMaps(
   return result;
 }
 
-function probableLineupMetadata(existing: Prisma.JsonValue | null, plan: ProbableLineupTeamPlan, appliedAt: Date) {
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances */
+function probableLineupMetadata(existing: Prisma.JsonValue | null, plan: ProbableLineupTeamPlan, appliedAt: Date, activePlayerIds: Set<string>) {
   const metadata = jsonObject(existing);
   return {
     ...metadata,
@@ -1024,6 +1026,9 @@ function probableLineupMetadata(existing: Prisma.JsonValue | null, plan: Probabl
       sourceUrl: plan.sourceUrl,
       sourceTeamCode: plan.sourceLineup.sourceTeamCode,
       sourceFixtureId: plan.sourceLineup.sourceFixtureId,
+      ...(plan.source === "SORAREINSIDE" && plan.startPercentByPlayerId ? {
+        startPercentByPlayerId: Object.fromEntries(Object.entries(plan.startPercentByPlayerId).filter(([id]) => activePlayerIds.has(id)))
+      } : {}),
       ...(plan.sourceLineup.sourceKickoff ? { sourceKickoff: plan.sourceLineup.sourceKickoff } : {}),
       ...(plan.sourceLineup.sourceLineupId ? { sourceLineupId: plan.sourceLineup.sourceLineupId } : {}),
       sourceUpdatedText: plan.sourceLineup.sourceUpdatedText,

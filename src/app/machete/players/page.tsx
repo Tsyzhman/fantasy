@@ -23,6 +23,7 @@ import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMachet
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
 import { loadCachedFantasySquadPlayerPool, loadSportsRuFantasyPriceRefsByScopedPlayer, sportsRuFantasyPriceScopeKey, type SportsRuFantasyPriceRef } from "@/machete/squad_planner";
 import { applyFantasyPlayerIdentityRows, filterFantasyPlayerIdentityRows } from "@/machete/player_identity";
+import { loadSorareStartChances } from "@/machete/sorareinside-start-chances";
 import {
   loadSharedLeagueSeasonOptions,
   loadSharedLeagueTeams,
@@ -485,7 +486,7 @@ async function buildMatchWindowRows({
     selectedLeagueScopes
   );
   const combineTeamCompetitions = competitionKeys.length > 1;
-  const [rawRows, windowSummary, sportsPriceRefs, forecastPools] = await Promise.all([
+  const [rawRows, windowSummary, sportsPriceRefs, forecastPools, startChances] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
       scopes,
       position: position ?? undefined,
@@ -505,7 +506,8 @@ async function buildMatchWindowRows({
             return { scope, players: [] };
           }
         }))
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    loadSorareStartChances(prisma, scopes)
   ]);
   const forecastByScopedPlayer = new Map<string, (typeof forecastPools)[number]["players"][number]>(forecastPools.flatMap(({ scope, players }) =>
     players.map((player) => [`${scope.leagueId}:${scope.season}:${player.teamId}:${player.playerId}`, player] as const)
@@ -515,11 +517,14 @@ async function buildMatchWindowRows({
     (rowId) => sportsRuPriceRefForMacheteRow(rowId, sportsPriceRefs),
     position
   ).map((row) => {
-    const forecast = forecastScopeKeysForMacheteRowId(row.id)
+    // @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances
+    const scopeKeys = forecastScopeKeysForMacheteRowId(row.id);
+    const forecast = scopeKeys
       .map((key) => forecastByScopedPlayer.get(key))
       .find(Boolean) ?? null;
     return {
       ...row,
+      sorareStartChance: scopeKeys.map(key => startChances.get(key)).find(Boolean) ?? null,
       averageRating: row.averageRating10 ?? row.averageRating,
       price: sportsRuPriceRefForMacheteRow(row.id, sportsPriceRefs)?.price ?? null,
       predictedFp: forecast?.predictedFp ?? null,

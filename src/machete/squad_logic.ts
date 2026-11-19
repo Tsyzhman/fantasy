@@ -112,6 +112,7 @@ export type FantasyProjectionListMetrics = Pick<
 >;
 
 export type FantasyPlannerPlayer = {
+  sorareStartChance?: import("./sorareinside-start-chances").SorareStartChance | null;
   // Raw per-match decomposition used only for transparent user-facing tooltips.
   // These values come from the component projection pipeline and are optional to
   // keep backward compatibility with legacy data flows.

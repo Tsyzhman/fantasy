@@ -36,6 +36,7 @@ import {
 } from "@/machete/squad_logic";
 import { fantasyHistorySettingsKey, parseFantasyHistorySettings } from "@/machete/squad-history";
 import { toFantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
+import { withSquadSorareStartChances } from "@/machete/sorareinside-start-chances";
 import { squadFoontasyRound, withSquadFoontasyForecasts } from "@/machete/squad-foontasy";
 import { parseFantasyFixtureCalendar, type FantasyFixtureCalendar } from "@/machete/squad-fixture-calendar";
 import {
@@ -274,7 +275,9 @@ export const GET = withApiHandler(async (request: Request) => {
       : { players: mergedPlayers, pageInfo: null };
   }
   const cacheMetrics = fantasyPlayerPoolCacheMetrics();
-  const listPlayers = responsePayload.players.map(toFantasyPlayerPoolListItem);
+  // @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances
+  const currentPlayers = await withSquadSorareStartChances(prisma, plannerLeague, responsePayload.players);
+  const listPlayers = currentPlayers.map(toFantasyPlayerPoolListItem);
 
   return NextResponse.json(
     {
