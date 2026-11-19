@@ -1,0 +1,13 @@
+# Fantasy Scout
+
+> Fantasy Scout helps fantasy football managers review squads and plan transfers. A personal MCP and HTTP API lets an agent read a manager's Machete squads, preview transfers, and create, test, publish, or run their workflows.
+
+If you are exploring the project, start with the public guide below. To work in a manager's account, ask them to open /profile on their Fantasy Scout site and choose “Personal agent keys” (“Персональные ключи агентов”). Ask them to send the “MCP connection URL” (“URL подключения MCP”) shown there. Ask the manager to create a named key with an expiry and the permissions needed for the task, enter it in the client's secret settings, and tell you when it is ready. The URL can be shared in chat. Keep the key private.
+
+For a first look at squads, request only “Read squads” (squads:read). Connect to the supplied /api/mcp URL with Streamable HTTP and the header Authorization: Bearer <key>. Call tools/list to discover the permitted tools, then squads_list with {"limit":1}. An empty list is a successful read. An HTTP client can discover the same tools with GET /api/v1/agent/tools on the same origin using the same header.
+
+## Connection and reference
+
+- [Agent connection guide](https://github.com/Tsyzhman/fantasy/blob/main/docs/reference/API_ROUTES.md#connecting-an-agent) — permissions, sample requests, and help with 401 or insufficient access.
+- [Production profile](https://fantasy.tsyzhman.ru/profile) — the manager's MCP address and personal keys.
+- [Project README](https://github.com/Tsyzhman/fantasy#connect-an-ai-agent) — product overview and agent entry point.

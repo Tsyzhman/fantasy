@@ -71,6 +71,10 @@ export default async function LoginPage({ searchParams }: PageProps) {
             <I18nText en="Sign in" ru="Войти" />
           </button>
         </form>
+        {/* @spec spec://modules/agents/FEAT-016-personal-agent-api#transport */}
+        <a className="mt-5 inline-block text-sm font-semibold text-sky-700 underline" href="/llms.txt">
+          <I18nText en="Connect an AI agent (MCP / API)" ru="Подключить ИИ-агента (MCP / API)" />
+        </a>
       </section>
     </main>
   );

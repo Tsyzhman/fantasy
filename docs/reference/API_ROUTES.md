@@ -21,6 +21,8 @@ An agent can study the repository without credentials. To use a live account, ch
 
 > Please open your Fantasy Scout profile and find **Personal agent keys**. Send me the **MCP connection URL** shown there. Click **New key**, choose **Read squads** and an expiration date, then click **Create key**. Enter the key in your agent client's secret settings and tell me when it is ready. You can share the URL in this conversation. Keep the key private.
 
+An agent given only the site address can follow **Connect an AI agent (MCP / API)** on the public sign-in page or read `/llms.txt` on that instance. [Public connection instructions](https://fantasy.tsyzhman.ru/llms.txt)
+
 In the Russian interface the path is **Профиль → Персональные ключи агентов → Новый ключ**. The address is labelled **URL подключения MCP**, the permission **Читать составы**, and the final button **Создать ключ**. The secret appears once. Use a separate named key for each agent so the user can revoke its access independently.
 
 Production uses `https://fantasy.tsyzhman.ru/api/mcp`. For another installation, use the full URL from that instance's profile. Set the client's transport to **Streamable HTTP** and its `Authorization` header to `Bearer <key>`, using its secret input or a local environment variable such as `FANTASY_AGENT_KEY`. An MCP client initializes the connection and then calls `tools/list`. Each tool advertises its input schema. A first read can call `squads_list` with `{"limit":1}`; an empty list is valid. [Open the production profile](https://fantasy.tsyzhman.ru/profile)

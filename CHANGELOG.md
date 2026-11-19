@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 - 2026-11-19
+
+- Link the public sign-in page to a credential-free agent connection guide at `/llms.txt`.
+
 ## 0.4.0 - 2026-11-19
 
 - Add scoped personal agent keys in Profile and a shared catalog of HTTP and MCP tools.

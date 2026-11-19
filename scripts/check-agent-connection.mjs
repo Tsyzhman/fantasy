@@ -8,6 +8,21 @@ const baseURL = new URL(process.env.PLAYWRIGHT_BASE_URL);
 const userAgent = process.env.PLAYWRIGHT_USER_AGENT || "fantasy-production-browser-smoke/agent-api";
 const browser = await chromium.launch();
 try {
+  const guest = await browser.newContext({ baseURL: baseURL.origin, userAgent });
+  const entry = await guest.newPage();
+  await entry.goto("/");
+  const link = entry.getByRole("link", { name: /Connect an AI agent|Подключить ИИ-агента/ });
+  const guidePath = await link.getAttribute("href", { timeout: 15_000 });
+  if (guidePath !== "/llms.txt") throw new Error("The public sign-in page did not link to the agent guide.");
+  const guide = await guest.request.get(guidePath, { maxRedirects: 0 });
+  const instructions = await guide.text();
+  if (guide.status() !== 200 || !guide.headers()["content-type"]?.includes("text/plain") ||
+      !["/profile", "MCP connection URL", "squads:read", "/api/mcp", "tools/list"].every(term => instructions.includes(term))) {
+    throw new Error("The public guide did not explain how to connect and make a first read.");
+  }
+  await guest.close();
+  console.log("Verified anonymous discovery from the site root to the agent connection instructions.");
+
   const context = await browser.newContext({ baseURL: baseURL.origin, userAgent, storageState: "output/playwright-auth/qa-user.json" });
   const page = await context.newPage();
   await page.goto("/profile");
