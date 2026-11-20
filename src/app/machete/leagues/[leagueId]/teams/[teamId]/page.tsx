@@ -27,6 +27,7 @@ import {
 } from "@/machete/shared_read_model";
 import { loadSportsRuTeamPlayerMappings, sportsRuDisplayNamesByPlayerId } from "@/machete/sports_ru_player_mapping";
 import { loadSportsRuAuthoritativeRosterContext, sportsRuSeasonAliases } from "@/machete/squad_planner";
+import { readSorareStartChances } from "@/machete/sorareinside-start-chances";
 
 export const dynamic = "force-dynamic";
 
@@ -118,8 +119,12 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
     })
   ]);
   const sportsNamesByPlayerId = sportsRuDisplayNamesByPlayerId(sportsRuMappings);
+  // @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances
+  const metadata = seasonTeam.metadata;
+  const startChances = readSorareStartChances(metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata.probableLineup : null);
   const players = filterByStarter(sortSharedMacheteRows(playerRows, "fantasyScore"), starterFilter).map((player) => ({
     ...player,
+    sorareStartChance: startChances.get(macheteTeamRowPlayerId(player.id) ?? "") ?? null,
     sportsName: sportsNamesByPlayerId.get(macheteTeamRowPlayerId(player.id) ?? "") ?? null
   }));
   const fantasyPreview = players.map((player) => player.fantasyScore).filter((score): score is number => typeof score === "number");

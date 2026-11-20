@@ -3,6 +3,7 @@ import { type UiLanguage, fantasyForecastTitle, minuteHistoryProvenanceLines, fo
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
 import { ColumnResizeHandle } from "./ColumnResizeHandle";
+import { ClubStartIndicator } from "./ClubStartIndicator";
 /** @spec spec://modules/machete/FEAT-004-rotation-risk#scenarios */
 import { currentRotationRisk, rotationRiskDescription } from "@/machete/rotation-risk";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Bookmark, Check, Columns3, Lock, Plus, Save, Search, SlidersHorizontal, Trash2 } from "lucide-react";
@@ -211,6 +212,7 @@ export function PlayerPoolNameSearch({ language, value, onChange }: {
 }
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances */
 export function CustomizablePlayerPoolTable({
   initialVisibleColumns,
   initialColumnWidths,
@@ -525,7 +527,7 @@ export function CustomPlayerPoolRow({ player, columns, horizon, language, provid
       ? `${Math.round(player.expectedMinutes)} ${localizedText(language, "min", "мин")}`
       : null,
     player.forecastConfidence !== null && player.forecastConfidence !== undefined
-      ? `${Math.round(player.forecastConfidence * 100)}%`
+      ? localizedText(language, `Quality ${Math.round(player.forecastConfidence * 100)}%`, `Качество ${Math.round(player.forecastConfidence * 100)}%`)
       : null
   ].filter((value): value is string => value !== null).join(" · ");
   const fixedColumnTitles = playerPoolFixedColumnTitles(language, provider);
@@ -541,11 +543,13 @@ export function CustomPlayerPoolRow({ player, columns, horizon, language, provid
     >
       <td className={cn("sticky left-0 z-[5] overflow-hidden border-r border-slate-200 px-2 py-1.5", isSelected ? "bg-emerald-50" : disabled ? "bg-slate-50" : "bg-white group-hover:bg-slate-50")} title={`${player.name}\n${fixedColumnTitles.player}\n${localizedText(language, `Forecast inputs: ${player.expectedMinutes == null ? "—" : `${formatNumber(player.expectedMinutes, 0)} min`}; confidence ${player.forecastConfidence == null ? "—" : `${formatNumber(player.forecastConfidence * 100, 0)}%`}.`, `Входы прогноза: ${player.expectedMinutes == null ? "—" : `${formatNumber(player.expectedMinutes, 0)} мин`}; уверенность ${player.forecastConfidence == null ? "—" : `${formatNumber(player.forecastConfidence * 100, 0)}%`}.`)}`}>
         <span className={cn("block truncate font-semibold", muted ? "text-slate-500" : "text-ink")}>{compactPlayerDisplayName(player.name)}</span>
-        {playerMetadata ? <span className="block truncate text-[10px] text-slate-500">{playerMetadata}</span> : null}
+        <ClubStartIndicator isStarter={player.isStarter} chance={player.sorareStartChance} language={language} />
       </td>
-      <td className="overflow-hidden px-2 py-1.5 text-slate-600" title={teamCellTitle}><span className="block truncate">{teamDisplayName}</span></td>
+      <td data-sort-value={teamDisplayName} className="overflow-hidden px-2 py-1.5 text-slate-600" title={teamCellTitle}><span className="block truncate">{teamDisplayName}</span>
+        {playerMetadata ? <span className="block truncate text-[10px] text-slate-500" title={playerMetadata}>{playerMetadata}</span> : null}
+      </td>
       <td className="overflow-hidden px-1 py-1.5" title={`${player.name} · ${localizedText(language, "position", "позиция")}: ${player.positionGroup}\n${fixedColumnTitles.position}`}><span className={cn("inline-block max-w-full truncate rounded px-1 py-0.5 text-[10px] font-bold", muted ? "border border-slate-300 bg-slate-200 text-slate-700" : positionPillClass(player.positionGroup))}>{player.positionGroup}</span></td>
-      <td data-sort-value={player.price} className={cn("overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold", muted ? "text-slate-600" : "text-ink")} title={`${player.name} · ${localizedText(language, "price", "цена")}: ${formatNumber(player.price, 1)}\n${localizedText(language, `Source: ${isVerifiedPrice ? `verified ${priceProviderLabel} fantasy price` : `estimate; no verified ${priceProviderLabel} mapping`}.`, `Источник: ${isVerifiedPrice ? `подтверждённая цена фэнтези ${priceProviderLabel}` : `оценка; подтверждённого сопоставления ${priceProviderLabel} нет`}.`)}`}>{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</td>
+      <td data-column-key="price" data-sort-value={player.price} className={cn("overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold", muted ? "text-slate-600" : "text-ink")} title={`${player.name} · ${localizedText(language, "price", "цена")}: ${formatNumber(player.price, 1)}\n${localizedText(language, `Source: ${isVerifiedPrice ? `verified ${priceProviderLabel} fantasy price` : `estimate; no verified ${priceProviderLabel} mapping`}.`, `Источник: ${isVerifiedPrice ? `подтверждённая цена фэнтези ${priceProviderLabel}` : `оценка; подтверждённого сопоставления ${priceProviderLabel} нет`}.`)}`}>{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</td>
       <td className="px-1 py-1.5 text-center">
         {isSelected ? (
           <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-7 w-7 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>
@@ -1234,7 +1238,7 @@ export function PlayerPoolTable({
                   ? `${Math.round(player.expectedMinutes)}${language === "ru" ? "м" : "m"}`
                   : null,
                 player.forecastConfidence !== null && player.forecastConfidence !== undefined
-                  ? `${Math.round(player.forecastConfidence * 100)}%`
+                  ? localizedText(language, `Quality ${Math.round(player.forecastConfidence * 100)}%`, `Качество ${Math.round(player.forecastConfidence * 100)}%`)
                   : null
               ].filter((value): value is string => value !== null).join(" · ");
 
@@ -1242,10 +1246,11 @@ export function PlayerPoolTable({
                 <tr key={player.playerId} className={rowClassName}>
                   <td className="px-2 py-1.5">
                     <span className={`block truncate font-semibold ${muted ? "text-slate-500" : "text-ink"}`} title={forecastTitle}>{compactPlayerDisplayName(player.name)}</span>
-                    {playerMetadata ? <span className="block truncate text-[10px] text-slate-600" title={forecastTitle}>{playerMetadata}</span> : null}
+                    <ClubStartIndicator isStarter={player.isStarter} chance={player.sorareStartChance} language={language} />
                   </td>
                   <td className="overflow-hidden px-1 py-1.5 text-slate-600">
                     <span className="block truncate" title={player.teamName}>{teamDisplayName}</span>
+                    {playerMetadata ? <span className="block truncate text-[10px] text-slate-600" title={forecastTitle}>{playerMetadata}</span> : null}
                   </td>
                   <td className="overflow-hidden px-1 py-1.5">
                     <span className={`inline-block max-w-full truncate rounded px-1 py-0.5 text-[10px] font-bold ${muted ? "border border-slate-300 bg-slate-200 text-slate-700" : positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
@@ -1430,6 +1435,7 @@ export function PlayerPoolMobileList({
                   </span>
                 </div>
                 <p className="mt-0.5 truncate text-xs text-slate-500">{fantasyPlayerTeamDisplayName(player)}</p>
+                <ClubStartIndicator isStarter={player.isStarter} chance={player.sorareStartChance} language={language} showFixture />
                 {player.expectedMinutes !== null && player.expectedMinutes !== undefined ? (
                   <p className="mt-0.5 text-[11px] text-slate-500">
                     {Math.round(player.expectedMinutes)} <I18nText en="min" ru="мин" />

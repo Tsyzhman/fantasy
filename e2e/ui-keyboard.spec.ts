@@ -412,9 +412,10 @@ test("mobile column sort shares desktop header state in both directions", async 
   await page.goto(`${fixture.url}/?mobileSort=football`);
   const desktop = page.getByTestId("player-pool-table");
   const price = desktop.locator('th[data-sort-key="price"]');
+  const firstPrice = desktop.locator('tbody td[data-column-key="price"]').first();
   await price.click();
   await expect(price).toHaveAttribute("aria-sort", "descending");
-  await expect(desktop.locator("tbody td[data-sort-value]").first()).toHaveAttribute("data-sort-value", "48");
+  await expect(firstPrice).toHaveAttribute("data-sort-value", "48");
   await page.setViewportSize({ width: 390, height: 844 });
   const sort = page.getByTestId("player-pool-sort");
   await expect(sort.getByRole("combobox")).toHaveValue("price");
@@ -423,7 +424,7 @@ test("mobile column sort shares desktop header state in both directions", async 
   await expect(page.getByTestId("player-pool-mobile").locator("article").first()).toHaveAttribute("data-player-id", "sort-0");
   await page.setViewportSize({ width: 1440, height: 1000 });
   await expect(price).toHaveAttribute("aria-sort", "ascending");
-  await expect(desktop.locator("tbody td[data-sort-value]").first()).toHaveAttribute("data-sort-value", "1");
+  await expect(firstPrice).toHaveAttribute("data-sort-value", "1");
 });
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */

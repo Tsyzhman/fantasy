@@ -15,7 +15,7 @@ Starting-lineup flags refresh every hour at minute 05. Use the published SorareI
 <a name="scope"></a>
 
 ## Scope {#scope}
-Controlling product canon: `specs/common/main.md`. Region - current seasons with fantasy prices and active club rosters. Saved user squads, national teams and the interface do not change. All source tournaments participate in the selection of the club's next match, including cups. The resulting club forecast is applied to the available current fantasy pools of that club.
+Controlling product canon: `specs/common/main.md`. The import covers current seasons with fantasy prices and active club rosters. All source tournaments participate in the selection of the club's next match, including cups. The resulting club forecast is applied to the available current fantasy pools of that club. Player selection displays the club XI marker alongside the published starting chance.
 
 <a name="goal"></a>
 
@@ -65,6 +65,16 @@ Ordinary club-roster refreshes atomically merge their metadata into the current 
 If the scoped calendar has no matching upcoming fixture, the nearest fixture has no published forecast, or its published starter list fails the full-XI check, take the latest finished, non-cancelled club match in the shared FotMob data across competitions. Choose the match before checking lineup completeness. Use the match's actual starters only when there are eleven unique players, one goalkeeper, and every player is active for that club in the target fantasy scope. Missing memberships and conflicting active club assignments block the fallback. A stored SorareInside forecast for a future kickoff and a newer recorded completed match have priority. Revalidate under the same team lock and publish changes through the existing CURRENT_XI queue.
 
 Store fallback provenance as `FOTMOB_LAST_PLAYED` with the completed match ID, kickoff and fingerprint. The fallback is a basis for Squad and is not an upcoming prediction for deadline reports. Repeating the same XI preserves the metadata and queues no update once that match is recorded.
+
+<a name="starting-chances"></a>
+
+### Player starting chances {#starting-chances}
+
+For the selected published fixture, read each player's `confidence_percentage` across the starting, alternate, bench and DNP entries. As in SorareInside's player list, sum distinct positional chances for the same player and cap the total at 100%. Identical copies of a slot count once. Missing, conflicting or out-of-range slot values leave the player's chance unknown. An explicit 0% is a valid forecast.
+
+Store percentages by verified FotMob player ID with the fixture's existing team metadata. Only the eleven primary starters set the XI flags. Optional candidates must resolve uniquely within the active club roster. A percentage-only change is visible on the next read, including reads backed by older player-pool snapshots. Such changes do not enqueue score recalculations. Withdrawn, superseded and expired forecasts and completed-match fallback XIs supply no percentage.
+
+The football player picker and player tables show the club XI marker and the Sorare starting chance together on desktop and touch screens. The forecast identifies the opponent and kickoff. Unknown chances show a dash. A forecast is distinct from an official lineup, a saved fantasy selection and the model's appearance probability.
 
 <a name="data"></a>
 
@@ -116,6 +126,8 @@ Existing probable-lineup sync, starting-xi-from-match, fantasy-player-pool-refre
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-11-19: Publish player-level SorareInside starting chances in football player selection.
 
 - 2026-11-06: WI-097 — record exact reviewed SorareInside birth-date exceptions and fall back to the verified XI from the latest finished match when the nearest forecast is unavailable.
 

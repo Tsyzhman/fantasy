@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2 - 2026-11-20
+
+- Show Sorare's starting percentage for the next match alongside the club's starting XI in the player picker and player tables.
+
 ## 0.4.1 - 2026-11-19
 
 - Link the public sign-in page to a credential-free agent connection guide at `/llms.txt`.

@@ -7,6 +7,7 @@ import { enqueueCurrentXiTeamsSnapshotRefresh } from "./fantasy-player-pool-refr
 import { corroboratedSorareRosterRepair, loadSorareRosterEvidence, restoreSorareRosterMembers, sorareRosterIdentity,
   type SorareRosterRepair, type SorareRosterEvidence } from "./sorareinside-roster";
 import { loadLastPlayedClubMatch, refreshLastPlayedClubXi, type LastPlayedXiReport } from "./sorareinside-last-played";
+import { withdrawSorareStartChances } from "./sorareinside-start-chances";
 
 const PROVIDER="SORAREINSIDE";
 const LEAGUE_COUNTRY: Record<string,string>={"47":"ENG","48":"ENG","53":"FRA","54":"GER","55":"ITA","57":"NED","61":"POR","63":"RUS","71":"TUR","87":"ESP"};
@@ -102,7 +103,9 @@ async function syncLocked(db:PrismaClient,client:SorareInsideClient,apply:boolea
           entry.problems.push(fetchError ?? "Missing lineup");
         }
       }
+      const scope={leagueId:season.leagueId,season:season.season,teamId:team.id};
       if (!selected || !lineup) {
+        if (apply) await withdrawSorareStartChances(db, scope, t.metadata, useLastPlayed ? undefined : selected);
         if (useLastPlayed) entry.lastPlayed = await refreshLastPlayedClubXi(db, {
           leagueId: season.leagueId, leagueName: season.league.name, season: season.season,
           teamId: team.id, teamName: team.name, roster: t.players, metadata: t.metadata,
@@ -110,7 +113,6 @@ async function syncLocked(db:PrismaClient,client:SorareInsideClient,apply:boolea
         });
         continue;
       }
-      const scope={leagueId:season.leagueId,season:season.season,teamId:team.id};
       const teamEvidence=evidenceByTeam.get(id)??[];
       const repairs=new Map<string,SorareRosterRepair>();
       const activeOtherClub=new Set(season.teams.filter(other=>other.team.id!==team.id)
@@ -127,15 +129,38 @@ async function syncLocked(db:PrismaClient,client:SorareInsideClient,apply:boolea
       const resolved=lineup.players.map(p=>({source:p,...resolveSourcePlayer(p,roster,savedId("PLAYER",p.id),team.id)}));
       entry.players=resolved.map(p=>({sourceId:p.source.id,name:p.source.name,playerId:p.player?String(p.player.id):null,reason:p.reason}));
       const targets=resolved.flatMap(p=>p.player?[p.player.id]:[]);
-      if(targets.length!==11 || new Set(targets.map(String)).size!==11) {entry.status="PLAYERS_UNMAPPED";continue;}
+      if(targets.length!==11 || new Set(targets.map(String)).size!==11) {
+        entry.status="PLAYERS_UNMAPPED";
+        if (apply) await withdrawSorareStartChances(db, scope, t.metadata);
+        continue;
+      }
       const pending:Mapping[]=[pendingTeams.get(id)!,...resolved.map(p=>({type:"PLAYER" as const,sourceId:p.source.id,internalId:p.player!.id,matchedBy:p.reason}))];
-      if(pending.some(m=>reverse.has(`${m.type}:${m.internalId}`)&&reverse.get(`${m.type}:${m.internalId}`)!==m.sourceId)) {entry.status="MAPPING_CONFLICT";continue;}
+      if(pending.some(m=>reverse.has(`${m.type}:${m.internalId}`)&&reverse.get(`${m.type}:${m.internalId}`)!==m.sourceId)) {
+        entry.status="MAPPING_CONFLICT";
+        if (apply) await withdrawSorareStartChances(db, scope, t.metadata);
+        continue;
+      }
+      /** @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances */
+      const primaryIds = new Map(resolved.map(p => [p.source.id, p.player!.id]));
+      const primarySources = new Map(resolved.map(p => [p.player!.id, p.source.id]));
+      const percentages = new Map<string, number | null>();
+      for (const { player, percent } of lineup.startChances) {
+        const playerId = primaryIds.get(player.id) ?? resolveSourcePlayer(player, roster, savedId("PLAYER", player.id), team.id).player?.id;
+        if (playerId === undefined) continue;
+        const owner = primarySources.get(playerId) ?? reverse.get(`PLAYER:${playerId}`);
+        if ((owner && owner !== player.id) || activeOtherClub.has(String(playerId))) continue;
+        const key = String(playerId);
+        percentages.set(key, percentages.has(key) ? null : percent);
+      }
+      // Two different optional identities resolving to one FotMob ID are ambiguous.
+      const startPercentByPlayerId = Object.fromEntries([...percentages].filter((pair): pair is [string, number] => pair[1] !== null));
       const selectedRepairs=targets.flatMap(playerId=>{const repair=repairs.get(String(playerId));return repair?[repair]:[];});
       if(selectedRepairs.length) entry.restoredRosterPlayerIds=selectedRepairs.map(repair=>String(repair.evidence.playerId));
       const sourceLineup={source:"SORAREINSIDE" as const,sourceUrl:`https://sorareinside.com/lineup?lineupId=${lineup.id}`,sourceTeamCode:selected.team.id,sourceFixtureId:selected.game.id,sourceKickoff:selected.game.kickoff,sourceLineupId:lineup.id,teamName:selected.team.name,opponentName:selected.opponent.name,venue:selected.home?"HOME" as const:"AWAY" as const,formation:lineup.formation,sourceUpdatedText:lineup.updatedAt,players:lineup.players.map(p=>({name:p.name,fullName:p.slug.replaceAll("-"," "),providerCode:p.id,shirtNumber:null}))};
       const current=t.players.filter(p=>p.isStarter).map(p=>p.player.id);
       const changed=current.length!==11 || targets.some(p=>!current.includes(p));
       const plan:ProbableLineupTeamPlan={source:"SORAREINSIDE",sourceUrl:sourceLineup.sourceUrl,leagueId:season.leagueId,leagueName:season.league.name,season:season.season,fetchedAt:now,sourceLineup,teamId:team.id,databaseTeamName:team.name,teamMatchedBy:"PROVIDER_CODE",teamConfidence:1,status:changed?"READY":"UNCHANGED",playerResolutions:[],currentStarterIds:current,targetPlayerIds:targets,startersToSet:targets.filter(p=>!current.includes(p)).length,startersToClear:current.filter(p=>!targets.includes(p)).length,problems:[]};
+      plan.startPercentByPlayerId = startPercentByPlayerId;
       entry.status=plan.status;
       if(apply) try {
         const outcome=await applyProbableLineupTeamPlan(db,plan,new Date(),(change,tx)=>enqueueCurrentXiTeamsSnapshotRefresh(tx,change),async tx=> {
@@ -143,7 +168,10 @@ async function syncLocked(db:PrismaClient,client:SorareInsideClient,apply:boolea
         },async tx=>restoreSorareRosterMembers(tx,scope,selectedRepairs));
         entry.status=outcome.status;
         for(const m of pending) reverse.set(`${m.type}:${m.internalId}`,m.sourceId);
-      } catch(error) {entry.status="APPLY_ERROR";entry.problems.push(safeError(error));}
+      } catch(error) {
+        entry.status="APPLY_ERROR";entry.problems.push(safeError(error));
+        await withdrawSorareStartChances(db, scope, t.metadata, selected);
+      }
     }
   }
   for (const team of report.teams) {

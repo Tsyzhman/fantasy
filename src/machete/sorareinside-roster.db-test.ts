@@ -8,10 +8,54 @@ import { enqueueCurrentXiTeamsSnapshotRefresh } from './fantasy-player-pool-refr
 import { loadSorareRosterEvidence, restoreSorareRosterMembers, type SorareRosterRepair } from './sorareinside-roster';
 import { CoreSeasonRosterRepository } from '../core_data/repositories';
 import { loadLastPlayedClubMatch, refreshLastPlayedClubXi } from './sorareinside-last-played';
+import { loadSorareStartChances, readSorareStartChances, withdrawSorareStartChances } from './sorareinside-start-chances';
 
 const db = new PrismaClient();
 const skip = !(process.env.CI === 'true' && process.env.DATABASE_URL?.includes('127.0.0.1:55439/fantasy_scout_test_ci'));
 after(() => db.$disconnect());
+
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances */
+test('PostgreSQL: odds-only revisions, explicit zero and withdrawal are visible without changing flags or queuing a rebuild', { skip }, async () => {
+  const f = await fixture();
+  try {
+    await db.teamPlayerSeason.updateMany({ where: f.scope, data: { active: true } });
+    const bench = String(f.ids[11]);
+    const starter = String(f.ids[0]);
+    const key = `${f.scope.leagueId}:${f.scope.season}:${f.scope.teamId}:`;
+    const apply = () => applyProbableLineupTeamPlan(db, f.plan, new Date(), (change, tx) => enqueueCurrentXiTeamsSnapshotRefresh(tx, change));
+    const read = () => loadSorareStartChances(db, [f.scope, f.scope]);
+    f.plan.startPercentByPlayerId = { [starter]: 80, [bench]: 0, "1": 30 };
+    assert.equal((await apply()).status, 'APPLIED');
+    const team = () => db.leagueSeasonTeam.findUniqueOrThrow({where: {leagueId_season_teamId: f.scope}});
+    const before = await team();
+    assert.equal((await read()).get(key + bench)?.percent, 0);
+    f.plan.startPercentByPlayerId = { [starter]: 65, [bench]: 35 };
+    assert.equal((await apply()).status, 'UNCHANGED');
+    assert.equal((await apply()).status, 'UNCHANGED');
+    const current = await team();
+    const chances = await read();
+    assert.equal(chances.size, 2);
+    assert.equal(chances.get(key + starter)?.percent, 65);
+    assert.equal(chances.get(key + starter)?.clubStarter, true);
+    assert.equal(chances.get(key + bench)?.clubStarter, false);
+    assert.equal(chances.get(key + bench)?.opponent, f.plan.sourceLineup.opponentName);
+    assert.deepEqual(current.startingXiChangedAt, before.startingXiChangedAt);
+    assert.equal(await db.fantasyPlayerPoolRefreshRequest.count({where: f.scope}), 1);
+    assert.equal(await db.teamPlayerSeason.count({where: {...f.scope, playerId: f.ids[11], isStarter: true}}), 0);
+    const lineup = (current.metadata as Record<string, unknown>).probableLineup as Record<string, unknown>;
+    assert.equal(readSorareStartChances(lineup, new Date(f.plan.sourceLineup.sourceKickoff!)).size, 0);
+    assert.equal(readSorareStartChances({...lineup, source: 'FOTMOB_LAST_PLAYED'}).size, 0);
+    await withdrawSorareStartChances(db, f.scope, before.metadata);
+    assert.equal((await read()).size, 2);
+    await db.teamPlayerSeason.updateMany({where: {...f.scope, playerId: f.ids[11]}, data: {isStarter: true}});
+    assert.equal((await read()).get(key + bench)?.clubStarter, true);
+    await db.teamPlayerSeason.updateMany({where: {...f.scope, playerId: f.ids[11]}, data: {active: false, isStarter: false}});
+    assert.equal((await read()).has(key + bench), false);
+    await withdrawSorareStartChances(db, f.scope, current.metadata);
+    assert.equal((await read()).size, 0);
+    assert.equal(await db.teamPlayerSeason.count({where: {...f.scope, isStarter: true}}), 11);
+  } finally { await f.cleanup(); }
+});
 
 async function fixture() {
   const base = BigInt(randomInt(10000000, 90000000)) * 100n;

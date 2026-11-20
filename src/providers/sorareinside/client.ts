@@ -31,7 +31,8 @@ export type SourceTeamScope = (candidate: Partial<SourceTeam>) => boolean;
 export type SourceGame = { id: string; kickoff: string; status: string; home: SourceTeam; away: SourceTeam; homeLineup: string | null; awayLineup: string | null };
 export type NextTeamGame = { team: SourceTeam; opponent: SourceTeam; game: SourceGame; lineupId: string | null; home: boolean };
 export type SourcePlayer = { id: string; name: string; slug: string; birthDate: string | null; position: string; index: number };
-export type SourceLineup = { id: string; gameId: string; teamId: string; updatedAt: string; formation: string; players: SourcePlayer[] };
+export type SourceStartChance = { player: SourcePlayer; percent: number };
+export type SourceLineup = { id: string; gameId: string; teamId: string; updatedAt: string; formation: string; players: SourcePlayer[]; startChances: SourceStartChance[] };
 
 // Inspect only applicability here. Required fixture identities are validated
 // below; unrelated payloads must not become prerequisites for our club import.
@@ -105,21 +106,66 @@ export function nearestTeamGames(games: SourceGame[], now: Date, inScope?: Sourc
 }
 
 export class IncompleteSorareInsideLineupError extends Error {
-  constructor() {
-    super("SorareInside: expected 11 unique starters with one goalkeeper first");
+  constructor(message = "SorareInside: expected 11 unique starters with one goalkeeper first") {
+    super(message);
   }
+}
+
+function parsePlayerSlot(input: unknown, minimumIndex: number, maximumIndex: number) {
+  const p = object(input);
+  const index = p.lineup_position_index;
+  if (typeof index !== "number" || !Number.isInteger(index) || index < minimumIndex || index > maximumIndex) {
+    throw new Error("SorareInside: invalid lineup position");
+  }
+  const player: SourcePlayer = {
+    id: sourceId(p.id), name: string(p.display_name), slug: string(p.slug),
+    birthDate: p.birth_date == null ? null : date(p.birth_date).slice(0, 10), position: string(p.position), index
+  };
+  const value = p.confidence_percentage;
+  const percent = typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100 ? value : null;
+  return { player, percent };
+}
+
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#starting-chances */
+function lineupStartChances(starters: ReturnType<typeof parsePlayerSlot>[], groups: Record<string, unknown>): SourceStartChance[] {
+  const byPlayer = new Map<string, { player: SourcePlayer; slots: Map<number, number | null> }>();
+  function add({ player, percent }: ReturnType<typeof parsePlayerSlot>) {
+    const entry = byPlayer.get(player.id) ?? { player, slots: new Map<number, number | null>() };
+    const previous = entry.slots.get(player.index);
+    entry.slots.set(player.index, previous === undefined || previous === percent ? percent : null);
+    byPlayer.set(player.id, entry);
+  }
+  starters.forEach(add);
+  for (const group of ["alternate_players", "bench_players", "dnp_players"] as const) {
+    const rows = groups[group];
+    if (!Array.isArray(rows)) continue;
+    const alternate = group === "alternate_players";
+    for (const row of alternate ? rows.flat() : rows) {
+      if (!row) continue;
+      // Optional entries never disqualify a complete primary XI.
+      try { add(parsePlayerSlot(row, alternate ? 0 : -1, alternate ? 10 : -1)); } catch { continue; }
+    }
+  }
+  return [...byPlayer.values()].flatMap(({ player, slots }) => {
+    let total = 0;
+    for (const percent of slots.values()) {
+      if (percent === null) return [];
+      total += percent;
+    }
+    return [{ player, percent: Math.min(100, total) }];
+  });
 }
 
 export function parseLineup(input: unknown, selected: NextTeamGame): SourceLineup {
   const l = object(input);
-  if (sourceId(l.id) !== selected.lineupId || sourceId(l.game_id) !== selected.game.id || sourceId(object(l.team).id) !== selected.team.id || l.is_published !== true) throw new Error("SorareInside: lineup does not match selected fixture/team or is unpublished");
-  const players = list(object(l.lineup_players).starting_players).map(value => {
-    const p = object(value);
-    if (!Number.isInteger(p.lineup_position_index) || Number(p.lineup_position_index) < 0 || Number(p.lineup_position_index) > 10) throw new Error("SorareInside: invalid lineup position");
-    return { id: sourceId(p.id), name: string(p.display_name), slug: string(p.slug), birthDate: p.birth_date == null ? null : date(p.birth_date).slice(0,10), position: string(p.position), index: Number(p.lineup_position_index) };
-  }).sort((a,b) => a.index-b.index);
+  if (sourceId(l.id) !== selected.lineupId || sourceId(l.game_id) !== selected.game.id || sourceId(object(l.team).id) !== selected.team.id) throw new Error("SorareInside: lineup does not match selected fixture/team");
+  if (l.is_published === false) throw new IncompleteSorareInsideLineupError("SorareInside: lineup is unpublished");
+  if (l.is_published !== true) throw new Error("SorareInside: missing publication status");
+  const groups = object(l.lineup_players);
+  const starters = list(groups.starting_players).map(value => parsePlayerSlot(value, 0, 10));
+  const players = starters.map(slot => slot.player).sort((a,b) => a.index-b.index);
   if (players.length !== 11 || new Set(players.map(p=>p.id)).size !== 11 || new Set(players.map(p=>p.index)).size !== 11 || players.filter(p=>p.position === "Goalkeeper").length !== 1 || players[0].position !== "Goalkeeper") throw new IncompleteSorareInsideLineupError();
-  return { id: sourceId(l.id), gameId: sourceId(l.game_id), teamId: selected.team.id, updatedAt: date(l.updated_at), formation: string(l.formation), players };
+  return { id: sourceId(l.id), gameId: sourceId(l.game_id), teamId: selected.team.id, updatedAt: date(l.updated_at), formation: string(l.formation), players, startChances: lineupStartChances(starters, groups) };
 }
 
 /** Bounded HTTP session, no response bodies or account data in errors/logs. */
