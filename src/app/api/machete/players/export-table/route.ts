@@ -1,8 +1,10 @@
 import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import type { CsvColumn } from "@/lib/csv";
 import { readJsonObject } from "@/lib/request-json";
 import { tableExportResponse } from "@/lib/table-export";
+import { resolveStoredPlayerExportNames } from "@/machete/player-table-export-names";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +14,7 @@ type ExportRow = Record<string, ExportCell>;
 type ExportColumn = { key: string; header: string };
 const requiredKeys = ["player"];
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export const POST = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
@@ -20,10 +23,11 @@ export const POST = withApiHandler(async (request: Request) => {
   if (!columns) return jsonError("BAD_REQUEST", "Invalid export columns.", 400);
   if (!Array.isArray(body.rows) || body.rows.length > 5_000) return jsonError("BAD_REQUEST", "rows must contain at most 5000 players.", 400);
   const rows = body.rows.map((row) => parseRow(row, columns));
-  if (rows.some((row) => row === null)) return jsonError("BAD_REQUEST", "Invalid typed export row.", 400);
+  if (!rows.every((row) => row !== null)) return jsonError("BAD_REQUEST", "Invalid typed export row.", 400);
+  await resolveStoredPlayerExportNames(prisma, rows);
   const language = body.language === "en" ? "en" : "ru";
   const csvColumns: CsvColumn<ExportRow>[] = columns.map((column) => ({ header: column.header, value: (row) => row[column.key] }));
-  return tableExportResponse({ rows: rows as ExportRow[], columns: csvColumns, format: "xlsx", filename: "machete-players", sheetName: language === "en" ? "Players" : "Игроки" });
+  return tableExportResponse({ rows, columns: csvColumns, format: "xlsx", filename: "machete-players", sheetName: language === "en" ? "Players" : "Игроки" });
 });
 
 function parseColumns(value: unknown): ExportColumn[] | null {

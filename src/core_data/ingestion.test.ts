@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { FotMobFixtureDetailsUnavailableError, type FotMobClient } from "./fotmob_client";
 import { run_next_ingestion_job } from "./ingestion-jobs";
 import { discover_matches_for_scope, fixtureRequiresDetailedPayload, ingest_match, ingest_scope } from "./ingestion";
 import { createIngestionScope } from "./ingestion-scope";
+import { parse_players } from "./parsers";
 import { CorePlayerRepository, CoreStatsRepository } from "./repositories";
 import { ScopeTooBroadError } from "./scope-validation";
 
@@ -776,6 +777,36 @@ test("player placeholder creation ignores invalid ids and deduplicates reference
   const createMany = calls[0] as { data?: Array<{ id: bigint; name: string }> };
   assert.deepEqual(createMany.data?.map((player) => player.id), [7001n, 7002n]);
   assert.ok(createMany.data?.every((player) => player.name.startsWith("FotMob player ")));
+});
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+test("an ID-only match observation preserves an existing player name", async () => {
+  const writes: Prisma.CorePlayerUpsertArgs[] = [];
+  const prisma = {
+    corePlayer: {
+      async upsert(input: Prisma.CorePlayerUpsertArgs) {
+        writes.push(input);
+        return {};
+      }
+    }
+  } as unknown as PrismaClient;
+  const repository = new CorePlayerRepository(prisma);
+  const [player] = parse_players({ playerStats: [{ playerId: "1201406", minutes: 72 }] });
+  assert.ok(player);
+  assert.equal(player.name, "FotMob player 1201406");
+
+  await repository.upsert(player);
+  assert.equal(writes[0].create.name, player.name);
+  assert.equal(writes[0].update.name, undefined);
+
+  await repository.upsert({ ...player, name: "Pablo Solari" });
+  assert.equal(writes[1].update.name, "Pablo Solari");
+
+  const parsed = parse_players({ playerStats: [
+    { playerId: "1201406", name: "Pablo Solari" },
+    { playerId: "1201406", name: "FotMob player 1201406" }
+  ] });
+  assert.deepEqual(parsed.map((row) => row.name), ["Pablo Solari"]);
 });
 
 test("stats repositories skip invalid required ids and null invalid optional relation ids", async () => {

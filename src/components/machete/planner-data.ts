@@ -1,6 +1,7 @@
 "use client";
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
 import { type UiLanguage } from "./planner-explanations";
+import { playerPoolExportName } from "@/lib/players/display-name";
 import { type PlayerPoolOptionalColumn, playerPoolOptionalColumns, customPlayerPoolColumnValue } from "./PlayerPool";
 import type { GlobalStrategyAnalysis } from "@/machete/global-strategy-planner";
 import { localizedText } from "@/components/localized-option";
@@ -16,6 +17,7 @@ export async function recordGlobalRecommendation(squadId: string | null, analysi
   } catch { console.warn("Global strategy recommendation snapshot request failed."); }
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export async function downloadPlayerPoolXlsx(
   players: FantasyPlannerPlayer[],
   horizon: number,
@@ -51,7 +53,7 @@ export async function downloadPlayerPoolXlsx(
       horizon,
       columns,
       rows: players.map((player) => ({
-        player: provider === "FPL" ? player.name : player.fotmobName ?? player.name,
+        player: playerPoolExportName(player, provider),
         team: player.teamName,
         position: player.positionGroup,
         price: player.price,

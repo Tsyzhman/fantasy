@@ -1,7 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { compactPlayerDisplayName } from "./display-name";
+import { compactPlayerDisplayName, playerPoolExportName } from "./display-name";
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+test("Excel pool and starting XI names preserve provider preferences and skip stale ID-only labels", () => {
+  const player = { name: "Пабло Солари", fotmobName: "Pablo Solari" };
+  assert.equal(playerPoolExportName(player), "Pablo Solari");
+  assert.equal(playerPoolExportName(player, "FPL"), "Пабло Солари");
+  assert.equal(playerPoolExportName({ ...player, fotmobName: " FotMob player 1201406 " }), "Пабло Солари");
+  assert.equal(playerPoolExportName({ ...player, name: "FotMob player 1201406" }, "FPL"), "Pablo Solari");
+  assert.equal(playerPoolExportName({ name: "FotMob player 1201406" }), "");
+});
 
 test("player display names use first initial and surname", () => {
   assert.equal(compactPlayerDisplayName("Bryan Mbeumo"), "B. Mbeumo");

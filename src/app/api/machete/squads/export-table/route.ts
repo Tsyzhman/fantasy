@@ -1,10 +1,12 @@
 import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { FPL_PROVIDER } from "@/lib/providers/fpl";
 import type { CsvColumn } from "@/lib/csv";
 import { readJsonObject } from "@/lib/request-json";
 import { tableExportResponse } from "@/lib/table-export";
 import { isSquadTableColumnsInput } from "@/machete/squad-table-columns";
+import { resolveStoredPlayerExportNames } from "@/machete/player-table-export-names";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +17,7 @@ type PlayerTableExportColumn = { key: string; header: string };
 
 const fixedColumnKeys = ["player", "team", "position", "price"] as const;
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export const POST = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
@@ -29,10 +32,11 @@ export const POST = withApiHandler(async (request: Request) => {
     return jsonError("BAD_REQUEST", "columns must contain the fixed columns followed by valid selected player-table columns.", 400);
   }
   const rows = body.rows.map((row) => parseRow(row, requestedColumns));
-  if (rows.some((row) => row === null)) {
+  if (!rows.every((row) => row !== null)) {
     return jsonError("BAD_REQUEST", "Every export row must contain valid typed values for every selected column.", 400);
   }
 
+  await resolveStoredPlayerExportNames(prisma, rows);
   const language = body.language === "en" ? "en" : "ru";
   const provider = normalizeProvider(body.provider);
   const leagueId = boundedText(body.leagueId, 32) || "league";
@@ -43,7 +47,7 @@ export const POST = withApiHandler(async (request: Request) => {
   }));
 
   return tableExportResponse({
-    rows: rows as PlayerTableExportRow[],
+    rows,
     columns,
     format: "xlsx",
     filename: `players-${provider.toLowerCase()}-${leagueId}-${season}`,

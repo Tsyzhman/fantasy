@@ -1,5 +1,21 @@
 const surnameParticles = new Set(["al", "bin", "da", "das", "de", "del", "della", "den", "der", "di", "dos", "du", "la", "le", "van", "von"]);
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+export function firstKnownPlayerName(...candidates: Array<string | null | undefined>): string {
+  for (const candidate of candidates) {
+    const name = candidate?.trim();
+    if (name && !/^FotMob player\s/i.test(name)) return name;
+  }
+  return "";
+}
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+export function playerPoolExportName(player: { name: string; fotmobName?: string | null }, provider = "SPORTS_RU") {
+  return provider === "FPL"
+    ? firstKnownPlayerName(player.name, player.fotmobName)
+    : firstKnownPlayerName(player.fotmobName, player.name);
+}
+
 export function compactPlayerDisplayName(name: string) {
   const trimmed = name.trim();
   const parts = trimmed.split(/\s+/).filter(Boolean);

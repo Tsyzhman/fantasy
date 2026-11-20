@@ -1,3 +1,4 @@
+import { firstKnownPlayerName } from "@/lib/players/display-name";
 import { extract_match_shots } from "@/providers/fotmob/shots";
 import { extract_team_match_stats } from "@/providers/fotmob/team-match-stats";
 
@@ -630,6 +631,7 @@ function collectNestedPlayers(value: unknown, players: Map<string, PlayerData>, 
   }
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 function addPlayer(
   players: Map<string, PlayerData>,
   input: { id: string | number | bigint | null | undefined; name: string | null | undefined; country: string | null | undefined; birthDate: Date | null | undefined }
@@ -640,7 +642,7 @@ function addPlayer(
   const existing = players.get(key);
   players.set(key, {
     id,
-    name: input.name ?? existing?.name ?? `FotMob player ${input.id ?? id}`,
+    name: firstKnownPlayerName(input.name, existing?.name) || `FotMob player ${input.id ?? id}`,
     country: input.country ?? existing?.country ?? null,
     birthDate: input.birthDate ?? existing?.birthDate ?? null,
     rawRef: input.id === null || input.id === undefined ? existing?.rawRef ?? String(id) : String(input.id)

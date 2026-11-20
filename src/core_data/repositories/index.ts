@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
+import { firstKnownPlayerName } from "@/lib/players/display-name";
 
 import {
   FOTMOB_SOURCE,
@@ -118,12 +119,10 @@ export class CorePlayerRepository {
 
   async upsert(player: PlayerData) {
     const data = playerData(player);
-    const { birthDate, ...observedWithoutBirthDate } = data;
     return this.prisma.corePlayer.upsert({
       where: { id: player.id },
-      // Rosters and match payloads omit birthdays. Absence is not a correction
-      // of an identity fact already verified from the player's own profile.
-      update: birthDate ? data : observedWithoutBirthDate,
+      // ID-only observations can create a foreign-key target but carry no name correction.
+      update: { ...data, name: firstKnownPlayerName(data.name) || undefined, birthDate: data.birthDate ?? undefined },
       create: {
         id: player.id,
         ...data

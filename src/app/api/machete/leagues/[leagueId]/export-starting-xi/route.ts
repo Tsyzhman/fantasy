@@ -1,6 +1,7 @@
 import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { playerPoolExportName } from "@/lib/players/display-name";
 import { tableExportResponse } from "@/lib/table-export";
 import { buildLeagueStartingXiTable } from "@/machete/league-starting-xi-export";
 import { loadSharedLeagueSeason } from "@/machete/shared_read_model";
@@ -9,6 +10,7 @@ import { loadCachedFantasySquadPlayerPool } from "@/machete/squad_planner";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export const GET = withApiHandler(async (request: Request, { params }: { params: Promise<{ leagueId: string }> }) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
@@ -51,7 +53,7 @@ export const GET = withApiHandler(async (request: Request, { params }: { params:
       id: team.teamId,
       name: team.team.name,
       players: (playersByTeamId.get(String(team.teamId)) ?? []).map((player) => ({
-        name: player.fotmobName || player.name,
+        name: playerPoolExportName(player),
         position: player.positionGroup,
         shirtNumber: null,
         isStarter: player.isStarter,

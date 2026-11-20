@@ -3,6 +3,7 @@ import { jsonError, requiredSearchParam, withApiHandler } from "@/lib/api-handle
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isFantasySquadLeague } from "@/lib/leagues/display";
+import { firstKnownPlayerName } from "@/lib/players/display-name";
 import { FPL_PROVIDER } from "@/lib/providers/fpl";
 import { parseTableExportFormat, tableExportResponse } from "@/lib/table-export";
 import { loadSharedLeagueSeason } from "@/machete/shared_read_model";
@@ -70,7 +71,10 @@ function normalizeProvider(value: string | null) {
   return value?.trim().toUpperCase() === FPL_PROVIDER ? FPL_PROVIDER : "SPORTS_RU";
 }
 
-/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#projection-precision */
+/**
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#projection-precision
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity
+ */
 function squadExportRows(selections: FantasySquadSelection[], players: FantasyPlannerPlayer[], roundCount: number): SquadExportRow[] {
   const playersById = new Map(players.map((player) => [player.playerId, player]));
 
@@ -83,7 +87,7 @@ function squadExportRows(selections: FantasySquadSelection[], players: FantasyPl
       return {
         slot: selection.slotIndex + 1 || index + 1,
         playerId: selection.playerId,
-        playerName: player?.name ?? `Player ${selection.playerId}`,
+        playerName: firstKnownPlayerName(player?.name, player?.fotmobName),
         teamName: player?.teamName ?? "",
         position: player?.position ?? null,
         role: squadRole(selection),

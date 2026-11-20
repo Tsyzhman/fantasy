@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.3 - 2026-11-20
+
+- Preserve known football player names during ID-only FotMob imports and use verified alternative names in Excel player tables, squads and starting lineups.
+
 ## 0.4.2 - 2026-11-20
 
 - Show Sorare's starting percentage for the next match alongside the club's starting XI in the player picker and player tables.

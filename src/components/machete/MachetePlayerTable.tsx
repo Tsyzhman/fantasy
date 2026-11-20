@@ -17,7 +17,7 @@ import { FdrRow } from "@/components/ui/fdr-pill";
 import { compactPriceHeaderThreshold, responsivePriceHeaderLabel } from "@/components/machete/responsive-price-label";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
-import { compactPlayerDisplayName } from "@/lib/players/display-name";
+import { compactPlayerDisplayName, firstKnownPlayerName } from "@/lib/players/display-name";
 import { compareFantasyPositions, isFantasyPositionSortKey } from "@/lib/players/fantasy-position-order";
 import { compactTeamDisplayName } from "@/lib/teams/display";
 import {
@@ -772,7 +772,10 @@ function PlayerNameCell({ player }: { player: MachetePlayerRow }) {
   return <div className="flex min-w-0 items-center gap-1.5"><PlayerComparePickButton player={comparePlayer} /><PlayerWatchlistButton source="machete" player={macheteWatchlistPlayer(player)} /><PlayerCompareDraggable player={comparePlayer} className="min-w-0 flex-1"><PlayerHoverCard player={data} trigger={<span className="block min-w-0 cursor-help"><span className="block truncate border-b border-dashed border-slate-300" title={machetePlayerIdentityTitle(player)}>{compactPlayerDisplayName(displayName)}</span>{player.expectedMinutes != null ? <span className="mt-0.5 block truncate text-[10px] font-normal text-slate-500">{Math.round(player.expectedMinutes)} <I18nText en="min" ru="мин" />{player.forecastConfidence != null ? ` · ${Math.round(player.forecastConfidence * 100)}%` : ""}</span> : null}</span>} /></PlayerCompareDraggable></div>;
 }
 
-export function machetePlayerDisplayName(player: Pick<MachetePlayerRow, "name" | "sportsName">) { return player.sportsName?.trim() || player.name; }
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+export function machetePlayerDisplayName(player: Pick<MachetePlayerRow, "name" | "sportsName">) {
+  return firstKnownPlayerName(player.sportsName, player.name);
+}
 export function machetePlayerTeamDisplayName(player: Pick<MachetePlayerRow, "teamName" | "teamShortName">) { return compactTeamDisplayName({ name: player.teamName, shortName: player.teamShortName }); }
 function machetePlayerIdentityTitle(player: Pick<MachetePlayerRow, "name" | "sportsName">) { const displayName = machetePlayerDisplayName(player); return displayName === player.name ? player.name : `Sports.ru: ${displayName} · FotMob: ${player.name}`; }
 function macheteWatchlistPlayer(player: MachetePlayerRow) { return { id: player.id, name: machetePlayerDisplayName(player), position: player.position, teamName: player.teamName, teamShortName: player.teamShortName }; }
