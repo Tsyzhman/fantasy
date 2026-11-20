@@ -119,10 +119,16 @@ export class CorePlayerRepository {
 
   async upsert(player: PlayerData) {
     const data = playerData(player);
+    const { name, birthDate, ...identity } = data;
+    const knownName = firstKnownPlayerName(name);
     return this.prisma.corePlayer.upsert({
       where: { id: player.id },
       // ID-only observations can create a foreign-key target but carry no name correction.
-      update: { ...data, name: firstKnownPlayerName(data.name) || undefined, birthDate: data.birthDate ?? undefined },
+      update: {
+        ...identity,
+        ...(knownName ? { name: knownName } : {}),
+        ...(birthDate ? { birthDate } : {})
+      },
       create: {
         id: player.id,
         ...data
