@@ -4,6 +4,12 @@ A full-stack sports analytics workspace for fantasy squad decisions. It combines
 provider ingestion, player matching, projections, budget and roster constraints,
 spreadsheet imports, and shot-map analysis in one application.
 
+## Connect an AI agent
+
+An agent can read a user's Machete squads, preview transfers, edit workflow drafts, and test or run a published workflow through MCP or HTTP. To connect, ask the user for the **MCP connection URL** from **Profile → Personal agent keys** and have them enter a personal key in the client's secret settings. For a first look at squads, the only permission needed is **Read squads** (`squads:read`). In production, users can open their [Fantasy Scout profile](https://fantasy.tsyzhman.ru/profile).
+
+Choose **Streamable HTTP**, send the key as a Bearer token, then call `tools/list` to see what this key can do. The [agent connection guide](docs/reference/API_ROUTES.md#connecting-an-agent) includes the exact request to make of a user, permission examples, and an HTTP option.
+
 ## What the application does
 
 | Area | Main workflow |

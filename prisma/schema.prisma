@@ -645,7 +645,11 @@ model User {
   isActive                      Boolean                        @default(true)
   lastLoginAt                   DateTime?
   sessions                      UserSession[]
+  agentKeys                     AgentKey[]
   fantasySquads                 UserFantasySquad[]
+  agentSquadSaves               AgentSquadSave[]
+  agentWorkflows                AgentWorkflow[]
+  agentWorkflowRuns             AgentWorkflowRun[]
   betaTestRuns                  BetaTestRun[]
   savedViews                    UserSavedView[]
   watchlistPlayers              UserWatchlistPlayer[]
@@ -719,6 +723,38 @@ model UserSession {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+/// @spec spec://modules/agents/FEAT-016-personal-agent-api#keys
+model AgentKey {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String    @db.VarChar(80)
+  secretHash String    @unique @db.Char(64)
+  scopes     String[]
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  lastUsedAt DateTime?
+
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events AgentCallAudit[]
+
+  @@index([userId, createdAt, id])
+}
+
+/// @spec spec://modules/agents/FEAT-016-personal-agent-api#authorization
+model AgentCallAudit {
+  id        String   @id @default(cuid())
+  keyId     String
+  transport String   @db.VarChar(8)
+  operation String   @db.VarChar(128)
+  outcome   String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  key AgentKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+
+  @@index([keyId, createdAt])
 }
 
 /// @spec spec://common/FEAT-009-session-authentication#bootstrap
@@ -1640,6 +1676,73 @@ model FantasyPlayerPrice {
   @@index([teamId, leagueId, season])
   @@index([leagueId, season, providerBirthDate], map: "fantasy_player_prices_provider_birth_date_idx")
   @@map("fantasy_player_prices")
+}
+
+/// @spec spec://modules/agents/FEAT-017-squad-workflows#drafts
+model AgentWorkflow {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  currentVersion Int      @default(1) @map("current_version")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user     User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions AgentWorkflowVersion[]
+
+  @@index([userId, id])
+  @@map("agent_workflows")
+}
+
+/// @spec spec://modules/agents/FEAT-017-squad-workflows#drafts
+model AgentWorkflowVersion {
+  workflowId  String    @map("workflow_id")
+  version     Int
+  name        String
+  squadId     String    @map("squad_id")
+  steps       Json
+  createdAt   DateTime  @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  workflow AgentWorkflow      @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  runs     AgentWorkflowRun[]
+
+  @@id([workflowId, version])
+  @@map("agent_workflow_versions")
+}
+
+/// @spec spec://modules/agents/FEAT-017-squad-workflows#runs
+model AgentWorkflowRun {
+  id                   String   @id @default(cuid())
+  userId               String   @map("user_id")
+  workflowId           String   @map("workflow_id")
+  version              Int
+  idempotencyKey       String   @map("idempotency_key")
+  expectedSquadVersion String   @map("expected_squad_version")
+  result               Json
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  definition AgentWorkflowVersion @relation(fields: [workflowId, version], references: [workflowId, version], onDelete: Cascade)
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, workflowId, id])
+  @@map("agent_workflow_runs")
+}
+
+/// @spec spec://modules/agents/FEAT-017-squad-workflows#squads
+model AgentSquadSave {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  squadId        String   @map("squad_id")
+  idempotencyKey String   @map("idempotency_key")
+  requestHash    String   @map("request_hash")
+  result         Json
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, idempotencyKey])
+  @@map("agent_squad_saves")
 }
 
 model UserFantasySquad {

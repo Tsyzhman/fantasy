@@ -12,6 +12,43 @@ The app uses Next.js route handlers under `src/app/api`.
 | Franchises | `/api/franchises` | [Franchise analytics](../../specs/modules/franchises/FEAT-005-franchise-analytics.md) |
 | Telegram | `/api/profile/telegram`, `/api/telegram/webhook` | [Linking and subscriptions](../../specs/modules/telegram/FEAT-007-deadline-assistant.md) |
 | Browser extension | `/api/browser-extension/sports-squad` | [Sports.ru squad transfer](../../extensions/sports-squad-transfer/README.md) |
+| Personal agent keys and tool discovery | `/api/profile/agent-keys`, `/api/mcp`, `/api/v1/agent/tools` | [Personal access](../../specs/modules/agents/FEAT-016-personal-agent-api.md) |
+| Squad previews and personal workflow runs | `/api/v1/agent/tools/<name>` and MCP tool calls | [Drafts, publication and runs](../../specs/modules/agents/FEAT-017-squad-workflows.md) |
+
+## Connecting an agent
+
+An agent can study the repository without credentials. To use a live account, check whether the user already configured a connection for the intended instance. If access is missing, ask in the user's language. A first request to view their squads could read as follows.
+
+> Please open your Fantasy Scout profile and find **Personal agent keys**. Send me the **MCP connection URL** shown there. Click **New key**, choose **Read squads** and an expiration date, then click **Create key**. Enter the key in your agent client's secret settings and tell me when it is ready. You can share the URL in this conversation. Keep the key private.
+
+An agent given only the site address can follow **Connect an AI agent (MCP / API)** on the public sign-in page or read `/llms.txt` on that instance. [Public connection instructions](https://fantasy.tsyzhman.ru/llms.txt)
+
+In the Russian interface the path is **Профиль → Персональные ключи агентов → Новый ключ**. The address is labelled **URL подключения MCP**, the permission **Читать составы**, and the final button **Создать ключ**. The secret appears once. Use a separate named key for each agent so the user can revoke its access independently.
+
+Production uses `https://fantasy.tsyzhman.ru/api/mcp`. For another installation, use the full URL from that instance's profile. Set the client's transport to **Streamable HTTP** and its `Authorization` header to `Bearer <key>`, using its secret input or a local environment variable such as `FANTASY_AGENT_KEY`. An MCP client initializes the connection and then calls `tools/list`. Each tool advertises its input schema. A first read can call `squads_list` with `{"limit":1}`; an empty list is valid. [Open the production profile](https://fantasy.tsyzhman.ru/profile)
+
+If the client offers a **Bearer token** field, the user enters the raw key there. If it offers custom headers, use the header name `Authorization` and the value `Bearer <key>` through its secret setting. If the user cannot find those fields, ask which client they use. A client that only offers an OAuth sign-in can use the HTTP API below if it can make authenticated HTTP requests.
+
+| User's task | Permissions to request |
+|---|---|
+| Inspect squads, propose transfers or preview changes | `squads:read` |
+| Save explicit transfers | `squads:read` and `squads:write` |
+| Open, create and edit drafts, then simulate their effect | `workflows:read`, `workflows:write`, `workflows:test` and `squads:read` |
+| Publish or execute a version | Add `workflows:publish` for publication or `workflows:run` and `squads:read` for execution. A step that saves a squad also needs `squads:write`. |
+
+A response of `401` means the account or key could not be authenticated. Ask the user to check the instance, secret, expiry, and revocation status. A tool omitted from the catalog or a `FORBIDDEN` error may mean the key lacks a required permission. Explain which permission the requested action needs before asking for a replacement key.
+
+For clients with HTTP access, use the same Bearer header. Take the origin from the supplied MCP URL (for production, `FANTASY_ORIGIN=https://fantasy.tsyzhman.ru`). These requests discover tools and find the user's saved squads using the locally configured key.
+
+```sh
+curl -H "Authorization: Bearer $FANTASY_AGENT_KEY" "$FANTASY_ORIGIN/api/v1/agent/tools"
+curl -H "Authorization: Bearer $FANTASY_AGENT_KEY" -H "Content-Type: application/json" \
+  -d '{}' "$FANTASY_ORIGIN/api/v1/agent/tools/squads_list"
+```
+
+To apply explicit transfers, read `squads_get`, then call `squads_preview` with the chosen replacements. Send those moves and the returned `squadVersion` to `squads_save` as `moves` and `expectedSquadVersion`, along with a new `idempotencyKey`. Reuse that key and the same arguments when retrying. Direct saving needs `squads:read` and `squads:write`.
+
+For a reusable process, call `workflows_actions` to discover the supported steps. Create a draft with `workflows_create`, edit with `workflows_update`, and inspect its effect with `workflows_test`. Publish the selected version with `workflows_publish`, execute it with `workflows_run`, and look up the returned `runId` with `workflows_get_run`. Testing a save step leaves the live squad intact.
 
 ## Health
 

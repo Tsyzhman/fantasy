@@ -1,0 +1,5 @@
+{
+  "mode": "online",
+  "sqlSha256": "7dfab6dc46cd8508a231f6c88ae06114d3218ecac04f4fc793ffdb1af5a00835",
+  "compatibility": "Adds an empty receipt table and a unique index for replaying direct squad saves. It references existing user IDs and leaves existing squad rows and the previous application version compatible."
+}

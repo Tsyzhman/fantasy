@@ -27,7 +27,10 @@ export function proxy(request: NextRequest) {
     return response;
   };
 
-  if (isPublicPath(pathname)) {
+  // @spec spec://modules/agents/FEAT-016-personal-agent-api#transport
+  // These exact routes authenticate a personal bearer in their handlers.
+  const agentRoute = pathname === "/api/mcp" || /^\/api\/v1\/agent\/tools(?:\/[^/]+)?$/.test(pathname);
+  if (agentRoute || isPublicPath(pathname)) {
     return finish(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 

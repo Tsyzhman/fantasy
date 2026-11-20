@@ -8,6 +8,8 @@ to find work status in the workflow configured for the checkout.
 
 | Document | Responsibility |
 |---|---|
+| [FEAT-016 Personal agent access](modules/agents/FEAT-016-personal-agent-api.md) | Active: personal keys, profile management, authorization and HTTP/MCP operations |
+| [FEAT-017 Personal squad workflows](modules/agents/FEAT-017-squad-workflows.md) | Active: versioned personal workflows, transfer previews and idempotent execution |
 | [FEAT-015-league-strength.md](modules/machete/FEAT-015-league-strength.md) | Active: league-season Massey team strength, xG coverage and played schedule difficulty |
 | [FEAT-014-passing-networks.md](modules/mixerr/FEAT-014-passing-networks.md) | Active: browser-local passing networks with independent starting lineup cutoffs |
 | [PROP-002-editorial-sport-design.md](common/PROP-002-editorial-sport-design.md) | Active: Midnight Scout / Pressbox, shared UI and independent theme/density preferences |

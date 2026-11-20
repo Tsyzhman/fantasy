@@ -1,6 +1,6 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.171",
+  "version": "0.4.2",
   "private": true,
   "engines": {
     "node": ">=24.11.0 <25"
@@ -82,7 +82,9 @@
     "deadline-reports": "tsx scripts/deadline-reports.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "^2.4.0",
     "@prisma/client": "^5.22.0",
+    "ajv": "^8.20.0",
     "brace-expansion": "file:vendor/brace-expansion-compat",
     "clsx": "^2.1.1",
     "exceljs": "^4.4.0",
@@ -97,6 +99,7 @@
     "web-vitals-legacy": "npm:web-vitals@4.2.4"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "^2.4.0",
     "@playwright/test": "^1.61.1",
     "@types/node": "^20.17.6",
     "@types/react": "^18.3.12",

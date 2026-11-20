@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.2 - 2026-11-20
+
+- Show Sorare's starting percentage for the next match alongside the club's starting XI in the player picker and player tables.
+
+## 0.4.1 - 2026-11-19
+
+- Link the public sign-in page to a credential-free agent connection guide at `/llms.txt`.
+
+## 0.4.0 - 2026-11-19
+
+- Add scoped personal agent keys in Profile and a shared catalog of HTTP and MCP tools.
+- Add direct squad saves and personal, versioned workflows with transfer previews, publication and idempotent runs.
+
 ## 0.3.171 - 2026-11-18
 
 - Allow two minutes for the production smoke test that validates XLSX export and the row limit.

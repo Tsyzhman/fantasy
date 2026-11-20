@@ -8,7 +8,7 @@ on:
       scope:
         description: Browser checks to run
         type: choice
-        options: [all, khl-statistics]
+        options: [all, khl-statistics, agent-api]
         default: all
 
 permissions:
@@ -48,6 +48,7 @@ jobs:
         run: npx playwright test --project=auth-setup --reporter=line --output=output/playwright-auth-results
 
       - name: Run authenticated desktop, tablet, and mobile checks
+        if: inputs.scope != 'agent-api'
         env:
           KHL_PRODUCTION_SMOKE: "true"
           PLAYWRIGHT_BASE_URL: https://fantasy.tsyzhman.ru
@@ -58,8 +59,16 @@ jobs:
           if [[ "$SMOKE_SCOPE" == "khl-statistics" ]]; then args+=(--grep "KHL visible statistics"); fi
           npx playwright test --no-deps --project=desktop-chromium --project=tablet-chromium --project=mobile-chromium "${args[@]}"
 
+      # @spec spec://modules/agents/FEAT-016-personal-agent-api#acceptance
+      - name: Verify the agent connection from the QA profile
+        if: inputs.scope == 'agent-api'
+        env:
+          PLAYWRIGHT_BASE_URL: https://fantasy.tsyzhman.ru
+          PLAYWRIGHT_USER_AGENT: fantasy-production-browser-smoke/${{ github.run_id }}
+        run: node scripts/check-agent-connection.mjs
+
       - name: Upload browser evidence
-        if: always()
+        if: always() && inputs.scope != 'agent-api'
         uses: actions/upload-artifact@v7
         with:
           name: production-browser-smoke-${{ github.run_id }}

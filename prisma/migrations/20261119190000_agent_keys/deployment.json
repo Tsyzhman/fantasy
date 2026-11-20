@@ -1,0 +1,5 @@
+{
+  "mode": "online",
+  "sqlSha256": "34b3cb839f64e965b6b5ca26e1bd3cbe7e80e292adbe3a98ae65f902c919cf6e",
+  "compatibility": "Creates empty key and audit tables and their indexes. The foreign key references existing User IDs. The previous runtime can continue using its session tables throughout and after rollback."
+}
