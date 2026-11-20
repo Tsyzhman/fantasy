@@ -1,4 +1,7 @@
-const surnameParticles = new Set(["al", "bin", "da", "das", "de", "del", "della", "den", "der", "di", "dos", "du", "la", "le", "van", "von"]);
+const surnameParticles = new Set([
+  "al", "bin", "da", "das", "de", "del", "della", "den", "der", "di", "dos", "du", "la", "le", "van", "von",
+  "аль", "бин", "да", "дас", "де", "дель", "делла", "ден", "дер", "ди", "дос", "дю", "ла", "ле", "ван", "фон"
+]);
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export function firstKnownPlayerName(...candidates: Array<string | null | undefined>): string {
@@ -10,10 +13,8 @@ export function firstKnownPlayerName(...candidates: Array<string | null | undefi
 }
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
-export function playerPoolExportName(player: { name: string; fotmobName?: string | null }, provider = "SPORTS_RU") {
-  return provider === "FPL"
-    ? firstKnownPlayerName(player.name, player.fotmobName)
-    : firstKnownPlayerName(player.fotmobName, player.name);
+export function playerPoolExportName(player: { name: string; fotmobName?: string | null }) {
+  return firstKnownPlayerName(player.name, player.fotmobName);
 }
 
 export function compactPlayerDisplayName(name: string) {

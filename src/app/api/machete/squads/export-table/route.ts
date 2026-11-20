@@ -6,7 +6,7 @@ import type { CsvColumn } from "@/lib/csv";
 import { readJsonObject } from "@/lib/request-json";
 import { tableExportResponse } from "@/lib/table-export";
 import { isSquadTableColumnsInput } from "@/machete/squad-table-columns";
-import { resolveStoredPlayerExportNames } from "@/machete/player-table-export-names";
+import { resolvePoolExportNames, resolveStoredPlayerExportNames } from "@/machete/player-table-export-names";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,11 +36,15 @@ export const POST = withApiHandler(async (request: Request) => {
     return jsonError("BAD_REQUEST", "Every export row must contain valid typed values for every selected column.", 400);
   }
 
-  await resolveStoredPlayerExportNames(prisma, rows);
   const language = body.language === "en" ? "en" : "ru";
   const provider = normalizeProvider(body.provider);
   const leagueId = boundedText(body.leagueId, 32) || "league";
-  const season = boundedText(body.season, 32).replaceAll("/", "-") || "season";
+  const season = boundedText(body.season, 32).trim();
+  if (/^[1-9]\d{0,17}$/.test(leagueId) && season) {
+    await resolvePoolExportNames(prisma, rows, { provider, leagueId: BigInt(leagueId), season });
+  } else {
+    await resolveStoredPlayerExportNames(prisma, rows, { provider });
+  }
   const columns: CsvColumn<PlayerTableExportRow>[] = requestedColumns.map((column) => ({
     header: column.header,
     value: (row) => row[column.key]
@@ -50,7 +54,7 @@ export const POST = withApiHandler(async (request: Request) => {
     rows,
     columns,
     format: "xlsx",
-    filename: `players-${provider.toLowerCase()}-${leagueId}-${season}`,
+    filename: `players-${provider.toLowerCase()}-${leagueId}-${season.replaceAll("/", "-") || "season"}`,
     sheetName: language === "en" ? "Players" : "Игроки"
   });
 });
@@ -89,6 +93,9 @@ function parseRow(value: unknown, columns: PlayerTableExportColumn[]): PlayerTab
   }
   if (typeof row.player !== "string" || typeof row.team !== "string" || typeof row.position !== "string") return null;
   if (row.price !== null && typeof row.price !== "number") return null;
+  if (typeof source.providerPlayerId === "string" && source.providerPlayerId.length > 0 && source.providerPlayerId.length <= 100) {
+    row.providerPlayerId = source.providerPlayerId;
+  }
   return row;
 }
 

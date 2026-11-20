@@ -203,10 +203,14 @@ explicit observation; a newly created player may still have an unknown birthday.
 
 An ID-only FotMob observation may create a referenced player but preserves an
 existing name. Football exports select a real name from the same player's
-available sources, including when reading an older pool. The Sports.ru pool and
-starting XI prefer the FotMob name; the FPL pool and saved squads prefer the
-provider name. When all names are missing, the name cell stays empty and the
-player remains in the export.
+available sources, including when reading an older pool. Sports.ru pool exports,
+saved squads and club starting lineups use the Sports.ru Fantasy display name
+when available. The full table preserves its spelling, while the XI keeps its
+compact format. FPL uses its own provider names. The pool export resolves a
+season-player ID within the requested provider, league and season. Older
+clients can supply a known name and club or an ID-only label. Ambiguous names
+cannot authorize a substitution. When all names are missing, the name cell
+stays empty and the player remains in the export.
 
 An unmapped Sports price observed within 48 hours may resolve against the
 canonical FotMob catalog when its current club resolves uniquely, its source

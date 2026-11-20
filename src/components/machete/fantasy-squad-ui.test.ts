@@ -664,7 +664,7 @@ test("player pool exposes team, price, local match-scope and typed XLSX export c
   assert.match(squadPlannerSource, /ru="Подробные подсказки"/);
   assert.match(squadPlannerSource, /applyQuickHistoryScope\("ALL_PLAYER_MATCHES"\)/);
   assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(exportPlayers, tableHorizon/);
-  assert.match(squadPlannerSource, /player: playerPoolExportName\(player, provider\)/);
+  assert.match(squadPlannerSource, /player: playerPoolExportName\(player\)/);
   assert.match(playerTableExportRouteSource, /body\.rows\.length > 5_000/);
   assert.doesNotMatch(playerTableExportRouteSource, /at most 140/);
   assert.match(squadPlannerSource, /filterPlayerPoolByNameQuery\(matchingPlayers, deferredPlayerNameQuery\)/);

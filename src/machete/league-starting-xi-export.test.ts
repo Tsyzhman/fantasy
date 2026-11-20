@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { buildLeagueStartingXiTable } from "@/machete/league-starting-xi-export";
 
-test("starting XI export uses one team per column and compact FotMob names", () => {
+test("starting XI export uses one team per column and compacts the supplied player names", () => {
   const table = buildLeagueStartingXiTable([
     {
       id: 2n,

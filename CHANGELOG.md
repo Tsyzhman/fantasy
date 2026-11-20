@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.5 - 2026-11-20
+
+- Export Sports.ru Fantasy player names in football player pools and starting lineups, including downloads from an older open tab.
+
 ## 0.4.4 - 2026-11-20
 
 - Calibrate Sports.ru Squad's standard FO and Alt expected points using prematch form and playing history. Publish paired hit rates, recall and point errors for the five-point signal.
