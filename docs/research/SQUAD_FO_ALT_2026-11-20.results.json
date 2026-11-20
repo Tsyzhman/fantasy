@@ -1,0 +1,672 @@
+{
+  "baselineCommit": "f41b86b3d60b23ccb3e58558d5cd413f52185dce",
+  "asOf": "2026-11-20T09:05:00Z",
+  "officialFixtures": 1032,
+  "coverage": {
+    "rounds": 101,
+    "discardedRounds": 4,
+    "snapshotRows": 65382,
+    "duplicatePlayers": 0,
+    "unverifiedTimestamp": 0,
+    "wrongIdentity": 863,
+    "otherClub": 89,
+    "wrongCalendar": 336,
+    "double": 582,
+    "blanks": 268,
+    "noComponent": 0,
+    "noFo": 0,
+    "rows": 59458,
+    "uniqueRounds": {
+      "train": 45,
+      "selection": 18,
+      "holdout": 34
+    }
+  },
+  "roundsSha256": "c0db28d213fe58f7cf7f6b57a73def31792de1118d2215bc8f5e9f365aedbf4c",
+  "scoresSha256": "6573195de8452d32e35e373abd4e0e4c2a896f9d0eb17900faf567bfb0cdbddd",
+  "historySha256": "e4806ca9bcbfa21395985afc91d40eee7ee7aad912620521832c097829edb0cf",
+  "pointModelSha256": "444e8c73a58c802f29d1e00895a73fcba0177667c21a0a62973f78089fbc1bf7",
+  "selection": {
+    "intervals": {
+      "train": {
+        "rounds": 45,
+        "firstDeadline": "2026-08-28",
+        "lastDeadline": "2026-09-19"
+      },
+      "selection": {
+        "rounds": 18,
+        "firstDeadline": "2026-10-09",
+        "lastDeadline": "2026-10-17"
+      }
+    },
+    "ridgePenalty": 150,
+    "models": {
+      "fo": {
+        "availableTrain": 26214,
+        "fittedTrain": 19627,
+        "selectionBefore": {
+          "rows": 3841,
+          "actual5": 1082,
+          "hits": 235,
+          "signals": 512,
+          "precision": 0.458984375,
+          "recall": 0.21719038817005545,
+          "mae": 2.1864358240041653,
+          "rmse": 2.8183996744271824
+        },
+        "selectionAfter": {
+          "rows": 3841,
+          "actual5": 1082,
+          "hits": 188,
+          "signals": 394,
+          "precision": 0.47715736040609136,
+          "recall": 0.17375231053604437,
+          "mae": 2.153900026034887,
+          "rmse": 2.7879584632139145
+        },
+        "candidates": [
+          {
+            "method": "direct",
+            "weight": 0.1,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 210,
+            "signals": 434,
+            "precision": 0.4838709677419355,
+            "recall": 0.19408502772643252,
+            "mae": 2.174272324915387,
+            "rmse": 2.803443135355817
+          },
+          {
+            "method": "direct",
+            "weight": 0.2,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 186,
+            "signals": 384,
+            "precision": 0.484375,
+            "recall": 0.17190388170055454,
+            "mae": 2.1640380109346524,
+            "rmse": 2.7908712954680914
+          },
+          {
+            "method": "direct",
+            "weight": 0.3,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 165,
+            "signals": 333,
+            "precision": 0.4954954954954955,
+            "recall": 0.15249537892791126,
+            "mae": 2.1556261390262947,
+            "rmse": 2.780561566359678
+          },
+          {
+            "method": "direct",
+            "weight": 0.4,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 148,
+            "signals": 290,
+            "precision": 0.5103448275862069,
+            "recall": 0.1367837338262477,
+            "mae": 2.1491460557146573,
+            "rmse": 2.7725607525877405
+          },
+          {
+            "method": "direct",
+            "weight": 0.5,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 124,
+            "signals": 249,
+            "precision": 0.4979919678714859,
+            "recall": 0.11460258780036968,
+            "mae": 2.1443790679510544,
+            "rmse": 2.767137545417945
+          },
+          {
+            "method": "direct",
+            "weight": 0.6,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 104,
+            "signals": 202,
+            "precision": 0.5148514851485149,
+            "recall": 0.09611829944547134,
+            "mae": 2.1413147617807864,
+            "rmse": 2.763882876509746
+          },
+          {
+            "method": "direct",
+            "weight": 0.7,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 90,
+            "signals": 168,
+            "precision": 0.5357142857142857,
+            "recall": 0.08317929759704251,
+            "mae": 2.1404686279614684,
+            "rmse": 2.7632497686674315
+          },
+          {
+            "method": "direct",
+            "weight": 0.8,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 71,
+            "signals": 132,
+            "precision": 0.5378787878787878,
+            "recall": 0.06561922365988909,
+            "mae": 2.1422103618849255,
+            "rmse": 2.7650580988522897
+          },
+          {
+            "method": "direct",
+            "weight": 0.9,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 56,
+            "signals": 104,
+            "precision": 0.5384615384615384,
+            "recall": 0.051756007393715345,
+            "mae": 2.1462171309554803,
+            "rmse": 2.769126241359969
+          },
+          {
+            "method": "direct",
+            "weight": 1.0,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 49,
+            "signals": 88,
+            "precision": 0.5568181818181818,
+            "recall": 0.04528650646950092,
+            "mae": 2.1521478781567303,
+            "rmse": 2.775683473510346
+          },
+          {
+            "method": "residual",
+            "weight": 0.1,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 221,
+            "signals": 460,
+            "precision": 0.48043478260869565,
+            "recall": 0.20425138632162662,
+            "mae": 2.1791148138505596,
+            "rmse": 2.8111422407510736
+          },
+          {
+            "method": "residual",
+            "weight": 0.2,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 216,
+            "signals": 448,
+            "precision": 0.48214285714285715,
+            "recall": 0.19963031423290203,
+            "mae": 2.172488935173132,
+            "rmse": 2.8048140683160234
+          },
+          {
+            "method": "residual",
+            "weight": 0.3,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 209,
+            "signals": 432,
+            "precision": 0.4837962962962963,
+            "recall": 0.19316081330868762,
+            "mae": 2.16651913564176,
+            "rmse": 2.799123444823315
+          },
+          {
+            "method": "residual",
+            "weight": 0.4,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 205,
+            "signals": 421,
+            "precision": 0.48693586698337293,
+            "recall": 0.18946395563770796,
+            "mae": 2.1613642280656076,
+            "rmse": 2.79457059980276
+          },
+          {
+            "method": "residual",
+            "weight": 0.5,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 194,
+            "signals": 408,
+            "precision": 0.47549019607843135,
+            "recall": 0.17929759704251386,
+            "mae": 2.1571543868784175,
+            "rmse": 2.790803130647664
+          },
+          {
+            "method": "residual",
+            "weight": 0.6,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 188,
+            "signals": 394,
+            "precision": 0.47715736040609136,
+            "recall": 0.17375231053604437,
+            "mae": 2.153900026034887,
+            "rmse": 2.7879584632139145
+          },
+          {
+            "method": "residual",
+            "weight": 0.7,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 182,
+            "signals": 385,
+            "precision": 0.4727272727272727,
+            "recall": 0.16820702402957485,
+            "mae": 2.1513668315542827,
+            "rmse": 2.7860046146938715
+          },
+          {
+            "method": "residual",
+            "weight": 0.8,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 180,
+            "signals": 375,
+            "precision": 0.48,
+            "recall": 0.16635859519408502,
+            "mae": 2.1495391825045562,
+            "rmse": 2.784759785091218
+          },
+          {
+            "method": "residual",
+            "weight": 0.9,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 178,
+            "signals": 368,
+            "precision": 0.483695652173913,
+            "recall": 0.1645101663585952,
+            "mae": 2.148607133558969,
+            "rmse": 2.7846106355403974
+          },
+          {
+            "method": "residual",
+            "weight": 1.0,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 173,
+            "signals": 361,
+            "precision": 0.4792243767313019,
+            "recall": 0.1598890942698706,
+            "mae": 2.1483337672481126,
+            "rmse": 2.785306478490297
+          }
+        ]
+      },
+      "alt": {
+        "availableTrain": 9473,
+        "fittedTrain": 9419,
+        "selectionBefore": {
+          "rows": 3841,
+          "actual5": 1082,
+          "hits": 351,
+          "signals": 814,
+          "precision": 0.4312039312039312,
+          "recall": 0.3243992606284658,
+          "mae": 2.396277011195001,
+          "rmse": 2.941905171839114
+        },
+        "selectionAfter": {
+          "rows": 3841,
+          "actual5": 1082,
+          "hits": 281,
+          "signals": 611,
+          "precision": 0.45990180032733224,
+          "recall": 0.25970425138632164,
+          "mae": 2.3333689143452228,
+          "rmse": 2.8842342865902424
+        },
+        "candidates": [
+          {
+            "method": "direct",
+            "weight": 0.1,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 310,
+            "signals": 690,
+            "precision": 0.4492753623188406,
+            "recall": 0.28650646950092423,
+            "mae": 2.3642514970059882,
+            "rmse": 2.9116465494188186
+          },
+          {
+            "method": "direct",
+            "weight": 0.2,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 281,
+            "signals": 611,
+            "precision": 0.45990180032733224,
+            "recall": 0.25970425138632164,
+            "mae": 2.3333689143452228,
+            "rmse": 2.8842342865902424
+          },
+          {
+            "method": "direct",
+            "weight": 0.3,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 258,
+            "signals": 562,
+            "precision": 0.45907473309608543,
+            "recall": 0.23844731977818853,
+            "mae": 2.3036006248372822,
+            "rmse": 2.8594937086346994
+          },
+          {
+            "method": "direct",
+            "weight": 0.4,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 224,
+            "signals": 482,
+            "precision": 0.46473029045643155,
+            "recall": 0.20702402957486138,
+            "mae": 2.2754282738870084,
+            "rmse": 2.8377456024350645
+          },
+          {
+            "method": "direct",
+            "weight": 0.5,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 202,
+            "signals": 422,
+            "precision": 0.4786729857819905,
+            "recall": 0.1866913123844732,
+            "mae": 2.2489872429054936,
+            "rmse": 2.8189311761353015
+          },
+          {
+            "method": "direct",
+            "weight": 0.6,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 171,
+            "signals": 358,
+            "precision": 0.4776536312849162,
+            "recall": 0.15804066543438078,
+            "mae": 2.22370736787295,
+            "rmse": 2.8031590670191577
+          },
+          {
+            "method": "direct",
+            "weight": 0.7,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 147,
+            "signals": 300,
+            "precision": 0.49,
+            "recall": 0.13585951940850277,
+            "mae": 2.2003384535277273,
+            "rmse": 2.790374163420082
+          },
+          {
+            "method": "direct",
+            "weight": 0.8,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 130,
+            "signals": 255,
+            "precision": 0.5098039215686274,
+            "recall": 0.12014787430683918,
+            "mae": 2.179031502212965,
+            "rmse": 2.7807421761550155
+          },
+          {
+            "method": "direct",
+            "weight": 0.9,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 111,
+            "signals": 212,
+            "precision": 0.5235849056603774,
+            "recall": 0.10258780036968576,
+            "mae": 2.1602473314241077,
+            "rmse": 2.7741773480338603
+          },
+          {
+            "method": "direct",
+            "weight": 1.0,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 95,
+            "signals": 180,
+            "precision": 0.5277777777777778,
+            "recall": 0.0878003696857671,
+            "mae": 2.1438245248633168,
+            "rmse": 2.770918089850598
+          },
+          {
+            "method": "residual",
+            "weight": 0.1,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 314,
+            "signals": 702,
+            "precision": 0.4472934472934473,
+            "recall": 0.2902033271719039,
+            "mae": 2.365529809945327,
+            "rmse": 2.9178088236146933
+          },
+          {
+            "method": "residual",
+            "weight": 0.2,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 289,
+            "signals": 638,
+            "precision": 0.45297805642633227,
+            "recall": 0.26709796672828096,
+            "mae": 2.3356313460036446,
+            "rmse": 2.8957375240831538
+          },
+          {
+            "method": "residual",
+            "weight": 0.3,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 272,
+            "signals": 602,
+            "precision": 0.45182724252491696,
+            "recall": 0.2513863216266174,
+            "mae": 2.3076334287945848,
+            "rmse": 2.876094242935424
+          },
+          {
+            "method": "residual",
+            "weight": 0.4,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 257,
+            "signals": 571,
+            "precision": 0.4500875656742557,
+            "recall": 0.23752310536044363,
+            "mae": 2.2810466024472795,
+            "rmse": 2.8585427128225636
+          },
+          {
+            "method": "residual",
+            "weight": 0.5,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 238,
+            "signals": 530,
+            "precision": 0.4490566037735849,
+            "recall": 0.2199630314232902,
+            "mae": 2.2558448320749807,
+            "rmse": 2.843341280626558
+          },
+          {
+            "method": "residual",
+            "weight": 0.6,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 225,
+            "signals": 487,
+            "precision": 0.4620123203285421,
+            "recall": 0.20794824399260628,
+            "mae": 2.2321400676907057,
+            "rmse": 2.8303756226093353
+          },
+          {
+            "method": "residual",
+            "weight": 0.7,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 208,
+            "signals": 447,
+            "precision": 0.465324384787472,
+            "recall": 0.1922365988909427,
+            "mae": 2.210330643061703,
+            "rmse": 2.8198059226286003
+          },
+          {
+            "method": "residual",
+            "weight": 0.8,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 192,
+            "signals": 412,
+            "precision": 0.46601941747572817,
+            "recall": 0.17744916820702403,
+            "mae": 2.1904139546992973,
+            "rmse": 2.8117176987741113
+          },
+          {
+            "method": "residual",
+            "weight": 0.9,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 176,
+            "signals": 377,
+            "precision": 0.46684350132625996,
+            "recall": 0.16266173752310537,
+            "mae": 2.1726217130955483,
+            "rmse": 2.8058902970860133
+          },
+          {
+            "method": "residual",
+            "weight": 1.0,
+            "rows": 3841,
+            "actual5": 1082,
+            "hits": 167,
+            "signals": 352,
+            "precision": 0.4744318181818182,
+            "recall": 0.15434380776340112,
+            "mae": 2.156995574069253,
+            "rmse": 2.8024829620192566
+          }
+        ]
+      }
+    },
+    "featuresSha256": "4dd12f853d5692c4b811c9c5f0b9b13255bbf874c001961fc0d316cc83b7fb6a"
+  },
+  "evaluation": {
+    "holdout": {
+      "dates": {
+        "rounds": 34,
+        "firstDeadline": "2026-10-23",
+        "lastDeadline": "2026-11-06"
+      },
+      "fullRows": 22157,
+      "pairedRows": 7516,
+      "fo": {
+        "before": {
+          "rows": 7516,
+          "actual5": 2281,
+          "hits": 439,
+          "signals": 919,
+          "precision": 0.4776931447225245,
+          "recall": 0.19245944761069705,
+          "mae": 2.203226450239489,
+          "rmse": 2.825529614505591
+        },
+        "after": {
+          "rows": 7516,
+          "actual5": 2281,
+          "hits": 353,
+          "signals": 725,
+          "precision": 0.4868965517241379,
+          "recall": 0.15475668566418238,
+          "mae": 2.190794305481639,
+          "rmse": 2.8136552171887392
+        }
+      },
+      "alt": {
+        "before": {
+          "rows": 7516,
+          "actual5": 2281,
+          "hits": 699,
+          "signals": 1566,
+          "precision": 0.446360153256705,
+          "recall": 0.30644454186760195,
+          "mae": 2.402996274614156,
+          "rmse": 2.9208297555460927
+        },
+        "after": {
+          "rows": 7516,
+          "actual5": 2281,
+          "hits": 535,
+          "signals": 1167,
+          "precision": 0.45844044558697516,
+          "recall": 0.2345462516440158,
+          "mae": 2.3484353379457157,
+          "rmse": 2.874735913548412
+        }
+      },
+      "pairedPointsSha256": "e899c13c57ea74586bae83f659b5867b516fa95137824a41aa177e0a0806085f",
+      "fullFo": {
+        "before": {
+          "rows": 22157,
+          "actual5": 2783,
+          "hits": 447,
+          "signals": 982,
+          "precision": 0.45519348268839105,
+          "recall": 0.1606180380883938,
+          "mae": 1.3651839147899083,
+          "rmse": 2.114293165921164
+        },
+        "after": {
+          "rows": 22157,
+          "actual5": 2783,
+          "hits": 356,
+          "signals": 738,
+          "precision": 0.4823848238482385,
+          "recall": 0.1279195113187208,
+          "mae": 1.272386153360112,
+          "rmse": 2.054265750045564
+        }
+      }
+    },
+    "later": {
+      "dates": {
+        "rounds": 0,
+        "firstDeadline": null,
+        "lastDeadline": null
+      },
+      "fullRows": 0,
+      "pairedRows": 0
+    },
+    "featuresSha256": "4dd12f853d5692c4b811c9c5f0b9b13255bbf874c001961fc0d316cc83b7fb6a"
+  },
+  "shippedTypeScriptPairedPointsSha256": "e899c13c57ea74586bae83f659b5867b516fa95137824a41aa177e0a0806085f",
+  "calendarAfter2026_11_06": {
+    "closedAtCutoff": 0,
+    "nextDeadlineUtc": "2026-11-20T16:30:00Z"
+  }
+}

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.4 - 2026-11-20
+
+- Calibrate Sports.ru Squad's standard FO and Alt expected points using prematch form and playing history. Publish paired hit rates, recall and point errors for the five-point signal.
+
 ## 0.4.3 - 2026-11-20
 
 - Preserve known football player names during ID-only FotMob imports and use verified alternative names in Excel player tables, squads and starting lineups.
