@@ -8,6 +8,7 @@ import { fivePlusFixtureFeatures, fivePlusPlayerFeatures } from "../../src/mache
 import { SquadFivePlusHistory, type FivePlusHistoryRow, type FivePlusOddsRow } from "../../src/machete/squad-research-five-plus-history";
 import { sportsRuResearchRidge } from "../../src/machete/squad-research-ridge";
 import { squadResearchForecasts } from "../../src/machete/squad-research-columns";
+import { calibratedSquadFixturePoints, squadPointCalibration, squadPointHistory } from "../../src/machete/squad-point-calibration";
 import {
   researchFixtureInput, researchFixturePoints, researchRidgeFeatures, researchStudyCandidates,
   type ResearchFixtureInput, type ResearchRidge, type ResearchStudyCandidate
@@ -162,6 +163,7 @@ const finite = (value: unknown): value is number => typeof value === "number" &&
 const roundScore = (value: number) => Math.round(value * 100) / 100;
 let ridge: ResearchRidge | undefined;
 let lastDeadline = -Infinity;
+const pairedPointHashes = new Map<string, ReturnType<typeof createHash>>();
 
 await readLines<Round | IdentityFile>(roundPath, async (data) => {
   if (data.kind !== "round") return;
@@ -190,6 +192,20 @@ await readLines<Round | IdentityFile>(roundPath, async (data) => {
   const perLeague = (leagueRounds[phase] ??= {});
   (perLeague[data.league] ??= []).push(data.round);
   coverage.rows += rows.length;
+  // Verify the shipped scorer directly against the original snapshots, independently of
+  // Python's feature indices. Hash both rounded point estimates for each paired row in order.
+  const pointPhase = deadline >= Date.parse("2026-11-07T00:00:00Z") ? "later" : phase;
+  const homeTeams = new Set(data.fixtures.filter((f) => f[4] === "CLOSED").map((f) => f[1]));
+  const pointHash = pairedPointHashes.get(pointPhase) ?? createHash("sha256");
+  pairedPointHashes.set(pointPhase, pointHash);
+  for (const { player, input, fo, alt } of rows) {
+    if (alt === null) continue;
+    const history = squadPointHistory(input.position, player.isStarter === true, player.stats, player.recentFp);
+    const home = homeTeams.has(player.teamId);
+    const nextFo = calibratedSquadFixturePoints(fo, home, squadPointCalibration("fo", history));
+    const nextAlt = calibratedSquadFixturePoints(alt, home, squadPointCalibration("alt", history));
+    pointHash.update(`${Math.round(nextFo * 100)},${Math.round(nextAlt * 100)}\n`);
+  }
   if (fivePlusTraining && fivePlusHistory) {
     const fixtures = new Map<string, ReturnType<typeof fivePlusFixtureFeatures>>();
     for (const [, home, away, kickoff, status, , , matchId] of data.fixtures) {
@@ -248,7 +264,8 @@ for (const name of [...researchStudyCandidates].sort((a, b) => validation.get(a)
 process.stdout.write(JSON.stringify({
   asOf: cutoffArg, sha256: fingerprints, officialFixtures: official.size, coverage, leagueRounds,
   dateRanges: Object.fromEntries(phases.map((p) => [p, [dates[p][0], dates[p].at(-1)]])),
-  selected, ridge, results, maxRssMiB: Math.round(process.resourceUsage().maxRSS / 1024)
+  selected, ridge, results, maxRssMiB: Math.round(process.resourceUsage().maxRSS / 1024),
+  pairedPointsSha256: Object.fromEntries([...pairedPointHashes].map(([phase, hash]) => [phase, hash.digest("hex")]))
 }, null, 2) + "\n");
 
 function roundRows(data: Round, deadline: number): Row[] {

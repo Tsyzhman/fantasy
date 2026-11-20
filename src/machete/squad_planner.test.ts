@@ -89,6 +89,27 @@ import { defaultFantasySquadRules, fantasyProviderPlaceholderPlayerId, fantasyTr
 import { expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig } from "./projection-formula-config";
 import { positionEventPriorPer90 } from "./player-season-prior";
 import { parseFantasyPlayerPoolSnapshotMetadata } from "./fantasy-player-pool-snapshots";
+import { calibratedSquadFixturePoints, squadPointCalibration, squadPointHistory } from "./squad-point-calibration";
+import { usesPersonalSquadAlt } from "@/lib/scoring/user-preferences";
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#research-forecasts */
+test("Sports.ru calibrates a component score in points and preserves unavailable history and personal Alt", () => {
+  const history = squadPointHistory("MID", true, {
+    matches_played: 8, minutes_played: 450, xg: 1.8, xa: 1.35, shots: 12, recoveries: 20
+  }, [2, 3, 3, 6, 8]);
+  assert.equal(calibratedSquadFixturePoints(4.64, true, squadPointCalibration("fo", history)).toFixed(2), "4.82");
+  assert.equal(calibratedSquadFixturePoints(4.40, true, squadPointCalibration("alt", history)).toFixed(2), "4.38");
+  const empty = squadPointCalibration("alt", squadPointHistory("FWD", false));
+  assert.equal(calibratedSquadFixturePoints(4.995, false, empty), 4.995);
+  assert.equal(calibratedSquadFixturePoints(0, true, squadPointCalibration("fo", history)), 0);
+  const preference = {
+    alternativeFormulaEnabled: false, alternativeFormulaGk: null, alternativeFormulaDef: null,
+    alternativeFormulaMid: null, alternativeFormulaFwd: "7"
+  };
+  assert.equal(usesPersonalSquadAlt(preference), false);
+  assert.equal(usesPersonalSquadAlt({ ...preference, alternativeFormulaEnabled: true }), true);
+  assert.equal(usesPersonalSquadAlt({ ...preference, alternativeProjectionFormulaConfig: { version: 1 } }), true);
+});
 
 /**
  * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#historical-opponent-forecast
@@ -571,6 +592,21 @@ test("double provider round evaluates the formula for both opponents and sums th
     goalFactor: 1, assistFactor: 1, ratedMatches: 8
   }), 3.51);
   assert.deepEqual([...new Set(round.terms.map((term) => term.fixtureLabel))], ["H AAA", "A BBB"]);
+  // @spec spec://modules/machete/FEAT-001-global-ranking-strategy#research-forecasts
+  const history = squadPointHistory("FWD", true, { matches_played: 4, minutes_played: 320 }, [3, 5]);
+  for (const kind of ["fo", "alt"] as const) {
+    const calibration = squadPointCalibration(kind, history);
+    const calibrated = projectionRoundFormulaWithBreakdown(fixtures, "double-player", index, config, calibration);
+    assert.ok(calibrated);
+    const sum = calibratedSquadFixturePoints(1.204, true, calibration) +
+      calibratedSquadFixturePoints(2.304, false, calibration);
+    assert.equal(calibrated.total, Math.round(sum * 100) / 100);
+    assert.equal(Math.round(calibrated.terms.reduce((n, term) => n + term.value, 0) * 100) / 100, calibrated.total);
+    assert.equal(opponentAdjustedRoundForecast(fixtures, "double-player", index, config, {
+      goalFactor: 1, assistFactor: 1, ratedMatches: 8
+    }, calibration), calibrated.total);
+    assert.equal(projectionRoundFormulaWithBreakdown(fixtures, "missing", index, config, calibration), null);
+  }
 });
 
 test("formula pipeline scales a raw per-90 allocation by expected minutes", () => {

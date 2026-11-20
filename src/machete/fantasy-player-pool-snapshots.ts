@@ -5,6 +5,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { isFantasySquadLeague, macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { createLogger } from "@/lib/logger";
+import { usesPersonalSquadAlt } from "@/lib/scoring/user-preferences";
 import { fantasyPlayerPoolTeamRefreshPlayerIds } from "@/machete/fantasy-player-pool-team-roster";
 import {
   buildFantasyStartingXiState,
@@ -351,13 +352,7 @@ export async function userCanUseCurrentXiFantasyPlayerPoolSnapshot(
       alternativeProjectionFormulaConfig: true
     }
   });
-  if (!preference?.alternativeFormulaEnabled) return true;
-  return !preference.alternativeProjectionFormulaConfig && ![
-    preference.alternativeFormulaGk,
-    preference.alternativeFormulaDef,
-    preference.alternativeFormulaMid,
-    preference.alternativeFormulaFwd
-  ].some((formula) => Boolean(formula?.trim()));
+  return !usesPersonalSquadAlt(preference);
 }
 
 export async function loadFantasyStartingXiRevision(

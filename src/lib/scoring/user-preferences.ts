@@ -91,6 +91,12 @@ function hasAnyFormula(preference: UserScoringFormulaPreference) {
   );
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#research-forecasts */
+export function usesPersonalSquadAlt(preference: UserScoringFormulaPreference | null | undefined) {
+  return Boolean(preference && (preference.alternativeProjectionFormulaConfig ||
+    (preference.alternativeFormulaEnabled && hasAnyFormula(preference))));
+}
+
 function formulaOrDefault(value: string | null, fallback: string | null) {
   return value?.trim() || fallback;
 }

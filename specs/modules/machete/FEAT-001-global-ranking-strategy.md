@@ -122,6 +122,18 @@ The saved roster and the player-pool detail batches read FFO from the imported f
 
 ### Forecasts selected by historical replay {#research-forecasts}
 
+Sports.ru's standard FO and Alt publish calibrated expected points per fixture.
+Use the component score at hundredth precision and prematch position, XI flag,
+venue, recent form, matches, minutes and event rates. Fit a numeric points or
+points-residual regression on earlier rounds and choose the blend before
+evaluating later rounds. A positive component estimate with player history is
+eligible. Preserve the raw formula when history is unavailable, the rounded
+base is nonpositive, or the user supplied their own Alt or global FO formula.
+FPL and the legacy fallback retain their scoring. The displayed breakdown,
+round totals, horizons, opponent comparison and value calculations use the same
+per-fixture result. Evaluate a 5+ signal at five rounded points, on identical
+player–round pairs, reporting precision, recall, MAE and RMSE.
+
 Sports.ru Squad offers up to five separate forecast columns selected by a
 reproducible current-season comparison. These are additional expected-point
 estimates for the displayed provider round. Each fixture is scored once and a
@@ -292,6 +304,8 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 <a name="changelog"></a>
 
 ## 12. Changelog {#changelog}
+
+- 2026-11-20: WI-106 — calibrate standard Sports.ru FO and Alt points from earlier rounds and report paired five-point signal coverage and point errors.
 
 - 2026-11-13: Name the five Squad forecast columns FIT, MIX, GAS, REF and TIK.
 - 2026-11-13: Add a calibrated chance of 5+ to the five Squad models, with separate filters and model-specific thresholds.
