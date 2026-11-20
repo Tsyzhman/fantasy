@@ -212,6 +212,10 @@ clients can supply a known name and club or an ID-only label. Ambiguous names
 cannot authorize a substitution. When all names are missing, the name cell
 stays empty and the player remains in the export.
 
+If Sports.ru omits a statistics profile for a season player, the current-season
+import retains that player's fantasy name, price and club, any previously
+verified identity metadata, and the complete records of the other players.
+
 An unmapped Sports price observed within 48 hours may resolve against the
 canonical FotMob catalog when its current club resolves uniquely, its source
 stat identity supplies a canonical Latin name with at least two tokens, and

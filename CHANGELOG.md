@@ -3,6 +3,7 @@
 ## 0.4.5 - 2026-11-20
 
 - Export Sports.ru Fantasy player names in football player pools and starting lineups, including downloads from an older open tab.
+- Keep importing official fantasy names when Sports.ru temporarily lacks a player's statistics profile.
 
 ## 0.4.4 - 2026-11-20
 

@@ -39,6 +39,63 @@ export type SportsRuFantasyGraphqlSnapshot = {
   fetchedAt: string;
 };
 
+type FantasyPricePlayer = {
+  id?: string | null;
+  name?: string | null;
+  price?: number | null;
+  status?: { selectedBy?: number | null } | null;
+  team?: { id?: string | null; name?: string | null; statObject?: { id?: string | null; name?: string | null } | null } | null;
+  statObject?: {
+    id?: string | null; name?: string | null; firstName?: string | null; lastName?: string | null;
+    coalesceName?: string | null; dateOfBirth?: string | null;
+  } | null;
+};
+
+class MissingSportsStatPlayer extends Error {}
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+async function loadFantasyPricePage(
+  source: { endpoint: string; fetchImpl: typeof fetch; seasonId: string; role: string },
+  pageNum: number,
+  pageSize: number,
+  includeStatPlayer = true
+): Promise<FantasyPricePlayer[]> {
+  try {
+    const response = await sportsRuGraphqlRequest<{
+      fantasyQueries?: { players?: { list?: FantasyPricePlayer[] | null } | null };
+    }>(source.endpoint, `{
+      fantasyQueries {
+        players(input: {
+          seasonID: ${JSON.stringify(source.seasonId)}, pageSize: ${pageSize}, pageNum: ${pageNum},
+          sortOrder: DESC, sortType: BY_PRICE, role: ${source.role}
+        }) {
+          list {
+            id name price
+            status { selectedBy }
+            team { id name statObject { id name } }
+            ${includeStatPlayer ? "statObject { id name firstName lastName coalesceName dateOfBirth }" : ""}
+          }
+        }
+      }
+    }`, source.fetchImpl);
+    return response.fantasyQueries?.players?.list ?? [];
+  } catch (error) {
+    if (!(error instanceof MissingSportsStatPlayer) || !includeStatPlayer) throw error;
+    if (pageSize === 1) return loadFantasyPricePage(source, pageNum, 1, false);
+    // Sports.ru discards the entire page when any one player's stat profile is absent.
+    // Split at aligned offsets to retain both the fantasy row and its neighbours' identities.
+    const parts = [2, 3, 5, 7].find(divisor => pageSize % divisor === 0) ?? pageSize;
+    const size = pageSize / parts;
+    const players: FantasyPricePlayer[] = [];
+    for (let offset = 0; offset < parts; offset++) {
+      const batch = await loadFantasyPricePage(source, (pageNum - 1) * parts + offset + 1, size);
+      players.push(...batch);
+      if (batch.length < size) break;
+    }
+    return players;
+  }
+}
+
 export type SportsRuFantasyTour = {
   id: string;
   name: string;
@@ -199,54 +256,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
   const seenPlayerIds = new Set<string>();
   for (const [role, position] of sportsRuFantasyRoles) {
     for (let pageNum = 1; pageNum <= 100; pageNum += 1) {
-      const response = await sportsRuGraphqlRequest<{
-        fantasyQueries?: {
-          players?: {
-            list?: Array<{
-              id?: string | null;
-              name?: string | null;
-              price?: number | null;
-              status?: { selectedBy?: number | null } | null;
-              team?: {
-                id?: string | null;
-                name?: string | null;
-                statObject?: { id?: string | null; name?: string | null } | null;
-              } | null;
-              statObject?: {
-                id?: string | null;
-                name?: string | null;
-                firstName?: string | null;
-                lastName?: string | null;
-                coalesceName?: string | null;
-                dateOfBirth?: string | null;
-              } | null;
-            }> | null;
-          } | null;
-        };
-      }>(
-        endpoint,
-        `{
-          fantasyQueries {
-            players(input: {
-              seasonID: ${JSON.stringify(seasonId)},
-              pageSize: ${pageSize},
-              pageNum: ${pageNum},
-              sortOrder: DESC,
-              sortType: BY_PRICE,
-              role: ${role}
-            }) {
-              list {
-                id name price
-                status { selectedBy }
-                team { id name statObject { id name } }
-                statObject { id name firstName lastName coalesceName dateOfBirth }
-              }
-            }
-          }
-        }`,
-        fetchImpl
-      );
-      const players = response.fantasyQueries?.players?.list ?? [];
+      const players = await loadFantasyPricePage({ endpoint, fetchImpl, seasonId, role }, pageNum, pageSize);
       for (const player of players) {
         const providerPlayerId = player.id?.trim();
         const correctedPlayerName = providerPlayerId
@@ -557,8 +567,16 @@ export async function sportsRuGraphqlRequest<T>(endpoint: string, query: string,
     body: JSON.stringify({ query })
   });
   if (!response.ok) throw new SportsRuGraphqlHttpError(response.status, response.headers.get("retry-after"), response.statusText);
-  const payload = (await response.json()) as { data?: T; errors?: Array<{ message?: string }> };
-  if (payload.errors?.length) throw new Error(`Sports.ru GraphQL error: ${payload.errors.map((error) => error.message ?? "unknown error").join("; ")}`);
+  const payload = (await response.json()) as { data?: T; errors?: Array<{ message?: string; path?: unknown[] }> };
+  if (payload.errors?.length) {
+    const message = `Sports.ru GraphQL error: ${payload.errors.map((error) => error.message ?? "unknown error").join("; ")}`;
+    if (payload.errors.every(error => error.message?.trim() === 'graphql: got nil for non-null "statPlayer"'
+      && error.path?.length === 5 && error.path[0] === "fantasyQueries" && error.path[1] === "players"
+      && error.path[2] === "list" && typeof error.path[3] === "number" && error.path[4] === "statObject")) {
+      throw new MissingSportsStatPlayer(message);
+    }
+    throw new Error(message);
+  }
   if (!payload.data) throw new Error("Sports.ru GraphQL response contains no data.");
   return payload.data;
 }

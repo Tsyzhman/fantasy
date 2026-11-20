@@ -81,6 +81,27 @@ test("Sports.ru snapshot fails closed when no current season exists", async () =
   assert.deepEqual(snapshot.prices, []);
 });
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+test("one missing stat profile keeps its fantasy name and every adjacent identity, including on later pages", async () => {
+  const fetchImpl: typeof fetch = async (_url, init) => {
+    const query: string = JSON.parse(String(init?.body)).query;
+    if (query.includes("tournament(")) return jsonResponse({ data: { fantasyQueries: { tournament: { currentSeason: { id: "80" } } } } });
+    const size = Number(/pageSize: (\d+)/.exec(query)?.[1]);
+    const start = (Number(/pageNum: (\d+)/.exec(query)?.[1]) - 1) * size;
+    const records = query.includes("role: MIDFIELDER")
+      ? Array.from({ length: 7 }, (_, index) => ({ id: String(index), name: `Имя ${index}`, price: 5, statObject: { id: `stat_${index}` } })).slice(start, start + size)
+      : [];
+    const missing = records.findIndex(player => player.id === "5");
+    if (missing >= 0 && query.includes("coalesceName")) return jsonResponse({ errors: [
+      { message: 'graphql: got nil for non-null "statPlayer" ', path: ["fantasyQueries", "players", "list", missing, "statObject"] }
+    ], data: null });
+    return jsonResponse({ data: { fantasyQueries: { players: { list: records.map(row => row.id === "5" ? { ...row, statObject: null } : row) } } } });
+  };
+  const { prices } = await fetchSportsRuFantasyGraphqlSnapshot("england", { fetchImpl, pageSize: 4 });
+  assert.deepEqual(prices.map(p => p.playerName), Array.from({ length: 7 }, (_, index) => `Имя ${index}`));
+  assert.deepEqual(prices.map(p => p.providerStatPlayerId), ["stat_0", "stat_1", "stat_2", "stat_3", "stat_4", null, "stat_6"]);
+});
+
 test("Sports.ru snapshot retains the hidden stat-player identity and birth date", async () => {
   const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
     const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;
