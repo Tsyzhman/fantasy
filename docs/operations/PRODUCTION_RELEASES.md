@@ -7,7 +7,15 @@ GitHub verified the two rate-limiter corrections in repository version
 0.3.167. [Application health](https://fantasy.tsyzhman.ru/api/health) ·
 [Check for 0.3.167](https://github.com/Tsyzhman/fantasy/actions/runs/43830802801)
 
-## Latest verified release 0.3.166 — 2026-11-13
+## Latest verified release 0.4.4 — 2026-11-20
+
+Production runs `20261120T094532Z-v0.4.4-3440e4c`, commit `3440e4c381dda7aeab730673e1b513d9f07cd8c8`, tree `963c0588955661a5e6b2c1373e68924f384b218f`. The public health endpoint, release marker and running web and worker images agree. The promoter retained 0.4.3 for rollback. The primary Squad page and both pool API canaries returned HTTP 200. [Dry run](https://github.com/Tsyzhman/fantasy/actions/runs/44710584820) · [Promotion](https://github.com/Tsyzhman/fantasy/actions/runs/44712473336) · [Authenticated browser checks](https://github.com/Tsyzhman/fantasy/actions/runs/44714998380)
+
+All 12 Sports.ru pools published version 6 with 8,473 current player rows, zero duplicates, an empty refresh queue and at most three retained READY revisions per scope. The displayed FO and standard Alt scores, round totals, price calculations and five probabilities were consistent across all rows. Matching pre- and post-release inputs were available for 7,217 rows. Independent recalculation reproduced their 7,217 numeric FO and 2,283 numeric Alt scores to the hundredth. The other 4,934 matching rows retained an empty Alt. [WI-106](../../specs/work/archive/2026/WI-106-squad-fo-alt-five-plus.md) · [Forecast guide](../reference/SQUAD_FORECAST_FORMULAS_RU.md)
+
+All 113 public health and previous-CSS probe pairs passed during promotion and browser checks, including 42 on 0.4.4. The sampled worker peak was 2.84 GiB of 4 GiB. It used 1.135 GiB at the last sample. Web and PostgreSQL peaked at 731 MiB and 1.193 GiB respectively, each within its 2 GiB limit. These three containers reported zero restarts or OOM kills. The shared Docker build cache measured 1.233 GB before and after.
+
+## Release 0.3.166 — 2026-11-13
 
 Production runs `20261113T201552Z-v0.3.166-88b0c55`, commit `88b0c55db48955250e68dbb257c496ec1150db66`, tree `88edd01514b2ac78b4551215eb67db2ca246879a`. The [dry run](https://github.com/Tsyzhman/fantasy/actions/runs/43497118839) and [promotion](https://github.com/Tsyzhman/fantasy/actions/runs/43498843211) passed. Production retains 0.3.165 for rollback.
 

@@ -25,7 +25,7 @@
   "roundsSha256": "c0db28d213fe58f7cf7f6b57a73def31792de1118d2215bc8f5e9f365aedbf4c",
   "scoresSha256": "6573195de8452d32e35e373abd4e0e4c2a896f9d0eb17900faf567bfb0cdbddd",
   "historySha256": "e4806ca9bcbfa21395985afc91d40eee7ee7aad912620521832c097829edb0cf",
-  "pointModelSha256": "444e8c73a58c802f29d1e00895a73fcba0177667c21a0a62973f78089fbc1bf7",
+  "pointModelSha256": "ff54cbb1d430e149d2ea61f61f4af9e1305c600d36fc1178e6f5ff7b8eceb996",
   "selection": {
     "intervals": {
       "train": {
