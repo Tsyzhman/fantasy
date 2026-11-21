@@ -72,6 +72,20 @@ test("legacy table namesakes need a unique match, with the club when available",
 });
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+test("an orphaned provider record cannot shadow a relinked price from an older tab", async () => {
+  const label = "Ксавье Мандза";
+  const orphanId = "8000000000072620";
+  const prisma = { corePlayer: { findMany: async () => [
+    { id: BigInt(orphanId), source: "sports_ru", name: label, fantasyPrices: [] },
+    { id: 2116938n, source: "fotmob", name: "Xavier Mandza", fantasyPrices: [{ playerName: label, teamName: "Ницца" }] }
+  ] } } as unknown as PrismaClient;
+  const rows: Row[] = [{ player: label }, { player: label, playerId: orphanId }];
+  const names = await resolveStoredPlayerExportNames(prisma, rows);
+  assert.deepEqual(rows.map(row => names.get(row)), ["Xavier Mandza", null]);
+  assert.deepEqual(rows.map(row => row.player), [label, label]);
+});
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 test("pool uses scoped provider IDs and exact unambiguous aliases and never exports a Latin matching hint", async () => {
   const scope = { provider: "SPORTS_RU", leagueId: 53n, season: "2026/2027" };
   const names = ["Ксавье Мандза", "Другой игрок", "Тёзка", "Имя Спортса"];

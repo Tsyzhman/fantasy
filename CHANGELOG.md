@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.7 - 2026-11-21
+
+- Resolve the FotMob name for older Excel exports after a Sports.ru player has been relinked and its former provider-only record is still in the catalog.
+
 ## 0.4.6 - 2026-11-21
 
 - Add short and full FotMob names as the first two columns of football player Excel exports. Starting lineups include a player list and the existing club matrix.

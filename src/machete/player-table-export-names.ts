@@ -149,7 +149,7 @@ export async function resolveStoredPlayerExportNames(
   const players = await prisma.corePlayer.findMany({
     where: { OR: [
       ...(ids.size ? [{ id: { in: [...ids] } }] : []),
-      ...(labels.length ? [{ name: { in: labels } }, { fantasyPrices: { some: { ...scope, playerName: { in: labels } } } }] : [])
+      ...(labels.length ? [{ source: "fotmob", name: { in: labels } }, { fantasyPrices: { some: { ...scope, playerName: { in: labels } } } }] : [])
     ] },
     select: { id: true, name: true, source: true, fantasyPrices: { where: scope, select: {
       playerName: true, ...(labels.length > 0 && { teamName: true, sportsTeamName: true, team: { select: { name: true } } })
@@ -160,7 +160,8 @@ export async function resolveStoredPlayerExportNames(
   const byTeam = new Map<string, CoreName | null>();
   const samePlayer = (a: CoreName, b: CoreName) => a.id === b.id;
   for (const player of (legacyNames.size ? players : [])) {
-    if (legacyNames.has(player.name)) indexUnique(byLabel, player.name, player, samePlayer);
+    // An orphaned provider-only record can remain after its price is linked to FotMob.
+    if (player.source === "fotmob" && legacyNames.has(player.name)) indexUnique(byLabel, player.name, player, samePlayer);
     for (const price of player.fantasyPrices) {
       for (const alias of [price.playerName, player.name]) {
         if (!legacyNames.has(alias)) continue;
