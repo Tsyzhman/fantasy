@@ -4,17 +4,23 @@ import { toCsv, type CsvColumn } from "@/lib/csv";
 
 export type TableExportFormat = "csv" | "xlsx";
 
-type TableExportOptions<T> = {
+type TableSheet<T> = {
   rows: T[];
   columns: CsvColumn<T>[];
+};
+
+type TableExportOptions<T, U> = TableSheet<T> & {
   format: TableExportFormat;
   filename: string;
   sheetName?: string;
+  additionalSheets?: Array<TableSheet<U> & { sheetName: string }>;
 };
 
 const xlsxContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-export async function tableExportResponse<T>({ rows, columns, format, filename, sheetName = "Export" }: TableExportOptions<T>) {
+export async function tableExportResponse<T, U = never>({
+  rows, columns, format, filename, sheetName = "Export", additionalSheets = []
+}: TableExportOptions<T, U>) {
   const safeFilename = safeExportFilename(filename);
 
   if (format === "csv") {
@@ -28,20 +34,8 @@ export async function tableExportResponse<T>({ rows, columns, format, filename, 
 
   const { default: ExcelJSLib } = await import("exceljs");
   const workbook = new ExcelJSLib.Workbook();
-  const worksheet = workbook.addWorksheet(safeSheetName(sheetName));
-
-  worksheet.columns = columns.map((column) => ({
-    header: column.header,
-    key: column.header,
-    width: Math.min(Math.max(column.header.length + 4, 12), 32)
-  }));
-  worksheet.getRow(1).font = { bold: true };
-
-  for (const row of rows) {
-    worksheet.addRow(columns.map((column) => normalizeExportCell(column.value(row))));
-  }
-
-  autosizeColumns(worksheet);
+  addTableSheet(workbook, sheetName, { rows, columns });
+  for (const sheet of additionalSheets) addTableSheet(workbook, sheet.sheetName, sheet);
   const buffer = await workbook.xlsx.writeBuffer();
 
   return new Response(Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer as ArrayBuffer), {
@@ -50,6 +44,16 @@ export async function tableExportResponse<T>({ rows, columns, format, filename, 
       "Content-Disposition": `attachment; filename="${safeFilename}.xlsx"`
     }
   });
+}
+
+function addTableSheet<T>(workbook: ExcelJS.Workbook, name: string, { columns, rows }: TableSheet<T>) {
+  const worksheet = workbook.addWorksheet(safeSheetName(name));
+  worksheet.columns = columns.map(column => ({ header: column.header, key: column.header }));
+  worksheet.getRow(1).font = { bold: true };
+  for (const row of rows) {
+    worksheet.addRow(columns.map(column => normalizeExportCell(column.value(row))));
+  }
+  autosizeColumns(worksheet);
 }
 
 export function parseTableExportFormat(

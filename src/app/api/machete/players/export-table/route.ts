@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import type { CsvColumn } from "@/lib/csv";
 import { readJsonObject } from "@/lib/request-json";
 import { tableExportResponse } from "@/lib/table-export";
-import { resolveStoredPlayerExportNames } from "@/machete/player-table-export-names";
+import { fotMobExportColumns, resolveStoredPlayerExportNames } from "@/machete/player-table-export-names";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,10 +24,13 @@ export const POST = withApiHandler(async (request: Request) => {
   if (!Array.isArray(body.rows) || body.rows.length > 5_000) return jsonError("BAD_REQUEST", "rows must contain at most 5000 players.", 400);
   const rows = body.rows.map((row) => parseRow(row, columns));
   if (!rows.every((row) => row !== null)) return jsonError("BAD_REQUEST", "Invalid typed export row.", 400);
-  await resolveStoredPlayerExportNames(prisma, rows);
+  const names = await resolveStoredPlayerExportNames(prisma, rows);
   const language = body.language === "en" ? "en" : "ru";
   const csvColumns: CsvColumn<ExportRow>[] = columns.map((column) => ({ header: column.header, value: (row) => row[column.key] }));
-  return tableExportResponse({ rows, columns: csvColumns, format: "xlsx", filename: "machete-players", sheetName: language === "en" ? "Players" : "Игроки" });
+  return tableExportResponse({
+    rows, columns: [...fotMobExportColumns<ExportRow>(row => names.get(row), language), ...csvColumns],
+    format: "xlsx", filename: "machete-players", sheetName: language === "en" ? "Players" : "Игроки"
+  });
 });
 
 function parseColumns(value: unknown): ExportColumn[] | null {
@@ -57,5 +60,6 @@ function parseRow(value: unknown, columns: ExportColumn[]): ExportRow | null {
     if (cell !== null && typeof cell !== "string" && (typeof cell !== "number" || !Number.isFinite(cell))) return null;
     row[column.key] = typeof cell === "string" ? cell.slice(0, 500) : cell;
   }
+  if (typeof source.playerId === "string" && /^[1-9]\d{0,18}$/.test(source.playerId)) row.playerId = source.playerId;
   return row;
 }

@@ -36,6 +36,7 @@ import { ClubStartIndicator } from "./ClubStartIndicator";
 
 export type MachetePlayerRow = {
   id: string;
+  playerId?: string;
   name: string;
   sportsName?: string | null;
   teamName?: string | null;
@@ -313,7 +314,10 @@ export function MachetePlayerTable({
         body: JSON.stringify({
           language,
           columns: exportColumns.map(({ key, label }) => ({ key, header: label })),
-          rows: displayedPlayers.map((player) => Object.fromEntries(exportColumns.map((column) => [column.key, column.value(player)])))
+          rows: displayedPlayers.map((player) => ({
+            ...Object.fromEntries(exportColumns.map((column) => [column.key, column.value(player)])),
+            playerId: player.playerId
+          }))
         })
       });
       if (!response.ok) throw new Error("EXPORT_FAILED");

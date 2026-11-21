@@ -6,6 +6,7 @@ export type LeagueStartingXiTeam = {
   id: bigint;
   name: string;
   players: Array<{
+    playerId: string;
     name: string;
     position: string | null;
     shirtNumber: number | null;
@@ -18,6 +19,7 @@ export type LeagueStartingXiTeam = {
 
 type StartingXiExportRow = Record<string, string>;
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export function buildLeagueStartingXiTable(teams: LeagueStartingXiTeam[]) {
   const orderedTeams = teams
     .map((team) => ({ ...team, players: probableStartingPlayers(team.players).sort(comparePlayers) }))
@@ -34,7 +36,10 @@ export function buildLeagueStartingXiTable(teams: LeagueStartingXiTeam[]) {
     value: (row) => row[keys[index]] ?? ""
   }));
 
-  return { rows, columns };
+  const playerRows = orderedTeams.flatMap(team => team.players.map(player => ({
+    playerId: player.playerId, playerName: player.name, teamName: team.name, position: player.position
+  })));
+  return { rows, columns, playerRows };
 }
 
 export function probableStartingPlayers<T extends LeagueStartingXiTeam["players"][number]>(players: T[]) {

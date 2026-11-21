@@ -3,28 +3,33 @@ import test from "node:test";
 
 import { buildLeagueStartingXiTable } from "@/machete/league-starting-xi-export";
 
-test("starting XI export uses one team per column and compacts the supplied player names", () => {
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+test("starting XI player rows and club matrix use the same teams, players and order", () => {
   const table = buildLeagueStartingXiTable([
     {
       id: 2n,
       name: "Zenit",
       players: [
-        { name: "Mateo Cassierra", position: "F", shirtNumber: 30 },
-        { name: "Douglas Santos", position: "D", shirtNumber: 3 }
+        { playerId: "10", name: "Mateo Cassierra", position: "F", shirtNumber: 30 },
+        { playerId: "11", name: "Douglas Santos", position: "D", shirtNumber: 3 }
       ]
     },
     {
       id: 1n,
       name: "Baltika",
       players: [
-        { name: "Nikolay Titkov", position: "M", shirtNumber: 22 },
-        { name: "Yevgeniy Latyshonok", position: "GK", shirtNumber: 1 },
-        { name: "Kevin De Bruyne", position: "M", shirtNumber: 17 }
+        { playerId: "20", name: "Nikolay Titkov", position: "M", shirtNumber: 22 },
+        { playerId: "21", name: "Yevgeniy Latyshonok", position: "GK", shirtNumber: 1 },
+        { playerId: "22", name: "Kevin De Bruyne", position: "M", shirtNumber: 17 }
       ]
     }
   ]);
 
   assert.deepEqual(table.columns.map((column) => column.header), ["Baltika", "Zenit"]);
+  assert.deepEqual(table.playerRows.map(row => [row.playerId, row.playerName, row.teamName]), [
+    ["22", "Kevin De Bruyne", "Baltika"], ["20", "Nikolay Titkov", "Baltika"],
+    ["21", "Yevgeniy Latyshonok", "Baltika"], ["10", "Mateo Cassierra", "Zenit"], ["11", "Douglas Santos", "Zenit"]
+  ]);
   assert.deepEqual(
     table.rows.map((row) => table.columns.map((column) => column.value(row))),
     [
@@ -38,7 +43,7 @@ test("starting XI export uses one team per column and compacts the supplied play
 test("starting XI export keeps every active team even when no starter is marked", () => {
   const table = buildLeagueStartingXiTable([
     { id: 1n, name: "Fakel", players: [] },
-    { id: 2n, name: "Rodina", players: [{ name: "Wendel", position: null, shirtNumber: null }] }
+    { id: 2n, name: "Rodina", players: [{ playerId: "7", name: "Wendel", position: null, shirtNumber: null }] }
   ]);
 
   assert.deepEqual(table.columns.map((column) => column.header), ["Fakel", "Rodina"]);
@@ -48,6 +53,7 @@ test("starting XI export keeps every active team even when no starter is marked"
 
 test("starting XI export uses the model ranking and caps every club at eleven players", () => {
   const players = Array.from({ length: 14 }, (_, index) => ({
+    playerId: String(10 + index),
     name: `Player ${index}`,
     position: "M",
     shirtNumber: null,

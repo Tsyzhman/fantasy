@@ -51,8 +51,10 @@ export type SharedPlayerOption = {
   nationality: string | null;
 };
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export type SharedMachetePlayerRow = {
   id: string;
+  playerId?: string;
   name: string;
   teamName?: string | null;
   teamShortName?: string | null;
@@ -706,6 +708,7 @@ export async function loadSharedMachetePlayerRows(
 
         return {
           id: `combined:${first.teamId}:${first.playerId}:${rows.map((row) => `${row.leagueId}:${row.season}`).join("|")}`,
+          playerId: String(first.playerId),
           name: first.player.name,
           teamName: first.team.name,
           teamShortName: firstNonEmpty(rows.map((row) => providerTeamShortName({ metadata: row.seasonTeam.metadata }))),
@@ -758,6 +761,7 @@ export async function loadSharedMachetePlayerRows(
 
       return {
         id: `${row.leagueId}:${row.season}:${row.teamId}:${row.playerId}`,
+        playerId: String(row.playerId),
         name: row.player.name,
         teamName: row.team.name,
         teamShortName: providerTeamShortName({ metadata: row.seasonTeam.metadata }),

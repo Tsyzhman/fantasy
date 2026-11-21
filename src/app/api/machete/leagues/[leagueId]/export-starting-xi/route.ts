@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { playerPoolExportName } from "@/lib/players/display-name";
 import { tableExportResponse } from "@/lib/table-export";
 import { buildLeagueStartingXiTable } from "@/machete/league-starting-xi-export";
+import { fotMobExportColumns, loadFotMobExportNames } from "@/machete/player-table-export-names";
 import { loadSharedLeagueSeason } from "@/machete/shared_read_model";
 import { loadCachedFantasySquadPlayerPool } from "@/machete/squad_planner";
 
@@ -53,6 +54,7 @@ export const GET = withApiHandler(async (request: Request, { params }: { params:
       id: team.teamId,
       name: team.team.name,
       players: (playersByTeamId.get(String(team.teamId)) ?? []).map((player) => ({
+        playerId: player.playerId,
         name: playerPoolExportName(player),
         position: player.positionGroup,
         shirtNumber: null,
@@ -64,11 +66,19 @@ export const GET = withApiHandler(async (request: Request, { params }: { params:
     }))
   );
 
+  const names = await loadFotMobExportNames(prisma, table.playerRows.map(row => row.playerId));
   return tableExportResponse({
-    ...table,
+    rows: table.playerRows,
+    columns: [
+      ...fotMobExportColumns<typeof table.playerRows[number]>(row => names.get(row.playerId), "en"),
+      { header: "Sports.ru player", value: row => row.playerName },
+      { header: "Team", value: row => row.teamName },
+      { header: "Position", value: row => row.position }
+    ],
     format: "xlsx",
     filename: `starting-xi-${rawLeagueId}-${season.replaceAll("/", "-")}`,
-    sheetName: "Starting XI"
+    sheetName: "Players",
+    additionalSheets: [{ sheetName: "Starting XI", rows: table.rows, columns: table.columns }]
   });
 });
 

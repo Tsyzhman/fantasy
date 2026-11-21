@@ -212,6 +212,15 @@ clients can supply a known name and club or an ID-only label. Ambiguous names
 cannot authorize a substitution. When all names are missing, the name cell
 stays empty and the player remains in the export.
 
+Football player Excel downloads (pool, player table, saved squad and starting
+XI) begin with the compact FotMob name in column A and the full FotMob display
+name in column B. Both refer to the same linked FotMob player. The compact form
+uses the initial and surname, including surname particles, and preserves
+single-word names. Both cells stay empty when the link or the name is missing
+or ambiguous. Provider names, selected metrics, row order and numeric cells
+follow these fixed columns. The starting XI workbook also retains the compact
+club matrix on a second sheet. CSV keeps its existing column order.
+
 If Sports.ru omits a statistics profile for a season player, the current-season
 import retains that player's fantasy name, price and club, any previously
 verified identity metadata, and the complete records of the other players.

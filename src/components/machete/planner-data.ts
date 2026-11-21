@@ -53,6 +53,7 @@ export async function downloadPlayerPoolXlsx(
       horizon,
       columns,
       rows: players.map((player) => ({
+        playerId: player.playerId,
         providerPlayerId: player.providerPlayerId,
         player: playerPoolExportName(player),
         team: player.teamName,

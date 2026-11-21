@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test';
 import ExcelJS from 'exceljs';
 
-/** @spec spec://modules/machete/FEAT-003-squad-player-card#root */
+/**
+ * @spec spec://modules/machete/FEAT-003-squad-player-card#root
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity
+ */
 test('Squad XLSX preserves a league pool larger than 1000 rows', async ({ request }) => {
   test.setTimeout(120_000);
   test.skip(process.env.KHL_PRODUCTION_SMOKE !== 'true', 'Authenticated production export regression');
@@ -14,9 +17,12 @@ test('Squad XLSX preserves a league pool larger than 1000 rows', async ({ reques
   await workbook.xlsx.load(await response.body() as unknown as ArrayBuffer);
   const sheet = workbook.getWorksheet('Players')!;
   expect(sheet.rowCount).toBe(1006);
+  expect(sheet.getRow(1).values).toEqual([, 'FotMob short name', 'FotMob full name', ...columns.map(column => column.header)]);
   for (let index = 0; index < rows.length; index++) {
-    expect(sheet.getCell(index + 2, 1).value).toBe(rows[index].player);
-    expect(sheet.getCell(index + 2, 4).value).toBe(rows[index].price);
+    expect(sheet.getCell(index + 2, 1).value).toBeNull();
+    expect(sheet.getCell(index + 2, 2).value).toBeNull();
+    expect(sheet.getCell(index + 2, 3).value).toBe(rows[index].player);
+    expect(sheet.getCell(index + 2, 6).value).toBe(rows[index].price);
   }
   const oversized = await request.post('/api/machete/squads/export-table', { data: { columns, rows: Array.from({ length: 5001 }, () => rows[0]) } });
   expect(oversized.status()).toBe(400);

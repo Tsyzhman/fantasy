@@ -7,6 +7,7 @@ import { firstKnownPlayerName } from "@/lib/players/display-name";
 import { FPL_PROVIDER } from "@/lib/providers/fpl";
 import { parseTableExportFormat, tableExportResponse } from "@/lib/table-export";
 import { loadSharedLeagueSeason } from "@/machete/shared_read_model";
+import { fotMobExportColumns, loadFotMobExportNames } from "@/machete/player-table-export-names";
 import { parseFantasyHistorySettings } from "@/machete/squad-history";
 import { loadFantasySquadPlannerData } from "@/machete/squad_planner";
 import { playerHorizonPoints, type FantasyPlannerPlayer, type FantasySquadSelection } from "@/machete/squad_logic";
@@ -33,6 +34,7 @@ type SquadExportRow = {
   roundPoints: number[];
 };
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export const GET = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
@@ -57,6 +59,10 @@ export const GET = withApiHandler(async (request: Request) => {
   const roundCount = Math.min(data.squad.horizonRounds, data.rounds.length);
   const rows = squadExportRows(data.squad.selections, data.players, roundCount);
   const columns = squadExportColumns(roundCount);
+  if (format === "xlsx") {
+    const names = await loadFotMobExportNames(prisma, rows.map(row => row.playerId));
+    columns.unshift(...fotMobExportColumns<SquadExportRow>(row => names.get(row.playerId), "en"));
+  }
 
   return tableExportResponse({
     rows,

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.6 - 2026-11-21
+
+- Add short and full FotMob names as the first two columns of football player Excel exports. Starting lineups include a player list and the existing club matrix.
+
 ## 0.4.5 - 2026-11-20
 
 - Export Sports.ru Fantasy player names in football player pools and starting lineups, including downloads from an older open tab.
