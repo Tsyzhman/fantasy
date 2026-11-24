@@ -45,6 +45,7 @@ function numericPlayerId(value: string): bigint | null {
 
 /**
  * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#pipeline
+ * @spec spec://modules/telegram/FEAT-007-deadline-assistant#message
  */
 export async function buildCampaignReports(
   prisma: PrismaClient,
@@ -66,7 +67,9 @@ export async function buildCampaignReports(
     select: { id: true, providerRoundId: true, ordinal: true, name: true }
   });
   const roundKey = round ? fantasyProviderRoundKey(contest.provider, round.ordinal, round.providerRoundId) : null;
-  const tag = deadlineTag(contest.name, round?.ordinal ?? null);
+  const numberedRound = /^(?:(\d+)\s+тур|тур\s+(\d+))$/i.exec(round?.name.trim() ?? "");
+  const sportsRoundNumber = numberedRound?.[1] ?? numberedRound?.[2];
+  const tag = deadlineTag(contest.name, sportsRoundNumber ? Number(sportsRoundNumber) : round?.ordinal ?? null, contest.leagueId);
   if (!tag) return result;
 
   const fixtures = round

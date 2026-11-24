@@ -25,3 +25,8 @@ test("unknown contests require an explicit alias instead of a guessed tag", () =
   assert.equal(contestTagAlias("Sports.ru Mystery Cup"), null);
   assert.equal(deadlineTag("Sports.ru Mystery Cup", 1), null);
 });
+
+test("the Sports Champions League tag follows the league identity", () => {
+  assert.equal(deadlineTag("Фэнтези ЛИГИ ЧЕМПИОНОВ", 5, 42n), "#ЛигаЧемпионов5");
+  assert.equal(deadlineTag("Renamed tournament", 5, 42n), "#ЛигаЧемпионов5");
+});
