@@ -17,7 +17,7 @@ import {
   moscowMinutesOfDay
 } from "./config";
 import { buildCampaignReports } from "./build";
-import { deadlineTag } from "./tags";
+import { contestTagAlias } from "./tags";
 import { lockDeadlinePublication, type ClaimedStageJob } from "./publication";
 export type { ClaimedStageJob } from "./publication";
 
@@ -73,6 +73,7 @@ export async function deadlinePlanningVersion(prisma: PrismaClient) {
 
 /**
  * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#deadlines
+ * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#recovery
  */
 export async function planDeadlineCampaigns(
   prisma: PrismaClient,
@@ -149,7 +150,7 @@ export async function planDeadlineCampaigns(
         status = "BLOCKED";
         blockedReason = "EARLY_DEADLINE";
         isEarlyDeadline = true;
-      } else if (!deadlineTag(contest.name, round.ordinal)) {
+      } else if (!contestTagAlias(contest.name, contest.leagueId)) {
         status = "BLOCKED";
         blockedReason = "UNKNOWN_TAG";
       }
@@ -164,9 +165,11 @@ export async function planDeadlineCampaigns(
       const campaign = unchanged ? existing : await prisma.$transaction(async (tx) => {
         if (existing) await tx.$queryRaw`SELECT "id" FROM "deadline_campaigns" WHERE "id" = ${existing.id} FOR UPDATE`;
         const current = existing ? await tx.deadlineCampaign.findUnique({ where: { id: existing.id } }) : null;
-        const campaignInputChanged = current && (current.deadlineAt?.getTime() !== deadlineAt?.getTime()
-          || current.scheduleVersion !== (contest.scheduleRevision ?? null) || current.reportDate !== reportDate);
-        if (current && !campaignInputChanged && ["BUILT", "DELIVERING", "DONE"].includes(current.status)) return current;
+        // A recovered campaign needs new stages because blocking cancelled the old ones.
+        const advanceInputVersion = current && (current.deadlineAt?.getTime() !== deadlineAt?.getTime()
+          || current.scheduleVersion !== (contest.scheduleRevision ?? null) || current.reportDate !== reportDate
+          || (current.status === "BLOCKED" && status === "ACTIVE"));
+        if (current && !advanceInputVersion && ["BUILT", "DELIVERING", "DONE"].includes(current.status)) return current;
         const planned = await tx.deadlineCampaign.upsert({
           where: { contestId_season_providerRoundId: { contestId, season: contest.season, providerRoundId: round.providerRoundId } },
           create: {
@@ -196,10 +199,10 @@ export async function planDeadlineCampaigns(
             reportDate,
             roundKey,
             roundLabel: `Тур ${round.ordinal}`,
-            ...(campaignInputChanged ? { inputVersion: { increment: 1 } } : {})
+            ...(advanceInputVersion ? { inputVersion: { increment: 1 } } : {})
           }
         });
-        if (campaignInputChanged) {
+        if (advanceInputVersion) {
           await tx.deadlineStageJob.updateMany({ where: { campaignId: planned.id, inputVersion: { not: planned.inputVersion }, status: { in: ["QUEUED", "FAILED", "RUNNING"] } }, data: { status: "CANCELLED", leaseToken: null, leaseUntil: null } });
           // Quarantine unsent old text atomically with the version change. A
           // rebuilt version may reopen STALE parts, but never cancelled consent

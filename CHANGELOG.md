@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.8 - 2026-11-24
+
+- Restore Telegram deadline reports for Sports.ru Champions League by identifying the competition independently of its display name.
+- Requeue deadline report stages when a blocked campaign becomes valid and use the Sports.ru round number in the message tag.
+
 ## 0.4.7 - 2026-11-21
 
 - Resolve the FotMob name for older Excel exports after a Sports.ru player has been relinked and its former provider-only record is still in the catalog.

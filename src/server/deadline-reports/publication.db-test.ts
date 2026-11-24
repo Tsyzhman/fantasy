@@ -55,6 +55,51 @@ test("a valid stage publishes its report and finishes under the same fence", { s
   });
 });
 
+/** @spec spec://modules/telegram/INFRA-005-deadline-pipeline#recovery */
+test("a previously blocked campaign queues fresh stages and delivers once after recovery", { skip }, async () => {
+  await fixture(async ({ contestId, campaignId, job }) => {
+    const recoveredAt = new Date("2026-11-04T07:15:00Z");
+    const plan = () => planDeadlineCampaigns(prisma, { now: recoveredAt, contestIds: [contestId] });
+    await prisma.fantasyContest.update({ where: { id: contestId }, data: { name: "Unknown tournament" } });
+    assert.equal((await plan()).details[0]?.reason, "UNKNOWN_TAG");
+    assert.equal((await prisma.deadlineStageJob.findUniqueOrThrow({ where: { id: job.id } })).status, "CANCELLED");
+
+    await prisma.fantasyContest.update({ where: { id: contestId }, data: { name: "Sports.ru Champions League" } });
+    await prisma.fantasyProviderRound.updateMany({ where: { contestId }, data: { name: "7 тур" } });
+    await plan();
+    await plan();
+
+    const campaign = await prisma.deadlineCampaign.findUniqueOrThrow({ where: { id: campaignId } });
+    assert.equal(campaign.status, "ACTIVE");
+    assert.equal(campaign.inputVersion, 2);
+    assert.equal(campaign.blockedReason, null);
+    const stages = await prisma.deadlineStageJob.findMany({
+      where: { campaignId, inputVersion: 2 },
+      orderBy: { dueAt: "asc" },
+      select: { stage: true, status: true }
+    });
+    assert.deepEqual(stages, [
+      { stage: "SQUAD_IMPORT", status: "QUEUED" },
+      { stage: "DATA_REFRESH", status: "QUEUED" },
+      { stage: "BUILD_REPORTS", status: "QUEUED" }
+    ]);
+    assert.equal(await finishStageJob(prisma, job, { status: "SUCCEEDED" }, recoveredAt), false);
+
+    assert.equal((await buildCampaignReports(prisma, { campaignId, now: recoveredAt })).built, 1);
+    const messages: string[] = [];
+    const sendMessage = async (_chatId: string, text: string) => {
+      messages.push(text);
+      return { messageId: "recovered-once" };
+    };
+    await withEnv({ TELEGRAM_DEADLINE_ENABLED: "true", TELEGRAM_SEND_ENABLED: "true" }, async () => {
+      await runDeadlineDeliveryTick(prisma, { now: recoveredAt, sendMessage });
+      await runDeadlineDeliveryTick(prisma, { now: recoveredAt, sendMessage });
+    });
+    assert.equal(messages.length, 1);
+    assert.match(messages[0] ?? "", /#ЛигаЧемпионов7/);
+  });
+});
+
 /** @spec spec://modules/telegram/INFRA-005-deadline-pipeline#deadlines */
 for (const status of ["BUILT", "DELIVERING"]) {
   test(`a moved ${status} campaign quarantines old text and rebuilds only for its new date/version`, { skip }, async () => {
